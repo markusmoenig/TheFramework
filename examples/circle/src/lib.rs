@@ -1,3 +1,5 @@
+// Lib file needed when compiled for Xcode to a static library
+
 use theframework::prelude::*;
 
 pub mod circle;

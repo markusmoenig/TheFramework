@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+#[allow(unused)]
 pub trait TheTrait {
 
     fn new() -> Self where Self: Sized;

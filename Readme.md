@@ -41,7 +41,7 @@ impl TheTrait for Circle {
         ctx.draw.circle(pixels, &(ctx.width / 2 - self.radius, ctx.height / 2 - self.radius, self.radius * 2, self.radius * 2), ctx.width, &[255, 255, 255, 255], self.radius);
     }
 
-    /// Update the app state.
+    /// Update the app state
     fn update(&mut self) {
     }
 
