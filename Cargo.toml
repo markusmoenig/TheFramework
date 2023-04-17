@@ -1,0 +1,29 @@
+[package]
+name = "theframework"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+env_logger = "0.10"
+log = "0.4"
+fontdue = "0.7.2"
+pixels = { version = "0.12.1", optional = true }
+winit = { version = "0.28.3", optional = true }
+winit_input_helper = { version = "0.14.1", optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1"
+console_log = "1.0.0"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = ["GpuTextureFormat"] }
+
+[features]
+pixels_winit = ["pixels", "winit", "winit_input_helper"]
+default = ["pixels_winit"]
+
+[workspace]
+members = [
+    "examples/*",
+    "run-wasm",
+]
