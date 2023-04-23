@@ -7,7 +7,8 @@ pub trait TheTrait {
 
     fn draw(&mut self, pixels: &mut [u8], ctx: &TheContext);
 
-    fn update(&mut self);
+    fn update(&mut self) {
+    }
 
     fn touch_down(&mut self, x: f32, y: f32) -> bool {
         false

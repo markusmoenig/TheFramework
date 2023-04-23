@@ -543,48 +543,57 @@ impl TheApp {
                     }
 
                     if input.mouse_pressed(0) {
+                        let coords =  input.mouse().unwrap();
+                        let pixel_pos: (usize, usize) = pixels.window_pos_to_pixel(coords)
+                            .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+
+                        if app.touch_down(0, pixel_pos.0 as f32, pixel_pos.1 as f32) {
+                            window.request_redraw();
+                        }
+                    } else
+                    if input.mouse_pressed(1) {
+                        let coords =  input.mouse().unwrap();
+                        let pixel_pos: (usize, usize) = pixels.window_pos_to_pixel(coords)
+                            .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+
+                        if app.touch_down(1, pixel_pos.0 as f32, pixel_pos.1 as f32) {
+                            window.request_redraw();
+                        }
+                    }
+
+                    if input.mouse_released(0) {
+                        let coords =  input.mouse().unwrap();
+                        let pixel_pos: (usize, usize) = pixels.window_pos_to_pixel(coords)
+                            .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+
+                        if app.touch_up(pixel_pos.0 as f32, pixel_pos.1 as f32) {
+                            window.request_redraw();
+                        }
+                    }
+
+                    if input.mouse_held(0) {
+                        let diff =  input.mouse_diff();
+                        if diff.0 != 0.0 || diff.1 != 0.0 {
                             let coords =  input.mouse().unwrap();
                             let pixel_pos: (usize, usize) = pixels.window_pos_to_pixel(coords)
                                 .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
-                            if app.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32) {
+                            if app.touch_dragged(pixel_pos.0 as f32, pixel_pos.1 as f32) {
                                 window.request_redraw();
                             }
                         }
-
-                        if input.mouse_released(0) {
+                    } else {
+                        let diff =  input.mouse_diff();
+                        if diff.0 != 0.0 || diff.1 != 0.0 {
                             let coords =  input.mouse().unwrap();
                             let pixel_pos: (usize, usize) = pixels.window_pos_to_pixel(coords)
                                 .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
-                            if app.touch_up(pixel_pos.0 as f32, pixel_pos.1 as f32) {
+                            if app.hover(pixel_pos.0 as f32, pixel_pos.1 as f32) {
                                 window.request_redraw();
                             }
                         }
-
-                        if input.mouse_held(0) {
-                            let diff =  input.mouse_diff();
-                            if diff.0 != 0.0 || diff.1 != 0.0 {
-                                let coords =  input.mouse().unwrap();
-                                let pixel_pos: (usize, usize) = pixels.window_pos_to_pixel(coords)
-                                    .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
-
-                                if app.touch_dragged(pixel_pos.0 as f32, pixel_pos.1 as f32) {
-                                    window.request_redraw();
-                                }
-                            }
-                        } else {
-                            let diff =  input.mouse_diff();
-                            if diff.0 != 0.0 || diff.1 != 0.0 {
-                                let coords =  input.mouse().unwrap();
-                                let pixel_pos: (usize, usize) = pixels.window_pos_to_pixel(coords)
-                                    .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
-
-                                if app.hover(pixel_pos.0 as f32, pixel_pos.1 as f32) {
-                                    window.request_redraw();
-                                }
-                            }
-                        }
+                    }
 
 
                     // Resize the window
