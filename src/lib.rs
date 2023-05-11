@@ -25,4 +25,6 @@ pub mod prelude {
     pub use crate::thecontext::TheContext;
     pub use crate::thedraw2d::TheDraw2D;
     pub use crate::WidgetKey;
+
+    pub use therenderer::prelude::*;
 }

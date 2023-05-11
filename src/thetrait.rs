@@ -5,7 +5,10 @@ pub trait TheTrait {
 
     fn new() -> Self where Self: Sized;
 
-    fn draw(&mut self, pixels: &mut [u8], ctx: &TheContext);
+    fn init(&mut self, ctx: &mut TheContext) {
+    }
+
+    fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext);
 
     fn update(&mut self) {
     }

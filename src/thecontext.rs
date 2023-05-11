@@ -1,11 +1,11 @@
 use crate::prelude::*;
 
 pub struct TheContext {
-
     pub width           : usize,
     pub height          : usize,
 
     pub draw            : TheDraw2D,
+    pub renderer        : TheRenderer,
 }
 
 impl TheContext {
@@ -15,6 +15,7 @@ impl TheContext {
             width,
             height,
             draw        : TheDraw2D::new(),
+            renderer    : TheRenderer::new(),
         }
     }
 }

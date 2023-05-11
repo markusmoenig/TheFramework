@@ -62,6 +62,7 @@ impl TheApp {
         };
 
         let mut ctx = TheContext::new(width, height);
+        app.init(&mut ctx);
 
         // Loop
         event_loop.run(move |event, _, control_flow| {
@@ -71,7 +72,7 @@ impl TheApp {
                 // let start = get_time();
 
                 let frame = pixels.frame_mut();
-                app.draw(frame, &ctx);
+                app.draw(frame, &mut ctx);
                 // println!("Time: {}", get_time() - start);
                 if pixels
                     .render()
@@ -265,8 +266,8 @@ impl TheApp {
                     let scale = window.scale_factor() as u32;
                     let _rc = pixels.resize_buffer(size.width / scale, size.height / scale);
                     // editor.resize(size.width as usize / scale as usize, size.height as usize / scale as usize);
-                    //width = size.width as usize / scale as usize;
-                    //height = size.height as usize / scale as usize;
+                    let width = size.width as usize / scale as usize;
+                    let height = size.height as usize / scale as usize;
                     ctx.width = width;
                     ctx.height = height;
                     window.request_redraw();
@@ -395,6 +396,7 @@ impl TheApp {
             };
 
             let mut ctx = TheContext::new(WIDTH as usize, HEIGHT as usize);
+            app.init(&mut ctx);
 
             event_loop.run(move |event, _, control_flow| {
                 // Draw the current frame

@@ -1,44 +1,35 @@
-use theframework::*;
+use theframework::prelude::*;
 
 pub struct Circle {
-
-    circle_x            : usize,
-    circle_y            : usize,
-
-    radius              : usize,
-
-    clicked             : bool,
+    circle_id           : u32,
 }
 
 impl TheTrait for Circle {
     fn new() -> Self where Self: Sized {
-        Self {
+    Self {
+            circle_id   : 0,
+        }
+    }
 
-            circle_x    : 0,
-            circle_y    : 0,
-            radius      : 200,
+    /// Init the scene by adding a shape to the world space
+    fn init(&mut self, ctx: &mut TheContext) {
 
-            clicked     : false,
+        // The world space always has the id of 0
+        if let Some(world_space) = ctx.renderer.get_space_mut(0) {
+            world_space.set_coord_system(Center);
+            self.circle_id = world_space.add_shape(Disc);
+            world_space.set_shape_property(self.circle_id, Normal, Color, vec!(1.0, 0.0, 0.0, 1.0));
         }
     }
 
     /// Draw a circle in the middle of the window
-    fn draw(&mut self, pixels: &mut [u8], ctx: &TheContext) {
-
-        let color = if self.clicked { [255, 0, 0, 255] } else { [255, 255, 255, 255] };
-
-        self.circle_x = ctx.width / 2;
-        self.circle_y = ctx.height / 2;
-
-        ctx.draw.rect(pixels, &(0, 0, ctx.width, ctx.height), ctx.width, &[0, 0, 0, 255]);
-        ctx.draw.circle(pixels,
-            &(self.circle_x - self.radius, self.circle_y - self.radius, self.radius * 2, self.radius * 2), ctx.width,
-            &color,
-            self.radius);
+    fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {
+        ctx.renderer.draw(pixels, ctx.width, ctx.height);
     }
 
     /// Click / touch at the given position, check if we clicked inside the circle
     fn touch_down(&mut self, x: f32, y: f32) -> bool {
+        /*
 
         /// Length of a 2d vector
         #[inline(always)]
@@ -54,12 +45,11 @@ impl TheTrait for Circle {
         } else {
             self.clicked = false;
         }
-
+        */
         true
     }
 
     fn touch_up(&mut self, _x: f32, _y: f32) -> bool {
-        self.clicked = false;
         true
     }
 

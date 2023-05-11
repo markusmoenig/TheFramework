@@ -38,7 +38,7 @@ pub extern "C" fn rust_draw(pixels: *mut u8, width: u32, height: u32) {
     CTX.lock().unwrap().width = width as usize;
     CTX.lock().unwrap().height = height as usize;
 
-    APP.lock().unwrap().draw(slice, &CTX.lock().unwrap());
+    APP.lock().unwrap().draw(slice, &mut CTX.lock().unwrap());
 }
 
 #[no_mangle]
