@@ -49,31 +49,31 @@ pub extern "C" fn rust_target_fps() -> u32 {
 #[no_mangle]
 pub extern "C" fn rust_hover(x: f32, y: f32) -> bool {
     //println!("hover {} {}", x, y);
-    APP.lock().unwrap().hover(x, y)
+    APP.lock().unwrap().hover(x, y, &mut CTX.lock().unwrap())
 }
 
 #[no_mangle]
 pub extern "C" fn rust_touch_down(x: f32, y: f32) -> bool {
     //println!("touch down {} {}", x, y);
-    APP.lock().unwrap().touch_down(x, y)
+    APP.lock().unwrap().touch_down(x, y, &mut CTX.lock().unwrap())
 }
 
 #[no_mangle]
 pub extern "C" fn rust_touch_dragged(x: f32, y: f32) -> bool {
     //println!("touch dragged {} {}", x, y);
-    APP.lock().unwrap().touch_dragged(x, y)
+    APP.lock().unwrap().touch_dragged(x, y, &mut CTX.lock().unwrap())
 }
 
 #[no_mangle]
 pub extern "C" fn rust_touch_up(x: f32, y: f32) -> bool {
     //println!("touch up {} {}", x, y);
-    APP.lock().unwrap().touch_up(x, y)
+    APP.lock().unwrap().touch_up(x, y, &mut CTX.lock().unwrap())
 }
 
 #[no_mangle]
 pub extern "C" fn rust_touch_wheel(x: f32, y: f32) -> bool {
     //println!("touch up {} {}", x, y);
-    APP.lock().unwrap().mouse_wheel((x as isize, y as isize))
+    APP.lock().unwrap().mouse_wheel((x as isize, y as isize), &mut CTX.lock().unwrap())
 }
 
 #[no_mangle]
@@ -81,7 +81,7 @@ pub extern "C" fn rust_key_down(p: *const c_char) -> bool {
     let c_str = unsafe { CStr::from_ptr(p) };
     if let Some(key) = c_str.to_str().ok() {
         if let Some(ch ) = key.chars().next() {
-            return APP.lock().unwrap().key_down(Some(ch), None);
+            return APP.lock().unwrap().key_down(Some(ch), None, &mut CTX.lock().unwrap());
         }
     }
     false
@@ -90,31 +90,31 @@ pub extern "C" fn rust_key_down(p: *const c_char) -> bool {
 #[no_mangle]
 pub extern "C" fn rust_special_key_down(key: u32) -> bool {
     if key == KEY_ESCAPE {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Escape))
+        APP.lock().unwrap().key_down(None, Some(WidgetKey::Escape), &mut CTX.lock().unwrap())
     } else
     if key == KEY_RETURN {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Return))
+        APP.lock().unwrap().key_down(None, Some(WidgetKey::Return), &mut CTX.lock().unwrap())
     } else
     if key == KEY_DELETE {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Delete))
+        APP.lock().unwrap().key_down(None, Some(WidgetKey::Delete), &mut CTX.lock().unwrap())
     } else
     if key == KEY_UP {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Up))
+        APP.lock().unwrap().key_down(None, Some(WidgetKey::Up), &mut CTX.lock().unwrap())
     } else
     if key == KEY_RIGHT {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Right))
+        APP.lock().unwrap().key_down(None, Some(WidgetKey::Right), &mut CTX.lock().unwrap())
     } else
     if key == KEY_DOWN {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Down))
+        APP.lock().unwrap().key_down(None, Some(WidgetKey::Down), &mut CTX.lock().unwrap())
     } else
     if key == KEY_LEFT {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Left))
+        APP.lock().unwrap().key_down(None, Some(WidgetKey::Left), &mut CTX.lock().unwrap())
     } else
     if key == KEY_SPACE {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Space))
+        APP.lock().unwrap().key_down(None, Some(WidgetKey::Space), &mut CTX.lock().unwrap())
     } else {
     //if key == KEY_TAB {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Tab))
+        APP.lock().unwrap().key_down(None, Some(WidgetKey::Tab), &mut CTX.lock().unwrap())
     }
 }
 

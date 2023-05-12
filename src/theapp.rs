@@ -69,11 +69,8 @@ impl TheApp {
             use winit::event::{ElementState, VirtualKeyCode};
 
             if let Event::RedrawRequested(_) = event {
-                // let start = get_time();
-
                 let frame = pixels.frame_mut();
                 app.draw(frame, &mut ctx);
-                // println!("Time: {}", get_time() - start);
                 if pixels
                     .render()
                     .map_err(|e| error!("pixels.render() failed: {}", e))
@@ -97,7 +94,7 @@ impl TheApp {
 
                     WindowEvent::ReceivedCharacter(char ) => match char {
                         _ => {
-                            if app.key_down(Some(*char), None) {
+                            if app.key_down(Some(*char), None, &mut ctx) {
                                 window.request_redraw();
                             }
                         }
@@ -121,52 +118,52 @@ impl TheApp {
                         ..
                     } => match virtual_code {
                         VirtualKeyCode::Delete => {
-                            if app.key_down(None, Some(WidgetKey::Delete)) {
+                            if app.key_down(None, Some(WidgetKey::Delete), &mut ctx) {
                                 window.request_redraw();
                             }
                         },
                         VirtualKeyCode::Back => {
-                            if app.key_down(None, Some(WidgetKey::Delete)) {
+                            if app.key_down(None, Some(WidgetKey::Delete), &mut ctx) {
                                 window.request_redraw();
                             }
                         },
                         VirtualKeyCode::Up => {
-                            if app.key_down(None, Some(WidgetKey::Up)) {
+                            if app.key_down(None, Some(WidgetKey::Up), &mut ctx) {
                                 window.request_redraw();
                             }
                         },
                         VirtualKeyCode::Right => {
-                            if app.key_down(None, Some(WidgetKey::Right)) {
+                            if app.key_down(None, Some(WidgetKey::Right), &mut ctx) {
                                 window.request_redraw();
                             }
                         },
                         VirtualKeyCode::Down => {
-                            if app.key_down(None, Some(WidgetKey::Down)) {
+                            if app.key_down(None, Some(WidgetKey::Down), &mut ctx) {
                                 window.request_redraw();
                             }
                         },
                         VirtualKeyCode::Left => {
-                            if app.key_down(None, Some(WidgetKey::Left)) {
+                            if app.key_down(None, Some(WidgetKey::Left), &mut ctx) {
                                 window.request_redraw();
                             }
                         },
                         VirtualKeyCode::Space => {
-                            if app.key_down(None, Some(WidgetKey::Space)) {
+                            if app.key_down(None, Some(WidgetKey::Space), &mut ctx) {
                                 window.request_redraw();
                             }
                         },
                         VirtualKeyCode::Tab => {
-                            if app.key_down(None, Some(WidgetKey::Tab)) {
+                            if app.key_down(None, Some(WidgetKey::Tab), &mut ctx) {
                                 window.request_redraw();
                             }
                         },
                         VirtualKeyCode::Return => {
-                            if app.key_down(None, Some(WidgetKey::Return)) {
+                            if app.key_down(None, Some(WidgetKey::Return), &mut ctx) {
                                 window.request_redraw();
                             }
                         },
                         VirtualKeyCode::Escape => {
-                            if app.key_down(None, Some(WidgetKey::Escape)) {
+                            if app.key_down(None, Some(WidgetKey::Escape), &mut ctx) {
                                 window.request_redraw();
                             }
                         }
@@ -182,7 +179,7 @@ impl TheApp {
                     DeviceEvent::MouseWheel { delta } => match delta {
                         winit::event::MouseScrollDelta::LineDelta(x, y) => {
                             //println!("mouse wheel Line Delta: ({},{})", x, y);
-                            if app.mouse_wheel(((*x * 100.0) as isize, (*y * 100.0) as isize)) {
+                            if app.mouse_wheel(((*x * 100.0) as isize, (*y * 100.0) as isize), &mut ctx) {
                                 window.request_redraw();
                                 //mouse_wheel_ongoing = true;
                             }
@@ -193,7 +190,7 @@ impl TheApp {
                         }
                         winit::event::MouseScrollDelta::PixelDelta(p) => {
                             //println!("mouse wheel Pixel Delta: ({},{})", p.x, p.y);
-                            if app.mouse_wheel((p.x as isize, p.y as isize)) {
+                            if app.mouse_wheel((p.x as isize, p.y as isize), &mut ctx) {
                                 window.request_redraw();
                                 //mouse_wheel_ongoing = true;
                             }
@@ -221,7 +218,7 @@ impl TheApp {
                     let pixel_pos: (usize, usize) = pixels.window_pos_to_pixel(coords)
                         .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
-                    if app.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32) {
+                    if app.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
                         window.request_redraw();
                     }
                 }
@@ -231,7 +228,7 @@ impl TheApp {
                     let pixel_pos: (usize, usize) = pixels.window_pos_to_pixel(coords)
                         .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
-                    if app.touch_up(pixel_pos.0 as f32, pixel_pos.1 as f32) {
+                    if app.touch_up(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
                         window.request_redraw();
                     }
                 }
@@ -243,7 +240,7 @@ impl TheApp {
                         let pixel_pos: (usize, usize) = pixels.window_pos_to_pixel(coords)
                             .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
-                        if app.touch_dragged(pixel_pos.0 as f32, pixel_pos.1 as f32) {
+                        if app.touch_dragged(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
                             window.request_redraw();
                         }
                     }
@@ -254,7 +251,7 @@ impl TheApp {
                         let pixel_pos: (usize, usize) = pixels.window_pos_to_pixel(coords)
                             .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
-                        if app.hover(pixel_pos.0 as f32, pixel_pos.1 as f32) {
+                        if app.hover(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
                             window.request_redraw();
                         }
                     }
@@ -273,6 +270,10 @@ impl TheApp {
                     window.request_redraw();
                 }
 
+                // Test if the app needs an update
+                if app.needs_update(&mut ctx) {
+                    window.request_redraw();
+                }
                 /*
                 let curr_time = get_time();
 

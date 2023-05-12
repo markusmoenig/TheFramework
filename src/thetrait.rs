@@ -10,30 +10,34 @@ pub trait TheTrait {
 
     fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext);
 
-    fn update(&mut self) {
+    fn update(&mut self, ctx: &mut TheContext) {
     }
 
-    fn touch_down(&mut self, x: f32, y: f32) -> bool {
+    fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
         false
     }
 
-    fn touch_dragged(&mut self, x: f32, y: f32) -> bool {
+    fn touch_down(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         false
     }
 
-    fn touch_up(&mut self, x: f32, y: f32) -> bool {
+    fn touch_dragged(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         false
     }
 
-    fn hover(&mut self, _x: f32, _y: f32) -> bool {
+    fn touch_up(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         false
     }
 
-    fn key_down(&mut self, char: Option<char>, key: Option<WidgetKey>) -> bool {
+    fn hover(&mut self, _x: f32, _y: f32, ctx: &mut TheContext) -> bool {
         false
     }
 
-    fn mouse_wheel(&mut self, delta: (isize, isize)) -> bool {
+    fn key_down(&mut self, char: Option<char>, key: Option<WidgetKey>, ctx: &mut TheContext) -> bool {
+        false
+    }
+
+    fn mouse_wheel(&mut self, delta: (isize, isize), ctx: &mut TheContext) -> bool {
         false
     }
 

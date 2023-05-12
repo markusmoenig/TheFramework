@@ -18,7 +18,10 @@ impl TheTrait for Circle {
         if let Some(world_space) = ctx.renderer.get_space_mut(0) {
             world_space.set_coord_system(Center);
             self.circle_id = world_space.add_shape(Disc);
-            world_space.set_shape_property(self.circle_id, Normal, Color, vec!(1.0, 0.0, 0.0, 1.0));
+            world_space.set_shape_property(self.circle_id, Normal, Color, vec!(1.0, 1.0, 1.0, 1.0));
+            world_space.set_shape_property(self.circle_id, Normal, Radius, vec!(100.0));
+            world_space.set_shape_property(self.circle_id, Selected, Color, vec!(1.0, 0.0, 0.0, 1.0));
+            world_space.set_shape_property(self.circle_id, Selected, Radius, vec!(120.0));
         }
     }
 
@@ -27,33 +30,28 @@ impl TheTrait for Circle {
         ctx.renderer.draw(pixels, ctx.width, ctx.height);
     }
 
-    /// Click / touch at the given position, check if we clicked inside the circle
-    fn touch_down(&mut self, x: f32, y: f32) -> bool {
-        /*
-
-        /// Length of a 2d vector
-        #[inline(always)]
-        fn length(v: (f32, f32)) -> f32 {
-            ((v.0).powf(2.0) + (v.1).powf(2.0)).sqrt()
+    /// If the touch event is inside the circle, set the circle state to Selected
+    fn touch_down(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
+        if let Some(world_space) = ctx.renderer.get_space_mut(0) {
+            if let Some(shape_id) = world_space.get_shape_at(x, y) {
+                world_space.set_shape_state(shape_id, Selected);
+            } else {
+                world_space.set_shape_state(self.circle_id, Normal);
+            }
         }
-
-        let dist = length((x - self.circle_x as f32, y - self.circle_y as f32)) - self.radius as f32;
-
-        if dist <= 0.0 {
-            // Clicked inside
-            self.clicked = true;
-        } else {
-            self.clicked = false;
-        }
-        */
-        true
+        ctx.renderer.needs_update()
     }
 
-    fn touch_up(&mut self, _x: f32, _y: f32) -> bool {
-        true
+    /// Set the circle state to Selected.
+    fn touch_up(&mut self, _x: f32, _y: f32, ctx: &mut TheContext) -> bool {
+        if let Some(world_space) = ctx.renderer.get_space_mut(0) {
+            world_space.set_shape_state(self.circle_id, Normal);
+        }
+        ctx.renderer.needs_update()
     }
 
-    /// Update the app state
-    fn update(&mut self) {
+    /// Query if the renderer needs an update (tramsition animation ongoing etc.)
+    fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
+        ctx.renderer.needs_update()
     }
 }
