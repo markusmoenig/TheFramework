@@ -1,12 +1,8 @@
-*TheFramework is work in progress and features are incomplete and may change*
-
-TheFramework is an abstraction layer for your application or 2D game. You create your app inside a trait, pass it to TheFramework and it will run on all currently supported application backends.
+TheFramework is an abstraction layer for your application or game. You create your app inside a trait, pass it to TheFramework and it will run on all currently supported application backends.
 
 Basically TheFramework opens a window and provides a pixel buffer for drawing and user events (mouse, keyboard, trackpads etc). to your application trait.
 
-It also provides a range of 2D drawing and utility functions for your application or game.
-
-This enables you to focus entirely on your application without worrying about the platform specifics.
+[TheRenderer](https://github.com/markusmoenig/TheRenderer) is an integrated, fast and stateful rendering framework which is integrated into TheFramework.
 
 ### Current Backends
 
@@ -18,34 +14,65 @@ This enables you to focus entirely on your application without worrying about th
 
 ### Example
 
-Here is an excerpt from the provided circle [example](./examples/). It draws a circle which can be modified by user input.
+Here is an excerpt from the provided circle [example](./examples/). It draws a circle which will get smoothly change size and color when clicked.
 
 First you define your app trait:
 
 ```rust
-
-struct Circle {
-    radius          : usize,
+pub struct Circle {
+    circle_id           : u32,
 }
 
 impl TheTrait for Circle {
     fn new() -> Self where Self: Sized {
-        Self {
-            radius  : 100,
+    Self {
+            circle_id   : 0,
+        }
+    }
+
+    /// Init the scene by adding a shape to the world space
+    fn init(&mut self, ctx: &mut TheContext) {
+
+        // The world space always has the id of 0
+        if let Some(world_space) = ctx.renderer.get_space_mut(0) {
+            world_space.set_coord_system(Center);
+            self.circle_id = world_space.add_shape(Disc);
+            world_space.set_shape_property(self.circle_id, Normal, Color, vec!(1.0, 1.0, 1.0, 1.0));
+            world_space.set_shape_property(self.circle_id, Normal, Radius, vec!(100.0));
+            world_space.set_shape_property(self.circle_id, Selected, Color, vec!(1.0, 0.0, 0.0, 1.0));
+            world_space.set_shape_property(self.circle_id, Selected, Radius, vec!(120.0));
         }
     }
 
     /// Draw a circle in the middle of the window
-    fn draw(&mut self, pixels: &mut [u8], ctx: &TheContext) {
-
-        ctx.draw.circle(pixels, &(ctx.width / 2 - self.radius, ctx.height / 2 - self.radius, self.radius * 2, self.radius * 2), ctx.width, &[255, 255, 255, 255], self.radius);
+    fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {
+        ctx.renderer.draw(pixels, ctx.width, ctx.height);
     }
 
-    /// Update the app state
-    fn update(&mut self) {
+    /// If the touch event is inside the circle, set the circle state to Selected
+    fn touch_down(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
+        if let Some(world_space) = ctx.renderer.get_space_mut(0) {
+            if let Some(shape_id) = world_space.get_shape_at(x, y) {
+                world_space.set_shape_state(shape_id, Selected);
+            } else {
+                world_space.set_shape_state(self.circle_id, Normal);
+            }
+        }
+        ctx.renderer.needs_update()
     }
 
-    // User event handling omitted, please see the example source code.
+    /// Set the circle state to Selected.
+    fn touch_up(&mut self, _x: f32, _y: f32, ctx: &mut TheContext) -> bool {
+        if let Some(world_space) = ctx.renderer.get_space_mut(0) {
+            world_space.set_shape_state(self.circle_id, Normal);
+        }
+        ctx.renderer.needs_update()
+    }
+
+    /// Query if the renderer needs an update (tramsition animation ongoing etc.)
+    fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
+        ctx.renderer.needs_update()
+    }
 }
 ```
 
