@@ -2,7 +2,24 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "cargo run",
+            "label": "cargo run ui demo",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run",
+                "--release",
+                "--package",
+                "uidemo",
+                // "--",
+                // "arg1"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "cargo run circle",
             "type": "shell",
             "command": "cargo",
             "args": [

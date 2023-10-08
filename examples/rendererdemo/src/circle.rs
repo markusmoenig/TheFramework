@@ -1,27 +1,32 @@
 use theframework::prelude::*;
 
 pub struct Circle {
-    circle_id           : u32,
+    circle_id: u32,
 }
 
 impl TheTrait for Circle {
-    fn new() -> Self where Self: Sized {
-    Self {
-            circle_id   : 0,
-        }
+    fn new() -> Self
+    where
+        Self: Sized,
+    {
+        Self { circle_id: 0 }
     }
 
     /// Init the scene by adding a shape to the world space
     fn init(&mut self, ctx: &mut TheContext) {
-
         // The world space always has the id of 0
         if let Some(world_space) = ctx.renderer.get_space_mut(0) {
             world_space.set_coord_system(Center);
             self.circle_id = world_space.add_shape(Disc);
-            world_space.set_shape_property(self.circle_id, Normal, Color, vec!(1.0, 1.0, 1.0, 1.0));
-            world_space.set_shape_property(self.circle_id, Normal, Radius, vec!(100.0));
-            world_space.set_shape_property(self.circle_id, Selected, Color, vec!(1.0, 0.0, 0.0, 1.0));
-            world_space.set_shape_property(self.circle_id, Selected, Radius, vec!(120.0));
+            world_space.set_shape_property(self.circle_id, Normal, Color, vec![1.0, 1.0, 1.0, 1.0]);
+            world_space.set_shape_property(self.circle_id, Normal, Radius, vec![100.0]);
+            world_space.set_shape_property(
+                self.circle_id,
+                Selected,
+                Color,
+                vec![1.0, 0.0, 0.0, 1.0],
+            );
+            world_space.set_shape_property(self.circle_id, Selected, Radius, vec![120.0]);
         }
     }
 

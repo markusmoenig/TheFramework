@@ -1,15 +1,12 @@
 use crate::prelude::*;
 
 #[allow(unused)]
-pub trait TheTrait {
+pub trait TheWidget {
     fn new() -> Self
     where
         Self: Sized;
 
     fn init(&mut self, ctx: &mut TheContext) {}
-
-    #[cfg(feature = "ui")]
-    fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {}
 
     fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {}
 
@@ -56,30 +53,4 @@ pub trait TheTrait {
         false
     }
 
-    /// Open a file requester
-    fn open(&mut self) {}
-
-    /// Save the file
-    fn save(&mut self) {}
-
-    /// Save the file as...
-    fn save_as(&mut self) {}
-
-    // Cut / Copy / Paste
-
-    fn cut(&mut self) -> String {
-        "".to_string()
-    }
-
-    fn copy(&mut self) -> String {
-        "".to_string()
-    }
-
-    fn paste(&mut self, text: String) {}
-
-    // Undo / Redo
-
-    fn undo(&mut self) {}
-
-    fn redo(&mut self) {}
 }

@@ -1,15 +1,31 @@
-use crate::prelude::*;
+pub mod thecanvas;
+pub mod thedim;
+pub mod theuicontext;
+pub mod thewidget;
+
+pub use crate::prelude::*;
+
+pub mod prelude {
+    pub use crate::theui::thecanvas::*;
+    pub use crate::theui::thedim::*;
+    pub use crate::theui::theuicontext::*;
+    pub use crate::theui::thewidget::*;
+    pub use crate::theui::*;
+}
+
+pub struct TheUI {
+    pub canvas: TheCanvas,
+}
 
 #[allow(unused)]
-pub trait TheTrait {
-    fn new() -> Self
-    where
-        Self: Sized;
+impl TheUI {
+    pub fn new() -> Self {
+        Self {
+            canvas: TheCanvas::new(),
+        }
+    }
 
     fn init(&mut self, ctx: &mut TheContext) {}
-
-    #[cfg(feature = "ui")]
-    fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {}
 
     fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {}
 
@@ -55,31 +71,4 @@ pub trait TheTrait {
     fn dropped_file(&mut self, _path: String) -> bool {
         false
     }
-
-    /// Open a file requester
-    fn open(&mut self) {}
-
-    /// Save the file
-    fn save(&mut self) {}
-
-    /// Save the file as...
-    fn save_as(&mut self) {}
-
-    // Cut / Copy / Paste
-
-    fn cut(&mut self) -> String {
-        "".to_string()
-    }
-
-    fn copy(&mut self) -> String {
-        "".to_string()
-    }
-
-    fn paste(&mut self, text: String) {}
-
-    // Undo / Redo
-
-    fn undo(&mut self) {}
-
-    fn redo(&mut self) {}
 }

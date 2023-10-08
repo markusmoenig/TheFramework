@@ -6,21 +6,21 @@ pub mod circle;
 use crate::circle::Circle;
 
 pub mod prelude {
-    pub const KEY_ESCAPE        : u32 = 0;
-    pub const KEY_RETURN        : u32 = 1;
-    pub const KEY_DELETE        : u32 = 2;
-    pub const KEY_UP            : u32 = 3;
-    pub const KEY_RIGHT         : u32 = 4;
-    pub const KEY_DOWN          : u32 = 5;
-    pub const KEY_LEFT          : u32 = 6;
-    pub const KEY_SPACE         : u32 = 7;
-    pub const KEY_TAB           : u32 = 8;
+    pub const KEY_ESCAPE: u32 = 0;
+    pub const KEY_RETURN: u32 = 1;
+    pub const KEY_DELETE: u32 = 2;
+    pub const KEY_UP: u32 = 3;
+    pub const KEY_RIGHT: u32 = 4;
+    pub const KEY_DOWN: u32 = 5;
+    pub const KEY_LEFT: u32 = 6;
+    pub const KEY_SPACE: u32 = 7;
+    pub const KEY_TAB: u32 = 8;
 }
 
 pub use prelude::*;
 
-use std::os::raw::c_char;
 use std::ffi::{CStr, CString};
+use std::os::raw::c_char;
 
 use lazy_static::lazy_static;
 use std::sync::Mutex;
@@ -55,13 +55,17 @@ pub extern "C" fn rust_hover(x: f32, y: f32) -> bool {
 #[no_mangle]
 pub extern "C" fn rust_touch_down(x: f32, y: f32) -> bool {
     //println!("touch down {} {}", x, y);
-    APP.lock().unwrap().touch_down(x, y, &mut CTX.lock().unwrap())
+    APP.lock()
+        .unwrap()
+        .touch_down(x, y, &mut CTX.lock().unwrap())
 }
 
 #[no_mangle]
 pub extern "C" fn rust_touch_dragged(x: f32, y: f32) -> bool {
     //println!("touch dragged {} {}", x, y);
-    APP.lock().unwrap().touch_dragged(x, y, &mut CTX.lock().unwrap())
+    APP.lock()
+        .unwrap()
+        .touch_dragged(x, y, &mut CTX.lock().unwrap())
 }
 
 #[no_mangle]
@@ -73,15 +77,20 @@ pub extern "C" fn rust_touch_up(x: f32, y: f32) -> bool {
 #[no_mangle]
 pub extern "C" fn rust_touch_wheel(x: f32, y: f32) -> bool {
     //println!("touch up {} {}", x, y);
-    APP.lock().unwrap().mouse_wheel((x as isize, y as isize), &mut CTX.lock().unwrap())
+    APP.lock()
+        .unwrap()
+        .mouse_wheel((x as isize, y as isize), &mut CTX.lock().unwrap())
 }
 
 #[no_mangle]
 pub extern "C" fn rust_key_down(p: *const c_char) -> bool {
     let c_str = unsafe { CStr::from_ptr(p) };
     if let Some(key) = c_str.to_str().ok() {
-        if let Some(ch ) = key.chars().next() {
-            return APP.lock().unwrap().key_down(Some(ch), None, &mut CTX.lock().unwrap());
+        if let Some(ch) = key.chars().next() {
+            return APP
+                .lock()
+                .unwrap()
+                .key_down(Some(ch), None, &mut CTX.lock().unwrap());
         }
     }
     false
@@ -90,36 +99,52 @@ pub extern "C" fn rust_key_down(p: *const c_char) -> bool {
 #[no_mangle]
 pub extern "C" fn rust_special_key_down(key: u32) -> bool {
     if key == KEY_ESCAPE {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Escape), &mut CTX.lock().unwrap())
-    } else
-    if key == KEY_RETURN {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Return), &mut CTX.lock().unwrap())
-    } else
-    if key == KEY_DELETE {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Delete), &mut CTX.lock().unwrap())
-    } else
-    if key == KEY_UP {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Up), &mut CTX.lock().unwrap())
-    } else
-    if key == KEY_RIGHT {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Right), &mut CTX.lock().unwrap())
-    } else
-    if key == KEY_DOWN {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Down), &mut CTX.lock().unwrap())
-    } else
-    if key == KEY_LEFT {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Left), &mut CTX.lock().unwrap())
-    } else
-    if key == KEY_SPACE {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Space), &mut CTX.lock().unwrap())
+        APP.lock()
+            .unwrap()
+            .key_down(None, Some(WidgetKey::Escape), &mut CTX.lock().unwrap())
+    } else if key == KEY_RETURN {
+        APP.lock()
+            .unwrap()
+            .key_down(None, Some(WidgetKey::Return), &mut CTX.lock().unwrap())
+    } else if key == KEY_DELETE {
+        APP.lock()
+            .unwrap()
+            .key_down(None, Some(WidgetKey::Delete), &mut CTX.lock().unwrap())
+    } else if key == KEY_UP {
+        APP.lock()
+            .unwrap()
+            .key_down(None, Some(WidgetKey::Up), &mut CTX.lock().unwrap())
+    } else if key == KEY_RIGHT {
+        APP.lock()
+            .unwrap()
+            .key_down(None, Some(WidgetKey::Right), &mut CTX.lock().unwrap())
+    } else if key == KEY_DOWN {
+        APP.lock()
+            .unwrap()
+            .key_down(None, Some(WidgetKey::Down), &mut CTX.lock().unwrap())
+    } else if key == KEY_LEFT {
+        APP.lock()
+            .unwrap()
+            .key_down(None, Some(WidgetKey::Left), &mut CTX.lock().unwrap())
+    } else if key == KEY_SPACE {
+        APP.lock()
+            .unwrap()
+            .key_down(None, Some(WidgetKey::Space), &mut CTX.lock().unwrap())
     } else {
-    //if key == KEY_TAB {
-        APP.lock().unwrap().key_down(None, Some(WidgetKey::Tab), &mut CTX.lock().unwrap())
+        //if key == KEY_TAB {
+        APP.lock()
+            .unwrap()
+            .key_down(None, Some(WidgetKey::Tab), &mut CTX.lock().unwrap())
     }
 }
 
 #[no_mangle]
-pub extern "C" fn rust_key_modifier_changed(shift: bool, ctrl: bool, alt: bool, logo: bool) -> bool {
+pub extern "C" fn rust_key_modifier_changed(
+    shift: bool,
+    ctrl: bool,
+    alt: bool,
+    logo: bool,
+) -> bool {
     APP.lock().unwrap().modifier_changed(shift, ctrl, alt, logo)
 }
 
@@ -147,13 +172,13 @@ pub extern "C" fn rust_save_as() {
 }
 
 #[no_mangle]
-pub extern "C" fn rust_cut() -> *mut c_char{
+pub extern "C" fn rust_cut() -> *mut c_char {
     let text = APP.lock().unwrap().cut();
     CString::new(text).unwrap().into_raw()
 }
 
 #[no_mangle]
-pub extern "C" fn rust_copy() -> *mut c_char{
+pub extern "C" fn rust_copy() -> *mut c_char {
     let text = APP.lock().unwrap().copy();
     CString::new(text).unwrap().into_raw()
 }
