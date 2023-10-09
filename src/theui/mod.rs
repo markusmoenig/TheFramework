@@ -1,16 +1,34 @@
 pub mod thecanvas;
 pub mod thedim;
+pub mod thergbabuffer;
 pub mod theuicontext;
 pub mod thewidget;
+pub mod thesizelimiter;
 
 pub use crate::prelude::*;
 
+pub type RGBA = [u8;4];
+pub const BLACK : RGBA =  [0, 0, 0, 255];
+pub const WHITE : RGBA =  [255, 255, 255, 255];
+
 pub mod prelude {
+
+    pub use crate::theui::RGBA;
+
+    pub use crate::theui::BLACK;
+    pub use crate::theui::WHITE;
+
     pub use crate::theui::thecanvas::*;
     pub use crate::theui::thedim::*;
+    pub use crate::theui::thergbabuffer::TheRGBABuffer;
     pub use crate::theui::theuicontext::*;
-    pub use crate::theui::thewidget::*;
-    pub use crate::theui::*;
+    pub use crate::theui::TheUI;
+    pub use crate::theui::thesizelimiter::TheSizeLimiter;
+
+    pub use crate::theui::thewidget::prelude::*;
+
+    pub use crate::theui::thewidget::colorbutton::*;
+    pub use crate::theui::thewidget::TheWidget;
 }
 
 pub struct TheUI {
@@ -27,48 +45,16 @@ impl TheUI {
 
     fn init(&mut self, ctx: &mut TheContext) {}
 
-    fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {}
+    pub fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {
+        self.canvas.resize(ctx.width as i32, ctx.height as i32);
+        self.canvas.draw(ctx);
+
+        pixels.copy_from_slice(self.canvas.get_buffer().get())
+    }
 
     fn update(&mut self, ctx: &mut TheContext) {}
 
     fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
-        false
-    }
-
-    fn touch_down(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
-        false
-    }
-
-    fn touch_dragged(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
-        false
-    }
-
-    fn touch_up(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
-        false
-    }
-
-    fn hover(&mut self, _x: f32, _y: f32, ctx: &mut TheContext) -> bool {
-        false
-    }
-
-    fn key_down(
-        &mut self,
-        char: Option<char>,
-        key: Option<WidgetKey>,
-        ctx: &mut TheContext,
-    ) -> bool {
-        false
-    }
-
-    fn mouse_wheel(&mut self, delta: (isize, isize), ctx: &mut TheContext) -> bool {
-        false
-    }
-
-    fn modifier_changed(&mut self, shift: bool, ctrl: bool, alt: bool, logo: bool) -> bool {
-        false
-    }
-
-    fn dropped_file(&mut self, _path: String) -> bool {
         false
     }
 }

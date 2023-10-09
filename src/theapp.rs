@@ -68,10 +68,12 @@ impl TheApp {
 
         #[cfg(feature = "ui")]
         {
+            ui.canvas.root = true;
             ui.canvas
                 .set_dim(TheDim::new(0, 0, width as i32, height as i32));
+
             app.init_ui(&mut ui, &mut ctx);
-            ui.canvas.layout();
+            ui.canvas.layout(width as i32, height as i32);
         }
 
         // Loop
@@ -80,6 +82,10 @@ impl TheApp {
 
             if let Event::RedrawRequested(_) = event {
                 let frame = pixels.frame_mut();
+
+                #[cfg(feature = "ui")]
+                ui.draw(frame, &mut ctx);
+
                 app.draw(frame, &mut ctx);
                 if pixels
                     .render()

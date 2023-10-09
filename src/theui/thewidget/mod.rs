@@ -1,5 +1,11 @@
 use crate::prelude::*;
 
+pub mod colorbutton;
+
+pub mod prelude {
+    pub use crate::theui::thewidget::colorbutton::TheColorButton;
+}
+
 #[allow(unused)]
 pub trait TheWidget {
     fn new() -> Self
@@ -8,7 +14,9 @@ pub trait TheWidget {
 
     fn init(&mut self, ctx: &mut TheContext) {}
 
-    fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {}
+    fn set_dim(&mut self, dim: TheDim) {}
+
+    fn draw(&mut self, buffer: &mut TheRGBABuffer, ctx: &mut TheContext) {}
 
     fn update(&mut self, ctx: &mut TheContext) {}
 
@@ -52,5 +60,4 @@ pub trait TheWidget {
     fn dropped_file(&mut self, _path: String) -> bool {
         false
     }
-
 }
