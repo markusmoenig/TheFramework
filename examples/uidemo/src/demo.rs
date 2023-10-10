@@ -17,7 +17,7 @@ impl TheTrait for UIDemo {
         let mut left_canvas: Box<TheCanvas> = Box::new(TheCanvas::new());
         left_canvas.limiter.set_max_width(60);
 
-        let mut blue_color = Box::new(TheColorButton::new());
+        let mut blue_color = Box::new(TheColorButton::new("Blue".to_string()));
         blue_color.set_color([0, 0, 255, 255]);
         left_canvas.widget = Some(blue_color);
 
@@ -25,7 +25,7 @@ impl TheTrait for UIDemo {
         let mut top_canvas: Box<TheCanvas> = Box::new(TheCanvas::new());
         top_canvas.limiter.set_max_height(80);
 
-        let mut green_color = Box::new(TheColorButton::new());
+        let mut green_color = Box::new(TheColorButton::new("Green".to_string()));
         green_color.set_color([0, 255, 0, 255]);
         top_canvas.widget = Some(green_color);
 
@@ -34,7 +34,7 @@ impl TheTrait for UIDemo {
         let mut right_canvas: Box<TheCanvas> = Box::new(TheCanvas::new());
         right_canvas.limiter.set_max_width(300);
 
-        let mut red_color = Box::new(TheColorButton::new());
+        let mut red_color = Box::new(TheColorButton::new("Red".to_string()));
         red_color.set_color([255, 0, 0, 255]);
         right_canvas.widget = Some(red_color);
 
@@ -43,7 +43,7 @@ impl TheTrait for UIDemo {
         let mut bottom_canvas: Box<TheCanvas> = Box::new(TheCanvas::new());
         bottom_canvas.limiter.set_max_height(200);
 
-        let mut yellow_color : Box<TheColorButton> = Box::new(TheColorButton::new());
+        let mut yellow_color : Box<TheColorButton> = Box::new(TheColorButton::new("Yellow".to_string()));
         yellow_color.set_color([255, 255, 0, 255]);
         bottom_canvas.widget = Some(yellow_color);
 
@@ -53,6 +53,6 @@ impl TheTrait for UIDemo {
         ui.canvas.top = Some(top_canvas);
         ui.canvas.right = Some(right_canvas);
         ui.canvas.bottom = Some(bottom_canvas);
-        ui.canvas.widget = Some(Box::new(TheColorButton::new()));
+        ui.canvas.widget = Some(Box::new(TheColorButton::new("White".to_string())));
     }
 }

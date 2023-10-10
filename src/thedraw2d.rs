@@ -386,7 +386,7 @@ impl TheDraw2D {
     }
 
     /// Blends a text aligned inside a rect and blends it with the existing background
-    pub fn blend_text_rect(
+    pub fn text_rect_blend(
         &self,
         frame: &mut [u8],
         rect: &(usize, usize, usize, usize),

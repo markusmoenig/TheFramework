@@ -13,6 +13,13 @@ pub use crate::thetrait::TheTrait;
 #[cfg(feature = "ui")]
 pub use crate::theui::TheUI;
 
+use rust_embed::RustEmbed;
+#[derive(RustEmbed)]
+#[folder = "embedded/"]
+#[exclude = "*.txt"]
+#[exclude = "*.DS_Store"]
+pub struct Embedded;
+
 #[derive(Clone)]
 pub enum WidgetKey {
     Escape,
@@ -29,6 +36,8 @@ pub enum WidgetKey {
 pub mod prelude {
 
     pub use maths_rs::prelude::*;
+    pub use uuid::*;
+    pub use rustc_hash::*;
 
     pub use crate::theapp::TheApp;
     pub use crate::thecontext::TheContext;

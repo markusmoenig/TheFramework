@@ -24,18 +24,23 @@ impl TheRGBABuffer {
         }
     }
 
-    /// Gets a mutable slice of the buffer
-    pub fn get_stride(&self) -> usize {
+    /// Gets the width (stride) of the buffer
+    pub fn dim(&self) -> &TheDim {
+        &self.dim
+    }
+
+    /// Gets the width (stride) of the buffer
+    pub fn stride(&self) -> usize {
         self.dim.width as usize
     }
 
     /// Gets a slice of the buffer
-    pub fn get(&self) -> &[u8] {
+    pub fn pixels(&self) -> &[u8] {
         &self.buffer[..]
     }
 
     /// Gets a mutable slice of the buffer
-    pub fn get_mut(&mut self) -> &mut [u8] {
+    pub fn pixels_mut(&mut self) -> &mut [u8] {
         &mut self.buffer[..]
     }
 

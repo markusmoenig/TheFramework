@@ -8,21 +8,30 @@ pub mod prelude {
 
 #[allow(unused)]
 pub trait TheWidget {
-    fn new() -> Self
+    fn new(name: String) -> Self
     where
         Self: Sized;
 
+    fn name(&self) -> &String;
+    fn id(&self) -> Uuid;
+
     fn init(&mut self, ctx: &mut TheContext) {}
+
+    /// Returns a reference to the TheDim of the widget.
+    fn dim(&self) -> &TheDim;
 
     fn set_dim(&mut self, dim: TheDim) {}
 
-    fn draw(&mut self, buffer: &mut TheRGBABuffer, ctx: &mut TheContext) {}
+    fn draw(&mut self, buffer: &mut TheRGBABuffer, style: &mut Box<dyn TheStyle>, ctx: &mut TheContext) {}
 
     fn update(&mut self, ctx: &mut TheContext) {}
 
     fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
         false
     }
+
+    fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) {}
+
 
     fn touch_down(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         false

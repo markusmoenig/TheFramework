@@ -55,8 +55,52 @@ impl TheCanvas {
     }
 
     /// Returns a reference to the underlying buffer
-    pub fn get_buffer(&mut self) -> &TheRGBABuffer {
+    pub fn buffer(&mut self) -> &TheRGBABuffer {
         &self.buffer
+    }
+
+    /// Returns the widget at the given screen coordinate (if any)
+    pub fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+
+        if let Some(left) = &mut self.left {
+            if let Some(widget) = &mut left.widget {
+                if widget.dim().contains(coord) {
+                    return Some(widget);
+                }
+            }
+        }
+
+        if let Some(top) = &mut self.top {
+            if let Some(widget) = &mut top.widget {
+                if widget.dim().contains(coord) {
+                    return Some(widget);
+                }
+            }
+        }
+
+        if let Some(right) = &mut self.right {
+            if let Some(widget) = &mut right.widget {
+                if widget.dim().contains(coord) {
+                    return Some(widget);
+                }
+            }
+        }
+
+        if let Some(bottom) = &mut self.bottom {
+            if let Some(widget) = &mut bottom.widget {
+                if widget.dim().contains(coord) {
+                    return Some(widget);
+                }
+            }
+        }
+
+        if let Some(widget) = &mut self.widget {
+            if widget.dim().contains(coord) {
+                return Some(widget);
+            }
+        }
+
+        None
     }
 
     /// Layout the canvas according to its dimensions.
@@ -104,31 +148,31 @@ impl TheCanvas {
     }
 
     /// Draw the canvas
-    pub fn draw(&mut self, ctx: &mut TheContext) {
+    pub fn draw(&mut self, style: &mut Box<dyn TheStyle>, ctx: &mut TheContext) {
 
         if let Some(left) = &mut self.left {
-            left.draw(ctx);
+            left.draw(style, ctx);
             self.buffer.copy_into(left.dim.x, left.dim.y, &left.buffer);
         }
 
         if let Some(top) = &mut self.top {
-            top.draw(ctx);
+            top.draw(style, ctx);
             self.buffer.copy_into(top.dim.x, top.dim.y, &top.buffer);
         }
 
         if let Some(right) = &mut self.right {
-            right.draw(ctx);
+            right.draw(style, ctx);
             self.buffer.copy_into(right.dim.x, right.dim.y, &right.buffer);
         }
 
         if let Some(bottom) = &mut self.bottom {
-            bottom.draw(ctx);
+            bottom.draw(style, ctx);
             self.buffer.copy_into(bottom.dim.x, bottom.dim.y, &bottom.buffer);
         }
 
         if let Some(widget) = &mut self.widget {
             // println!("{:?}", self.dim.to_utuple());
-            widget.draw(&mut self.buffer, ctx);
+            widget.draw(&mut self.buffer, style, ctx);
         }
     }
 }
