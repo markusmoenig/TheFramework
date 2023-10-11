@@ -12,6 +12,17 @@ pub trait TheStyle {
     where
         Self: Sized;
 
-    fn draw_widget_border(&mut self, buffer: &mut TheRGBABuffer, dim: &TheDim, shrinker: &mut TheDimShrinker, ctx: &mut TheContext) {}
+    #[allow(clippy::borrowed_box)]
+    /// Returns the current theme of the style
+    fn theme(&self) -> &Box<dyn TheTheme>;
 
+    /// Draw the widget border
+    fn draw_widget_border(
+        &mut self,
+        buffer: &mut TheRGBABuffer,
+        dim: &TheDim,
+        shrinker: &mut TheDimShrinker,
+        ctx: &mut TheContext,
+    ) {
+    }
 }

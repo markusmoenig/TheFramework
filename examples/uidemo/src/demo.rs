@@ -10,8 +10,7 @@ impl TheTrait for UIDemo {
         Self {}
     }
 
-    fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
-
+    fn init_ui(&mut self, ui: &mut TheUI, _ctx: &mut TheContext) {
         // Left
 
         let mut left_canvas: Box<TheCanvas> = Box::new(TheCanvas::new());
@@ -43,7 +42,8 @@ impl TheTrait for UIDemo {
         let mut bottom_canvas: Box<TheCanvas> = Box::new(TheCanvas::new());
         bottom_canvas.limiter.set_max_height(200);
 
-        let mut yellow_color : Box<TheColorButton> = Box::new(TheColorButton::new("Yellow".to_string()));
+        let mut yellow_color: Box<TheColorButton> =
+            Box::new(TheColorButton::new("Yellow".to_string()));
         yellow_color.set_color([255, 255, 0, 255]);
         bottom_canvas.widget = Some(yellow_color);
 

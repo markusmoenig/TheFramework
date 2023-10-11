@@ -5,10 +5,15 @@ pub struct TheSizeLimiter {
     max_size: Vec2<i32>,
 }
 
+impl Default for TheSizeLimiter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TheSizeLimiter {
     pub fn new() -> Self {
         Self {
-
             min_size: Vec2::new(0, 0),
             max_size: Vec2::new(std::i32::MAX, std::i32::MAX),
         }

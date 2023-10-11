@@ -6,7 +6,7 @@ pub struct TheDim {
     pub y: i32,
     pub width: i32,
     pub height: i32,
-    pub root:  bool,
+    pub root: bool,
 }
 
 impl TheDim {
@@ -36,20 +36,15 @@ impl TheDim {
 
     /// Check for size validity
     pub fn is_valid(&self) -> bool {
-        if self.height > 0 && self.height > 0 {
-            true
-        } else {
-            false
-        }
+        self.width > 0 && self.height > 0
     }
 
     /// Checks if the given coordinate is inside the dimension.
     pub fn contains(&self, coord: Vec2i) -> bool {
-        if self.x <= coord.x && self.x + self.width > coord.x && self.y <= coord.y && self.y + self.height > coord.y {
-            true
-        } else {
-            false
-        }
+        self.x <= coord.x
+            && self.x + self.width > coord.x
+            && self.y <= coord.y
+            && self.y + self.height > coord.y
     }
 
     /// Returns the given screen coordinate as a local coordinate.
@@ -60,7 +55,12 @@ impl TheDim {
     /// Returns the dimension as an usize tuple (used by the drawing routines)
     pub fn to_utuple(&self) -> (usize, usize, usize, usize) {
         if self.root {
-            (self.x as usize, self.y as usize, self.width as usize, self.height as usize)
+            (
+                self.x as usize,
+                self.y as usize,
+                self.width as usize,
+                self.height as usize,
+            )
         } else {
             self.to_zero_based_utuple()
         }
@@ -69,9 +69,19 @@ impl TheDim {
     /// Returns the dimension as an usize tuple (used by the drawing routines)
     pub fn to_shrunk_utuple(&self, shrinker: &TheDimShrinker) -> (usize, usize, usize, usize) {
         if self.root {
-            ((self.x + shrinker.left) as usize, (self.y + shrinker.top) as usize, (self.width - shrinker.right) as usize, (self.height - shrinker.bottom) as usize)
+            (
+                (self.x + shrinker.left) as usize,
+                (self.y + shrinker.top) as usize,
+                (self.width - shrinker.right) as usize,
+                (self.height - shrinker.bottom) as usize,
+            )
         } else {
-            (shrinker.left as usize, shrinker.top as usize, (self.width - shrinker.right) as usize, (self.height - shrinker.bottom) as usize)
+            (
+                shrinker.left as usize,
+                shrinker.top as usize,
+                (self.width - shrinker.right) as usize,
+                (self.height - shrinker.bottom) as usize,
+            )
         }
     }
 
@@ -115,5 +125,4 @@ impl TheDimShrinker {
         self.right += right * 2;
         self.bottom += bottom * 2;
     }
-
 }

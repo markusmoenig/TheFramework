@@ -6,6 +6,12 @@ pub struct TheApp {
     pub ui: TheUI,
 }
 
+impl Default for TheApp {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TheApp {
     pub fn new() -> Self {
         Self {
@@ -63,6 +69,8 @@ impl TheApp {
         let mut ctx = TheContext::new(width, height);
         #[cfg(feature = "ui")]
         let mut ui = TheUI::new();
+        #[cfg(feature = "ui")]
+        ui.init(&mut ctx);
 
         app.init(&mut ctx);
 
@@ -99,33 +107,27 @@ impl TheApp {
 
             match &event {
                 Event::WindowEvent { event, .. } => match event {
-                    WindowEvent::DroppedFile(path) => match path {
-                        _ => {
-                            app.dropped_file(path.to_str().unwrap().to_string());
+                    WindowEvent::DroppedFile(path) => {
+                        app.dropped_file(path.to_str().unwrap().to_string());
+                        window.request_redraw();
+                    }
+
+                    WindowEvent::ReceivedCharacter(char) => {
+                        if app.key_down(Some(*char), None, &mut ctx) {
                             window.request_redraw();
                         }
-                    },
+                    }
 
-                    WindowEvent::ReceivedCharacter(char) => match char {
-                        _ => {
-                            if app.key_down(Some(*char), None, &mut ctx) {
-                                window.request_redraw();
-                            }
+                    WindowEvent::ModifiersChanged(state) => {
+                        if app.modifier_changed(
+                            state.shift(),
+                            state.ctrl(),
+                            state.alt(),
+                            state.logo(),
+                        ) {
+                            window.request_redraw();
                         }
-                    },
-
-                    WindowEvent::ModifiersChanged(state) => match state {
-                        _ => {
-                            if app.modifier_changed(
-                                state.shift(),
-                                state.ctrl(),
-                                state.alt(),
-                                state.logo(),
-                            ) {
-                                window.request_redraw();
-                            }
-                        }
-                    },
+                    }
 
                     WindowEvent::KeyboardInput {
                         input:
@@ -222,7 +224,16 @@ impl TheApp {
                             }
                         }
                     },
-                    _ => (),
+                    DeviceEvent::Added => {}
+                    DeviceEvent::Removed => {}
+                    DeviceEvent::MouseMotion { delta: _ } => {}
+                    DeviceEvent::Motion { axis: _, value: _ } => {}
+                    DeviceEvent::Button {
+                        button: _,
+                        state: _,
+                    } => {}
+                    DeviceEvent::Key(_) => {}
+                    DeviceEvent::Text { codepoint: _ } => {}
                 },
                 _ => (),
             }

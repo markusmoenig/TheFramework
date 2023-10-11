@@ -16,6 +16,12 @@ pub struct TheDraw2D {
     pub mask_size: (usize, usize),
 }
 
+impl Default for TheDraw2D {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TheDraw2D {
     pub fn new() -> Self {
         Self {
@@ -76,8 +82,8 @@ impl TheDraw2D {
 
                 let background = &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
                 frame[i..i + 4].copy_from_slice(&self.mix_color(
-                    &background,
-                    &color,
+                    background,
+                    color,
                     color[3] as f32 / 255.0,
                 ));
             }
@@ -90,24 +96,24 @@ impl TheDraw2D {
         frame: &mut [u8],
         rect: &(usize, usize, usize, usize),
         stride: usize,
-        color: [u8; 4],
+        color: &[u8; 4],
     ) {
         let y = rect.1;
         for x in rect.0..rect.0 + rect.2 {
             let mut i = x * 4 + y * stride * 4;
-            frame[i..i + 4].copy_from_slice(&color);
+            frame[i..i + 4].copy_from_slice(color);
 
             i = x * 4 + (y + rect.3 - 1) * stride * 4;
-            frame[i..i + 4].copy_from_slice(&color);
+            frame[i..i + 4].copy_from_slice(color);
         }
 
         let x = rect.0;
         for y in rect.1..rect.1 + rect.3 {
             let mut i = x * 4 + y * stride * 4;
-            frame[i..i + 4].copy_from_slice(&color);
+            frame[i..i + 4].copy_from_slice(color);
 
             i = (x + rect.2 - 1) * 4 + y * stride * 4;
-            frame[i..i + 4].copy_from_slice(&color);
+            frame[i..i + 4].copy_from_slice(color);
         }
     }
 
@@ -136,7 +142,7 @@ impl TheDraw2D {
                     //let t = self.smoothstep(0.0, -2.0, r);
 
                     let background = &[frame[i], frame[i + 1], frame[i + 2], 255];
-                    let mixed_color = self.mix_color(&background, &color, t);
+                    let mixed_color = self.mix_color(background, color, t);
 
                     frame[i..i + 4].copy_from_slice(&mixed_color);
                 }
@@ -144,6 +150,7 @@ impl TheDraw2D {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     /// Draws a circle with a border of a given size
     pub fn circle_with_border(
         &self,
@@ -170,10 +177,10 @@ impl TheDraw2D {
                     let t = self.fill_mask(d);
 
                     let background = &[frame[i], frame[i + 1], frame[i + 2], 255];
-                    let mut mixed_color = self.mix_color(&background, &color, t);
+                    let mut mixed_color = self.mix_color(background, color, t);
 
                     let b = self.border_mask(d, border_size as f32);
-                    mixed_color = self.mix_color(&mixed_color, &border_color, b);
+                    mixed_color = self.mix_color(&mixed_color, border_color, b);
 
                     frame[i..i + 4].copy_from_slice(&mixed_color);
                 }
@@ -224,7 +231,7 @@ impl TheDraw2D {
 
                     let background = &[frame[i], frame[i + 1], frame[i + 2], 255];
                     let mut mixed_color =
-                        self.mix_color(&background, &color, t * (color[3] as f32 / 255.0));
+                        self.mix_color(background, color, t * (color[3] as f32 / 255.0));
                     mixed_color[3] = (mixed_color[3] as f32 * (color[3] as f32 / 255.0)) as u8;
                     frame[i..i + 4].copy_from_slice(&mixed_color);
                 }
@@ -232,6 +239,7 @@ impl TheDraw2D {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     /// Draws a rounded rect with a border
     pub fn rounded_rect_with_border(
         &self,
@@ -278,10 +286,10 @@ impl TheDraw2D {
 
                     let background = &[frame[i], frame[i + 1], frame[i + 2], 255];
                     let mut mixed_color =
-                        self.mix_color(&background, &color, t * (color[3] as f32 / 255.0));
+                        self.mix_color(background, color, t * (color[3] as f32 / 255.0));
 
                     let b = self.border_mask(d, border_size);
-                    mixed_color = self.mix_color(&mixed_color, &border_color, b);
+                    mixed_color = self.mix_color(&mixed_color, border_color, b);
 
                     frame[i..i + 4].copy_from_slice(&mixed_color);
                 }
@@ -312,6 +320,7 @@ impl TheDraw2D {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     /// Draws a text aligned inside a rect
     pub fn text_rect(
         &self,
@@ -342,7 +351,7 @@ impl TheDraw2D {
         }
 
         if add_trail {
-            text_to_use = text_to_use + "...";
+            text_to_use += "...";
         }
 
         let fonts = &[font];
@@ -353,12 +362,10 @@ impl TheDraw2D {
             max_height: Some(rect.3 as f32),
             horizontal_align: if align == TheTextAlignment::Left {
                 HorizontalAlign::Left
+            } else if align == TheTextAlignment::Right {
+                HorizontalAlign::Right
             } else {
-                if align == TheTextAlignment::Right {
-                    HorizontalAlign::Right
-                } else {
-                    HorizontalAlign::Center
-                }
+                HorizontalAlign::Center
             },
             vertical_align: VerticalAlign::Middle,
             ..LayoutSettings::default()
@@ -376,8 +383,8 @@ impl TheDraw2D {
                     let m = alphamap[x + y * metrics.width];
 
                     frame[i..i + 4].copy_from_slice(&self.mix_color(
-                        &background,
-                        &color,
+                        background,
+                        color,
                         m as f32 / 255.0,
                     ));
                 }
@@ -385,6 +392,7 @@ impl TheDraw2D {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     /// Blends a text aligned inside a rect and blends it with the existing background
     pub fn text_rect_blend(
         &self,
@@ -413,7 +421,7 @@ impl TheDraw2D {
         }
 
         if add_trail {
-            text_to_use = text_to_use + "...";
+            text_to_use += "...";
         }
 
         let fonts = &[font];
@@ -424,17 +432,15 @@ impl TheDraw2D {
             max_height: Some(rect.3 as f32),
             horizontal_align: if align == TheTextAlignment::Left {
                 HorizontalAlign::Left
+            } else if align == TheTextAlignment::Right {
+                HorizontalAlign::Right
             } else {
-                if align == TheTextAlignment::Right {
-                    HorizontalAlign::Right
-                } else {
-                    HorizontalAlign::Center
-                }
+                HorizontalAlign::Center
             },
             vertical_align: VerticalAlign::Middle,
             ..LayoutSettings::default()
         });
-        layout.append(fonts, &TextStyle::new(&text_to_use.as_str(), size, 0));
+        layout.append(fonts, &TextStyle::new(text_to_use.as_str(), size, 0));
 
         for glyph in layout.glyphs() {
             let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
@@ -448,8 +454,8 @@ impl TheDraw2D {
 
                     let background = &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
                     frame[i..i + 4].copy_from_slice(&self.mix_color(
-                        &background,
-                        &color,
+                        background,
+                        color,
                         m as f32 / 255.0,
                     ));
                 }
@@ -457,6 +463,7 @@ impl TheDraw2D {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     /// Draws the given text
     pub fn text(
         &self,
@@ -492,8 +499,8 @@ impl TheDraw2D {
                     let m = alphamap[x + y * metrics.width];
 
                     frame[i..i + 4].copy_from_slice(&self.mix_color(
-                        &background,
-                        &color,
+                        background,
+                        color,
                         m as f32 / 255.0,
                     ));
                 }
@@ -551,8 +558,8 @@ impl TheDraw2D {
                 let background = &[dest[dd], dest[dd + 1], dest[dd + 2], dest[dd + 3]];
                 let color = &[source[ss], source[ss + 1], source[ss + 2], source[ss + 3]];
                 dest[dd..dd + 4].copy_from_slice(&self.mix_color(
-                    &background,
-                    &color,
+                    background,
+                    color,
                     (color[3] as f32) / 255.0,
                 ));
             }
@@ -583,8 +590,8 @@ impl TheDraw2D {
                     (source[ss + 3] * 255.0) as u8,
                 ];
                 dest[dd..dd + 4].copy_from_slice(&self.mix_color(
-                    &background,
-                    &color,
+                    background,
+                    color,
                     (color[3] as f32) / 255.0,
                 ));
             }
@@ -611,8 +618,8 @@ impl TheDraw2D {
                 let background = &[dest[dd], dest[dd + 1], dest[dd + 2], dest[dd + 3]];
                 let color = &[source[ss], source[ss + 1], source[ss + 2], source[ss + 3]];
                 dest[dd..dd + 4].copy_from_slice(&self.mix_color(
-                    &background,
-                    &color,
+                    background,
+                    color,
                     (color[3] as f32) / 255.0,
                 ));
             }
@@ -635,12 +642,12 @@ impl TheDraw2D {
 
             // TODO: Make this faster
 
-            if (y + rect.1 as isize) >= safe_rect.1 as isize
-                && (y + rect.1 as isize) < (safe_rect.1 + safe_rect.3) as isize
+            if (y + rect.1) >= safe_rect.1 as isize
+                && (y + rect.1) < (safe_rect.1 + safe_rect.3) as isize
             {
                 for x in 0..rect.2 as isize {
-                    if (x + rect.0 as isize) >= safe_rect.0 as isize
-                        && (x + rect.0 as isize) < (safe_rect.0 + safe_rect.2) as isize
+                    if (x + rect.0) >= safe_rect.0 as isize
+                        && (x + rect.0) < (safe_rect.0 + safe_rect.2) as isize
                     {
                         let dd = (d + x * 4) as usize;
                         let ss = (s + x * 4) as usize;
@@ -648,8 +655,8 @@ impl TheDraw2D {
                         let background = &[dest[dd], dest[dd + 1], dest[dd + 2], dest[dd + 3]];
                         let color = &[source[ss], source[ss + 1], source[ss + 2], source[ss + 3]];
                         dest[dd..dd + 4].copy_from_slice(&self.mix_color(
-                            &background,
-                            &color,
+                            background,
+                            color,
                             (color[3] as f32) / 255.0,
                         ));
                     }
@@ -703,7 +710,7 @@ impl TheDraw2D {
     /// Smoothstep for f32
     pub fn _smoothstep(&self, e0: f32, e1: f32, x: f32) -> f32 {
         let t = ((x - e0) / (e1 - e0)).clamp(0.0, 1.0);
-        return t * t * (3.0 - 2.0 * t);
+        t * t * (3.0 - 2.0 * t)
     }
 
     /// Mixes two colors based on v

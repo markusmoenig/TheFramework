@@ -1,12 +1,12 @@
 use crate::prelude::*;
 
 pub struct TheColorButton {
-    name: String,
-    id: Uuid,
+    widget_id: TheWidgetId,
+    widget_state: TheWidgetState,
 
     dim: TheDim,
 
-    color: RGBA
+    color: RGBA,
 }
 
 impl TheWidget for TheColorButton {
@@ -15,37 +15,45 @@ impl TheWidget for TheColorButton {
         Self: Sized,
     {
         Self {
-            name,
-            id: Uuid::new_v4(),
+            widget_id: TheWidgetId::new(name),
+            widget_state: TheWidgetState::new(),
+
             dim: TheDim::zero(),
-            color : WHITE
+            color: WHITE,
         }
     }
 
-    fn name(&self) -> &String { &self.name }
-    fn id(&self) -> Uuid { self.id }
+    fn id(&self) -> &TheWidgetId {
+        &self.widget_id
+    }
+    fn state(&self) -> &TheWidgetState {
+        &self.widget_state
+    }
 
-    fn on_event(&mut self, event: &TheEvent, _ctx: &mut TheContext) {
+    fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) {
         //println!("event ({}): {:?}", self.name, event);
         match event {
             TheEvent::MouseDown(coord) => {
-
-            },
+                ctx.ui.set_focus(self.id());
+            }
             _ => {}
         }
     }
 
-     fn dim(&self) -> &TheDim {
+    fn dim(&self) -> &TheDim {
         &self.dim
-     }
+    }
 
-
-    /// Set the dimension of the widget
-     fn set_dim(&mut self, dim: TheDim) {
+    fn set_dim(&mut self, dim: TheDim) {
         self.dim = dim;
     }
 
-    fn draw(&mut self, buffer: &mut TheRGBABuffer, style: &mut Box<dyn TheStyle>, ctx: &mut TheContext) {
+    fn draw(
+        &mut self,
+        buffer: &mut TheRGBABuffer,
+        style: &mut Box<dyn TheStyle>,
+        ctx: &mut TheContext,
+    ) {
         let stride = buffer.stride();
         let mut shrinker = TheDimShrinker::zero();
 
@@ -59,7 +67,16 @@ impl TheWidget for TheColorButton {
         );
 
         if let Some(font) = &ctx.ui.font {
-            ctx.draw.text_rect_blend(buffer.pixels_mut(), &self.dim.to_shrunk_utuple(&shrinker), stride, font, 20.0, &self.name, &BLACK, crate::thedraw2d::TheTextAlignment::Center);
+            ctx.draw.text_rect_blend(
+                buffer.pixels_mut(),
+                &self.dim.to_shrunk_utuple(&shrinker),
+                stride,
+                font,
+                20.0,
+                &self.id().name,
+                &BLACK,
+                crate::thedraw2d::TheTextAlignment::Center,
+            );
         }
     }
 }

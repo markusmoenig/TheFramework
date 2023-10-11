@@ -19,7 +19,7 @@ impl TheRGBABuffer {
     /// Creates a buffer of the given dimension
     pub fn new(dim: TheDim) -> Self {
         Self {
-            dim: dim,
+            dim,
             buffer: vec![0; dim.width as usize * dim.height as usize * 4],
         }
     }
@@ -64,9 +64,9 @@ impl TheRGBABuffer {
     pub fn copy_into(&mut self, x: i32, y: i32, other: &TheRGBABuffer) {
         let dest = &mut self.buffer[..];
         let width = (other.dim.width * 4) as usize;
-        for h in 0..other.dim.height  {
+        for h in 0..other.dim.height {
             let s = (h * other.dim.width * 4) as usize;
-            let d = ((h+y) * self.dim.width * 4 + x * 4) as usize;
+            let d = ((h + y) * self.dim.width * 4 + x * 4) as usize;
             dest[d..d + width].copy_from_slice(&other.buffer[s..s + width]);
         }
     }

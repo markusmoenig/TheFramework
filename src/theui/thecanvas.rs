@@ -17,6 +17,12 @@ pub struct TheCanvas {
     pub widget: Option<Box<dyn TheWidget>>,
 }
 
+impl Default for TheCanvas {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// TheCanvas divides a screen dimension into 4 possible sub-spaces for its border while containing a set of widgets for its center.
 impl TheCanvas {
     pub fn new() -> Self {
@@ -60,8 +66,54 @@ impl TheCanvas {
     }
 
     /// Returns the widget at the given screen coordinate (if any)
-    pub fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+    pub fn get_widget(
+        &mut self,
+        name: Option<&String>,
+        uuid: Option<&Uuid>,
+    ) -> Option<&mut Box<dyn TheWidget>> {
+        if let Some(left) = &mut self.left {
+            if let Some(widget) = &mut left.widget {
+                if widget.id().matches(name, uuid) {
+                    return Some(widget);
+                }
+            }
+        }
 
+        if let Some(top) = &mut self.top {
+            if let Some(widget) = &mut top.widget {
+                if widget.id().matches(name, uuid) {
+                    return Some(widget);
+                }
+            }
+        }
+
+        if let Some(right) = &mut self.right {
+            if let Some(widget) = &mut right.widget {
+                if widget.id().matches(name, uuid) {
+                    return Some(widget);
+                }
+            }
+        }
+
+        if let Some(bottom) = &mut self.bottom {
+            if let Some(widget) = &mut bottom.widget {
+                if widget.id().matches(name, uuid) {
+                    return Some(widget);
+                }
+            }
+        }
+
+        if let Some(widget) = &mut self.widget {
+            if widget.id().matches(name, uuid) {
+                return Some(widget);
+            }
+        }
+
+        None
+    }
+
+    /// Returns the widget at the given screen coordinate (if any)
+    pub fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
         if let Some(left) = &mut self.left {
             if let Some(widget) = &mut left.widget {
                 if widget.dim().contains(coord) {
@@ -129,14 +181,24 @@ impl TheCanvas {
         if let Some(right) = &mut self.right {
             let right_width = right.limiter.get_width(w);
             let right_height = right.limiter.get_height(h);
-            right.set_dim(TheDim::new(width - right_width, y, right_width, right_height));
+            right.set_dim(TheDim::new(
+                width - right_width,
+                y,
+                right_width,
+                right_height,
+            ));
             w -= right_width;
         }
 
         if let Some(bottom) = &mut self.bottom {
-            let bottom_width = w;//top.limiter.get_width(w);
+            let bottom_width = w; //top.limiter.get_width(w);
             let bottom_height = bottom.limiter.get_height(h);
-            bottom.set_dim(TheDim::new(x, y + h - bottom_height, bottom_width, bottom_height));
+            bottom.set_dim(TheDim::new(
+                x,
+                y + h - bottom_height,
+                bottom_width,
+                bottom_height,
+            ));
             h -= bottom_height;
         }
 
@@ -149,7 +211,6 @@ impl TheCanvas {
 
     /// Draw the canvas
     pub fn draw(&mut self, style: &mut Box<dyn TheStyle>, ctx: &mut TheContext) {
-
         if let Some(left) = &mut self.left {
             left.draw(style, ctx);
             self.buffer.copy_into(left.dim.x, left.dim.y, &left.buffer);
@@ -162,12 +223,14 @@ impl TheCanvas {
 
         if let Some(right) = &mut self.right {
             right.draw(style, ctx);
-            self.buffer.copy_into(right.dim.x, right.dim.y, &right.buffer);
+            self.buffer
+                .copy_into(right.dim.x, right.dim.y, &right.buffer);
         }
 
         if let Some(bottom) = &mut self.bottom {
             bottom.draw(style, ctx);
-            self.buffer.copy_into(bottom.dim.x, bottom.dim.y, &bottom.buffer);
+            self.buffer
+                .copy_into(bottom.dim.x, bottom.dim.y, &bottom.buffer);
         }
 
         if let Some(widget) = &mut self.widget {
