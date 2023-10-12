@@ -31,7 +31,7 @@ impl TheWidget for TheColorButton {
     }
 
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) {
-        //println!("event ({}): {:?}", self.name, event);
+        println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
             TheEvent::MouseDown(coord) => {
                 ctx.ui.set_focus(self.id());
@@ -44,8 +44,13 @@ impl TheWidget for TheColorButton {
         &self.dim
     }
 
+    fn dim_mut(&mut self) -> &mut TheDim {
+        &mut self.dim
+    }
+
     fn set_dim(&mut self, dim: TheDim) {
         self.dim = dim;
+        println!("set_dim ({}): {:?}", self.widget_id.name, dim);
     }
 
     fn draw(
@@ -61,7 +66,7 @@ impl TheWidget for TheColorButton {
 
         ctx.draw.rect(
             buffer.pixels_mut(),
-            &self.dim.to_shrunk_utuple(&shrinker),
+            &self.dim.to_local_shrunk_utuple(&shrinker),
             stride,
             &self.color,
         );
@@ -69,7 +74,7 @@ impl TheWidget for TheColorButton {
         if let Some(font) = &ctx.ui.font {
             ctx.draw.text_rect_blend(
                 buffer.pixels_mut(),
-                &self.dim.to_shrunk_utuple(&shrinker),
+                &self.dim.to_local_shrunk_utuple(&shrinker),
                 stride,
                 font,
                 20.0,

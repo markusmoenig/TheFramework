@@ -1,4 +1,5 @@
 use theframework::prelude::*;
+use crate::prelude::*;
 
 pub struct UIDemo {}
 
@@ -10,9 +11,8 @@ impl TheTrait for UIDemo {
         Self {}
     }
 
-    fn init_ui(&mut self, ui: &mut TheUI, _ctx: &mut TheContext) {
+    fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
         // Left
-
         let mut left_canvas: Box<TheCanvas> = Box::new(TheCanvas::new());
         left_canvas.limiter.set_max_width(60);
 
@@ -29,13 +29,8 @@ impl TheTrait for UIDemo {
         top_canvas.widget = Some(green_color);
 
         // Right
-
-        let mut right_canvas: Box<TheCanvas> = Box::new(TheCanvas::new());
-        right_canvas.limiter.set_max_width(300);
-
-        let mut red_color = Box::new(TheColorButton::new("Red".to_string()));
-        red_color.set_color([255, 0, 0, 255]);
-        right_canvas.widget = Some(red_color);
+        let mut sidebar = Sidebar::new();
+        sidebar.init_ui(ui, ctx);
 
         // Bottom
 
@@ -51,7 +46,6 @@ impl TheTrait for UIDemo {
 
         ui.canvas.left = Some(left_canvas);
         ui.canvas.top = Some(top_canvas);
-        ui.canvas.right = Some(right_canvas);
         ui.canvas.bottom = Some(bottom_canvas);
         ui.canvas.widget = Some(Box::new(TheColorButton::new("White".to_string())));
     }

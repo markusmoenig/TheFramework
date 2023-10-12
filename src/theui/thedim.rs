@@ -1,12 +1,20 @@
 use crate::prelude::*;
 
-#[derive(PartialEq, PartialOrd, Clone, Copy)]
+#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
 pub struct TheDim {
+
+    /// The x offset in screen coordinates
     pub x: i32,
+    /// The y offset in screen coordinates
     pub y: i32,
+
     pub width: i32,
     pub height: i32,
-    pub root: bool,
+
+    /// The x offset relative to the canvas buffer
+    pub buffer_x: i32,
+    /// The y offset relative to the canvas buffer
+    pub buffer_y: i32,
 }
 
 impl TheDim {
@@ -16,7 +24,8 @@ impl TheDim {
             y: 0,
             width: 0,
             height: 0,
-            root: false,
+            buffer_x: 0,
+            buffer_y: 0,
         }
     }
 
@@ -26,11 +35,18 @@ impl TheDim {
             y,
             width,
             height,
-            root: false,
+            buffer_x: 0,
+            buffer_y: 0,
         }
     }
 
-    pub fn coordinate(&self) -> Vec2i {
+    /// Sets the offset relative to the canvas buffer.
+    pub fn set_buffer_offset(&mut self, buffer_x: i32, buffer_y: i32)  {
+        self.buffer_x = buffer_x;
+        self.buffer_y = buffer_y;
+    }
+
+    pub fn screen_coord(&self) -> Vec2i {
         Vec2i::new(self.x, self.y)
     }
 
@@ -49,46 +65,29 @@ impl TheDim {
 
     /// Returns the given screen coordinate as a local coordinate.
     pub fn to_local(&self, coord: Vec2i) -> Vec2i {
-        coord - self.coordinate()
+        coord - self.screen_coord()
     }
 
     /// Returns the dimension as an usize tuple (used by the drawing routines)
-    pub fn to_utuple(&self) -> (usize, usize, usize, usize) {
-        if self.root {
-            (
-                self.x as usize,
-                self.y as usize,
-                self.width as usize,
-                self.height as usize,
-            )
-        } else {
-            self.to_zero_based_utuple()
-        }
+    pub fn to_local_utuple(&self) -> (usize, usize, usize, usize) {
+        (
+            self.buffer_x as usize,
+            self.buffer_y as usize,
+            self.width as usize,
+            self.height as usize,
+        )
     }
 
     /// Returns the dimension as an usize tuple (used by the drawing routines)
-    pub fn to_shrunk_utuple(&self, shrinker: &TheDimShrinker) -> (usize, usize, usize, usize) {
-        if self.root {
-            (
-                (self.x + shrinker.left) as usize,
-                (self.y + shrinker.top) as usize,
-                (self.width - shrinker.right) as usize,
-                (self.height - shrinker.bottom) as usize,
-            )
-        } else {
-            (
-                shrinker.left as usize,
-                shrinker.top as usize,
-                (self.width - shrinker.right) as usize,
-                (self.height - shrinker.bottom) as usize,
-            )
-        }
+    pub fn to_local_shrunk_utuple(&self, shrinker: &TheDimShrinker) -> (usize, usize, usize, usize) {
+        (
+            (self.buffer_x + shrinker.left) as usize,
+            (self.buffer_y + shrinker.top) as usize,
+            (self.width - shrinker.right) as usize,
+            (self.height - shrinker.bottom) as usize,
+        )
     }
 
-    /// Returns the zero based dimensions as an usize tuple (used by the drawing routines)
-    pub fn to_zero_based_utuple(&self) -> (usize, usize, usize, usize) {
-        (0, 0, self.width as usize, self.height as usize)
-    }
 }
 
 /// Shrink content of TheDim, used in styles to provide a way to implement custom sized borders for widgets.

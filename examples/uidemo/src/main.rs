@@ -1,10 +1,13 @@
 use theframework::*;
 
 pub mod demo;
+pub mod sidebar;
+
 use crate::demo::UIDemo;
 
 pub mod prelude {
     pub use theframework::prelude::*;
+    pub use crate::sidebar::*;
 }
 
 fn main() {

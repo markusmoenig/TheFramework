@@ -7,6 +7,6 @@ edition = "2021"
 theframework = { path = "../..", features = ["ui"] }
 lazy_static = "1.4.0"
 
-[lib]
-name = "rustapi"
-crate-type = ["staticlib"]
+# [lib]
+# name = "rustapi"
+# crate-type = ["staticlib"]

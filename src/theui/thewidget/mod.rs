@@ -24,6 +24,9 @@ pub trait TheWidget {
     /// Returns a reference to the dimensions of the widget.
     fn dim(&self) -> &TheDim;
 
+    /// Returns a mutable reference to the dimensions of the widget.
+    fn dim_mut(&mut self) -> &mut TheDim;
+
     /// Set the dimensions of the widget
     fn set_dim(&mut self, dim: TheDim) {}
 

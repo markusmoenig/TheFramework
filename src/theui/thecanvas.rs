@@ -72,34 +72,26 @@ impl TheCanvas {
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheWidget>> {
         if let Some(left) = &mut self.left {
-            if let Some(widget) = &mut left.widget {
-                if widget.id().matches(name, uuid) {
-                    return Some(widget);
-                }
+            if let Some(widget) = left.get_widget(name, uuid) {
+                return Some(widget);
             }
         }
 
         if let Some(top) = &mut self.top {
-            if let Some(widget) = &mut top.widget {
-                if widget.id().matches(name, uuid) {
-                    return Some(widget);
-                }
+            if let Some(widget) = top.get_widget(name, uuid) {
+                return Some(widget);
             }
         }
 
         if let Some(right) = &mut self.right {
-            if let Some(widget) = &mut right.widget {
-                if widget.id().matches(name, uuid) {
-                    return Some(widget);
-                }
+            if let Some(widget) = right.get_widget(name, uuid) {
+                return Some(widget);
             }
         }
 
         if let Some(bottom) = &mut self.bottom {
-            if let Some(widget) = &mut bottom.widget {
-                if widget.id().matches(name, uuid) {
-                    return Some(widget);
-                }
+            if let Some(widget) = bottom.get_widget(name, uuid) {
+                return Some(widget);
             }
         }
 
@@ -115,34 +107,26 @@ impl TheCanvas {
     /// Returns the widget at the given screen coordinate (if any)
     pub fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
         if let Some(left) = &mut self.left {
-            if let Some(widget) = &mut left.widget {
-                if widget.dim().contains(coord) {
-                    return Some(widget);
-                }
+            if let Some(widget) = left.get_widget_at_coord(coord) {
+                return Some(widget);
             }
         }
 
         if let Some(top) = &mut self.top {
-            if let Some(widget) = &mut top.widget {
-                if widget.dim().contains(coord) {
-                    return Some(widget);
-                }
+            if let Some(widget) = top.get_widget_at_coord(coord) {
+                return Some(widget);
             }
         }
 
         if let Some(right) = &mut self.right {
-            if let Some(widget) = &mut right.widget {
-                if widget.dim().contains(coord) {
-                    return Some(widget);
-                }
+            if let Some(widget) = right.get_widget_at_coord(coord) {
+                return Some(widget);
             }
         }
 
         if let Some(bottom) = &mut self.bottom {
-            if let Some(widget) = &mut bottom.widget {
-                if widget.dim().contains(coord) {
-                    return Some(widget);
-                }
+            if let Some(widget) = bottom.get_widget_at_coord(coord) {
+                return Some(widget);
             }
         }
 
@@ -157,16 +141,23 @@ impl TheCanvas {
 
     /// Layout the canvas according to its dimensions.
     pub fn layout(&mut self, width: i32, height: i32) {
+
+        // The screen dimensions
         let mut x = self.dim.x;
         let mut y = self.dim.y;
         let mut w = width;
         let mut h = height;
+
+        // Offset from the buffer
+        let mut buffer_x = 0;
+        let mut buffer_y = 0;
 
         if let Some(top) = &mut self.top {
             let top_width = top.limiter.get_width(w);
             let top_height = top.limiter.get_height(h);
             top.set_dim(TheDim::new(width - top_width, 0, top_width, top_height));
             y += top_height;
+            buffer_y += top_height;
             h -= top_height;
         }
 
@@ -175,6 +166,7 @@ impl TheCanvas {
             let left_height = left.limiter.get_height(h);
             left.set_dim(TheDim::new(0, y, left_width, left_height));
             x += left_width;
+            buffer_x += left_width;
             w -= left_width;
         }
 
@@ -191,7 +183,7 @@ impl TheCanvas {
         }
 
         if let Some(bottom) = &mut self.bottom {
-            let bottom_width = w; //top.limiter.get_width(w);
+            let bottom_width = w;
             let bottom_height = bottom.limiter.get_height(h);
             bottom.set_dim(TheDim::new(
                 x,
@@ -203,9 +195,9 @@ impl TheCanvas {
         }
 
         if let Some(widget) = &mut self.widget {
-            let mut dim = TheDim::new(x, y, w, h);
-            dim.root = self.root;
+            let dim = TheDim::new(x, y, w, h);
             widget.set_dim(dim);
+            widget.dim_mut().set_buffer_offset(buffer_x, buffer_y);
         }
     }
 
