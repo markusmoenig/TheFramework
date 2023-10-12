@@ -20,5 +20,5 @@ pub trait TheTheme {
 /// The
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum TheThemeColors {
-    DefaultWidgetBorder
+    DefaultWidgetBorder,
 }

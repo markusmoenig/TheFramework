@@ -3,7 +3,7 @@ use crate::prelude::*;
 use super::TheThemeColors;
 
 pub struct TheDarkTheme {
-    colors: FxHashMap<TheThemeColors, RGBA>
+    colors: FxHashMap<TheThemeColors, RGBA>,
 }
 
 /// Implements TheDarkTheme
@@ -16,9 +16,7 @@ impl TheTheme for TheDarkTheme {
 
         colors.insert(DefaultWidgetBorder, [128, 128, 128, 255]);
 
-        Self {
-            colors
-        }
+        Self { colors }
     }
 
     fn color(&self, of: TheThemeColors) -> &RGBA {

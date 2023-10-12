@@ -6,8 +6,8 @@ pub mod sidebar;
 use crate::demo::UIDemo;
 
 pub mod prelude {
-    pub use theframework::prelude::*;
     pub use crate::sidebar::*;
+    pub use theframework::prelude::*;
 }
 
 fn main() {

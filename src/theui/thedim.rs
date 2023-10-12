@@ -2,7 +2,6 @@ use crate::prelude::*;
 
 #[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
 pub struct TheDim {
-
     /// The x offset in screen coordinates
     pub x: i32,
     /// The y offset in screen coordinates
@@ -41,7 +40,7 @@ impl TheDim {
     }
 
     /// Sets the offset relative to the canvas buffer.
-    pub fn set_buffer_offset(&mut self, buffer_x: i32, buffer_y: i32)  {
+    pub fn set_buffer_offset(&mut self, buffer_x: i32, buffer_y: i32) {
         self.buffer_x = buffer_x;
         self.buffer_y = buffer_y;
     }
@@ -79,7 +78,10 @@ impl TheDim {
     }
 
     /// Returns the dimension as an usize tuple (used by the drawing routines)
-    pub fn to_local_shrunk_utuple(&self, shrinker: &TheDimShrinker) -> (usize, usize, usize, usize) {
+    pub fn to_local_shrunk_utuple(
+        &self,
+        shrinker: &TheDimShrinker,
+    ) -> (usize, usize, usize, usize) {
         (
             (self.buffer_x + shrinker.left) as usize,
             (self.buffer_y + shrinker.top) as usize,
@@ -87,7 +89,6 @@ impl TheDim {
             (self.height - shrinker.bottom) as usize,
         )
     }
-
 }
 
 /// Shrink content of TheDim, used in styles to provide a way to implement custom sized borders for widgets.

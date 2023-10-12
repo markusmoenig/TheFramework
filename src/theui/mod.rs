@@ -3,11 +3,11 @@ pub mod thedim;
 pub mod thergbabuffer;
 pub mod thesizelimiter;
 pub mod thestyle;
+pub mod thetheme;
 pub mod theuicontext;
 pub mod thevalue;
 pub mod thevent;
 pub mod thewidget;
-pub mod thetheme;
 
 use std::sync::mpsc::{self, Receiver};
 

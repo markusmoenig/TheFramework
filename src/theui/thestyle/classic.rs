@@ -11,9 +11,7 @@ impl TheStyle for TheClassicStyle {
         Self: Sized,
     {
         let dark = Box::new(TheDarkTheme::new());
-        Self {
-            dark
-        }
+        Self { dark }
     }
 
     fn theme(&self) -> &Box<dyn TheTheme> {

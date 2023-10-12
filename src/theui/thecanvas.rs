@@ -1,6 +1,9 @@
 use crate::prelude::*;
 
 pub struct TheCanvas {
+    /// The relative offset to the parent canvas
+    pub offset: Vec2i,
+
     pub dim: TheDim,
 
     pub limiter: TheSizeLimiter,
@@ -27,6 +30,8 @@ impl Default for TheCanvas {
 impl TheCanvas {
     pub fn new() -> Self {
         Self {
+            offset: Vec2i::zero(),
+
             dim: TheDim::zero(),
 
             limiter: TheSizeLimiter::new(),
@@ -141,7 +146,6 @@ impl TheCanvas {
 
     /// Layout the canvas according to its dimensions.
     pub fn layout(&mut self, width: i32, height: i32) {
-
         // The screen dimensions
         let mut x = self.dim.x;
         let mut y = self.dim.y;
@@ -155,7 +159,8 @@ impl TheCanvas {
         if let Some(top) = &mut self.top {
             let top_width = top.limiter.get_width(w);
             let top_height = top.limiter.get_height(h);
-            top.set_dim(TheDim::new(width - top_width, 0, top_width, top_height));
+            top.set_dim(TheDim::new(x + width - top_width, y, top_width, top_height));
+            top.offset = vec2i(0, 0);
             y += top_height;
             buffer_y += top_height;
             h -= top_height;
@@ -164,7 +169,8 @@ impl TheCanvas {
         if let Some(left) = &mut self.left {
             let left_width = left.limiter.get_width(w);
             let left_height = left.limiter.get_height(h);
-            left.set_dim(TheDim::new(0, y, left_width, left_height));
+            left.set_dim(TheDim::new(x, y, left_width, left_height));
+            left.offset = vec2i(0, y);
             x += left_width;
             buffer_x += left_width;
             w -= left_width;
@@ -179,6 +185,7 @@ impl TheCanvas {
                 right_width,
                 right_height,
             ));
+            right.offset = vec2i(width - right_width, y);
             w -= right_width;
         }
 
@@ -191,6 +198,7 @@ impl TheCanvas {
                 bottom_width,
                 bottom_height,
             ));
+            bottom.offset = vec2i(x, y + h - bottom_height);
             h -= bottom_height;
         }
 
@@ -205,28 +213,29 @@ impl TheCanvas {
     pub fn draw(&mut self, style: &mut Box<dyn TheStyle>, ctx: &mut TheContext) {
         if let Some(left) = &mut self.left {
             left.draw(style, ctx);
-            self.buffer.copy_into(left.dim.x, left.dim.y, &left.buffer);
+            self.buffer
+                .copy_into(left.offset.x, left.offset.y, &left.buffer);
         }
 
         if let Some(top) = &mut self.top {
             top.draw(style, ctx);
-            self.buffer.copy_into(top.dim.x, top.dim.y, &top.buffer);
+            self.buffer
+                .copy_into(top.offset.x, top.offset.y, &top.buffer);
         }
 
         if let Some(right) = &mut self.right {
             right.draw(style, ctx);
             self.buffer
-                .copy_into(right.dim.x, right.dim.y, &right.buffer);
+                .copy_into(right.offset.x, right.offset.y, &right.buffer);
         }
 
         if let Some(bottom) = &mut self.bottom {
             bottom.draw(style, ctx);
             self.buffer
-                .copy_into(bottom.dim.x, bottom.dim.y, &bottom.buffer);
+                .copy_into(bottom.offset.x, bottom.offset.y, &bottom.buffer);
         }
 
         if let Some(widget) = &mut self.widget {
-            // println!("{:?}", self.dim.to_utuple());
             widget.draw(&mut self.buffer, style, ctx);
         }
     }

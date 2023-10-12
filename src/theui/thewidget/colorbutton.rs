@@ -64,6 +64,12 @@ impl TheWidget for TheColorButton {
 
         style.draw_widget_border(buffer, &self.dim, &mut shrinker, ctx);
 
+        println!(
+            "draw ({}): {:?}",
+            self.widget_id.name,
+            self.dim.to_local_shrunk_utuple(&shrinker)
+        );
+
         ctx.draw.rect(
             buffer.pixels_mut(),
             &self.dim.to_local_shrunk_utuple(&shrinker),
