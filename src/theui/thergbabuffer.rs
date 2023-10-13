@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+#[derive(PartialEq, PartialOrd, Clone, Debug)]
 pub struct TheRGBABuffer {
     dim: TheDim,
 

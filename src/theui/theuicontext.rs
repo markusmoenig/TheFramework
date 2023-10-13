@@ -7,8 +7,11 @@ use std::sync::mpsc::Sender;
 pub struct TheUIContext {
     pub font: Option<Font>,
     pub code_font: Option<Font>,
+    icons: FxHashMap<String, (Vec<u8>, u32, u32)>,
+
 
     pub focus: Option<TheWidgetId>,
+    pub keyboard_focus: Option<TheWidgetId>,
 
     pub state_events_sender: Option<Sender<TheEvent>>,
 }
@@ -27,8 +30,7 @@ impl TheUIContext {
 
         for file in Embedded::iter() {
             let name = file.as_ref();
-            // println!("{:?}", name);
-            if name.starts_with("fonts/Roboto") {
+            if name.starts_with("fonts/Roboto-Medium") {
                 if let Some(font_bytes) = Embedded::get(name) {
                     if let Ok(f) =
                         Font::from_bytes(font_bytes.data, fontdue::FontSettings::default())
@@ -45,6 +47,7 @@ impl TheUIContext {
                     }
                 }
             } else if name.starts_with("icons/") {
+                println!("{:?}", name);
                 if let Some(file) = Embedded::get(name) {
                     let data = std::io::Cursor::new(file.data);
 
@@ -67,12 +70,23 @@ impl TheUIContext {
 
         Self {
             focus: None,
+            keyboard_focus: None,
 
             font,
             code_font,
+            icons,
 
             state_events_sender: None,
         }
+    }
+
+    /// Returns an icon of the given name from the embedded style icons
+    pub fn icon(&self, name: &str) -> Option<&(Vec<u8>, u32, u32)> {
+
+        if let Some(icon) = self.icons.get(&name.to_string()) {
+            return Some(icon);
+        }
+        None
     }
 
     /// Sets the focus to the given widget

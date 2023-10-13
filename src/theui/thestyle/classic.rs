@@ -28,7 +28,7 @@ impl TheStyle for TheClassicStyle {
         let stride = buffer.stride();
         ctx.draw.rect_outline(
             buffer.pixels_mut(),
-            &dim.to_local_shrunk_utuple(shrinker),
+            &dim.to_buffer_shrunk_utuple(shrinker),
             stride,
             self.theme().color(DefaultWidgetBorder),
         );

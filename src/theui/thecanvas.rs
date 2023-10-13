@@ -10,14 +10,16 @@ pub struct TheCanvas {
 
     pub root: bool,
 
+    pub top_is_expanding: bool,
+
     buffer: TheRGBABuffer,
 
-    pub left: Option<Box<TheCanvas>>,
-    pub top: Option<Box<TheCanvas>>,
-    pub right: Option<Box<TheCanvas>>,
-    pub bottom: Option<Box<TheCanvas>>,
+    left: Option<Box<TheCanvas>>,
+    top: Option<Box<TheCanvas>>,
+    right: Option<Box<TheCanvas>>,
+    bottom: Option<Box<TheCanvas>>,
 
-    pub widget: Option<Box<dyn TheWidget>>,
+    widget: Option<Box<dyn TheWidget>>,
 }
 
 impl Default for TheCanvas {
@@ -37,6 +39,7 @@ impl TheCanvas {
             limiter: TheSizeLimiter::new(),
 
             root: false,
+            top_is_expanding: true,
 
             buffer: TheRGBABuffer::empty(),
 
@@ -56,6 +59,31 @@ impl TheCanvas {
             self.buffer.set_dim(self.dim);
             self.layout(self.dim.width, self.dim.height);
         }
+    }
+
+    /// Sets the widget.
+    pub fn set_widget<T: TheWidget + 'static>(&mut self, widget: T) {
+        self.widget = Some(Box::new(widget));
+    }
+
+    /// Sets the canvas to the left of this canvas.
+    pub fn set_left(&mut self, canvas: TheCanvas) {
+        self.left = Some(Box::new(canvas));
+    }
+
+    /// Sets the canvas to the top of this canvas.
+    pub fn set_top(&mut self, canvas: TheCanvas) {
+        self.top = Some(Box::new(canvas));
+    }
+
+    /// Sets the canvas to the right of this canvas.
+    pub fn set_right(&mut self, canvas: TheCanvas) {
+        self.right = Some(Box::new(canvas));
+    }
+
+    /// Sets the canvas to the bottom of this canvas.
+    pub fn set_bottom(&mut self, canvas: TheCanvas) {
+        self.bottom = Some(Box::new(canvas));
     }
 
     /// Resize the canvas if needed
@@ -156,37 +184,52 @@ impl TheCanvas {
         let mut buffer_x = 0;
         let mut buffer_y = 0;
 
-        if let Some(top) = &mut self.top {
-            let top_width = top.limiter.get_width(w);
-            let top_height = top.limiter.get_height(h);
-            top.set_dim(TheDim::new(x + width - top_width, y, top_width, top_height));
-            top.offset = vec2i(0, 0);
-            y += top_height;
-            buffer_y += top_height;
-            h -= top_height;
+        if self.top_is_expanding {
+            if let Some(top) = &mut self.top {
+                let top_width = top.limiter.get_width(w);
+                let top_height = top.limiter.get_height(h);
+                top.set_dim(TheDim::new(x + width - top_width, y, top_width, top_height));
+                top.offset = vec2i(0, 0);
+                y += top_height;
+                buffer_y += top_height;
+                h -= top_height;
+            }
         }
 
         if let Some(left) = &mut self.left {
             let left_width = left.limiter.get_width(w);
             let left_height = left.limiter.get_height(h);
             left.set_dim(TheDim::new(x, y, left_width, left_height));
-            left.offset = vec2i(0, y);
+            left.offset = vec2i(0, buffer_y);
             x += left_width;
             buffer_x += left_width;
             w -= left_width;
         }
 
+        let mut right_width = 0;
         if let Some(right) = &mut self.right {
-            let right_width = right.limiter.get_width(w);
+            right_width = right.limiter.get_width(w);
             let right_height = right.limiter.get_height(h);
             right.set_dim(TheDim::new(
-                width - right_width,
+                x + w - right_width,
                 y,
                 right_width,
                 right_height,
             ));
-            right.offset = vec2i(width - right_width, y);
+            right.offset = vec2i(width - right_width, buffer_y);
             w -= right_width;
+        }
+
+        if !self.top_is_expanding {
+            if let Some(top) = &mut self.top {
+                let top_width = top.limiter.get_width(w);
+                let top_height = top.limiter.get_height(h);
+                top.set_dim(TheDim::new(x + width - top_width, y, top_width - right_width, top_height));
+                top.offset = vec2i(0, 0);
+                y += top_height;
+                buffer_y += top_height;
+                h -= top_height;
+            }
         }
 
         if let Some(bottom) = &mut self.bottom {
@@ -198,7 +241,7 @@ impl TheCanvas {
                 bottom_width,
                 bottom_height,
             ));
-            bottom.offset = vec2i(x, y + h - bottom_height);
+            bottom.offset = vec2i(buffer_x, buffer_y + h - bottom_height);
             h -= bottom_height;
         }
 
@@ -226,7 +269,7 @@ impl TheCanvas {
         if let Some(right) = &mut self.right {
             right.draw(style, ctx);
             self.buffer
-                .copy_into(right.offset.x, right.offset.y, &right.buffer);
+               .copy_into(right.offset.x, right.offset.y, &right.buffer);
         }
 
         if let Some(bottom) = &mut self.bottom {

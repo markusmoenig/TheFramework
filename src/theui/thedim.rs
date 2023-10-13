@@ -67,8 +67,8 @@ impl TheDim {
         coord - self.screen_coord()
     }
 
-    /// Returns the dimension as an usize tuple (used by the drawing routines)
-    pub fn to_local_utuple(&self) -> (usize, usize, usize, usize) {
+    /// Returns the dimension as an usize tuple relative to the buffer origin (used by the drawing routines)
+    pub fn to_buffer_utuple(&self) -> (usize, usize, usize, usize) {
         (
             self.buffer_x as usize,
             self.buffer_y as usize,
@@ -77,8 +77,8 @@ impl TheDim {
         )
     }
 
-    /// Returns the dimension as an usize tuple (used by the drawing routines)
-    pub fn to_local_shrunk_utuple(
+    /// Returns the dimension as an usize tuple relative to the buffer origin (used by the drawing routines)
+    pub fn to_buffer_shrunk_utuple(
         &self,
         shrinker: &TheDimShrinker,
     ) -> (usize, usize, usize, usize) {

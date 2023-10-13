@@ -1,9 +1,11 @@
 use crate::prelude::*;
 
 pub mod colorbutton;
+pub mod sectionheader;
 
 pub mod prelude {
     pub use crate::theui::thewidget::colorbutton::TheColorButton;
+    pub use crate::theui::thewidget::sectionheader::TheSectionHeader;
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetId;
     pub use crate::theui::thewidget::TheWidgetState;
