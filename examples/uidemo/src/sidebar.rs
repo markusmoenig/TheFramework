@@ -10,13 +10,15 @@ impl Sidebar {
     }
 
     pub fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
-
         let mut vertical_canvas = TheCanvas::new();
-        vertical_canvas.limiter.set_max_width(60);
+        vertical_canvas.limiter.set_max_width(80);
 
-        let mut white_color = TheColorButton::new("White 2".to_string());
+        let mut white_color = TheColorButton::new("Box".to_string());
         white_color.set_color([255, 255, 255, 255]);
-        vertical_canvas.set_widget(white_color);
+
+        let mut vlayout = TheVLayout::new("Context Buttons".to_string());
+        vlayout.add_widget(white_color);
+        vertical_canvas.set_widget(vlayout);
 
         let mut canvas = TheCanvas::new();
         canvas.limiter.set_max_width(360);

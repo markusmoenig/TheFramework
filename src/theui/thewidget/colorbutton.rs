@@ -2,7 +2,6 @@ use crate::prelude::*;
 
 pub struct TheColorButton {
     widget_id: TheWidgetId,
-    widget_state: TheWidgetState,
 
     dim: TheDim,
 
@@ -16,7 +15,6 @@ impl TheWidget for TheColorButton {
     {
         Self {
             widget_id: TheWidgetId::new(name),
-            widget_state: TheWidgetState::new(),
 
             dim: TheDim::zero(),
             color: WHITE,
@@ -25,9 +23,6 @@ impl TheWidget for TheColorButton {
 
     fn id(&self) -> &TheWidgetId {
         &self.widget_id
-    }
-    fn state(&self) -> &TheWidgetState {
-        &self.widget_state
     }
 
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) {
@@ -61,7 +56,7 @@ impl TheWidget for TheColorButton {
         let stride = buffer.stride();
         let mut shrinker = TheDimShrinker::zero();
 
-        style.draw_widget_border(buffer, &self.dim, &mut shrinker, ctx);
+        style.draw_widget_border(buffer, self, &mut shrinker, ctx);
 
         ctx.draw.rect(
             buffer.pixels_mut(),
@@ -76,7 +71,7 @@ impl TheWidget for TheColorButton {
                 &self.dim.to_buffer_shrunk_utuple(&shrinker),
                 stride,
                 font,
-                20.0,
+                15.0,
                 &self.id().name,
                 &BLACK,
                 crate::thedraw2d::TheTextAlignment::Center,

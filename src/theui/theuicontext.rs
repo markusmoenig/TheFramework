@@ -9,7 +9,6 @@ pub struct TheUIContext {
     pub code_font: Option<Font>,
     icons: FxHashMap<String, (Vec<u8>, u32, u32)>,
 
-
     pub focus: Option<TheWidgetId>,
     pub keyboard_focus: Option<TheWidgetId>,
 
@@ -82,7 +81,6 @@ impl TheUIContext {
 
     /// Returns an icon of the given name from the embedded style icons
     pub fn icon(&self, name: &str) -> Option<&(Vec<u8>, u32, u32)> {
-
         if let Some(icon) = self.icons.get(&name.to_string()) {
             return Some(icon);
         }

@@ -114,6 +114,6 @@ impl TheUI {
             self.process_events(ctx);
         }
 
-        false
+        true
     }
 }

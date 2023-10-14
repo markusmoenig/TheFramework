@@ -21,16 +21,23 @@ impl TheStyle for TheClassicStyle {
     fn draw_widget_border(
         &mut self,
         buffer: &mut TheRGBABuffer,
-        dim: &TheDim,
+        widget: &mut dyn TheWidget,
         shrinker: &mut TheDimShrinker,
         ctx: &mut TheContext,
     ) {
         let stride = buffer.stride();
+
+        let border_color = if widget.id().equals(&ctx.ui.focus) {
+            self.theme().color(SelectedWidgetBorder)
+        } else {
+            self.theme().color(DefaultWidgetBorder)
+        };
+
         ctx.draw.rect_outline(
             buffer.pixels_mut(),
-            &dim.to_buffer_shrunk_utuple(shrinker),
+            &widget.dim().to_buffer_shrunk_utuple(shrinker),
             stride,
-            self.theme().color(DefaultWidgetBorder),
+            border_color,
         );
 
         shrinker.shrink(2);

@@ -2,13 +2,16 @@ use crate::prelude::*;
 
 pub mod colorbutton;
 pub mod sectionheader;
+pub mod vlayout;
 
 pub mod prelude {
     pub use crate::theui::thewidget::colorbutton::TheColorButton;
     pub use crate::theui::thewidget::sectionheader::TheSectionHeader;
+    pub use crate::theui::thewidget::vlayout::TheVLayout;
+
+    pub use crate::theui::thewidget::TheLayout;
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetId;
-    pub use crate::theui::thewidget::TheWidgetState;
 }
 
 /// TheWidget trait defines the asbtract functionality of a widget.
@@ -19,9 +22,24 @@ pub trait TheWidget {
         Self: Sized;
 
     fn id(&self) -> &TheWidgetId;
-    fn state(&self) -> &TheWidgetState;
 
     fn init(&mut self, ctx: &mut TheContext) {}
+
+    fn is_layout(&self) -> bool {
+        false
+    }
+
+    fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+        None
+    }
+
+    fn get_widget(
+        &mut self,
+        name: Option<&String>,
+        uuid: Option<&Uuid>,
+    ) -> Option<&mut Box<dyn TheWidget>> {
+        None
+    }
 
     /// Returns a reference to the dimensions of the widget.
     fn dim(&self) -> &TheDim;
@@ -85,26 +103,9 @@ impl TheWidgetId {
     }
 }
 
-/// Defines the widget state.
-#[derive(Clone, Debug)]
-pub struct TheWidgetState {
-    pub mouse_over: bool,
-    pub mouse_clicked: bool,
-    pub toggle_state: bool,
-}
-
-impl Default for TheWidgetState {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl TheWidgetState {
-    pub fn new() -> Self {
-        Self {
-            mouse_over: false,
-            mouse_clicked: false,
-            toggle_state: false,
-        }
-    }
+/// TheLayout trait defines an abstract layout interface for widgets.
+#[allow(unused)]
+pub trait TheLayout: TheWidget {
+    fn add_widget<T: TheWidget + 'static>(&mut self, widget: T);
+    fn widgets(&mut self) -> &mut Vec<Box<dyn TheWidget>>;
 }

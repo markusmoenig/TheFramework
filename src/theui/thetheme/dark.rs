@@ -14,7 +14,9 @@ impl TheTheme for TheDarkTheme {
     {
         let mut colors = FxHashMap::default();
 
-        colors.insert(DefaultWidgetBorder, [128, 128, 128, 255]);
+        colors.insert(DefaultWidgetBorder, [31, 31, 31, 255]);
+        // colors.insert(SelectedWidgetBorder, [55, 68, 98, 255]);
+        colors.insert(SelectedWidgetBorder, [255, 68, 98, 255]);
         colors.insert(DefaultWidgetBackground, [17, 17, 17, 255]);
 
         Self { colors }

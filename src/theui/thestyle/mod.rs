@@ -20,7 +20,7 @@ pub trait TheStyle {
     fn draw_widget_border(
         &mut self,
         buffer: &mut TheRGBABuffer,
-        dim: &TheDim,
+        widget: &mut dyn TheWidget,
         shrinker: &mut TheDimShrinker,
         ctx: &mut TheContext,
     ) {

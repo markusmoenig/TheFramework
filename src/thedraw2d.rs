@@ -550,7 +550,7 @@ impl TheDraw2D {
         for y in 0..rect.3 {
             let d = rect.0 * 4 + (y + rect.1) * dest_stride * 4;
             let s = y * rect.2 * 3;
-            let p = [source[s], source[s+1], source[s+2], 255];
+            let p = [source[s], source[s + 1], source[s + 2], 255];
             dest[d..d + rect.2 * 4].copy_from_slice(&p);
         }
     }

@@ -46,6 +46,7 @@ impl TheTrait for UIDemo {
         ui.canvas.set_left(left_canvas);
         ui.canvas.set_top(top_canvas);
         ui.canvas.set_bottom(bottom_canvas);
-        ui.canvas.set_widget(TheColorButton::new("White".to_string()));
+        ui.canvas
+            .set_widget(TheColorButton::new("White".to_string()));
     }
 }

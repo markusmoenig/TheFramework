@@ -129,8 +129,13 @@ impl TheCanvas {
         }
 
         if let Some(widget) = &mut self.widget {
-            if widget.id().matches(name, uuid) {
+            if !widget.is_layout() && widget.id().matches(name, uuid) {
                 return Some(widget);
+            }
+            if widget.is_layout() {
+                if let Some(child) = widget.get_widget(name, uuid) {
+                    return Some(child);
+                }
             }
         }
 
@@ -164,8 +169,13 @@ impl TheCanvas {
         }
 
         if let Some(widget) = &mut self.widget {
-            if widget.dim().contains(coord) {
+            if !widget.is_layout() && widget.dim().contains(coord) {
                 return Some(widget);
+            }
+            if widget.is_layout() {
+                if let Some(widget) = widget.get_widget_at_coord(coord) {
+                    return Some(widget);
+                }
             }
         }
 
@@ -224,7 +234,12 @@ impl TheCanvas {
             if let Some(top) = &mut self.top {
                 let top_width = top.limiter.get_width(w);
                 let top_height = top.limiter.get_height(h);
-                top.set_dim(TheDim::new(x + width - top_width, y, top_width - right_width, top_height));
+                top.set_dim(TheDim::new(
+                    x + width - top_width - right_width,
+                    y,
+                    top_width,
+                    top_height,
+                ));
                 top.offset = vec2i(0, 0);
                 y += top_height;
                 buffer_y += top_height;
@@ -269,7 +284,7 @@ impl TheCanvas {
         if let Some(right) = &mut self.right {
             right.draw(style, ctx);
             self.buffer
-               .copy_into(right.offset.x, right.offset.y, &right.buffer);
+                .copy_into(right.offset.x, right.offset.y, &right.buffer);
         }
 
         if let Some(bottom) = &mut self.bottom {
