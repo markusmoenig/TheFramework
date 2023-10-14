@@ -61,8 +61,11 @@ pub trait TheWidget {
 
     fn update(&mut self, ctx: &mut TheContext) {}
 
-    fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
+    fn needs_redraw(&mut self) -> bool {
         false
+    }
+
+    fn set_needs_redraw(&mut self, redraw: bool) {
     }
 
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) {}

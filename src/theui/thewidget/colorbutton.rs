@@ -4,8 +4,8 @@ pub struct TheColorButton {
     widget_id: TheWidgetId,
 
     dim: TheDim,
-
     color: RGBA,
+    is_dirty: bool,
 }
 
 impl TheWidget for TheColorButton {
@@ -18,6 +18,7 @@ impl TheWidget for TheColorButton {
 
             dim: TheDim::zero(),
             color: WHITE,
+            is_dirty: false
         }
     }
 
@@ -30,6 +31,7 @@ impl TheWidget for TheColorButton {
         match event {
             TheEvent::MouseDown(coord) => {
                 ctx.ui.set_focus(self.id());
+                self.is_dirty = true;
             }
             _ => {}
         }
@@ -44,7 +46,18 @@ impl TheWidget for TheColorButton {
     }
 
     fn set_dim(&mut self, dim: TheDim) {
-        self.dim = dim;
+        if self.dim != dim {
+            self.dim = dim;
+            self.is_dirty = true;
+        }
+    }
+
+    fn needs_redraw(&mut self) -> bool {
+        self.is_dirty
+    }
+
+    fn set_needs_redraw(&mut self, redraw: bool) {
+        self.is_dirty = redraw;
     }
 
     fn draw(
@@ -77,6 +90,8 @@ impl TheWidget for TheColorButton {
                 crate::thedraw2d::TheTextAlignment::Center,
             );
         }
+
+        self.is_dirty = false;
     }
 }
 

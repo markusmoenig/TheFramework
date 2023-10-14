@@ -30,6 +30,10 @@ impl TheWidget for TheVLayout {
         true
     }
 
+    fn needs_redraw(&mut self) -> bool {
+        true
+    }
+
     fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
         let widgets = self.widgets();
         widgets.iter_mut().find(|w| w.dim().contains(coord))
@@ -43,15 +47,15 @@ impl TheWidget for TheVLayout {
         self.widgets.iter_mut().find(|w| w.id().matches(name, uuid))
     }
 
-    fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) {
-        println!("event ({}): {:?}", self.widget_id.name, event);
-        match event {
-            TheEvent::MouseDown(coord) => {
-                ctx.ui.set_focus(self.id());
-            }
-            _ => {}
-        }
-    }
+    // fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) {
+    //     println!("event ({}): {:?}", self.widget_id.name, event);
+    //     match event {
+    //         TheEvent::MouseDown(coord) => {
+    //             ctx.ui.set_focus(self.id());
+    //         }
+    //         _ => {}
+    //     }
+    // }
 
     fn dim(&self) -> &TheDim {
         &self.dim
@@ -62,15 +66,17 @@ impl TheWidget for TheVLayout {
     }
 
     fn set_dim(&mut self, dim: TheDim) {
-        self.dim = dim;
+        if self.dim != dim {
+            self.dim = dim;
 
-        let x = 10;
-        let mut y = 10;
+            let x = 10;
+            let mut y = 10;
 
-        for w in &mut self.widgets {
-            w.set_dim(TheDim::new(dim.x + x, dim.y + y, 60, 60));
-            w.dim_mut().set_buffer_offset(x, y);
-            y += 40;
+            for w in &mut self.widgets {
+                w.set_dim(TheDim::new(dim.x + x, dim.y + y, 60, 60));
+                w.dim_mut().set_buffer_offset(x, y);
+                y += 40;
+            }
         }
     }
 
@@ -90,7 +96,9 @@ impl TheWidget for TheVLayout {
         );
 
         for w in &mut self.widgets {
-            w.draw(buffer, style, ctx);
+            //if w.needs_redraw() {
+                w.draw(buffer, style, ctx);
+            //}
         }
     }
 }

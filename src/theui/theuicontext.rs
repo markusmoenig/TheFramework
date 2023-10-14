@@ -90,6 +90,9 @@ impl TheUIContext {
     /// Sets the focus to the given widget
     pub fn set_focus(&mut self, id: &TheWidgetId) {
         if !id.equals(&self.focus) {
+            if let Some(focus) = &self.focus {
+                self.send_state(TheEvent::LostFocus(focus.clone()));
+            }
             self.send_state(TheEvent::Focus(id.clone()));
             self.focus = Some(id.clone());
         }

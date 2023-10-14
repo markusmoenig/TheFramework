@@ -294,7 +294,9 @@ impl TheCanvas {
         }
 
         if let Some(widget) = &mut self.widget {
-            widget.draw(&mut self.buffer, style, ctx);
+            if widget.needs_redraw() {
+                widget.draw(&mut self.buffer, style, ctx);
+            }
         }
     }
 }

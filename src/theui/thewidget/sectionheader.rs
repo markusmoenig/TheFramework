@@ -4,8 +4,8 @@ pub struct TheSectionHeader {
     widget_id: TheWidgetId,
 
     dim: TheDim,
-
     text: String,
+    is_dirty: bool,
 }
 
 impl TheWidget for TheSectionHeader {
@@ -18,6 +18,7 @@ impl TheWidget for TheSectionHeader {
 
             dim: TheDim::zero(),
             text: "".to_string(),
+            is_dirty: false
         }
     }
 
@@ -45,7 +46,14 @@ impl TheWidget for TheSectionHeader {
     }
 
     fn set_dim(&mut self, dim: TheDim) {
-        self.dim = dim;
+        if self.dim != dim {
+            self.dim = dim;
+            self.is_dirty = true;
+        }
+    }
+
+    fn needs_redraw(&mut self) -> bool {
+        self.is_dirty
     }
 
     fn draw(
