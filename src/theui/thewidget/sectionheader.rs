@@ -18,7 +18,7 @@ impl TheWidget for TheSectionHeader {
 
             dim: TheDim::zero(),
             text: "".to_string(),
-            is_dirty: false
+            is_dirty: false,
         }
     }
 

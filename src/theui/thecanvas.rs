@@ -20,6 +20,7 @@ pub struct TheCanvas {
     bottom: Option<Box<TheCanvas>>,
 
     widget: Option<Box<dyn TheWidget>>,
+    layout: Option<Box<dyn TheLayout>>,
 }
 
 impl Default for TheCanvas {
@@ -49,6 +50,7 @@ impl TheCanvas {
             bottom: None,
 
             widget: None,
+            layout: None,
         }
     }
 
@@ -58,12 +60,20 @@ impl TheCanvas {
             self.dim = dim;
             self.buffer.set_dim(self.dim);
             self.layout(self.dim.width, self.dim.height);
+            if let Some(layout) = &mut self.layout {
+                layout.set_dim(dim);
+            }
         }
     }
 
     /// Sets the widget.
     pub fn set_widget<T: TheWidget + 'static>(&mut self, widget: T) {
         self.widget = Some(Box::new(widget));
+    }
+
+    /// Sets the layout.
+    pub fn set_layout<T: TheLayout + 'static>(&mut self, layout: T) {
+        self.layout = Some(Box::new(layout));
     }
 
     /// Sets the canvas to the left of this canvas.
@@ -129,13 +139,14 @@ impl TheCanvas {
         }
 
         if let Some(widget) = &mut self.widget {
-            if !widget.is_layout() && widget.id().matches(name, uuid) {
+            if widget.id().matches(name, uuid) {
                 return Some(widget);
             }
-            if widget.is_layout() {
-                if let Some(child) = widget.get_widget(name, uuid) {
-                    return Some(child);
-                }
+        }
+
+        if let Some(layout) = &mut self.layout {
+            if let Some(child) = layout.get_widget(name, uuid) {
+                return Some(child);
             }
         }
 
@@ -169,13 +180,14 @@ impl TheCanvas {
         }
 
         if let Some(widget) = &mut self.widget {
-            if !widget.is_layout() && widget.dim().contains(coord) {
+            if widget.dim().contains(coord) {
                 return Some(widget);
             }
-            if widget.is_layout() {
-                if let Some(widget) = widget.get_widget_at_coord(coord) {
-                    return Some(widget);
-                }
+        }
+
+        if let Some(layout) = &mut self.layout {
+            if let Some(widget) = layout.get_widget_at_coord(coord) {
+                return Some(widget);
             }
         }
 
@@ -297,6 +309,10 @@ impl TheCanvas {
             if widget.needs_redraw() {
                 widget.draw(&mut self.buffer, style, ctx);
             }
+        }
+
+        if let Some(layout) = &mut self.layout {
+            layout.draw(&mut self.buffer, style, ctx);
         }
     }
 }

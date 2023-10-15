@@ -8,7 +8,7 @@ pub struct TheVLayout {
     widgets: Vec<Box<dyn TheWidget>>,
 }
 
-impl TheWidget for TheVLayout {
+impl TheLayout for TheVLayout {
     fn new(name: String) -> Self
     where
         Self: Sized,
@@ -22,16 +22,12 @@ impl TheWidget for TheVLayout {
         }
     }
 
-    fn id(&self) -> &TheWidgetId {
-        &self.widget_id
+    fn widgets(&mut self) -> &mut Vec<Box<dyn TheWidget>> {
+        &mut self.widgets
     }
 
-    fn is_layout(&self) -> bool {
-        true
-    }
-
-    fn needs_redraw(&mut self) -> bool {
-        true
+    fn add_widget(&mut self, widget: Box<dyn TheWidget>) {
+        self.widgets.push(widget);
     }
 
     fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
@@ -95,23 +91,19 @@ impl TheWidget for TheVLayout {
             style.theme().color(DefaultWidgetBackground),
         );
 
+        let mut redraw = false;
+
         for w in &mut self.widgets {
-            //if w.needs_redraw() {
-                w.draw(buffer, style, ctx);
-            //}
+            if w.needs_redraw() {
+                redraw = true;
+                break;
+            }
         }
-    }
-}
 
-impl TheLayout for TheVLayout {
-    fn widgets(&mut self) -> &mut Vec<Box<dyn TheWidget>> {
-        &mut self.widgets
+        //if redraw {
+            for w in &mut self.widgets {
+                w.draw(buffer, style, ctx);
+            }
+        //}
     }
-
-    fn add_widget<T: TheWidget + 'static>(&mut self, widget: T) {
-        self.widgets.push(Box::new(widget));
-    }
-    // fn widgets(&self) -> Box<dyn Iterator<Item = &dyn TheWidget>> {
-    //     Box::new(self.widgets.iter().map(|widget| &**widget))
-    // }
 }

@@ -17,8 +17,8 @@ impl Sidebar {
         white_color.set_color([255, 255, 255, 255]);
 
         let mut vlayout = TheVLayout::new("Context Buttons".to_string());
-        vlayout.add_widget(white_color);
-        vertical_canvas.set_widget(vlayout);
+        vlayout.add_widget(Box::new(white_color));
+        vertical_canvas.set_layout(vlayout);
 
         let mut canvas = TheCanvas::new();
         canvas.limiter.set_max_width(360);

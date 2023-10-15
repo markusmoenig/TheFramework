@@ -94,13 +94,13 @@ impl TheUI {
                 match event {
                     TheEvent::Focus(id) => {
                         println!("Gained focus {:?}", id);
-                    },
+                    }
                     TheEvent::LostFocus(id) => {
                         println!("Lost focus {:?}", id);
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
                             widget.set_needs_redraw(true);
                         }
-                    },
+                    }
                     _ => {}
                 }
             }

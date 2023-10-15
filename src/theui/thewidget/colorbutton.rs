@@ -18,7 +18,7 @@ impl TheWidget for TheColorButton {
 
             dim: TheDim::zero(),
             color: WHITE,
-            is_dirty: false
+            is_dirty: false,
         }
     }
 
@@ -69,6 +69,7 @@ impl TheWidget for TheColorButton {
         let stride = buffer.stride();
         let mut shrinker = TheDimShrinker::zero();
 
+        println!("drawing {:?}", self.id().name);
         style.draw_widget_border(buffer, self, &mut shrinker, ctx);
 
         ctx.draw.rect(
