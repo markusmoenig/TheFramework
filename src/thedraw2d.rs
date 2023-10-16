@@ -4,10 +4,17 @@ use fontdue::layout::{
 use fontdue::Font;
 
 #[derive(PartialEq)]
-pub enum TheTextAlignment {
+pub enum TheHorizontalAlign {
     Left,
     Center,
     Right,
+}
+
+#[derive(PartialEq)]
+pub enum TheVerticalAlign {
+    Top,
+    Center,
+    Bottom,
 }
 
 #[derive(PartialEq, Debug)]
@@ -332,7 +339,8 @@ impl TheDraw2D {
         text: &str,
         color: &[u8; 4],
         background: &[u8; 4],
-        align: TheTextAlignment,
+        halign: TheHorizontalAlign,
+        valign: TheVerticalAlign,
     ) {
         let mut text_to_use = text.trim_end().to_string().clone();
         text_to_use = text_to_use.replace('\n', "");
@@ -360,14 +368,20 @@ impl TheDraw2D {
         layout.reset(&LayoutSettings {
             max_width: Some(rect.2 as f32),
             max_height: Some(rect.3 as f32),
-            horizontal_align: if align == TheTextAlignment::Left {
+            horizontal_align: if halign == TheHorizontalAlign::Left {
                 HorizontalAlign::Left
-            } else if align == TheTextAlignment::Right {
+            } else if halign == TheHorizontalAlign::Right {
                 HorizontalAlign::Right
             } else {
                 HorizontalAlign::Center
             },
-            vertical_align: VerticalAlign::Middle,
+            vertical_align: if valign == TheVerticalAlign::Top {
+                VerticalAlign::Top
+            } else if valign == TheVerticalAlign::Bottom {
+                VerticalAlign::Bottom
+            } else {
+                VerticalAlign::Middle
+            },
             ..LayoutSettings::default()
         });
         layout.append(fonts, &TextStyle::new(text_to_use.as_str(), size, 0));
@@ -403,7 +417,8 @@ impl TheDraw2D {
         size: f32,
         text: &str,
         color: &[u8; 4],
-        align: TheTextAlignment,
+        halign: TheHorizontalAlign,
+        valign: TheVerticalAlign
     ) {
         let mut text_to_use = text.trim_end().to_string().clone();
         if text_to_use.trim_end().is_empty() {
@@ -430,14 +445,20 @@ impl TheDraw2D {
         layout.reset(&LayoutSettings {
             max_width: Some(rect.2 as f32),
             max_height: Some(rect.3 as f32),
-            horizontal_align: if align == TheTextAlignment::Left {
+            horizontal_align: if halign == TheHorizontalAlign::Left {
                 HorizontalAlign::Left
-            } else if align == TheTextAlignment::Right {
+            } else if halign == TheHorizontalAlign::Right {
                 HorizontalAlign::Right
             } else {
                 HorizontalAlign::Center
             },
-            vertical_align: VerticalAlign::Middle,
+            vertical_align: if valign == TheVerticalAlign::Top {
+                VerticalAlign::Top
+            } else if valign == TheVerticalAlign::Bottom {
+                VerticalAlign::Bottom
+            } else {
+                VerticalAlign::Middle
+            },
             ..LayoutSettings::default()
         });
         layout.append(fonts, &TextStyle::new(text_to_use.as_str(), size, 0));

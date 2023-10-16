@@ -9,4 +9,6 @@ pub enum TheEvent {
     // These events define widget states.
     Focus(TheWidgetId),
     LostFocus(TheWidgetId),
+    Hover(TheWidgetId),
+    LostHover(TheWidgetId),
 }

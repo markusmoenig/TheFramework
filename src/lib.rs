@@ -42,6 +42,9 @@ pub mod prelude {
     pub use crate::theapp::TheApp;
     pub use crate::thecontext::TheContext;
     pub use crate::thedraw2d::TheDraw2D;
+    pub use crate::thedraw2d::TheHorizontalAlign;
+    pub use crate::thedraw2d::TheVerticalAlign;
+
     pub use crate::thetrait::TheTrait;
     pub use crate::WidgetKey;
 

@@ -100,6 +100,15 @@ impl TheUI {
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
                             widget.set_needs_redraw(true);
                         }
+                    },
+                    TheEvent::Hover(id) => {
+                        println!("Gained hover {:?}", id);
+                    }
+                    TheEvent::LostHover(id) => {
+                        println!("Lost hover {:?}", id);
+                        if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
+                            widget.set_needs_redraw(true);
+                        }
                     }
                     _ => {}
                 }
@@ -114,12 +123,31 @@ impl TheUI {
     pub fn touch_down(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let coord = vec2i(x as i32, y as i32);
         if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
-            let event = TheEvent::MouseDown(TheValue::Coordinate(widget.dim().to_local((coord))));
+            let event = TheEvent::MouseDown(TheValue::Coordinate(widget.dim().to_local(coord)));
             widget.on_event(&event, ctx);
 
             self.process_events(ctx);
         }
 
+        true
+    }
+
+    pub fn touch_dragged(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
+        false
+    }
+
+    pub fn touch_up(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
+        false
+    }
+
+    pub fn hover(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
+        let coord = vec2i(x as i32, y as i32);
+        if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
+            let event = TheEvent::MouseDown(TheValue::Coordinate(widget.dim().to_local(coord)));
+            widget.on_event(&event, ctx);
+
+            self.process_events(ctx);
+        }
         true
     }
 }

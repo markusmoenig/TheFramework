@@ -23,4 +23,6 @@ pub enum TheThemeColors {
     DefaultWidgetBorder,
     SelectedWidgetBorder,
     DefaultWidgetBackground,
+
+    SwitchbarBorder,
 }

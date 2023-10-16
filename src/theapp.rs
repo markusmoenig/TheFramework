@@ -270,6 +270,11 @@ impl TheApp {
                         .window_pos_to_pixel(coords)
                         .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
+                    #[cfg(feature = "ui")]
+                    if ui.touch_up(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                        window.request_redraw();
+                    }
+
                     if app.touch_up(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
                         window.request_redraw();
                     }
@@ -283,6 +288,11 @@ impl TheApp {
                             .window_pos_to_pixel(coords)
                             .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
+                        #[cfg(feature = "ui")]
+                        if ui.touch_dragged(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                            window.request_redraw();
+                        }
+
                         if app.touch_dragged(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
                             window.request_redraw();
                         }
@@ -294,6 +304,12 @@ impl TheApp {
                         let pixel_pos: (usize, usize) = pixels
                             .window_pos_to_pixel(coords)
                             .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+
+
+                        #[cfg(feature = "ui")]
+                        if ui.hover(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                            window.request_redraw();
+                        }
 
                         if app.hover(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
                             window.request_redraw();
@@ -603,6 +619,11 @@ impl TheApp {
                             .window_pos_to_pixel(coords)
                             .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
+                        #[cfg(feature = "ui")]
+                        if ui.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                            window.request_redraw();
+                        }
+
                         if app.touch_down(0, pixel_pos.0 as f32, pixel_pos.1 as f32) {
                             window.request_redraw();
                         }
@@ -611,6 +632,11 @@ impl TheApp {
                         let pixel_pos: (usize, usize) = pixels
                             .window_pos_to_pixel(coords)
                             .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+
+                        #[cfg(feature = "ui")]
+                        if ui.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                            window.request_redraw();
+                        }
 
                         if app.touch_down(1, pixel_pos.0 as f32, pixel_pos.1 as f32) {
                             window.request_redraw();

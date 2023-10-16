@@ -65,13 +65,13 @@ impl TheLayout for TheVLayout {
         if self.dim != dim {
             self.dim = dim;
 
-            let x = 10;
+            let x = 5;
             let mut y = 10;
 
             for w in &mut self.widgets {
-                w.set_dim(TheDim::new(dim.x + x, dim.y + y, 60, 60));
+                w.set_dim(TheDim::new(dim.x + x, dim.y + y, 81, 47));
                 w.dim_mut().set_buffer_offset(x, y);
-                y += 40;
+                y += 47 + 4;
             }
         }
     }

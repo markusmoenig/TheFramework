@@ -1,12 +1,12 @@
 use crate::prelude::*;
 
 pub mod colorbutton;
-pub mod sectionheader;
+pub mod switchbar;
 pub mod vlayout;
 
 pub mod prelude {
     pub use crate::theui::thewidget::colorbutton::TheColorButton;
-    pub use crate::theui::thewidget::sectionheader::TheSectionHeader;
+    pub use crate::theui::thewidget::switchbar::TheSwitchbar;
     pub use crate::theui::thewidget::vlayout::TheVLayout;
 
     pub use crate::theui::thewidget::TheLayout;

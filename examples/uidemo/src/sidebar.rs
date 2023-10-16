@@ -1,4 +1,4 @@
-use theframework::theui::thewidget::sectionheader::TheSectionHeaderTrait;
+use theframework::theui::thewidget::switchbar::TheSectionHeaderTrait;
 
 use crate::prelude::*;
 
@@ -11,7 +11,7 @@ impl Sidebar {
 
     pub fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
         let mut vertical_canvas = TheCanvas::new();
-        vertical_canvas.limiter.set_max_width(80);
+        vertical_canvas.limiter.set_max_width(90);
 
         let mut white_color = TheColorButton::new("Box".to_string());
         white_color.set_color([255, 255, 255, 255]);
@@ -28,8 +28,8 @@ impl Sidebar {
         canvas.set_widget(red_color);
 
         let mut header = TheCanvas::new();
-        header.limiter.set_max_height(22);
-        let mut section_header = TheSectionHeader::new("Section Header".to_string());
+        header.limiter.set_max_height(21);
+        let mut section_header = TheSwitchbar::new("Section Header".to_string());
         section_header.set_text("Section Header".to_string());
         header.set_widget(section_header);
 

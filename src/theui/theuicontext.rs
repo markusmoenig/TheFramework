@@ -11,6 +11,7 @@ pub struct TheUIContext {
 
     pub focus: Option<TheWidgetId>,
     pub keyboard_focus: Option<TheWidgetId>,
+    pub hover: Option<TheWidgetId>,
 
     pub state_events_sender: Option<Sender<TheEvent>>,
 }
@@ -29,7 +30,7 @@ impl TheUIContext {
 
         for file in Embedded::iter() {
             let name = file.as_ref();
-            if name.starts_with("fonts/Roboto-Medium") {
+            if name.starts_with("fonts/Roboto-Bold") {
                 if let Some(font_bytes) = Embedded::get(name) {
                     if let Ok(f) =
                         Font::from_bytes(font_bytes.data, fontdue::FontSettings::default())
@@ -70,6 +71,7 @@ impl TheUIContext {
         Self {
             focus: None,
             keyboard_focus: None,
+            hover: None,
 
             font,
             code_font,
@@ -94,6 +96,17 @@ impl TheUIContext {
                 self.send_state(TheEvent::LostFocus(focus.clone()));
             }
             self.send_state(TheEvent::Focus(id.clone()));
+            self.focus = Some(id.clone());
+        }
+    }
+
+    /// Sets the hover to the given widget
+    pub fn set_hover(&mut self, id: &TheWidgetId) {
+        if !id.equals(&self.focus) {
+            if let Some(focus) = &self.focus {
+                self.send_state(TheEvent::LostHover(focus.clone()));
+            }
+            self.send_state(TheEvent::Hover(id.clone()));
             self.focus = Some(id.clone());
         }
     }

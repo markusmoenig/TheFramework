@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-pub struct TheSectionHeader {
+pub struct TheSwitchbar {
     widget_id: TheWidgetId,
 
     dim: TheDim,
@@ -8,7 +8,7 @@ pub struct TheSectionHeader {
     is_dirty: bool,
 }
 
-impl TheWidget for TheSectionHeader {
+impl TheWidget for TheSwitchbar {
     fn new(name: String) -> Self
     where
         Self: Sized,
@@ -67,9 +67,9 @@ impl TheWidget for TheSectionHeader {
         let utuple = self.dim.to_buffer_utuple();
 
         ctx.draw
-            .rect_outline(buffer.pixels_mut(), &utuple, stride, &BLACK);
+            .rect_outline(buffer.pixels_mut(), &utuple, stride, style.theme().color(SwitchbarBorder));
 
-        if let Some(icon) = ctx.ui.icon("dark_sectionheader") {
+        if let Some(icon) = ctx.ui.icon("dark_switchbar") {
             for x in 1..utuple.2 - 1 {
                 let r = (utuple.0 + x, utuple.1, 1, icon.2 as usize);
                 ctx.draw
@@ -77,34 +77,14 @@ impl TheWidget for TheSectionHeader {
             }
         }
 
-        if let Some(icon) = ctx.ui.icon("caret-double-right-fill") {
-            let r = (utuple.0 + 5, utuple.1 + 3, icon.1 as usize, icon.2 as usize);
+        if let Some(icon) = ctx.ui.icon("switchbar_icon") {
+            let r = (utuple.0 + 6, utuple.1 + 6, icon.1 as usize, icon.2 as usize);
             ctx.draw
-                .copy_slice(buffer.pixels_mut(), &icon.0, &r, stride);
+                .blend_slice(buffer.pixels_mut(), &icon.0, &r, stride);
         }
 
-        if let Some(font) = &ctx.ui.font {
-            ctx.draw.text_rect_blend(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_utuple(),
-                stride,
-                font,
-                16.0,
-                &self.id().name,
-                &WHITE,
-                crate::thedraw2d::TheTextAlignment::Center,
-            );
-        }
-
-        /*
-        style.draw_widget_border(buffer, &self.dim, &mut shrinker, ctx);
-
-        ctx.draw.rect(
-            buffer.pixels_mut(),
-            &self.dim.to_buffer_shrunk_utuple(&shrinker),
-            stride,
-            &self.color,
-        );
+        let mut shrinker = TheDimShrinker::zero();
+        shrinker.shrink_by(30, 1, 0, 0);
 
         if let Some(font) = &ctx.ui.font {
             ctx.draw.text_rect_blend(
@@ -112,12 +92,13 @@ impl TheWidget for TheSectionHeader {
                 &self.dim.to_buffer_shrunk_utuple(&shrinker),
                 stride,
                 font,
-                20.0,
+                15.0,
                 &self.id().name,
-                &BLACK,
-                crate::thedraw2d::TheTextAlignment::Center,
+                &WHITE,
+                TheHorizontalAlign::Left,
+                TheVerticalAlign::Center
             );
-        }*/
+        }
     }
 }
 
@@ -125,7 +106,7 @@ pub trait TheSectionHeaderTrait {
     fn set_text(&mut self, text: String);
 }
 
-impl TheSectionHeaderTrait for TheSectionHeader {
+impl TheSectionHeaderTrait for TheSwitchbar {
     fn set_text(&mut self, text: String) {
         self.text = text;
     }

@@ -69,7 +69,6 @@ impl TheWidget for TheColorButton {
         let stride = buffer.stride();
         let mut shrinker = TheDimShrinker::zero();
 
-        println!("drawing {:?}", self.id().name);
         style.draw_widget_border(buffer, self, &mut shrinker, ctx);
 
         ctx.draw.rect(
@@ -88,7 +87,8 @@ impl TheWidget for TheColorButton {
                 15.0,
                 &self.id().name,
                 &BLACK,
-                crate::thedraw2d::TheTextAlignment::Center,
+                TheHorizontalAlign::Center,
+                TheVerticalAlign::Center,
             );
         }
 
