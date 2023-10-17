@@ -26,16 +26,9 @@ impl TheWidget for TheSwitchbar {
         &self.widget_id
     }
 
-    fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) {
-        /*
-        println!("event ({}): {:?}", self.widget_id.name, event);
-        match event {
-            TheEvent::MouseDown(coord) => {
-                ctx.ui.set_focus(self.id());
-            }
-            _ => {}
-        }*/
-    }
+    // fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
+    //     false
+    // }
 
     fn dim(&self) -> &TheDim {
         &self.dim
@@ -64,10 +57,14 @@ impl TheWidget for TheSwitchbar {
     ) {
         let stride = buffer.stride();
 
-        let utuple = self.dim.to_buffer_utuple();
+        let utuple: (usize, usize, usize, usize) = self.dim.to_buffer_utuple();
 
-        ctx.draw
-            .rect_outline(buffer.pixels_mut(), &utuple, stride, style.theme().color(SwitchbarBorder));
+        ctx.draw.rect_outline(
+            buffer.pixels_mut(),
+            &utuple,
+            stride,
+            style.theme().color(SwitchbarBorder),
+        );
 
         if let Some(icon) = ctx.ui.icon("dark_switchbar") {
             for x in 1..utuple.2 - 1 {
@@ -96,7 +93,7 @@ impl TheWidget for TheSwitchbar {
                 &self.id().name,
                 &WHITE,
                 TheHorizontalAlign::Left,
-                TheVerticalAlign::Center
+                TheVerticalAlign::Center,
             );
         }
     }

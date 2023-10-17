@@ -26,15 +26,18 @@ impl TheWidget for TheColorButton {
         &self.widget_id
     }
 
-    fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) {
-        println!("event ({}): {:?}", self.widget_id.name, event);
+    fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
+        let mut redraw = false;
+        // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
             TheEvent::MouseDown(coord) => {
                 ctx.ui.set_focus(self.id());
                 self.is_dirty = true;
+                redraw = true;
             }
             _ => {}
         }
+        redraw
     }
 
     fn dim(&self) -> &TheDim {

@@ -6,6 +6,12 @@ pub struct TheVLayout {
     dim: TheDim,
 
     widgets: Vec<Box<dyn TheWidget>>,
+
+    content_size: Vec2i,
+    margin: Vec4i,
+    padding: i32,
+
+    background: TheThemeColors,
 }
 
 impl TheLayout for TheVLayout {
@@ -19,7 +25,29 @@ impl TheLayout for TheVLayout {
             dim: TheDim::zero(),
 
             widgets: vec![],
+
+            content_size: vec2i(40, 40),
+            margin: vec4i(10, 10, 10, 10),
+            padding: 5,
+
+            background: DefaultWidgetBackground,
         }
+    }
+
+    fn set_fixed_content_size(&mut self, size: Vec2i) {
+        self.content_size = size;
+    }
+
+    fn set_margin(&mut self, margin: Vec4i) {
+        self.margin = margin;
+    }
+
+    fn set_padding(&mut self, padding: i32) {
+        self.padding = padding;
+    }
+
+    fn set_background_color(&mut self, color: TheThemeColors) {
+        self.background = color;
     }
 
     fn widgets(&mut self) -> &mut Vec<Box<dyn TheWidget>> {
@@ -65,13 +93,13 @@ impl TheLayout for TheVLayout {
         if self.dim != dim {
             self.dim = dim;
 
-            let x = 5;
-            let mut y = 10;
+            let x = self.margin.x;
+            let mut y = self.margin.y;
 
             for w in &mut self.widgets {
-                w.set_dim(TheDim::new(dim.x + x, dim.y + y, 81, 47));
+                w.set_dim(TheDim::new(dim.x + x, dim.y + y, self.content_size.x, self.content_size.y));
                 w.dim_mut().set_buffer_offset(x, y);
-                y += 47 + 4;
+                y += self.content_size.y + self.padding;
             }
         }
     }
@@ -88,7 +116,7 @@ impl TheLayout for TheVLayout {
             buffer.pixels_mut(),
             &self.dim.to_buffer_utuple(),
             stride,
-            style.theme().color(DefaultWidgetBackground),
+            style.theme().color(self.background),
         );
 
         let mut redraw = false;
@@ -101,9 +129,9 @@ impl TheLayout for TheVLayout {
         }
 
         //if redraw {
-            for w in &mut self.widgets {
-                w.draw(buffer, style, ctx);
-            }
+        for w in &mut self.widgets {
+            w.draw(buffer, style, ctx);
+        }
         //}
     }
 }

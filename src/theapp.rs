@@ -305,7 +305,6 @@ impl TheApp {
                             .window_pos_to_pixel(coords)
                             .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
-
                         #[cfg(feature = "ui")]
                         if ui.hover(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
                             window.request_redraw();
@@ -332,6 +331,11 @@ impl TheApp {
                     ui.canvas
                         .set_dim(TheDim::new(0, 0, width as i32, height as i32));
 
+                    window.request_redraw();
+                }
+
+                #[cfg(feature = "ui")]
+                if ui.needs_update(&mut ctx) {
                     window.request_redraw();
                 }
 

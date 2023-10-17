@@ -14,12 +14,15 @@ impl TheTheme for TheDarkTheme {
     {
         let mut colors = FxHashMap::default();
 
-        colors.insert(DefaultWidgetBorder, [71, 71, 71, 255]);
-        // colors.insert(SelectedWidgetBorder, [55, 68, 98, 255]);
-        colors.insert(SelectedWidgetBorder, [249, 249, 96, 255]);
-        colors.insert(DefaultWidgetBackground, [130, 130, 130, 255]);
+        colors.insert(DefaultWidgetBackground, [116, 116, 116, 255]);
+        colors.insert(DefaultWidgetBorder, [146, 146, 146, 255]);
+        colors.insert(SelectedWidgetBorder, [187, 122, 208, 255]);
 
-        colors.insert(SwitchbarBorder, [81, 81, 81, 255]);
+        colors.insert(SwitchbarBorder, [86, 86, 86, 255]);
+
+        colors.insert(SectionbarBackground, [130, 130, 130, 255]);
+        colors.insert(SectionbarNormalTextColor, [255, 255, 255, 255]);
+        colors.insert(SectionbarSelectedTextColor, [96, 96, 96, 255]);
 
         Self { colors }
     }

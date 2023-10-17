@@ -30,8 +30,9 @@ lazy_static! {
     static ref CTX: Mutex<TheContext> = Mutex::new(TheContext::new(800, 600));
 }
 
+/// # Safety
 #[no_mangle]
-pub extern "C" fn rust_draw(pixels: *mut u8, width: u32, height: u32) {
+pub unsafe extern "C" fn rust_draw(pixels: *mut u8, width: u32, height: u32) {
     let length = width as usize * height as usize * 4;
     let slice = unsafe { std::slice::from_raw_parts_mut(pixels, length) };
 
@@ -82,10 +83,11 @@ pub extern "C" fn rust_touch_wheel(x: f32, y: f32) -> bool {
         .mouse_wheel((x as isize, y as isize), &mut CTX.lock().unwrap())
 }
 
+/// # Safety
 #[no_mangle]
-pub extern "C" fn rust_key_down(p: *const c_char) -> bool {
+pub unsafe extern "C" fn rust_key_down(p: *const c_char) -> bool {
     let c_str = unsafe { CStr::from_ptr(p) };
-    if let Some(key) = c_str.to_str().ok() {
+    if let Ok(key) = c_str.to_str() {
         if let Some(ch) = key.chars().next() {
             return APP
                 .lock()
@@ -148,10 +150,11 @@ pub extern "C" fn rust_key_modifier_changed(
     APP.lock().unwrap().modifier_changed(shift, ctrl, alt, logo)
 }
 
+/// # Safety
 #[no_mangle]
-pub extern "C" fn rust_dropped_file(p: *const c_char) {
+pub unsafe extern "C" fn rust_dropped_file(p: *const c_char) {
     let path_str = unsafe { CStr::from_ptr(p) };
-    if let Some(path) = path_str.to_str().ok() {
+    if let Ok(path) = path_str.to_str() {
         APP.lock().unwrap().dropped_file(path.to_string());
     }
 }
@@ -183,10 +186,11 @@ pub extern "C" fn rust_copy() -> *mut c_char {
     CString::new(text).unwrap().into_raw()
 }
 
+/// # Safety
 #[no_mangle]
-pub extern "C" fn rust_paste(p: *const c_char) {
+pub unsafe extern "C" fn rust_paste(p: *const c_char) {
     let text_str = unsafe { CStr::from_ptr(p) };
-    if let Some(text) = text_str.to_str().ok() {
+    if let Ok(text) = text_str.to_str() {
         APP.lock().unwrap().paste(text.to_string());
     }
 }

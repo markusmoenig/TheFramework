@@ -95,24 +95,33 @@ impl TheUIContext {
             if let Some(focus) = &self.focus {
                 self.send_state(TheEvent::LostFocus(focus.clone()));
             }
-            self.send_state(TheEvent::Focus(id.clone()));
+            self.send_state(TheEvent::GainedFocus(id.clone()));
             self.focus = Some(id.clone());
         }
     }
 
     /// Sets the hover to the given widget
     pub fn set_hover(&mut self, id: &TheWidgetId) {
-        if !id.equals(&self.focus) {
-            if let Some(focus) = &self.focus {
-                self.send_state(TheEvent::LostHover(focus.clone()));
+        if !id.equals(&self.hover) {
+            if let Some(hover) = &self.hover {
+                self.send_state(TheEvent::LostHover(hover.clone()));
             }
-            self.send_state(TheEvent::Hover(id.clone()));
-            self.focus = Some(id.clone());
+            self.send_state(TheEvent::GainedHover(id.clone()));
+            self.hover = Some(id.clone());
         }
     }
 
+    /// Indicates that the state of the given widget changed
+    pub fn send_widget_state_changed(&mut self, id: &TheWidgetId, state: TheWidgetState) {
+        self.send_state(TheEvent::StateChanged(id.clone(), state));
+    }
+
+    pub fn set_widget_state(&mut self, name: String, state: TheWidgetState) {
+        self.send_state(TheEvent::SetState(name, state));
+    }
+
     /// Sends the given state event
-    fn send_state(&mut self, event: TheEvent) {
+    pub fn send_state(&mut self, event: TheEvent) {
         if let Some(sender) = &mut self.state_events_sender {
             sender.send(event).unwrap();
         }

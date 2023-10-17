@@ -1,14 +1,18 @@
 use crate::prelude::*;
 use theframework::prelude::*;
 
-pub struct UIDemo {}
+pub struct UIDemo {
+    sidebar: Sidebar,
+}
 
 impl TheTrait for UIDemo {
     fn new() -> Self
     where
         Self: Sized,
     {
-        Self {}
+        Self {
+            sidebar: Sidebar::new(),
+        }
     }
 
     fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
@@ -29,8 +33,7 @@ impl TheTrait for UIDemo {
         top_canvas.set_widget(green_color);
 
         // Right
-        let mut sidebar = Sidebar::new();
-        sidebar.init_ui(ui, ctx);
+        self.sidebar.init_ui(ui, ctx);
 
         // Bottom
 
@@ -48,5 +51,11 @@ impl TheTrait for UIDemo {
         ui.canvas.set_bottom(bottom_canvas);
         ui.canvas
             .set_widget(TheColorButton::new("White".to_string()));
+    }
+
+    fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
+        let mut redraw = false;
+        redraw = self.sidebar.needs_update(ctx);
+        redraw
     }
 }

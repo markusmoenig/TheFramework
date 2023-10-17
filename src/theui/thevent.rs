@@ -5,10 +5,14 @@ use crate::prelude::*;
 pub enum TheEvent {
     // These events are passed to the on_event function of the widgets and cover user interaction.
     MouseDown(TheValue),
+    Hover(TheValue),
 
     // These events define widget states.
-    Focus(TheWidgetId),
+    StateChanged(TheWidgetId, TheWidgetState),
+    SetState(String, TheWidgetState),
+
+    GainedFocus(TheWidgetId),
     LostFocus(TheWidgetId),
-    Hover(TheWidgetId),
+    GainedHover(TheWidgetId),
     LostHover(TheWidgetId),
 }

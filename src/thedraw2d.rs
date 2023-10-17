@@ -418,7 +418,7 @@ impl TheDraw2D {
         text: &str,
         color: &[u8; 4],
         halign: TheHorizontalAlign,
-        valign: TheVerticalAlign
+        valign: TheVerticalAlign,
     ) {
         let mut text_to_use = text.trim_end().to_string().clone();
         if text_to_use.trim_end().is_empty() {
@@ -571,8 +571,15 @@ impl TheDraw2D {
         for y in 0..rect.3 {
             let d = rect.0 * 4 + (y + rect.1) * dest_stride * 4;
             let s = y * rect.2 * 3;
-            let p = [source[s], source[s + 1], source[s + 2], 255];
-            dest[d..d + rect.2 * 4].copy_from_slice(&p);
+
+            let mut p : Vec<u8> = vec![0; rect.2 * 4];
+            for x in 0..rect.2 {
+                let o = x * 4;
+                let o3 = x * 3;
+                let t = [source[s + o3], source[s + o3 + 1], source[s + o3 + 2], 255];
+                p[o..o + 4].copy_from_slice(&t);
+            }
+            dest[d..d + rect.2 * 4].copy_from_slice(&p[0..rect.2 * 4]);
         }
     }
 
