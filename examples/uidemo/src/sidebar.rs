@@ -17,7 +17,6 @@ impl Sidebar {
 
     pub fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
         let mut vertical_canvas = TheCanvas::new();
-        vertical_canvas.limiter.set_max_width(90);
 
         let mut cube_sectionbar_button = TheSectionbarButton::new("Cube".to_string());
         cube_sectionbar_button.set_text("Cube".to_string());
@@ -32,20 +31,20 @@ impl Sidebar {
         vlayout.set_margin(vec4i(5, 10, 5, 10));
         vlayout.set_padding(4);
         vlayout.set_background_color(SectionbarBackground);
+        vlayout.limiter_mut().set_max_width(90);
         vertical_canvas.set_layout(vlayout);
 
         let mut canvas = TheCanvas::new();
-        canvas.limiter.set_max_width(360);
 
         let mut red_color = TheColorButton::new("Red".to_string());
         red_color.set_color([255, 0, 0, 255]);
+        red_color.limiter_mut().set_max_width(360);
         canvas.set_widget(red_color);
 
         let mut header = TheCanvas::new();
-        header.limiter.set_max_height(21);
-        let mut section_header = TheSwitchbar::new("Section Header".to_string());
-        section_header.set_text("Section Header".to_string());
-        header.set_widget(section_header);
+        let mut switchbar = TheSwitchbar::new("Section Header".to_string());
+        switchbar.set_text("Section Header".to_string());
+        header.set_widget(switchbar);
 
         canvas.set_top(header);
         canvas.set_right(vertical_canvas);

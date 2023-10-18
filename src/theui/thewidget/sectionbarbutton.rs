@@ -2,6 +2,7 @@ use crate::prelude::*;
 
 pub struct TheSectionbarButton {
     widget_id: TheWidgetId,
+    limiter: TheSizeLimiter,
 
     state: TheWidgetState,
 
@@ -17,6 +18,7 @@ impl TheWidget for TheSectionbarButton {
     {
         Self {
             widget_id: TheWidgetId::new(name),
+            limiter: TheSizeLimiter::new(),
 
             state: TheWidgetState::None,
 
@@ -67,6 +69,14 @@ impl TheWidget for TheSectionbarButton {
             self.dim = dim;
             self.is_dirty = true;
         }
+    }
+
+    fn limiter(&self) -> &TheSizeLimiter {
+        &self.limiter
+    }
+
+    fn limiter_mut(&mut self) -> &mut TheSizeLimiter {
+        &mut self.limiter
     }
 
     fn state(&self) -> TheWidgetState { self.state }

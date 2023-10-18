@@ -3,6 +3,8 @@ use crate::prelude::*;
 pub struct TheSwitchbar {
     widget_id: TheWidgetId,
 
+    limiter: TheSizeLimiter,
+
     dim: TheDim,
     text: String,
     is_dirty: bool,
@@ -13,8 +15,12 @@ impl TheWidget for TheSwitchbar {
     where
         Self: Sized,
     {
+        let mut limiter = TheSizeLimiter::new();
+        limiter.set_max_height(21);
+
         Self {
             widget_id: TheWidgetId::new(name),
+            limiter,
 
             dim: TheDim::zero(),
             text: "".to_string(),
@@ -43,6 +49,14 @@ impl TheWidget for TheSwitchbar {
             self.dim = dim;
             self.is_dirty = true;
         }
+    }
+
+    fn limiter(&self) -> &TheSizeLimiter {
+        &self.limiter
+    }
+
+    fn limiter_mut(&mut self) -> &mut TheSizeLimiter {
+        &mut self.limiter
     }
 
     fn needs_redraw(&mut self) -> bool {

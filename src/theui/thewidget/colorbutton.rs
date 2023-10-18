@@ -2,6 +2,7 @@ use crate::prelude::*;
 
 pub struct TheColorButton {
     widget_id: TheWidgetId,
+    limiter: TheSizeLimiter,
 
     dim: TheDim,
     color: RGBA,
@@ -15,6 +16,7 @@ impl TheWidget for TheColorButton {
     {
         Self {
             widget_id: TheWidgetId::new(name),
+            limiter: TheSizeLimiter::new(),
 
             dim: TheDim::zero(),
             color: WHITE,
@@ -26,11 +28,12 @@ impl TheWidget for TheColorButton {
         &self.widget_id
     }
 
+    #[allow(clippy::single_match)]
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
-            TheEvent::MouseDown(coord) => {
+            TheEvent::MouseDown(_coord) => {
                 ctx.ui.set_focus(self.id());
                 self.is_dirty = true;
                 redraw = true;
@@ -53,6 +56,14 @@ impl TheWidget for TheColorButton {
             self.dim = dim;
             self.is_dirty = true;
         }
+    }
+
+    fn limiter(&self) -> &TheSizeLimiter {
+        &self.limiter
+    }
+
+    fn limiter_mut(&mut self) -> &mut TheSizeLimiter {
+        &mut self.limiter
     }
 
     fn needs_redraw(&mut self) -> bool {

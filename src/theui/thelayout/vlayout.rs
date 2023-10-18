@@ -2,6 +2,7 @@ use crate::prelude::*;
 
 pub struct TheVLayout {
     widget_id: TheWidgetId,
+    limiter: TheSizeLimiter,
 
     dim: TheDim,
 
@@ -21,6 +22,7 @@ impl TheLayout for TheVLayout {
     {
         Self {
             widget_id: TheWidgetId::new(name),
+            limiter: TheSizeLimiter::new(),
 
             dim: TheDim::zero(),
 
@@ -102,6 +104,14 @@ impl TheLayout for TheVLayout {
                 y += self.content_size.y + self.padding;
             }
         }
+    }
+
+    fn limiter(&self) -> &TheSizeLimiter {
+        &self.limiter
+    }
+
+    fn limiter_mut(&mut self) -> &mut TheSizeLimiter {
+        &mut self.limiter
     }
 
     fn draw(

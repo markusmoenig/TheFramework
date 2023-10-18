@@ -39,6 +39,12 @@ pub trait TheWidget {
     /// Returns a mutable reference to the dimensions of the widget.
     fn dim_mut(&mut self) -> &mut TheDim;
 
+    /// Returns a reference to the size limiter of the widget.
+    fn limiter(&self) -> &TheSizeLimiter;
+
+    /// Returns a mutable reference to the limiter of the widget.
+    fn limiter_mut(&mut self) -> &mut TheSizeLimiter;
+
     /// Set the dimensions of the widget
     fn set_dim(&mut self, dim: TheDim) {}
 

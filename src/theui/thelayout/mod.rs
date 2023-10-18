@@ -24,6 +24,12 @@ pub trait TheLayout {
     /// Set the dimensions of the widget
     fn set_dim(&mut self, dim: TheDim) {}
 
+    /// Returns a reference to the size limiter of the widget.
+    fn limiter(&self) -> &TheSizeLimiter;
+
+    /// Returns a mutable reference to the limiter of the widget.
+    fn limiter_mut(&mut self) -> &mut TheSizeLimiter;
+
     /// Sets the fixed size of content in the layout
     fn set_fixed_content_size(&mut self, size: Vec2i) {}
 

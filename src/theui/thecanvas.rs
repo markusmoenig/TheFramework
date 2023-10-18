@@ -6,8 +6,6 @@ pub struct TheCanvas {
 
     pub dim: TheDim,
 
-    pub limiter: TheSizeLimiter,
-
     pub root: bool,
 
     pub top_is_expanding: bool,
@@ -37,8 +35,6 @@ impl TheCanvas {
 
             dim: TheDim::zero(),
 
-            limiter: TheSizeLimiter::new(),
-
             root: false,
             top_is_expanding: true,
 
@@ -64,6 +60,46 @@ impl TheCanvas {
                 layout.set_dim(dim);
             }
         }
+    }
+
+    /// Returns a reference to the limiter of the widget.
+    fn _limiter(&self) -> Option<&TheSizeLimiter> {
+        if let Some(widget) = &self.widget {
+            return Some(widget.limiter())
+        } else if let Some(layout) = &self.layout {
+            return Some(layout.limiter())
+        }
+        None
+    }
+
+    /// Returns a mutable reference to the limiter of the widget.
+    fn _limiter_mut(&mut self) -> Option<&mut TheSizeLimiter> {
+        if let Some(widget) = &mut self.widget {
+            return Some(widget.limiter_mut())
+        } else if let Some(layout) = &mut self.layout {
+            return Some(layout.limiter_mut())
+        }
+        None
+    }
+
+    /// Returns the width of the limiter considering the maximum width of the widget.
+    fn get_limiter_width(&self, max_width: i32) -> i32 {
+        if let Some(widget) = &self.widget {
+            return widget.limiter().get_width(max_width);
+        } else if let Some(layout) = &self.layout {
+            return layout.limiter().get_width(max_width);
+        }
+        max_width
+    }
+
+    /// Returns the height of the limiter considering the given maximum height.
+    fn get_limiter_height(&self, max_height: i32) -> i32 {
+        if let Some(widget) = &self.widget {
+            return widget.limiter().get_height(max_height);
+        } else if let Some(layout) = &self.layout {
+            return layout.limiter().get_height(max_height);
+        }
+        max_height
     }
 
     /// Sets the widget.
@@ -208,8 +244,8 @@ impl TheCanvas {
 
         if self.top_is_expanding {
             if let Some(top) = &mut self.top {
-                let top_width = top.limiter.get_width(w);
-                let top_height = top.limiter.get_height(h);
+                let top_width = top.get_limiter_width(w);
+                let top_height = top.get_limiter_height(h);
                 top.set_dim(TheDim::new(x + width - top_width, y, top_width, top_height));
                 top.offset = vec2i(0, 0);
                 y += top_height;
@@ -219,8 +255,8 @@ impl TheCanvas {
         }
 
         if let Some(left) = &mut self.left {
-            let left_width = left.limiter.get_width(w);
-            let left_height = left.limiter.get_height(h);
+            let left_width = left.get_limiter_width(w);
+            let left_height = left.get_limiter_height(h);
             left.set_dim(TheDim::new(x, y, left_width, left_height));
             left.offset = vec2i(0, buffer_y);
             x += left_width;
@@ -230,8 +266,8 @@ impl TheCanvas {
 
         let mut right_width = 0;
         if let Some(right) = &mut self.right {
-            right_width = right.limiter.get_width(w);
-            let right_height = right.limiter.get_height(h);
+            right_width = right.get_limiter_width(w);
+            let right_height = right.get_limiter_height(h);
             right.set_dim(TheDim::new(
                 x + w - right_width,
                 y,
@@ -244,8 +280,8 @@ impl TheCanvas {
 
         if !self.top_is_expanding {
             if let Some(top) = &mut self.top {
-                let top_width = top.limiter.get_width(w);
-                let top_height = top.limiter.get_height(h);
+                let top_width = top.get_limiter_width(w);
+                let top_height = top.get_limiter_height(h);
                 top.set_dim(TheDim::new(
                     x + width - top_width - right_width,
                     y,
@@ -261,7 +297,7 @@ impl TheCanvas {
 
         if let Some(bottom) = &mut self.bottom {
             let bottom_width = w;
-            let bottom_height = bottom.limiter.get_height(h);
+            let bottom_height = bottom.get_limiter_height(h);
             bottom.set_dim(TheDim::new(
                 x,
                 y + h - bottom_height,
