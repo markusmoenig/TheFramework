@@ -25,6 +25,9 @@ impl TheTheme for TheDarkTheme {
         colors.insert(SectionbarNormalTextColor, [255, 255, 255, 255]);
         colors.insert(SectionbarSelectedTextColor, [96, 96, 96, 255]);
 
+        colors.insert(MenubarPopupBackground, [124, 124, 124, 255]);
+        colors.insert(MenubarPopupBorder, [153, 153, 153, 255]);
+
         Self { colors }
     }
 

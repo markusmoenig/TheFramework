@@ -30,4 +30,8 @@ pub enum TheThemeColors {
     SectionbarBackground,
     SectionbarNormalTextColor,
     SectionbarSelectedTextColor,
+
+    MenubarPopupBackground,
+    MenubarPopupBorder,
+
 }

@@ -29,7 +29,7 @@ impl TheTrait for UIDemo {
 
         let menubar = TheMenubar::new("Menubar".to_string());
 
-        let mut yellow_color = TheDropdownMenu::new("Yellow".to_string());
+        let mut yellow_color = TheDropdownMenu::new("DropDown".to_string());
         yellow_color.add_option("Option #1".to_string());
         yellow_color.add_option("Option #2".to_string());
 

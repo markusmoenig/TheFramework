@@ -143,4 +143,10 @@ impl TheUIContext {
             sender.send(event).unwrap();
         }
     }
+
+
+    /// Indicates that the state of the given widget changed
+    pub fn send_widget_value_changed(&mut self, id: &TheWidgetId, value: TheValue) {
+        self.send_state(TheEvent::ValueChanged(id.clone(), value));
+    }
 }

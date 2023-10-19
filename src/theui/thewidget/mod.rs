@@ -63,6 +63,9 @@ pub trait TheWidget {
     /// Set the widget state.
     fn set_state(&mut self, state: TheWidgetState) {}
 
+    /// Set the widget value.
+    fn set_value(&mut self, value: TheValue) {}
+
     /// Draw the widget in the given style
     fn draw(
         &mut self,

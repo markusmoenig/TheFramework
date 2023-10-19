@@ -125,25 +125,35 @@ impl TheUI {
                             widget.set_state(state);
                         }
                         self.is_dirty = true;
-                    }
+                    },
                     TheEvent::GainedFocus(id) => {
                         println!("Gained focus {:?}", id);
-                    }
+                    },
                     TheEvent::LostFocus(id) => {
                         println!("Lost focus {:?}", id);
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
                             widget.set_needs_redraw(true);
                         }
-                    }
+                    },
                     TheEvent::GainedHover(id) => {
                         println!("Gained hover {:?}", id);
-                    }
+                    },
                     TheEvent::LostHover(id) => {
                         println!("Lost hover {:?}", id);
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
                             widget.set_needs_redraw(true);
                         }
-                    }
+                    },
+                    TheEvent::ValueChanged(id, value) => {
+                        println!("Widget Value changed {:?}: {:?}", id, value);
+                    },
+                    TheEvent::SetValue(name, value) => {
+                        println!("Set Value {:?}: {:?}", name, value);
+                        if let Some(widget) = self.canvas.get_widget(Some(&name), None) {
+                            widget.set_value(value);
+                        }
+                        self.is_dirty = true;
+                    },
                     _ => {}
                 }
             }
@@ -168,7 +178,21 @@ impl TheUI {
     }
 
     pub fn touch_dragged(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
-        false
+        let mut redraw = false;
+        let coord = vec2i(x as i32, y as i32);
+
+        if let Some(id) = &ctx.ui.focus {
+            if let Some(widget) = self.canvas.get_widget(Some(&id.name), Some(&id.uuid)) {
+                let event = TheEvent::MouseDragged(TheValue::Coordinate(widget.dim().to_local(coord)));
+                redraw = widget.on_event(&event, ctx);
+                self.process_events(ctx);
+            }
+        } else if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
+            let event = TheEvent::MouseDragged(TheValue::Coordinate(widget.dim().to_local(coord)));
+            redraw = widget.on_event(&event, ctx);
+            self.process_events(ctx);
+        }
+        redraw
     }
 
     pub fn touch_up(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {

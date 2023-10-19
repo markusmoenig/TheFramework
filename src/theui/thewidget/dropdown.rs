@@ -8,9 +8,9 @@ pub struct TheDropdownMenu {
 
     options: Vec<String>,
     selected: i32,
+    original: i32,
 
     dim: TheDim,
-    color: RGBA,
     is_dirty: bool,
 }
 
@@ -31,9 +31,9 @@ impl TheWidget for TheDropdownMenu {
 
             options: vec![],
             selected: 0,
+            original: 0,
 
             dim: TheDim::zero(),
-            color: WHITE,
             is_dirty: false,
         }
     }
@@ -53,8 +53,23 @@ impl TheWidget for TheDropdownMenu {
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
                     ctx.ui.set_focus(self.id());
                     ctx.ui.set_overlay(self.id());
+                    self.original = self.selected;
                 }
                 redraw = true;
+            }
+            TheEvent::MouseDragged(coord) => {
+                if !self.options.is_empty() {
+                    if let Some(coord) = coord.to_vec2i() {
+                        let y: i32 = coord.y - (self.dim.y + 10);
+                        if y >= 0 {
+                            let index = y / 20;
+                            if index < self.options.len() as i32 && index != self.selected {
+                                self.selected = index;
+                            }
+                        }
+                    }
+                    redraw = true;
+                }
             }
             TheEvent::MouseUp(_coord) => {
                 self.is_dirty = true;
@@ -62,6 +77,11 @@ impl TheWidget for TheDropdownMenu {
                     self.state = TheWidgetState::None;
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
                     ctx.ui.clear_overlay();
+
+                    if self.selected != self.original {
+                        let text = self.options[self.selected as usize].clone();
+                        ctx.ui.send_widget_value_changed(self.id(), TheValue::Text(text));
+                    }
                 }
                 redraw = true;
             }
@@ -201,9 +221,46 @@ impl TheWidget for TheDropdownMenu {
         ctx: &mut TheContext,
     ) -> TheRGBABuffer {
 
-        let mut dim = TheDim::new(self.dim.x, self.dim.y + 20, 142, 100);
+        let len = self.options.len();
+        let width = 142;
+        let height = 2 + len * 20 + (if len > 1 { len - 1 } else { 0 });
 
-        let buffer = TheRGBABuffer::new(dim);
+        let dim = TheDim::new(self.dim.x, self.dim.y + 20, width as i32, height as i32);
+
+        let mut buffer = TheRGBABuffer::new(dim);
+        ctx.draw.rect(buffer.pixels_mut(), &(0, 0, width, height), width, style.theme().color(MenubarPopupBackground));
+
+        ctx.draw.rect_outline(buffer.pixels_mut(), &(0, 0, width, height), width, style.theme().color(MenubarPopupBorder));
+
+        let x = 0;
+        let mut y = 0;
+
+        for i in 0..len {
+
+            if i == self.selected as usize {
+                ctx.draw.rect(buffer.pixels_mut(), &(x, y, width, 21), width, style.theme().color(SelectedWidgetBorder));
+            }
+
+            ctx.draw.rect_outline(buffer.pixels_mut(), &(x, y, width, 21), width, style.theme().color(MenubarPopupBorder));
+
+            if !self.options.is_empty() {
+                if let Some(font) = &ctx.ui.font {
+                    ctx.draw.text_rect_blend(
+                        buffer.pixels_mut(),
+                        &(x + 8, y, width - 8, 21),
+                        width,
+                        font,
+                        12.5,
+                        self.options[i].as_str(),
+                        &WHITE,
+                        TheHorizontalAlign::Left,
+                        TheVerticalAlign::Center,
+                    );
+                }
+            }
+
+            y += 21;
+        }
 
         buffer
     }
