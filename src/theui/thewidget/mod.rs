@@ -91,6 +91,7 @@ pub trait TheWidget {
         false
     }
 
+    /// If this function returns true it indicates that the widget needs a redraw.
     fn needs_redraw(&mut self) -> bool {
         false
     }

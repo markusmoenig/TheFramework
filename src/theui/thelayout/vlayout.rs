@@ -106,7 +106,8 @@ impl TheLayout for TheVLayout {
                 }
 
                 w.set_dim(TheDim::new(dim.x + x, dim.y + y, width, height));
-                w.dim_mut().set_buffer_offset(x, y);
+                w.dim_mut()
+                    .set_buffer_offset(self.dim.buffer_x + x, self.dim.buffer_y + y);
                 y += height + self.padding;
             }
         }
@@ -137,19 +138,8 @@ impl TheLayout for TheVLayout {
             );
         }
 
-        let mut redraw = false;
-
-        for w in &mut self.widgets {
-            if w.needs_redraw() {
-                redraw = true;
-                break;
-            }
-        }
-
-        //if redraw {
         for w in &mut self.widgets {
             w.draw(buffer, style, ctx);
         }
-        //}
     }
 }

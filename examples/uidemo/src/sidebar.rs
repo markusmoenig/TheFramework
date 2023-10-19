@@ -7,6 +7,7 @@ pub struct Sidebar {
     state_receiver: Option<Receiver<TheEvent>>,
 }
 
+#[allow(clippy::new_without_default)]
 impl Sidebar {
     pub fn new() -> Self {
         Self {
@@ -19,7 +20,7 @@ impl Sidebar {
 
         let mut section_bar_header_canvas = TheCanvas::new();
         section_bar_header_canvas
-            .set_widget(TheSectionbarHeader::new("Sectionbar Header".to_string()));
+            .set_widget(TheSectionbarHeader::new("Context Header".to_string()));
         sectionbar_canvas.set_top(section_bar_header_canvas);
 
         let mut cube_sectionbar_button = TheSectionbarButton::new("Cube".to_string());

@@ -62,8 +62,6 @@ impl TheTrait for UIDemo {
     }
 
     fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
-        let mut redraw = false;
-        redraw = self.sidebar.needs_update(ctx);
-        redraw
+        self.sidebar.needs_update(ctx)
     }
 }

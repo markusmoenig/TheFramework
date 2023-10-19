@@ -66,7 +66,7 @@ impl TheWidget for TheMenubar {
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
-        style: &mut Box<dyn TheStyle>,
+        _style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
         let stride = buffer.stride();

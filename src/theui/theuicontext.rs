@@ -50,7 +50,6 @@ impl TheUIContext {
                     }
                 }
             } else if name.starts_with("icons/") {
-                println!("{:?}", name);
                 if let Some(file) = Embedded::get(name) {
                     let data = std::io::Cursor::new(file.data);
 
@@ -88,7 +87,7 @@ impl TheUIContext {
     }
 
     /// Returns an icon of the given name from the embedded style icons
-    pub fn icon(&self, name: &str) -> Option<&(TheRGBABuffer)> {
+    pub fn icon(&self, name: &str) -> Option<&TheRGBABuffer> {
         if let Some(icon) = self.icons.get(&name.to_string()) {
             return Some(icon);
         }
@@ -143,7 +142,6 @@ impl TheUIContext {
             sender.send(event).unwrap();
         }
     }
-
 
     /// Indicates that the state of the given widget changed
     pub fn send_widget_value_changed(&mut self, id: &TheWidgetId, value: TheValue) {

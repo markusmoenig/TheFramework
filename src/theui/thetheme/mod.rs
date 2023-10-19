@@ -33,5 +33,4 @@ pub enum TheThemeColors {
 
     MenubarPopupBackground,
     MenubarPopupBorder,
-
 }

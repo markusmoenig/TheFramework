@@ -68,6 +68,7 @@ impl TheWidget for TheDropdownMenu {
                             }
                         }
                     }
+                    self.is_dirty = true;
                     redraw = true;
                 }
             }
@@ -80,7 +81,8 @@ impl TheWidget for TheDropdownMenu {
 
                     if self.selected != self.original {
                         let text = self.options[self.selected as usize].clone();
-                        ctx.ui.send_widget_value_changed(self.id(), TheValue::Text(text));
+                        ctx.ui
+                            .send_widget_value_changed(self.id(), TheValue::Text(text));
                     }
                 }
                 redraw = true;
@@ -220,7 +222,6 @@ impl TheWidget for TheDropdownMenu {
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) -> TheRGBABuffer {
-
         let len = self.options.len();
         let width = 142;
         let height = 2 + len * 20 + (if len > 1 { len - 1 } else { 0 });
@@ -228,20 +229,39 @@ impl TheWidget for TheDropdownMenu {
         let dim = TheDim::new(self.dim.x, self.dim.y + 20, width as i32, height as i32);
 
         let mut buffer = TheRGBABuffer::new(dim);
-        ctx.draw.rect(buffer.pixels_mut(), &(0, 0, width, height), width, style.theme().color(MenubarPopupBackground));
+        ctx.draw.rect(
+            buffer.pixels_mut(),
+            &(0, 0, width, height),
+            width,
+            style.theme().color(MenubarPopupBackground),
+        );
 
-        ctx.draw.rect_outline(buffer.pixels_mut(), &(0, 0, width, height), width, style.theme().color(MenubarPopupBorder));
+        ctx.draw.rect_outline(
+            buffer.pixels_mut(),
+            &(0, 0, width, height),
+            width,
+            style.theme().color(MenubarPopupBorder),
+        );
 
         let x = 0;
         let mut y = 0;
 
         for i in 0..len {
-
             if i == self.selected as usize {
-                ctx.draw.rect(buffer.pixels_mut(), &(x, y, width, 21), width, style.theme().color(SelectedWidgetBorder));
+                ctx.draw.rect(
+                    buffer.pixels_mut(),
+                    &(x, y, width, 21),
+                    width,
+                    style.theme().color(SelectedWidgetBorder),
+                );
             }
 
-            ctx.draw.rect_outline(buffer.pixels_mut(), &(x, y, width, 21), width, style.theme().color(MenubarPopupBorder));
+            ctx.draw.rect_outline(
+                buffer.pixels_mut(),
+                &(x, y, width, 21),
+                width,
+                style.theme().color(MenubarPopupBorder),
+            );
 
             if !self.options.is_empty() {
                 if let Some(font) = &ctx.ui.font {

@@ -44,6 +44,16 @@ pub trait TheLayout {
     /// Set the background color for the layout
     fn set_background_color(&mut self, color: Option<TheThemeColors>) {}
 
+    /// If this function returns true it indicates that the layout needs a redraw.
+    fn needs_redraw(&mut self) -> bool {
+        for w in self.widgets() {
+            if w.needs_redraw() {
+                return true;
+            }
+        }
+        false
+    }
+
     fn get_widget(
         &mut self,
         name: Option<&String>,

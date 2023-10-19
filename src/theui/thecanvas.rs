@@ -56,9 +56,6 @@ impl TheCanvas {
             self.dim = dim;
             self.buffer.set_dim(self.dim);
             self.layout(self.dim.width, self.dim.height);
-            if let Some(layout) = &mut self.layout {
-                layout.set_dim(dim);
-            }
         }
     }
 
@@ -315,9 +312,10 @@ impl TheCanvas {
         }
 
         if let Some(layout) = &mut self.layout {
-            let dim = TheDim::new(x, y, w, h);
+            let mut dim = TheDim::new(x, y, w, h);
+            dim.buffer_x = buffer_x;
+            dim.buffer_y = buffer_y;
             layout.set_dim(dim);
-            layout.dim_mut().set_buffer_offset(buffer_x, buffer_y);
         }
     }
 
@@ -356,7 +354,9 @@ impl TheCanvas {
 
         if let Some(layout) = &mut self.layout {
             //println!("drawing layout {}, {:?}", layout.id().name, layout.dim());
-            layout.draw(&mut self.buffer, style, ctx);
+            if ctx.ui.redraw_all || layout.needs_redraw() {
+                layout.draw(&mut self.buffer, style, ctx);
+            }
         }
     }
 
@@ -365,8 +365,8 @@ impl TheCanvas {
             if let Some(widget) = self.get_widget(None, Some(&overlay.uuid)) {
                 let buffer = widget.draw_overlay(style, ctx);
                 if buffer.is_valid() {
-                self.buffer
-                    .copy_into(buffer.dim().x, buffer.dim().y, &buffer);
+                    self.buffer
+                        .copy_into(buffer.dim().x, buffer.dim().y, &buffer);
                 }
             }
         }
