@@ -572,7 +572,7 @@ impl TheDraw2D {
             let d = rect.0 * 4 + (y + rect.1) * dest_stride * 4;
             let s = y * rect.2 * 3;
 
-            let mut p : Vec<u8> = vec![0; rect.2 * 4];
+            let mut p: Vec<u8> = vec![0; rect.2 * 4];
             for x in 0..rect.2 {
                 let o = x * 4;
                 let o3 = x * 3;

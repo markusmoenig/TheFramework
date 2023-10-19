@@ -7,13 +7,16 @@ use std::sync::mpsc::Sender;
 pub struct TheUIContext {
     pub font: Option<Font>,
     pub code_font: Option<Font>,
-    icons: FxHashMap<String, (Vec<u8>, u32, u32)>,
+    icons: FxHashMap<String, TheRGBABuffer>,
 
     pub focus: Option<TheWidgetId>,
     pub keyboard_focus: Option<TheWidgetId>,
     pub hover: Option<TheWidgetId>,
+    pub overlay: Option<TheWidgetId>,
 
     pub state_events_sender: Option<Sender<TheEvent>>,
+
+    pub redraw_all: bool,
 }
 
 impl Default for TheUIContext {
@@ -26,7 +29,7 @@ impl TheUIContext {
     pub fn new() -> Self {
         let mut font: Option<Font> = None;
         let mut code_font: Option<Font> = None;
-        let mut icons: FxHashMap<String, (Vec<u8>, u32, u32)> = FxHashMap::default();
+        let mut icons: FxHashMap<String, TheRGBABuffer> = FxHashMap::default();
 
         for file in Embedded::iter() {
             let name = file.as_ref();
@@ -61,7 +64,7 @@ impl TheUIContext {
                         cut_name = cut_name.replace(".png", "");
                         icons.insert(
                             cut_name.to_string(),
-                            (bytes.to_vec(), info.width, info.height),
+                            TheRGBABuffer::from(bytes.to_vec(), info.width, info.height),
                         );
                     }
                 }
@@ -72,17 +75,20 @@ impl TheUIContext {
             focus: None,
             keyboard_focus: None,
             hover: None,
+            overlay: None,
 
             font,
             code_font,
             icons,
 
             state_events_sender: None,
+
+            redraw_all: false,
         }
     }
 
     /// Returns an icon of the given name from the embedded style icons
-    pub fn icon(&self, name: &str) -> Option<&(Vec<u8>, u32, u32)> {
+    pub fn icon(&self, name: &str) -> Option<&(TheRGBABuffer)> {
         if let Some(icon) = self.icons.get(&name.to_string()) {
             return Some(icon);
         }
@@ -109,6 +115,17 @@ impl TheUIContext {
             self.send_state(TheEvent::GainedHover(id.clone()));
             self.hover = Some(id.clone());
         }
+    }
+
+    /// Sets the overlay to the given widget. This will call the draw_overlay method of the widget after all other draw calls (for menus etc).
+    pub fn set_overlay(&mut self, id: &TheWidgetId) {
+        self.overlay = Some(id.clone());
+    }
+
+    /// Clears
+    pub fn clear_overlay(&mut self) {
+        self.overlay = None;
+        self.redraw_all = true;
     }
 
     /// Indicates that the state of the given widget changed

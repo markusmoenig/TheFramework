@@ -1,14 +1,21 @@
 use crate::prelude::*;
 
 pub mod colorbutton;
-pub mod switchbar;
+pub mod dropdown;
+pub mod menubar;
 pub mod sectionbarbutton;
+pub mod sectionbarheader;
+pub mod switchbar;
 
 pub mod prelude {
     pub use crate::theui::thewidget::colorbutton::TheColorButton;
-    pub use crate::theui::thewidget::switchbar::TheSwitchbar;
+    pub use crate::theui::thewidget::dropdown::TheDropdownMenu;
+    pub use crate::theui::thewidget::dropdown::TheDropdownMenuTrait;
+    pub use crate::theui::thewidget::menubar::TheMenubar;
     pub use crate::theui::thewidget::sectionbarbutton::TheSectionbarButton;
     pub use crate::theui::thewidget::sectionbarbutton::TheSectionbarButtonTrait;
+    pub use crate::theui::thewidget::sectionbarheader::TheSectionbarHeader;
+    pub use crate::theui::thewidget::switchbar::TheSwitchbar;
 
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetId;
@@ -49,7 +56,9 @@ pub trait TheWidget {
     fn set_dim(&mut self, dim: TheDim) {}
 
     /// Returns the current state of the widget.
-    fn state(&self) -> TheWidgetState { TheWidgetState::None }
+    fn state(&self) -> TheWidgetState {
+        TheWidgetState::None
+    }
 
     /// Set the widget state.
     fn set_state(&mut self, state: TheWidgetState) {}
@@ -63,8 +72,16 @@ pub trait TheWidget {
     ) {
     }
 
-    fn update(&mut self, ctx: &mut TheContext) {}
+    /// Draw the widget in the given style
+    fn draw_overlay(
+        &mut self,
+        style: &mut Box<dyn TheStyle>,
+        ctx: &mut TheContext,
+    ) -> TheRGBABuffer {
+        TheRGBABuffer::empty()
+    }
 
+    fn update(&mut self, ctx: &mut TheContext) {}
 
     /// Widgets who supports hover return true
     fn supports_hover(&mut self) -> bool {
@@ -78,7 +95,9 @@ pub trait TheWidget {
     fn set_needs_redraw(&mut self, redraw: bool) {}
 
     /// Process an user driven device event, returns true if we need to redraw.
-    fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {false}
+    fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
+        false
+    }
 }
 
 /// Defines the identifier for a widget, its name and Uuid.

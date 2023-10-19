@@ -26,6 +26,7 @@ pub enum TheThemeColors {
 
     SwitchbarBorder,
 
+    SectionbarHeaderBorder,
     SectionbarBackground,
     SectionbarNormalTextColor,
     SectionbarSelectedTextColor,

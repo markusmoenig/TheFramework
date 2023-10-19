@@ -20,6 +20,7 @@ impl TheTheme for TheDarkTheme {
 
         colors.insert(SwitchbarBorder, [86, 86, 86, 255]);
 
+        colors.insert(SectionbarHeaderBorder, [86, 86, 86, 255]);
         colors.insert(SectionbarBackground, [130, 130, 130, 255]);
         colors.insert(SectionbarNormalTextColor, [255, 255, 255, 255]);
         colors.insert(SectionbarSelectedTextColor, [96, 96, 96, 255]);

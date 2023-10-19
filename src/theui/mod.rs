@@ -10,7 +10,7 @@ pub mod thevalue;
 pub mod thevent;
 pub mod thewidget;
 
-use std::sync::mpsc::{self, Sender, Receiver};
+use std::sync::mpsc::{self, Receiver, Sender};
 
 pub use crate::prelude::*;
 
@@ -58,7 +58,7 @@ pub struct TheUI {
 
     app_state_events: FxHashMap<String, Sender<TheEvent>>,
 
-    is_dirty: bool
+    is_dirty: bool,
 }
 
 impl Default for TheUI {
@@ -99,6 +99,8 @@ impl TheUI {
     pub fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {
         self.canvas.resize(ctx.width as i32, ctx.height as i32);
         self.canvas.draw(&mut self.style, ctx);
+        self.canvas.draw_overlay(&mut self.style, ctx);
+        ctx.ui.redraw_all = false;
 
         pixels.copy_from_slice(self.canvas.buffer().pixels());
         self.is_dirty = false;
@@ -108,7 +110,6 @@ impl TheUI {
     pub fn process_events(&mut self, ctx: &mut TheContext) {
         if let Some(receiver) = &mut self.state_events_receiver {
             while let Ok(event) = receiver.try_recv() {
-
                 // Resend event to all app listeners
                 for (name, sender) in &self.app_state_events {
                     sender.send(event.clone()).unwrap();
@@ -117,26 +118,26 @@ impl TheUI {
                 match event {
                     TheEvent::StateChanged(id, state) => {
                         println!("Widget State changed {:?}: {:?}", id, state);
-                    },
+                    }
                     TheEvent::SetState(name, state) => {
                         println!("Set State {:?}: {:?}", name, state);
                         if let Some(widget) = self.canvas.get_widget(Some(&name), None) {
                             widget.set_state(state);
                         }
                         self.is_dirty = true;
-                    },
+                    }
                     TheEvent::GainedFocus(id) => {
                         println!("Gained focus {:?}", id);
-                    },
+                    }
                     TheEvent::LostFocus(id) => {
                         println!("Lost focus {:?}", id);
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
                             widget.set_needs_redraw(true);
                         }
-                    },
+                    }
                     TheEvent::GainedHover(id) => {
                         println!("Gained hover {:?}", id);
-                    },
+                    }
                     TheEvent::LostHover(id) => {
                         println!("Lost hover {:?}", id);
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
@@ -171,7 +172,21 @@ impl TheUI {
     }
 
     pub fn touch_up(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
-        false
+        let mut redraw = false;
+        let coord = vec2i(x as i32, y as i32);
+
+        if let Some(id) = &ctx.ui.focus {
+            if let Some(widget) = self.canvas.get_widget(Some(&id.name), Some(&id.uuid)) {
+                let event = TheEvent::MouseUp(TheValue::Coordinate(widget.dim().to_local(coord)));
+                redraw = widget.on_event(&event, ctx);
+                self.process_events(ctx);
+            }
+        } else if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
+            let event = TheEvent::MouseUp(TheValue::Coordinate(widget.dim().to_local(coord)));
+            redraw = widget.on_event(&event, ctx);
+            self.process_events(ctx);
+        }
+        redraw
     }
 
     pub fn hover(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {

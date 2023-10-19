@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-pub struct TheSwitchbar {
+pub struct TheMenubar {
     widget_id: TheWidgetId,
 
     limiter: TheSizeLimiter,
@@ -10,13 +10,13 @@ pub struct TheSwitchbar {
     is_dirty: bool,
 }
 
-impl TheWidget for TheSwitchbar {
+impl TheWidget for TheMenubar {
     fn new(name: String) -> Self
     where
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_height(21);
+        limiter.set_max_height(43);
 
         Self {
             widget_id: TheWidgetId::new(name),
@@ -73,56 +73,21 @@ impl TheWidget for TheSwitchbar {
 
         let utuple: (usize, usize, usize, usize) = self.dim.to_buffer_utuple();
 
-        ctx.draw.rect_outline(
-            buffer.pixels_mut(),
-            &utuple,
-            stride,
-            style.theme().color(SwitchbarBorder),
-        );
-
-        if let Some(icon) = ctx.ui.icon("dark_switchbar") {
-            for x in 1..utuple.2 - 1 {
+        if let Some(icon) = ctx.ui.icon("dark_menubar_large") {
+            for x in 0..utuple.2 {
                 let r = (utuple.0 + x, utuple.1, 1, icon.dim().height as usize);
                 ctx.draw
                     .copy_slice_3(buffer.pixels_mut(), icon.pixels(), &r, stride);
             }
         }
-
-        if let Some(icon) = ctx.ui.icon("switchbar_icon") {
-            let r = (
-                utuple.0 + 6,
-                utuple.1 + 6,
-                icon.dim().width as usize,
-                icon.dim().height as usize,
-            );
-            ctx.draw
-                .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
-        }
-
-        let mut shrinker = TheDimShrinker::zero();
-        shrinker.shrink_by(30, 1, 0, 0);
-
-        if let Some(font) = &ctx.ui.font {
-            ctx.draw.text_rect_blend(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                font,
-                15.0,
-                &self.id().name,
-                &WHITE,
-                TheHorizontalAlign::Left,
-                TheVerticalAlign::Center,
-            );
-        }
     }
 }
 
-pub trait TheSectionHeaderTrait {
+pub trait TheMenubarTrait {
     fn set_text(&mut self, text: String);
 }
 
-impl TheSectionHeaderTrait for TheSwitchbar {
+impl TheMenubarTrait for TheMenubar {
     fn set_text(&mut self, text: String) {
         self.text = text;
     }

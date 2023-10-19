@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-pub struct TheVLayout {
+pub struct TheHLayout {
     widget_id: TheWidgetId,
     limiter: TheSizeLimiter,
 
@@ -14,7 +14,7 @@ pub struct TheVLayout {
     background: Option<TheThemeColors>,
 }
 
-impl TheLayout for TheVLayout {
+impl TheLayout for TheHLayout {
     fn new(name: String) -> Self
     where
         Self: Sized,
@@ -93,21 +93,21 @@ impl TheLayout for TheVLayout {
         if self.dim != dim {
             self.dim = dim;
 
-            let x = self.margin.x;
-            let mut y = self.margin.y;
+            let mut x = self.margin.x;
+            let y = self.margin.y;
 
             for w in &mut self.widgets {
                 let width = w.limiter().get_width(dim.width);
                 let height = w.limiter().get_height(dim.height);
 
                 // Limit to visible area
-                if y + height > dim.height {
+                if x + width > dim.width {
                     break;
                 }
 
                 w.set_dim(TheDim::new(dim.x + x, dim.y + y, width, height));
                 w.dim_mut().set_buffer_offset(x, y);
-                y += height + self.padding;
+                x += width + self.padding;
             }
         }
     }

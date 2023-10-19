@@ -65,9 +65,9 @@ impl TheCanvas {
     /// Returns a reference to the limiter of the widget.
     fn _limiter(&self) -> Option<&TheSizeLimiter> {
         if let Some(widget) = &self.widget {
-            return Some(widget.limiter())
+            return Some(widget.limiter());
         } else if let Some(layout) = &self.layout {
-            return Some(layout.limiter())
+            return Some(layout.limiter());
         }
         None
     }
@@ -75,9 +75,9 @@ impl TheCanvas {
     /// Returns a mutable reference to the limiter of the widget.
     fn _limiter_mut(&mut self) -> Option<&mut TheSizeLimiter> {
         if let Some(widget) = &mut self.widget {
-            return Some(widget.limiter_mut())
+            return Some(widget.limiter_mut());
         } else if let Some(layout) = &mut self.layout {
-            return Some(layout.limiter_mut())
+            return Some(layout.limiter_mut());
         }
         None
     }
@@ -174,15 +174,15 @@ impl TheCanvas {
             }
         }
 
-        if let Some(widget) = &mut self.widget {
-            if widget.id().matches(name, uuid) {
-                return Some(widget);
-            }
-        }
-
         if let Some(layout) = &mut self.layout {
             if let Some(child) = layout.get_widget(name, uuid) {
                 return Some(child);
+            }
+        }
+
+        if let Some(widget) = &mut self.widget {
+            if widget.id().matches(name, uuid) {
+                return Some(widget);
             }
         }
 
@@ -215,14 +215,14 @@ impl TheCanvas {
             }
         }
 
-        if let Some(widget) = &mut self.widget {
-            if widget.dim().contains(coord) {
+        if let Some(layout) = &mut self.layout {
+            if let Some(widget) = layout.get_widget_at_coord(coord) {
                 return Some(widget);
             }
         }
 
-        if let Some(layout) = &mut self.layout {
-            if let Some(widget) = layout.get_widget_at_coord(coord) {
+        if let Some(widget) = &mut self.widget {
+            if widget.dim().contains(coord) {
                 return Some(widget);
             }
         }
@@ -313,6 +313,12 @@ impl TheCanvas {
             widget.set_dim(dim);
             widget.dim_mut().set_buffer_offset(buffer_x, buffer_y);
         }
+
+        if let Some(layout) = &mut self.layout {
+            let dim = TheDim::new(x, y, w, h);
+            layout.set_dim(dim);
+            layout.dim_mut().set_buffer_offset(buffer_x, buffer_y);
+        }
     }
 
     /// Draw the canvas
@@ -342,13 +348,27 @@ impl TheCanvas {
         }
 
         if let Some(widget) = &mut self.widget {
-            if widget.needs_redraw() {
+            println!("drawing widget {}, {:?}", widget.id().name, widget.dim());
+            if ctx.ui.redraw_all || widget.needs_redraw() {
                 widget.draw(&mut self.buffer, style, ctx);
             }
         }
 
         if let Some(layout) = &mut self.layout {
+            println!("drawing layout {}, {:?}", layout.id().name, layout.dim());
             layout.draw(&mut self.buffer, style, ctx);
+        }
+    }
+
+    pub fn draw_overlay(&mut self, style: &mut Box<dyn TheStyle>, ctx: &mut TheContext) {
+        if let Some(overlay) = &ctx.ui.overlay {
+            if let Some(widget) = self.get_widget(None, Some(&overlay.uuid)) {
+                let buffer = widget.draw_overlay(style, ctx);
+                if buffer.is_valid() {
+                self.buffer
+                    .copy_into(buffer.dim().x, buffer.dim().y, &buffer);
+                }
+            }
         }
     }
 }

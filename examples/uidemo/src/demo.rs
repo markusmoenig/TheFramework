@@ -27,10 +27,18 @@ impl TheTrait for UIDemo {
         // Top
         let mut top_canvas = TheCanvas::new();
 
-        let mut green_color = TheColorButton::new("Green".to_string());
-        green_color.set_color([0, 255, 0, 255]);
-        green_color.limiter_mut().set_max_height(80);
-        top_canvas.set_widget(green_color);
+        let menubar = TheMenubar::new("Menubar".to_string());
+
+        let mut yellow_color = TheDropdownMenu::new("Yellow".to_string());
+        yellow_color.add_option("Option #1".to_string());
+        yellow_color.add_option("Option #2".to_string());
+
+        let mut hlayout = TheHLayout::new("Menu Layout".to_string());
+        hlayout.set_background_color(None);
+        hlayout.add_widget(Box::new(yellow_color));
+
+        top_canvas.set_widget(menubar);
+        top_canvas.set_layout(hlayout);
 
         // Right
         self.sidebar.init_ui(ui, ctx);

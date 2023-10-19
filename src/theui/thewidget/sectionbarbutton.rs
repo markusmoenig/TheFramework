@@ -16,9 +16,12 @@ impl TheWidget for TheSectionbarButton {
     where
         Self: Sized,
     {
+        let mut limiter = TheSizeLimiter::new();
+        limiter.set_max_size(vec2i(81, 47));
+
         Self {
             widget_id: TheWidgetId::new(name),
-            limiter: TheSizeLimiter::new(),
+            limiter,
 
             state: TheWidgetState::None,
 
@@ -43,7 +46,7 @@ impl TheWidget for TheSectionbarButton {
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
                 }
                 redraw = true;
-            },
+            }
             TheEvent::Hover(_coord) => {
                 if self.state != TheWidgetState::Selected && !self.id().equals(&ctx.ui.hover) {
                     self.is_dirty = true;
@@ -79,7 +82,9 @@ impl TheWidget for TheSectionbarButton {
         &mut self.limiter
     }
 
-    fn state(&self) -> TheWidgetState { self.state }
+    fn state(&self) -> TheWidgetState {
+        self.state
+    }
 
     fn set_state(&mut self, state: TheWidgetState) {
         self.state = state;
@@ -109,7 +114,7 @@ impl TheWidget for TheSectionbarButton {
 
         let utuple: (usize, usize, usize, usize) = self.dim.to_buffer_utuple();
 
-        let mut icon_name =  if self.state == TheWidgetState::Selected {
+        let mut icon_name = if self.state == TheWidgetState::Selected {
             "dark_sectionbarbutton_selected".to_string()
         } else {
             "dark_sectionbarbutton_normal".to_string()
@@ -119,16 +124,21 @@ impl TheWidget for TheSectionbarButton {
             icon_name = "dark_sectionbarbutton_hover".to_string()
         }
 
-        let text_color =  if self.state == TheWidgetState::Selected {
+        let text_color = if self.state == TheWidgetState::Selected {
             style.theme().color(SectionbarSelectedTextColor)
         } else {
             style.theme().color(SectionbarNormalTextColor)
         };
 
         if let Some(icon) = ctx.ui.icon(&icon_name) {
-            let r = (utuple.0, utuple.1, icon.1 as usize, icon.2 as usize);
+            let r = (
+                utuple.0,
+                utuple.1,
+                icon.dim().width as usize,
+                icon.dim().height as usize,
+            );
             ctx.draw
-                .blend_slice(buffer.pixels_mut(), &icon.0, &r, stride);
+                .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
         }
 
         if let Some(font) = &ctx.ui.font {

@@ -1,8 +1,10 @@
 use crate::prelude::*;
 
+pub mod hlayout;
 pub mod vlayout;
 
 pub mod prelude {
+    pub use crate::theui::thelayout::hlayout::TheHLayout;
     pub use crate::theui::thelayout::vlayout::TheVLayout;
 
     pub use crate::theui::thelayout::TheLayout;
@@ -14,6 +16,9 @@ pub trait TheLayout {
     fn new(name: String) -> Self
     where
         Self: Sized;
+
+    /// Returns the id of the layout.
+    fn id(&self) -> &TheWidgetId;
 
     /// Returns a reference to the dimensions of the widget.
     fn dim(&self) -> &TheDim;
@@ -30,9 +35,6 @@ pub trait TheLayout {
     /// Returns a mutable reference to the limiter of the widget.
     fn limiter_mut(&mut self) -> &mut TheSizeLimiter;
 
-    /// Sets the fixed size of content in the layout
-    fn set_fixed_content_size(&mut self, size: Vec2i) {}
-
     /// Sets the margin for content in the layout
     fn set_margin(&mut self, margin: Vec4i) {}
 
@@ -40,7 +42,7 @@ pub trait TheLayout {
     fn set_padding(&mut self, padding: i32) {}
 
     /// Set the background color for the layout
-    fn set_background_color(&mut self, color: TheThemeColors) {}
+    fn set_background_color(&mut self, color: Option<TheThemeColors>) {}
 
     fn get_widget(
         &mut self,
