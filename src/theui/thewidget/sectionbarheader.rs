@@ -86,6 +86,8 @@ impl TheWidget for TheSectionbarHeader {
             }
         }
 
+        self.is_dirty = false;
+
         // if let Some(icon) = ctx.ui.icon("switchbar_icon") {
         //     let r = (utuple.0 + 6, utuple.1 + 6, icon.1 as usize, icon.2 as usize);
         //     ctx.draw

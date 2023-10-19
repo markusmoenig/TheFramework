@@ -115,6 +115,8 @@ impl TheWidget for TheSwitchbar {
                 TheVerticalAlign::Center,
             );
         }
+
+        self.is_dirty = false;
     }
 }
 

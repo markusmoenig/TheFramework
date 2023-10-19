@@ -80,6 +80,8 @@ impl TheWidget for TheMenubar {
                     .copy_slice_3(buffer.pixels_mut(), icon.pixels(), &r, stride);
             }
         }
+
+        self.is_dirty = false;
     }
 }
 
