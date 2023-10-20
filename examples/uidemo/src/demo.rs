@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use theframework::prelude::*;
+use theframework::{prelude::*, theui::thewidget::thetext::TheText};
 
 pub struct UIDemo {
     sidebar: Sidebar,
@@ -29,13 +29,17 @@ impl TheTrait for UIDemo {
 
         let menubar = TheMenubar::new("Menubar".to_string());
 
-        let mut yellow_color = TheDropdownMenu::new("DropDown".to_string());
-        yellow_color.add_option("Option #1".to_string());
-        yellow_color.add_option("Option #2".to_string());
+        let mut text = TheText::new("Text".to_string());
+        text.set_text("Testing".to_string());
+
+        let mut dropdown = TheDropdownMenu::new("DropDown".to_string());
+        dropdown.add_option("Option #1".to_string());
+        dropdown.add_option("Option #2".to_string());
 
         let mut hlayout = TheHLayout::new("Menu Layout".to_string());
         hlayout.set_background_color(None);
-        hlayout.add_widget(Box::new(yellow_color));
+        hlayout.add_widget(Box::new(text));
+        hlayout.add_widget(Box::new(dropdown));
 
         top_canvas.set_widget(menubar);
         top_canvas.set_layout(hlayout);

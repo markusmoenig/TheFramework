@@ -89,7 +89,7 @@ impl TheLayout for TheHLayout {
         &mut self.dim
     }
 
-    fn set_dim(&mut self, dim: TheDim) {
+    fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {
         if self.dim != dim {
             self.dim = dim;
 
@@ -97,6 +97,7 @@ impl TheLayout for TheHLayout {
             let y = self.margin.y;
 
             for w in &mut self.widgets {
+                w.calculate_size(ctx);
                 let width = w.limiter().get_width(dim.width);
                 let height = w.limiter().get_height(dim.height);
 

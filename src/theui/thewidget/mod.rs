@@ -1,21 +1,24 @@
 use crate::prelude::*;
 
-pub mod colorbutton;
-pub mod dropdown;
-pub mod menubar;
-pub mod sectionbarbutton;
-pub mod sectionbarheader;
-pub mod switchbar;
+pub mod thecolorbutton;
+pub mod thedropdownmenu;
+pub mod themenubar;
+pub mod thesectionbarbutton;
+pub mod thesectionbarheader;
+pub mod theswitchbar;
+pub mod thetext;
 
 pub mod prelude {
-    pub use crate::theui::thewidget::colorbutton::TheColorButton;
-    pub use crate::theui::thewidget::dropdown::TheDropdownMenu;
-    pub use crate::theui::thewidget::dropdown::TheDropdownMenuTrait;
-    pub use crate::theui::thewidget::menubar::TheMenubar;
-    pub use crate::theui::thewidget::sectionbarbutton::TheSectionbarButton;
-    pub use crate::theui::thewidget::sectionbarbutton::TheSectionbarButtonTrait;
-    pub use crate::theui::thewidget::sectionbarheader::TheSectionbarHeader;
-    pub use crate::theui::thewidget::switchbar::TheSwitchbar;
+    pub use crate::theui::thewidget::thecolorbutton::TheColorButton;
+    pub use crate::theui::thewidget::thedropdownmenu::TheDropdownMenu;
+    pub use crate::theui::thewidget::thedropdownmenu::TheDropdownMenuTrait;
+    pub use crate::theui::thewidget::themenubar::TheMenubar;
+    pub use crate::theui::thewidget::thesectionbarbutton::TheSectionbarButton;
+    pub use crate::theui::thewidget::thesectionbarbutton::TheSectionbarButtonTrait;
+    pub use crate::theui::thewidget::thesectionbarheader::TheSectionbarHeader;
+    pub use crate::theui::thewidget::theswitchbar::TheSwitchbar;
+    pub use crate::theui::thewidget::theswitchbar::TheSwitchbarTrait;
+    pub use crate::theui::thewidget::thetext::{TheText, TheTextTrait};
 
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetId;
@@ -38,7 +41,8 @@ pub trait TheWidget {
 
     fn id(&self) -> &TheWidgetId;
 
-    fn init(&mut self, ctx: &mut TheContext) {}
+    /// Called during layouts to give Widgets a chance to dynamically change size (for example for when a widgets text changes). The function is supposed to adjust its limiter.
+    fn calculate_size(&mut self, ctx: &mut TheContext) {}
 
     /// Returns a reference to the dimensions of the widget.
     fn dim(&self) -> &TheDim;

@@ -1,5 +1,3 @@
-use theframework::theui::thewidget::switchbar::TheSectionHeaderTrait;
-
 use crate::prelude::*;
 use std::sync::mpsc::Receiver;
 

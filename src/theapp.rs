@@ -78,10 +78,10 @@ impl TheApp {
         {
             ui.canvas.root = true;
             ui.canvas
-                .set_dim(TheDim::new(0, 0, width as i32, height as i32));
+                .set_dim(TheDim::new(0, 0, width as i32, height as i32), &mut ctx);
 
             app.init_ui(&mut ui, &mut ctx);
-            ui.canvas.layout(width as i32, height as i32);
+            ui.canvas.layout(width as i32, height as i32, &mut ctx);
         }
 
         // Loop
@@ -329,7 +329,7 @@ impl TheApp {
 
                     #[cfg(feature = "ui")]
                     ui.canvas
-                        .set_dim(TheDim::new(0, 0, width as i32, height as i32));
+                        .set_dim(TheDim::new(0, 0, width as i32, height as i32), &mut ctx);
 
                     window.request_redraw();
                 }

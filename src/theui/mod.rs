@@ -15,6 +15,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 pub use crate::prelude::*;
 
 pub type RGBA = [u8; 4];
+pub const TRANSPARENT: RGBA = [0, 0, 0, 0];
 pub const BLACK: RGBA = [0, 0, 0, 255];
 pub const WHITE: RGBA = [255, 255, 255, 255];
 
@@ -35,7 +36,7 @@ pub mod prelude {
     pub use crate::theui::thevalue::TheValue;
     pub use crate::theui::thevent::TheEvent;
 
-    pub use crate::theui::thewidget::colorbutton::*;
+    pub use crate::theui::thewidget::thecolorbutton::*;
     pub use crate::theui::thewidget::prelude::*;
 
     pub use crate::theui::thestyle::prelude::*;
@@ -97,7 +98,7 @@ impl TheUI {
     }
 
     pub fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {
-        self.canvas.resize(ctx.width as i32, ctx.height as i32);
+        self.canvas.resize(ctx.width as i32, ctx.height as i32, ctx);
         self.canvas.draw(&mut self.style, ctx);
         self.canvas.draw_overlay(&mut self.style, ctx);
         ctx.ui.redraw_all = false;

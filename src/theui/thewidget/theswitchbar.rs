@@ -120,11 +120,11 @@ impl TheWidget for TheSwitchbar {
     }
 }
 
-pub trait TheSectionHeaderTrait {
+pub trait TheSwitchbarTrait {
     fn set_text(&mut self, text: String);
 }
 
-impl TheSectionHeaderTrait for TheSwitchbar {
+impl TheSwitchbarTrait for TheSwitchbar {
     fn set_text(&mut self, text: String) {
         self.text = text;
     }

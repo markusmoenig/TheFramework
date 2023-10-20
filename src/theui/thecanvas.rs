@@ -51,11 +51,11 @@ impl TheCanvas {
     }
 
     /// Set the dimension of the canvas
-    pub fn set_dim(&mut self, dim: TheDim) {
+    pub fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {
         if dim != self.dim {
             self.dim = dim;
             self.buffer.set_dim(self.dim);
-            self.layout(self.dim.width, self.dim.height);
+            self.layout(self.dim.width, self.dim.height, ctx);
         }
     }
 
@@ -130,9 +130,9 @@ impl TheCanvas {
     }
 
     /// Resize the canvas if needed
-    pub fn resize(&mut self, width: i32, height: i32) {
+    pub fn resize(&mut self, width: i32, height: i32, ctx: &mut TheContext) {
         if width != self.dim.width || height != self.dim.height {
-            self.set_dim(TheDim::new(self.dim.x, self.dim.y, width, height));
+            self.set_dim(TheDim::new(self.dim.x, self.dim.y, width, height), ctx);
         }
     }
 
@@ -228,7 +228,7 @@ impl TheCanvas {
     }
 
     /// Layout the canvas according to its dimensions.
-    pub fn layout(&mut self, width: i32, height: i32) {
+    pub fn layout(&mut self, width: i32, height: i32, ctx: &mut TheContext) {
         // The screen dimensions
         let mut x = self.dim.x;
         let mut y = self.dim.y;
@@ -243,7 +243,7 @@ impl TheCanvas {
             if let Some(top) = &mut self.top {
                 let top_width = top.get_limiter_width(w);
                 let top_height = top.get_limiter_height(h);
-                top.set_dim(TheDim::new(x + width - top_width, y, top_width, top_height));
+                top.set_dim(TheDim::new(x + width - top_width, y, top_width, top_height), ctx);
                 top.offset = vec2i(0, 0);
                 y += top_height;
                 buffer_y += top_height;
@@ -254,7 +254,7 @@ impl TheCanvas {
         if let Some(left) = &mut self.left {
             let left_width = left.get_limiter_width(w);
             let left_height = left.get_limiter_height(h);
-            left.set_dim(TheDim::new(x, y, left_width, left_height));
+            left.set_dim(TheDim::new(x, y, left_width, left_height), ctx);
             left.offset = vec2i(0, buffer_y);
             x += left_width;
             buffer_x += left_width;
@@ -270,7 +270,7 @@ impl TheCanvas {
                 y,
                 right_width,
                 right_height,
-            ));
+            ), ctx);
             right.offset = vec2i(width - right_width, buffer_y);
             w -= right_width;
         }
@@ -284,7 +284,7 @@ impl TheCanvas {
                     y,
                     top_width,
                     top_height,
-                ));
+                ), ctx);
                 top.offset = vec2i(0, 0);
                 y += top_height;
                 buffer_y += top_height;
@@ -300,7 +300,7 @@ impl TheCanvas {
                 y + h - bottom_height,
                 bottom_width,
                 bottom_height,
-            ));
+            ), ctx);
             bottom.offset = vec2i(buffer_x, buffer_y + h - bottom_height);
             h -= bottom_height;
         }
@@ -315,7 +315,7 @@ impl TheCanvas {
             let mut dim = TheDim::new(x, y, w, h);
             dim.buffer_x = buffer_x;
             dim.buffer_y = buffer_y;
-            layout.set_dim(dim);
+            layout.set_dim(dim, ctx);
         }
     }
 
@@ -345,9 +345,17 @@ impl TheCanvas {
                 .copy_into(bottom.offset.x, bottom.offset.y, &bottom.buffer);
         }
 
+        // If a layout needs a redraw, make sure to redraw the widget as well as items in the layout may be transparent (text)
+
+        let mut force_widget_redraw = false;
+
+        if let Some(layout) = &mut self.layout {
+            force_widget_redraw = layout.needs_redraw();
+        }
+
         if let Some(widget) = &mut self.widget {
             //println!("drawing widget {}, {:?}", widget.id().name, widget.dim());
-            if ctx.ui.redraw_all || widget.needs_redraw() {
+            if ctx.ui.redraw_all || widget.needs_redraw() || force_widget_redraw {
                 widget.draw(&mut self.buffer, style, ctx);
             }
         }

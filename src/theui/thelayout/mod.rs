@@ -27,7 +27,7 @@ pub trait TheLayout {
     fn dim_mut(&mut self) -> &mut TheDim;
 
     /// Set the dimensions of the widget
-    fn set_dim(&mut self, dim: TheDim) {}
+    fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {}
 
     /// Returns a reference to the size limiter of the widget.
     fn limiter(&self) -> &TheSizeLimiter;
