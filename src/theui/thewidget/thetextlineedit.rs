@@ -1,33 +1,30 @@
 use crate::prelude::*;
 
-pub struct TheText {
+pub struct TheTextLineEdit {
     widget_id: TheWidgetId,
-
     limiter: TheSizeLimiter,
 
-    dim: TheDim,
     text: String,
-    text_size: f32,
 
+    dim: TheDim,
     is_dirty: bool,
 }
 
-impl TheWidget for TheText {
+impl TheWidget for TheTextLineEdit {
     fn new(name: String) -> Self
     where
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_height(21);
+        limiter.set_max_height(20);
 
         Self {
             widget_id: TheWidgetId::new(name),
             limiter,
 
-            dim: TheDim::zero(),
             text: "".to_string(),
-            text_size: 13.0,
 
+            dim: TheDim::zero(),
             is_dirty: false,
         }
     }
@@ -36,9 +33,20 @@ impl TheWidget for TheText {
         &self.widget_id
     }
 
-    // fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
-    //     false
-    // }
+    #[allow(clippy::single_match)]
+    fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
+        let mut redraw = false;
+        // println!("event ({}): {:?}", self.widget_id.name, event);
+        match event {
+            TheEvent::MouseDown(_coord) => {
+                ctx.ui.set_focus(self.id());
+                self.is_dirty = true;
+                redraw = true;
+            }
+            _ => {}
+        }
+        redraw
+    }
 
     fn dim(&self) -> &TheDim {
         &self.dim
@@ -67,17 +75,14 @@ impl TheWidget for TheText {
         self.is_dirty
     }
 
-    fn calculate_size(&mut self, ctx: &mut TheContext) {
-        if let Some(font) = &ctx.ui.font {
-            let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
-            self.limiter_mut().set_max_size(vec2i((ceil(size.0 as f32) + 1.0) as i32, size.1 as i32));
-        }
+    fn set_needs_redraw(&mut self, redraw: bool) {
+        self.is_dirty = redraw;
     }
 
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
-        _style: &mut Box<dyn TheStyle>,
+        style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
         if !self.dim().is_valid() {
@@ -85,9 +90,16 @@ impl TheWidget for TheText {
         }
 
         let stride = buffer.stride();
-
         let mut shrinker = TheDimShrinker::zero();
-        shrinker.shrink_by(0, 1, 0, 0);
+
+        style.draw_widget_border(buffer, self, &mut shrinker, ctx);
+
+        ctx.draw.rect(
+            buffer.pixels_mut(),
+            &self.dim.to_buffer_shrunk_utuple(&shrinker),
+            stride,
+            style.theme().color(TextEditBackground),
+        );
 
         if let Some(font) = &ctx.ui.font {
             ctx.draw.text_rect_blend(
@@ -95,9 +107,9 @@ impl TheWidget for TheText {
                 &self.dim.to_buffer_shrunk_utuple(&shrinker),
                 stride,
                 font,
-                self.text_size,
-                &self.text,
-                &WHITE,
+                14.5,
+                &self.id().name,
+                style.theme().color(TextEditTextColor),
                 TheHorizontalAlign::Left,
                 TheVerticalAlign::Center,
             );
@@ -107,19 +119,13 @@ impl TheWidget for TheText {
     }
 }
 
-/// TheText specific functions.
-pub trait TheTextTrait {
-    /// Set the text to display.
+pub trait TheTextLineEditTrait : TheWidget {
     fn set_text(&mut self, text: String);
-    /// Set the text size.
-    fn set_text_size(&mut self, text_size: f32);
+
 }
 
-impl TheTextTrait for TheText {
+impl TheTextLineEditTrait for TheTextLineEdit {
     fn set_text(&mut self, text: String) {
         self.text = text;
-    }
-    fn set_text_size(&mut self, text_size: f32) {
-        self.text_size = text_size;
     }
 }

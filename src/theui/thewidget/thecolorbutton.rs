@@ -83,6 +83,10 @@ impl TheWidget for TheColorButton {
         let stride = buffer.stride();
         let mut shrinker = TheDimShrinker::zero();
 
+        if !self.dim().is_valid() {
+            return;
+        }
+
         style.draw_widget_border(buffer, self, &mut shrinker, ctx);
 
         ctx.draw.rect(

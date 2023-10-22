@@ -354,15 +354,15 @@ impl TheCanvas {
         }
 
         if let Some(widget) = &mut self.widget {
-            //println!("drawing widget {}, {:?}", widget.id().name, widget.dim());
+            // println!("drawing widget {}, {:?}", widget.id().name, widget.dim());
             if ctx.ui.redraw_all || widget.needs_redraw() || force_widget_redraw {
                 widget.draw(&mut self.buffer, style, ctx);
             }
         }
 
         if let Some(layout) = &mut self.layout {
-            //println!("drawing layout {}, {:?}", layout.id().name, layout.dim());
-            if ctx.ui.redraw_all || layout.needs_redraw() {
+            // println!("drawing layout {}, {:?}", layout.id().name, layout.dim());
+            if ctx.ui.redraw_all || layout.needs_redraw() || layout.widgets().is_empty() {
                 layout.draw(&mut self.buffer, style, ctx);
             }
         }

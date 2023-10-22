@@ -25,4 +25,14 @@ pub trait TheStyle {
         ctx: &mut TheContext,
     ) {
     }
+
+    /// Draw the widget border
+    fn draw_text_edit_border(
+        &mut self,
+        buffer: &mut TheRGBABuffer,
+        widget: &mut dyn TheWidget,
+        shrinker: &mut TheDimShrinker,
+        ctx: &mut TheContext,
+    ) {
+    }
 }

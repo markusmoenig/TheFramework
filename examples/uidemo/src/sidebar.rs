@@ -36,19 +36,30 @@ impl Sidebar {
         vlayout.limiter_mut().set_max_width(90);
         sectionbar_canvas.set_layout(vlayout);
 
-        let mut canvas = TheCanvas::new();
-
-        let mut red_color = TheColorButton::new("Red".to_string());
-        red_color.set_color([255, 0, 0, 255]);
-        red_color.limiter_mut().set_max_width(360);
-        canvas.set_widget(red_color);
-
         // Switchbar
 
         let mut header = TheCanvas::new();
         let mut switchbar = TheSwitchbar::new("Switchbar Header".to_string());
         switchbar.set_text("Section Header".to_string());
         header.set_widget(switchbar);
+
+
+        let mut text_layout = TheTextLayout::new("Text Layout".to_string());
+        text_layout.limiter_mut().set_max_width(360);
+        //text_layout.set_text_margin(50);
+
+        let mut text_line_edit = TheTextLineEdit::new("Text Line Edit".to_string());
+        text_layout.add_pair("Text Line Edit".to_string(), Box::new(text_line_edit));
+
+        for i in 0..10 {
+            let mut dropdown = TheDropdownMenu::new(format!("DropDown {}", i));
+            dropdown.add_option("Option #1".to_string());
+            dropdown.add_option("Option #2".to_string());
+            text_layout.add_pair(format!("Item #{}", i), Box::new(dropdown));
+        }
+
+        let mut canvas = TheCanvas::new();
+        canvas.set_layout(text_layout);
 
         canvas.set_top(header);
         canvas.set_right(sectionbar_canvas);

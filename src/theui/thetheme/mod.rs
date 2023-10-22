@@ -20,6 +20,7 @@ pub trait TheTheme {
 /// The
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum TheThemeColors {
+
     DefaultWidgetBorder,
     SelectedWidgetBorder,
     DefaultWidgetBackground,
@@ -30,6 +31,15 @@ pub enum TheThemeColors {
     SectionbarBackground,
     SectionbarNormalTextColor,
     SectionbarSelectedTextColor,
+
+    TextLayoutBackground,
+    TextLayoutBorder,
+
+    TextEditBackground,
+    TextEditBorder,
+    SelectedTextEditBorder1,
+    SelectedTextEditBorder2,
+    TextEditTextColor,
 
     MenubarPopupBackground,
     MenubarPopupBorder,

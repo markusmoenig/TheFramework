@@ -69,8 +69,11 @@ impl TheWidget for TheSwitchbar {
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
-        let stride = buffer.stride();
+        if !self.dim().is_valid() {
+            return;
+        }
 
+        let stride = buffer.stride();
         let utuple: (usize, usize, usize, usize) = self.dim.to_buffer_utuple();
 
         ctx.draw.rect_outline(

@@ -60,7 +60,7 @@ impl TheWidget for TheDropdownMenu {
             TheEvent::MouseDragged(coord) => {
                 if !self.options.is_empty() {
                     if let Some(coord) = coord.to_vec2i() {
-                        let y: i32 = coord.y - (self.dim.y + 10);
+                        let y: i32 = coord.y - 20;
                         if y >= 0 {
                             let index = y / 20;
                             if index < self.options.len() as i32 && index != self.selected {
@@ -149,6 +149,10 @@ impl TheWidget for TheDropdownMenu {
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
+        if !self.dim().is_valid() {
+            return;
+        }
+
         let stride = buffer.stride();
         let mut shrinker = TheDimShrinker::zero();
 

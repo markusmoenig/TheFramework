@@ -1,11 +1,14 @@
 use crate::prelude::*;
 
-pub mod hlayout;
-pub mod vlayout;
+pub mod thehlayout;
+pub mod thevlayout;
+pub mod thetextlayout;
 
 pub mod prelude {
-    pub use crate::theui::thelayout::hlayout::TheHLayout;
-    pub use crate::theui::thelayout::vlayout::TheVLayout;
+    pub use crate::theui::thelayout::thehlayout::TheHLayout;
+    pub use crate::theui::thelayout::thevlayout::TheVLayout;
+    pub use crate::theui::thelayout::thetextlayout::TheTextLayout;
+    pub use crate::theui::thelayout::thetextlayout::TheTextLayoutTrait;
 
     pub use crate::theui::thelayout::TheLayout;
 }

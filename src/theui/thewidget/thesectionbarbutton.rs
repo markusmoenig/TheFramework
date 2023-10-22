@@ -109,6 +109,10 @@ impl TheWidget for TheSectionbarButton {
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
+        if !self.dim().is_valid() {
+            return;
+        }
+
         let stride = buffer.stride();
         let shrinker = TheDimShrinker::zero();
 
