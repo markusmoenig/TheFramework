@@ -162,6 +162,12 @@ impl TheUI {
     }
 
     pub fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
+        if ctx.ui.relayout {
+            let width = self.canvas.buffer().dim().width;
+            let height = self.canvas.buffer().dim().height;
+            self.canvas.layout(width, height, ctx);
+            ctx.ui.relayout = false;
+        }
         self.process_events(ctx);
         self.is_dirty
     }

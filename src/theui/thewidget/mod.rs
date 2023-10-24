@@ -4,10 +4,11 @@ pub mod thecolorbutton;
 pub mod thedropdownmenu;
 pub mod themenubar;
 pub mod thesectionbarbutton;
-pub mod thesectionbarheader;
+pub mod thesectionbar;
 pub mod theswitchbar;
 pub mod thetext;
 pub mod thetextlineedit;
+pub mod thesnapperbar;
 
 pub mod prelude {
     pub use crate::theui::thewidget::thecolorbutton::TheColorButton;
@@ -16,10 +17,10 @@ pub mod prelude {
     pub use crate::theui::thewidget::themenubar::TheMenubar;
     pub use crate::theui::thewidget::thesectionbarbutton::TheSectionbarButton;
     pub use crate::theui::thewidget::thesectionbarbutton::TheSectionbarButtonTrait;
-    pub use crate::theui::thewidget::thesectionbarheader::TheSectionbarHeader;
-    pub use crate::theui::thewidget::theswitchbar::TheSwitchbar;
-    pub use crate::theui::thewidget::theswitchbar::TheSwitchbarTrait;
+    pub use crate::theui::thewidget::thesectionbar::TheSectionbar;
+    pub use crate::theui::thewidget::theswitchbar::{TheSwitchbar, TheSwitchbarTrait};
     pub use crate::theui::thewidget::thetext::{TheText, TheTextTrait};
+    pub use crate::theui::thewidget::thesnapperbar::{TheSnapperbar, TheSnapperbarTrait};
 
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
 

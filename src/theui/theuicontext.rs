@@ -17,6 +17,7 @@ pub struct TheUIContext {
     pub state_events_sender: Option<Sender<TheEvent>>,
 
     pub redraw_all: bool,
+    pub relayout: bool,
 }
 
 impl Default for TheUIContext {
@@ -83,6 +84,7 @@ impl TheUIContext {
             state_events_sender: None,
 
             redraw_all: false,
+            relayout: false,
         }
     }
 
@@ -147,4 +149,5 @@ impl TheUIContext {
     pub fn send_widget_value_changed(&mut self, id: &TheWidgetId, value: TheValue) {
         self.send_state(TheEvent::ValueChanged(id.clone(), value));
     }
+
 }

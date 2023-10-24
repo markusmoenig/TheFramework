@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-pub struct TheSectionbarHeader {
+pub struct TheSectionbar {
     widget_id: TheWidgetId,
 
     limiter: TheSizeLimiter,
@@ -9,7 +9,7 @@ pub struct TheSectionbarHeader {
     is_dirty: bool,
 }
 
-impl TheWidget for TheSectionbarHeader {
+impl TheWidget for TheSectionbar {
     fn new(name: String) -> Self
     where
         Self: Sized,

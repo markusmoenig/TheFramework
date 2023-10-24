@@ -14,12 +14,14 @@ impl Sidebar {
     }
 
     pub fn init_ui(&mut self, ui: &mut TheUI, _ctx: &mut TheContext) {
+        let mut canvas = TheCanvas::new();
+
         let mut sectionbar_canvas = TheCanvas::new();
 
-        let mut section_bar_header_canvas = TheCanvas::new();
-        section_bar_header_canvas
-            .set_widget(TheSectionbarHeader::new("Context Header".to_string()));
-        sectionbar_canvas.set_top(section_bar_header_canvas);
+        let mut section_bar_canvas = TheCanvas::new();
+        section_bar_canvas
+            .set_widget(TheSectionbar::new("Sectionbar".to_string()));
+        sectionbar_canvas.set_top(section_bar_canvas);
 
         let mut cube_sectionbar_button = TheSectionbarButton::new("Cube".to_string());
         cube_sectionbar_button.set_text("Cube".to_string());
@@ -43,12 +45,23 @@ impl Sidebar {
         switchbar.set_text("Section Header".to_string());
         header.set_widget(switchbar);
 
+        // Snapperbar
+
+        // let mut snapper = TheCanvas::new();
+
+        // let mut snapperbar = TheSnapperbar::new("Snapperbar Header".to_string());
+        // snapperbar.set_text("Snapperbar".to_string());
+        // snapper.set_widget(snapperbar);
+
+        // header.set_bottom(snapper);
+
+        // ---
 
         let mut text_layout = TheTextLayout::new("Text Layout".to_string());
         text_layout.limiter_mut().set_max_width(360);
         //text_layout.set_text_margin(50);
 
-        let mut text_line_edit = TheTextLineEdit::new("Text Line Edit".to_string());
+        let text_line_edit = TheTextLineEdit::new("Text Line Edit".to_string());
         text_layout.add_pair("Text Line Edit".to_string(), Box::new(text_line_edit));
 
         for i in 0..10 {
@@ -59,6 +72,7 @@ impl Sidebar {
         }
 
         let mut canvas = TheCanvas::new();
+
         canvas.set_layout(text_layout);
 
         canvas.set_top(header);
@@ -77,8 +91,8 @@ impl Sidebar {
         if let Some(receiver) = &mut self.state_receiver {
             while let Ok(event) = receiver.try_recv() {
                 match event {
-                    TheEvent::StateChanged(id, state) => {
-                        println!("app Widget State changed {:?}: {:?}", id, state);
+                    TheEvent::StateChanged(id, _state) => {
+                        //println!("app Widget State changed {:?}: {:?}", id, state);
 
                         if id.name == "Cube" {
                             ctx.ui

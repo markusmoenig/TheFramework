@@ -1,13 +1,15 @@
 use crate::prelude::*;
 
 pub struct TheCanvas {
+
+    pub uuid: Uuid,
+
     /// The relative offset to the parent canvas
     pub offset: Vec2i,
 
     pub dim: TheDim,
 
     pub root: bool,
-
     pub top_is_expanding: bool,
 
     buffer: TheRGBABuffer,
@@ -31,6 +33,8 @@ impl Default for TheCanvas {
 impl TheCanvas {
     pub fn new() -> Self {
         Self {
+            uuid: Uuid::new_v4(),
+
             offset: Vec2i::zero(),
 
             dim: TheDim::zero(),
@@ -141,7 +145,7 @@ impl TheCanvas {
         &self.buffer
     }
 
-    /// Returns the widget at the given screen coordinate (if any)
+    /// Returns the widget of the given id
     pub fn get_widget(
         &mut self,
         name: Option<&String>,
