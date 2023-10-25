@@ -55,16 +55,29 @@ impl TheLayout for TheSnapperLayout {
     }
 
     fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+        let mut open_states = vec![];
+
         for b in &mut self.bars {
+
+            if b.is_open() {
+                open_states.push(true);
+            } else {
+                open_states.push(false);
+            }
+
             if b.dim().contains(coord) {
                 return Some(b);
             }
         }
-        for l in &mut self.layouts {
-            if let Some(w) = l.get_widget_at_coord(coord) {
-                return Some(w);
+
+        for (index, l) in self.layouts.iter_mut().enumerate() {
+            if open_states[index] {
+                if let Some(w) = l.get_widget_at_coord(coord) {
+                    return Some(w);
+                }
             }
         }
+
         None
     }
 
@@ -73,15 +86,27 @@ impl TheLayout for TheSnapperLayout {
         name: Option<&String>,
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheWidget>> {
+        let mut open_states = vec![];
 
-        if let Some(w) = self.bars.iter_mut().find(|b| b.id().matches(name, uuid)) {
-            return Some(w);
+        for b in &mut self.bars {
+
+            if b.is_open() {
+                open_states.push(true);
+            } else {
+                open_states.push(false);
+            }
+
+            if b.id().matches(name, uuid) {
+                return Some(b);
+            }
         }
 
-        for l in &mut self.layouts {
-            let widgets = l.widgets();
-            if let Some(w) = widgets.iter_mut().find(|w| w.id().matches(name, uuid)) {
-                return Some(w);
+        for (index, l) in self.layouts.iter_mut().enumerate() {
+            if open_states[index] {
+                let widgets = l.widgets();
+                if let Some(w) = widgets.iter_mut().find(|w| w.id().matches(name, uuid)) {
+                    return Some(w);
+                }
             }
         }
 
@@ -89,13 +114,11 @@ impl TheLayout for TheSnapperLayout {
     }
 
     fn needs_redraw(&mut self) -> bool {
-        for b in &mut self.bars {
-            if b.needs_redraw() {
+        for i in 0..self.bars.len() {
+            if self.bars[i].needs_redraw() {
                 return true;
             }
-        }
-        for l in &mut self.layouts {
-            if l.needs_redraw() {
+            if self.bars[i].is_open() && self.layouts[i].needs_redraw() {
                 return true;
             }
         }
@@ -131,12 +154,14 @@ impl TheLayout for TheSnapperLayout {
 
                 y += self.bars[i].dim().height;
 
-                let mut dim = TheDim::new(dim.x + x, dim.y + y, width, height_per_section);
-                dim.buffer_x = self.dim.buffer_x;
-                dim.buffer_y = self.dim.buffer_y + y;
-                self.layouts[i].set_dim(dim, ctx);
+                if self.bars[i].is_open() {
+                    let mut dim = TheDim::new(dim.x + x, dim.y + y, width, height_per_section);
+                    dim.buffer_x = self.dim.buffer_x;
+                    dim.buffer_y = self.dim.buffer_y + y;
+                    self.layouts[i].set_dim(dim, ctx);
 
-                y += height_per_section;
+                    y += height_per_section;
+                }
             }
         }
     }
@@ -159,12 +184,22 @@ impl TheLayout for TheSnapperLayout {
             return;
         }
 
-        for b in &mut self.bars {
-            b.draw(buffer, style, ctx);
-        }
+        let stride = buffer.stride();
+        let utuple: (usize, usize, usize, usize) = self.dim.to_buffer_utuple();
 
-        for l in &mut self.layouts {
-            l.draw(buffer, style, ctx);
+        ctx.draw.rect(
+            buffer.pixels_mut(),
+            &utuple,
+            stride,
+            style.theme().color(DefaultWidgetBackground),
+        );
+
+        let sections = self.bars.len();
+        for i in 0..sections {
+            self.bars[i].draw(buffer, style, ctx);
+            if self.bars[i].is_open() {
+                self.layouts[i].draw(buffer, style, ctx);
+            }
         }
     }
 }

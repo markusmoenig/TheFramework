@@ -68,6 +68,11 @@ pub trait TheWidget {
         TheWidgetState::None
     }
 
+    /// Returns the current open state of the widget.
+    fn is_open(&self) -> bool {
+        false
+    }
+
     /// Set the widget state.
     fn set_state(&mut self, state: TheWidgetState) {}
 

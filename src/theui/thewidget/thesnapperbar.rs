@@ -79,6 +79,10 @@ impl TheWidget for TheSnapperbar {
         true
     }
 
+    fn is_open(&self) -> bool {
+        self.open
+    }
+
     fn needs_redraw(&mut self) -> bool {
         self.is_dirty
     }
@@ -96,6 +100,7 @@ impl TheWidget for TheSnapperbar {
                 if self.state != TheWidgetState::Clicked {
                     self.state = TheWidgetState::Clicked;
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
+                    ctx.ui.set_focus(self.id());
                 }
                 redraw = true;
             }
@@ -105,6 +110,8 @@ impl TheWidget for TheSnapperbar {
                     self.state = TheWidgetState::None;
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
                     self.open = !self.open;
+                    ctx.ui.redraw_all = true;
+                    ctx.ui.relayout = true;
                 }
                 redraw = true;
             }
