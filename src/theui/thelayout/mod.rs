@@ -3,12 +3,13 @@ use crate::prelude::*;
 pub mod thehlayout;
 pub mod thevlayout;
 pub mod thetextlayout;
+pub mod thesnapperlayout;
 
 pub mod prelude {
-    pub use crate::theui::thelayout::thehlayout::TheHLayout;
-    pub use crate::theui::thelayout::thevlayout::TheVLayout;
-    pub use crate::theui::thelayout::thetextlayout::TheTextLayout;
-    pub use crate::theui::thelayout::thetextlayout::TheTextLayoutTrait;
+    pub use crate::theui::thelayout::thehlayout::{TheHLayout, TheHLayoutTrait};
+    pub use crate::theui::thelayout::thevlayout::{TheVLayout, TheVLayoutTrait};
+    pub use crate::theui::thelayout::thetextlayout::{TheTextLayout, TheTextLayoutTrait};
+    pub use crate::theui::thelayout::thesnapperlayout::{TheSnapperLayout, TheSnapperLayoutTrait};
 
     pub use crate::theui::thelayout::TheLayout;
 }
@@ -65,8 +66,6 @@ pub trait TheLayout {
 
     fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>>;
 
-    //fn add_widget<T: TheWidget + 'static>(&mut self, widget: T);
-    fn add_widget(&mut self, widget: Box<dyn TheWidget>);
     fn widgets(&mut self) -> &mut Vec<Box<dyn TheWidget>>;
 
     /// Draw the widget in the given style

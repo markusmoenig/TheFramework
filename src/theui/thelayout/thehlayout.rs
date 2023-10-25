@@ -54,10 +54,6 @@ impl TheLayout for TheHLayout {
         &mut self.widgets
     }
 
-    fn add_widget(&mut self, widget: Box<dyn TheWidget>) {
-        self.widgets.push(widget);
-    }
-
     fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
         let widgets = self.widgets();
         widgets.iter_mut().find(|w| w.dim().contains(coord))
@@ -70,16 +66,6 @@ impl TheLayout for TheHLayout {
     ) -> Option<&mut Box<dyn TheWidget>> {
         self.widgets.iter_mut().find(|w| w.id().matches(name, uuid))
     }
-
-    // fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) {
-    //     println!("event ({}): {:?}", self.widget_id.name, event);
-    //     match event {
-    //         TheEvent::MouseDown(coord) => {
-    //             ctx.ui.set_focus(self.id());
-    //         }
-    //         _ => {}
-    //     }
-    // }
 
     fn dim(&self) -> &TheDim {
         &self.dim
@@ -142,5 +128,17 @@ impl TheLayout for TheHLayout {
         for w in &mut self.widgets {
             w.draw(buffer, style, ctx);
         }
+    }
+}
+
+/// TheHLayout specific functions.
+pub trait TheHLayoutTrait {
+    /// Add a widget to the layout.
+    fn add_widget(&mut self, widget: Box<dyn TheWidget>);
+}
+
+impl TheHLayoutTrait for TheHLayout {
+    fn add_widget(&mut self, widget: Box<dyn TheWidget>) {
+        self.widgets.push(widget);
     }
 }

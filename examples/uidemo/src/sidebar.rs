@@ -14,7 +14,6 @@ impl Sidebar {
     }
 
     pub fn init_ui(&mut self, ui: &mut TheUI, _ctx: &mut TheContext) {
-        let mut canvas = TheCanvas::new();
 
         let mut sectionbar_canvas = TheCanvas::new();
 
@@ -47,18 +46,12 @@ impl Sidebar {
 
         // Snapperbar
 
-        // let mut snapper = TheCanvas::new();
-
-        // let mut snapperbar = TheSnapperbar::new("Snapperbar Header".to_string());
-        // snapperbar.set_text("Snapperbar".to_string());
-        // snapper.set_widget(snapperbar);
-
-        // header.set_bottom(snapper);
+        let mut snapperbar = TheSnapperbar::new("Snapperbar Header".to_string());
+        snapperbar.set_text("Snapperbar".to_string());
 
         // ---
 
         let mut text_layout = TheTextLayout::new("Text Layout".to_string());
-        text_layout.limiter_mut().set_max_width(360);
         //text_layout.set_text_margin(50);
 
         let text_line_edit = TheTextLineEdit::new("Text Line Edit".to_string());
@@ -71,9 +64,13 @@ impl Sidebar {
             text_layout.add_pair(format!("Item #{}", i), Box::new(dropdown));
         }
 
+        let mut snapper_layout = TheSnapperLayout::new("Snapper Layout".to_string());
+        snapper_layout.add_pair(Box::new(snapperbar), Box::new(text_layout));
+        snapper_layout.limiter_mut().set_max_width(360);
+
         let mut canvas = TheCanvas::new();
 
-        canvas.set_layout(text_layout);
+        canvas.set_layout(snapper_layout);
 
         canvas.set_top(header);
         canvas.set_right(sectionbar_canvas);

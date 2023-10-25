@@ -205,6 +205,7 @@ impl TheWidget for TheSnapperbar {
 pub trait TheSnapperbarTrait {
     fn set_text(&mut self, text: String);
     fn set_canvas_collapse_uuid(&mut self, collapse: Uuid);
+    fn is_open(&self) -> bool;
 }
 
 impl TheSnapperbarTrait for TheSnapperbar {
@@ -213,5 +214,8 @@ impl TheSnapperbarTrait for TheSnapperbar {
     }
     fn set_canvas_collapse_uuid(&mut self, collapse: Uuid) {
         self.collapse_uuid = Some(collapse);
+    }
+    fn is_open(&self) -> bool {
+        self.open
     }
 }
