@@ -13,9 +13,12 @@ pub trait TheTrait {
 
     fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {}
 
-    fn update(&mut self, ctx: &mut TheContext) {}
+    fn update(&mut self, ctx: &mut TheContext) -> bool {
+        false
+    }
 
-    fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
+    #[cfg(feature = "ui")]
+    fn update_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
         false
     }
 

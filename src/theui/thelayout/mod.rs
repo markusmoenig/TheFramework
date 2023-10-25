@@ -4,12 +4,14 @@ pub mod thehlayout;
 pub mod thevlayout;
 pub mod thetextlayout;
 pub mod thesnapperlayout;
+pub mod thestacklayout;
 
 pub mod prelude {
     pub use crate::theui::thelayout::thehlayout::{TheHLayout, TheHLayoutTrait};
     pub use crate::theui::thelayout::thevlayout::{TheVLayout, TheVLayoutTrait};
     pub use crate::theui::thelayout::thetextlayout::{TheTextLayout, TheTextLayoutTrait};
     pub use crate::theui::thelayout::thesnapperlayout::{TheSnapperLayout, TheSnapperLayoutTrait};
+    pub use crate::theui::thelayout::thestacklayout::{TheStackLayout, TheStackLayoutTrait};
 
     pub use crate::theui::thelayout::TheLayout;
 }
@@ -75,4 +77,9 @@ pub trait TheLayout {
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     );
+
+    /// Process an user driven device event, returns true if we need to redraw.
+    fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
+        false
+    }
 }

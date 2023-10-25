@@ -56,7 +56,7 @@ impl TheCanvas {
 
     /// Set the dimension of the canvas
     pub fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {
-        if dim != self.dim {
+        if dim != self.dim || ctx.ui.relayout {
             self.dim = dim;
             self.buffer.set_dim(self.dim);
             self.layout(self.dim.width, self.dim.height, ctx);
@@ -145,6 +145,40 @@ impl TheCanvas {
         &self.buffer
     }
 
+    /// Returns the canvas of the given id
+    pub fn get_canvas(&mut self, uuid: Uuid) -> Option<&mut TheCanvas> {
+
+        if uuid == self.uuid {
+            return Some(self);
+        }
+
+        if let Some(left) = &mut self.left {
+            if let Some(canvas) = left.get_canvas(uuid) {
+                return Some(canvas);
+            }
+        }
+
+        if let Some(top) = &mut self.top {
+            if let Some(canvas) = top.get_canvas(uuid) {
+                return Some(canvas);
+            }
+        }
+
+        if let Some(right) = &mut self.right {
+            if let Some(canvas) = right.get_canvas(uuid) {
+                return Some(canvas);
+            }
+        }
+
+        if let Some(bottom) = &mut self.bottom {
+            if let Some(canvas) = bottom.get_canvas(uuid) {
+                return Some(canvas);
+            }
+        }
+
+        None
+    }
+
     /// Returns the widget of the given id
     pub fn get_widget(
         &mut self,
@@ -184,6 +218,45 @@ impl TheCanvas {
         if let Some(widget) = &mut self.widget {
             if widget.id().matches(name, uuid) {
                 return Some(widget);
+            }
+        }
+
+        None
+    }
+
+    /// Returns the layout of the given id
+    pub fn get_layout(
+        &mut self,
+        name: Option<&String>,
+        uuid: Option<&Uuid>,
+    ) -> Option<&mut Box<dyn TheLayout>> {
+        if let Some(left) = &mut self.left {
+            if let Some(widget) = left.get_layout(name, uuid) {
+                return Some(widget);
+            }
+        }
+
+        if let Some(top) = &mut self.top {
+            if let Some(widget) = top.get_layout(name, uuid) {
+                return Some(widget);
+            }
+        }
+
+        if let Some(right) = &mut self.right {
+            if let Some(widget) = right.get_layout(name, uuid) {
+                return Some(widget);
+            }
+        }
+
+        if let Some(bottom) = &mut self.bottom {
+            if let Some(widget) = bottom.get_layout(name, uuid) {
+                return Some(widget);
+            }
+        }
+
+        if let Some(layout) = &mut self.layout {
+            if layout.id().matches(name, uuid) {
+                return Some(layout);
             }
         }
 

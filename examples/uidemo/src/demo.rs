@@ -65,7 +65,7 @@ impl TheTrait for UIDemo {
             .set_widget(TheColorButton::new("White".to_string()));
     }
 
-    fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
-        self.sidebar.needs_update(ctx)
+    fn update_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
+        self.sidebar.update_ui(ui, ctx)
     }
 }

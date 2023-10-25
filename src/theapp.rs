@@ -335,12 +335,18 @@ impl TheApp {
                 }
 
                 #[cfg(feature = "ui")]
-                if ui.needs_update(&mut ctx) {
+                if ui.update(&mut ctx) {
+                    window.request_redraw();
+                }
+
+                #[cfg(feature = "ui")]
+                // Test if the app needs an update
+                if app.update_ui(&mut ui, &mut ctx) {
                     window.request_redraw();
                 }
 
                 // Test if the app needs an update
-                if app.needs_update(&mut ctx) {
+                if app.update(&mut ctx) {
                     window.request_redraw();
                 }
                 /*

@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 /// All events which are handled by the framework
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum TheEvent {
     // These events are passed to the on_event function of the widgets and cover user interaction.
     MouseDown(TheValue),
@@ -20,4 +20,7 @@ pub enum TheEvent {
     LostFocus(TheWidgetId),
     GainedHover(TheWidgetId),
     LostHover(TheWidgetId),
+
+    // These events define layout states.
+    SetStackIndex(TheWidgetId, usize),
 }

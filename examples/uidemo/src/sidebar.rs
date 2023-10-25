@@ -3,6 +3,7 @@ use std::sync::mpsc::Receiver;
 
 pub struct Sidebar {
     state_receiver: Option<Receiver<TheEvent>>,
+    stack_layout_id: TheWidgetId,
 }
 
 #[allow(clippy::new_without_default)]
@@ -10,6 +11,7 @@ impl Sidebar {
     pub fn new() -> Self {
         Self {
             state_receiver: None,
+            stack_layout_id: TheWidgetId::new("".to_string()),
         }
     }
 
@@ -69,8 +71,20 @@ impl Sidebar {
         snapper_layout.limiter_mut().set_max_width(360);
 
         let mut canvas = TheCanvas::new();
+        let mut stack_layout = TheStackLayout::new("Stack Layout".to_string());
+        stack_layout.add_layout(Box::new(snapper_layout));
 
-        canvas.set_layout(snapper_layout);
+        let mut test_layout = TheVLayout::new("Dummy".to_string());
+        test_layout.limiter_mut().set_max_width(360);
+        let mut dummy_text = TheText::new("dummy text".to_string());
+        dummy_text.set_text("Test".to_string());
+
+        test_layout.add_widget(Box::new(dummy_text));
+        stack_layout.add_layout(Box::new(test_layout));
+
+        self.stack_layout_id = stack_layout.id().clone();
+        stack_layout.set_index(0);
+        canvas.set_layout(stack_layout);
 
         canvas.set_top(header);
         canvas.set_right(sectionbar_canvas);
@@ -82,7 +96,7 @@ impl Sidebar {
     }
 
     #[allow(clippy::single_match)]
-    pub fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
+    pub fn update_ui(&mut self, _ui: &mut TheUI, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
 
         if let Some(receiver) = &mut self.state_receiver {
@@ -94,9 +108,11 @@ impl Sidebar {
                         if id.name == "Cube" {
                             ctx.ui
                                 .set_widget_state("Sphere".to_string(), TheWidgetState::None);
+                            ctx.ui.send(TheEvent::SetStackIndex(self.stack_layout_id.clone(), 0));
                         } else if id.name == "Sphere" {
                             ctx.ui
                                 .set_widget_state("Cube".to_string(), TheWidgetState::None);
+                            ctx.ui.send(TheEvent::SetStackIndex(self.stack_layout_id.clone(), 1));
                         }
 
                         redraw = true;

@@ -100,9 +100,9 @@ impl TheUIContext {
     pub fn set_focus(&mut self, id: &TheWidgetId) {
         if !id.equals(&self.focus) {
             if let Some(focus) = &self.focus {
-                self.send_state(TheEvent::LostFocus(focus.clone()));
+                self.send(TheEvent::LostFocus(focus.clone()));
             }
-            self.send_state(TheEvent::GainedFocus(id.clone()));
+            self.send(TheEvent::GainedFocus(id.clone()));
             self.focus = Some(id.clone());
         }
     }
@@ -111,9 +111,9 @@ impl TheUIContext {
     pub fn set_hover(&mut self, id: &TheWidgetId) {
         if !id.equals(&self.hover) {
             if let Some(hover) = &self.hover {
-                self.send_state(TheEvent::LostHover(hover.clone()));
+                self.send(TheEvent::LostHover(hover.clone()));
             }
-            self.send_state(TheEvent::GainedHover(id.clone()));
+            self.send(TheEvent::GainedHover(id.clone()));
             self.hover = Some(id.clone());
         }
     }
@@ -131,15 +131,15 @@ impl TheUIContext {
 
     /// Indicates that the state of the given widget changed
     pub fn send_widget_state_changed(&mut self, id: &TheWidgetId, state: TheWidgetState) {
-        self.send_state(TheEvent::StateChanged(id.clone(), state));
+        self.send(TheEvent::StateChanged(id.clone(), state));
     }
 
     pub fn set_widget_state(&mut self, name: String, state: TheWidgetState) {
-        self.send_state(TheEvent::SetState(name, state));
+        self.send(TheEvent::SetState(name, state));
     }
 
     /// Sends the given state event
-    pub fn send_state(&mut self, event: TheEvent) {
+    pub fn send(&mut self, event: TheEvent) {
         if let Some(sender) = &mut self.state_events_sender {
             sender.send(event).unwrap();
         }
@@ -147,7 +147,7 @@ impl TheUIContext {
 
     /// Indicates that the state of the given widget changed
     pub fn send_widget_value_changed(&mut self, id: &TheWidgetId, value: TheValue) {
-        self.send_state(TheEvent::ValueChanged(id.clone(), value));
+        self.send(TheEvent::ValueChanged(id.clone(), value));
     }
 
 }

@@ -10,7 +10,7 @@ pub mod thevalue;
 pub mod thevent;
 pub mod thewidget;
 
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::{sync::mpsc::{self, Receiver, Sender}, ops::DerefMut};
 
 pub use crate::prelude::*;
 
@@ -20,11 +20,12 @@ pub const BLACK: RGBA = [0, 0, 0, 255];
 pub const WHITE: RGBA = [255, 255, 255, 255];
 
 pub mod prelude {
-
     pub use crate::theui::RGBA;
 
     pub use crate::theui::BLACK;
     pub use crate::theui::WHITE;
+
+    pub use std::rc::Rc;
 
     pub use crate::theui::thecanvas::*;
     pub use crate::theui::thedim::*;
@@ -117,51 +118,56 @@ impl TheUI {
                 }
 
                 match event {
+                    TheEvent::SetStackIndex(id, index) => {
+                        if let Some(layout) = self.canvas.get_layout(None, Some(&id.uuid)) {
+                            self.is_dirty = layout.on_event(&TheEvent::SetStackIndex(id, index), ctx);
+                        }
+                    },
                     TheEvent::StateChanged(id, state) => {
                         println!("Widget State changed {:?}: {:?}", id, state);
-                    }
+                    },
                     TheEvent::SetState(name, state) => {
                         println!("Set State {:?}: {:?}", name, state);
                         if let Some(widget) = self.canvas.get_widget(Some(&name), None) {
                             widget.set_state(state);
                         }
                         self.is_dirty = true;
-                    }
+                    },
                     TheEvent::GainedFocus(id) => {
                         println!("Gained focus {:?}", id);
-                    }
+                    },
                     TheEvent::LostFocus(id) => {
                         println!("Lost focus {:?}", id);
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
                             widget.set_needs_redraw(true);
                         }
-                    }
+                    },
                     TheEvent::GainedHover(id) => {
                         println!("Gained hover {:?}", id);
-                    }
+                    },
                     TheEvent::LostHover(id) => {
                         println!("Lost hover {:?}", id);
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
                             widget.set_needs_redraw(true);
                         }
-                    }
+                    },
                     TheEvent::ValueChanged(id, value) => {
                         println!("Widget Value changed {:?}: {:?}", id, value);
-                    }
+                    },
                     TheEvent::SetValue(name, value) => {
                         println!("Set Value {:?}: {:?}", name, value);
                         if let Some(widget) = self.canvas.get_widget(Some(&name), None) {
                             widget.set_value(value);
                         }
                         self.is_dirty = true;
-                    }
+                    },
                     _ => {}
                 }
             }
         }
     }
 
-    pub fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
+    pub fn update(&mut self, ctx: &mut TheContext) -> bool {
         if ctx.ui.relayout {
             let width = self.canvas.buffer().dim().width;
             let height = self.canvas.buffer().dim().height;
@@ -169,7 +175,7 @@ impl TheUI {
             ctx.ui.relayout = false;
         }
         self.process_events(ctx);
-        self.is_dirty
+        self.is_dirty || ctx.ui.redraw_all
     }
 
     pub fn touch_down(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
@@ -231,7 +237,7 @@ impl TheUI {
             // If the new hover widget does not support a hover state, make sure to unhover the current widget if any
             if !widget.supports_hover() {
                 if let Some(hover) = &ctx.ui.hover {
-                    ctx.ui.send_state(TheEvent::LostHover(hover.clone()));
+                    ctx.ui.send(TheEvent::LostHover(hover.clone()));
                     redraw = true;
                     ctx.ui.hover = None;
                 }
@@ -239,7 +245,7 @@ impl TheUI {
 
             self.process_events(ctx);
         } else if let Some(hover) = &ctx.ui.hover {
-            ctx.ui.send_state(TheEvent::LostHover(hover.clone()));
+            ctx.ui.send(TheEvent::LostHover(hover.clone()));
             redraw = true;
             ctx.ui.hover = None;
             self.process_events(ctx);

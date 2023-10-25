@@ -108,7 +108,7 @@ impl TheWidget for TheTextLineEdit {
                 stride,
                 font,
                 14.5,
-                &self.id().name,
+                &self.text,
                 style.theme().color(TextEditTextColor),
                 TheHorizontalAlign::Left,
                 TheVerticalAlign::Center,

@@ -56,7 +56,7 @@ impl TheTrait for Circle {
     }
 
     /// Query if the renderer needs an update (tramsition animation ongoing etc.)
-    fn needs_update(&mut self, ctx: &mut TheContext) -> bool {
+    fn update(&mut self, ctx: &mut TheContext) -> bool {
         ctx.renderer.needs_update()
     }
 }
