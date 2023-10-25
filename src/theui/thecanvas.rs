@@ -1,7 +1,6 @@
 use crate::prelude::*;
 
 pub struct TheCanvas {
-
     pub uuid: Uuid,
 
     /// The relative offset to the parent canvas
@@ -147,7 +146,6 @@ impl TheCanvas {
 
     /// Returns the canvas of the given id
     pub fn get_canvas(&mut self, uuid: Uuid) -> Option<&mut TheCanvas> {
-
         if uuid == self.uuid {
             return Some(self);
         }
@@ -320,7 +318,10 @@ impl TheCanvas {
             if let Some(top) = &mut self.top {
                 let top_width = top.get_limiter_width(w);
                 let top_height = top.get_limiter_height(h);
-                top.set_dim(TheDim::new(x + width - top_width, y, top_width, top_height), ctx);
+                top.set_dim(
+                    TheDim::new(x + width - top_width, y, top_width, top_height),
+                    ctx,
+                );
                 top.offset = vec2i(0, 0);
                 y += top_height;
                 buffer_y += top_height;
@@ -342,12 +343,10 @@ impl TheCanvas {
         if let Some(right) = &mut self.right {
             right_width = right.get_limiter_width(w);
             let right_height = right.get_limiter_height(h);
-            right.set_dim(TheDim::new(
-                x + w - right_width,
-                y,
-                right_width,
-                right_height,
-            ), ctx);
+            right.set_dim(
+                TheDim::new(x + w - right_width, y, right_width, right_height),
+                ctx,
+            );
             right.offset = vec2i(width - right_width, buffer_y);
             w -= right_width;
         }
@@ -356,12 +355,15 @@ impl TheCanvas {
             if let Some(top) = &mut self.top {
                 let top_width = top.get_limiter_width(w);
                 let top_height = top.get_limiter_height(h);
-                top.set_dim(TheDim::new(
-                    x + width - top_width - right_width,
-                    y,
-                    top_width,
-                    top_height,
-                ), ctx);
+                top.set_dim(
+                    TheDim::new(
+                        x + width - top_width - right_width,
+                        y,
+                        top_width,
+                        top_height,
+                    ),
+                    ctx,
+                );
                 top.offset = vec2i(0, 0);
                 y += top_height;
                 buffer_y += top_height;
@@ -372,12 +374,10 @@ impl TheCanvas {
         if let Some(bottom) = &mut self.bottom {
             let bottom_width = w;
             let bottom_height = bottom.get_limiter_height(h);
-            bottom.set_dim(TheDim::new(
-                x,
-                y + h - bottom_height,
-                bottom_width,
-                bottom_height,
-            ), ctx);
+            bottom.set_dim(
+                TheDim::new(x, y + h - bottom_height, bottom_width, bottom_height),
+                ctx,
+            );
             bottom.offset = vec2i(buffer_x, buffer_y + h - bottom_height);
             h -= bottom_height;
         }

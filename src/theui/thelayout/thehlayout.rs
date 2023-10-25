@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheHLayout {
-    widget_id: TheWidgetId,
+    id: TheId,
     limiter: TheSizeLimiter,
 
     dim: TheDim,
@@ -20,7 +20,7 @@ impl TheLayout for TheHLayout {
         Self: Sized,
     {
         Self {
-            widget_id: TheWidgetId::new(name),
+            id: TheId::new(name),
             limiter: TheSizeLimiter::new(),
 
             dim: TheDim::zero(),
@@ -34,8 +34,8 @@ impl TheLayout for TheHLayout {
         }
     }
 
-    fn id(&self) -> &TheWidgetId {
-        &self.widget_id
+    fn id(&self) -> &TheId {
+        &self.id
     }
 
     fn set_margin(&mut self, margin: Vec4i) {

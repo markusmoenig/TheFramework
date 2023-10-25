@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheSwitchbar {
-    widget_id: TheWidgetId,
+    widget_id: TheId,
 
     limiter: TheSizeLimiter,
 
@@ -19,7 +19,7 @@ impl TheWidget for TheSwitchbar {
         limiter.set_max_height(21);
 
         Self {
-            widget_id: TheWidgetId::new(name),
+            widget_id: TheId::new(name),
             limiter,
 
             dim: TheDim::zero(),
@@ -28,7 +28,7 @@ impl TheWidget for TheSwitchbar {
         }
     }
 
-    fn id(&self) -> &TheWidgetId {
+    fn id(&self) -> &TheId {
         &self.widget_id
     }
 

@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheTextLineEdit {
-    widget_id: TheWidgetId,
+    widget_id: TheId,
     limiter: TheSizeLimiter,
 
     text: String,
@@ -19,7 +19,7 @@ impl TheWidget for TheTextLineEdit {
         limiter.set_max_height(20);
 
         Self {
-            widget_id: TheWidgetId::new(name),
+            widget_id: TheId::new(name),
             limiter,
 
             text: "".to_string(),
@@ -29,7 +29,7 @@ impl TheWidget for TheTextLineEdit {
         }
     }
 
-    fn id(&self) -> &TheWidgetId {
+    fn id(&self) -> &TheId {
         &self.widget_id
     }
 
@@ -119,9 +119,8 @@ impl TheWidget for TheTextLineEdit {
     }
 }
 
-pub trait TheTextLineEditTrait : TheWidget {
+pub trait TheTextLineEditTrait: TheWidget {
     fn set_text(&mut self, text: String);
-
 }
 
 impl TheTextLineEditTrait for TheTextLineEdit {

@@ -9,8 +9,9 @@ pub mod theuicontext;
 pub mod thevalue;
 pub mod thevent;
 pub mod thewidget;
+pub mod theid;
 
-use std::{sync::mpsc::{self, Receiver, Sender}, ops::DerefMut};
+use std::sync::mpsc::{self, Receiver, Sender};
 
 pub use crate::prelude::*;
 
@@ -27,6 +28,8 @@ pub mod prelude {
 
     pub use std::rc::Rc;
 
+    pub use crate::theui::theid::TheId;
+
     pub use crate::theui::thecanvas::*;
     pub use crate::theui::thedim::*;
     pub use crate::theui::thergbabuffer::TheRGBABuffer;
@@ -37,8 +40,8 @@ pub mod prelude {
     pub use crate::theui::thevalue::TheValue;
     pub use crate::theui::thevent::TheEvent;
 
-    pub use crate::theui::thewidget::thecolorbutton::*;
     pub use crate::theui::thewidget::prelude::*;
+    pub use crate::theui::thewidget::thecolorbutton::*;
 
     pub use crate::theui::thestyle::prelude::*;
     pub use crate::theui::thestyle::TheStyle;
@@ -120,47 +123,48 @@ impl TheUI {
                 match event {
                     TheEvent::SetStackIndex(id, index) => {
                         if let Some(layout) = self.canvas.get_layout(None, Some(&id.uuid)) {
-                            self.is_dirty = layout.on_event(&TheEvent::SetStackIndex(id, index), ctx);
+                            self.is_dirty =
+                                layout.on_event(&TheEvent::SetStackIndex(id, index), ctx);
                         }
-                    },
+                    }
                     TheEvent::StateChanged(id, state) => {
                         println!("Widget State changed {:?}: {:?}", id, state);
-                    },
+                    }
                     TheEvent::SetState(name, state) => {
                         println!("Set State {:?}: {:?}", name, state);
                         if let Some(widget) = self.canvas.get_widget(Some(&name), None) {
                             widget.set_state(state);
                         }
                         self.is_dirty = true;
-                    },
+                    }
                     TheEvent::GainedFocus(id) => {
                         println!("Gained focus {:?}", id);
-                    },
+                    }
                     TheEvent::LostFocus(id) => {
                         println!("Lost focus {:?}", id);
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
                             widget.set_needs_redraw(true);
                         }
-                    },
+                    }
                     TheEvent::GainedHover(id) => {
                         println!("Gained hover {:?}", id);
-                    },
+                    }
                     TheEvent::LostHover(id) => {
                         println!("Lost hover {:?}", id);
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
                             widget.set_needs_redraw(true);
                         }
-                    },
+                    }
                     TheEvent::ValueChanged(id, value) => {
                         println!("Widget Value changed {:?}: {:?}", id, value);
-                    },
+                    }
                     TheEvent::SetValue(name, value) => {
                         println!("Set Value {:?}: {:?}", name, value);
                         if let Some(widget) = self.canvas.get_widget(Some(&name), None) {
                             widget.set_value(value);
                         }
                         self.is_dirty = true;
-                    },
+                    }
                     _ => {}
                 }
             }
@@ -175,7 +179,7 @@ impl TheUI {
             ctx.ui.relayout = false;
         }
         self.process_events(ctx);
-        self.is_dirty || ctx.ui.redraw_all
+        self.is_dirty
     }
 
     pub fn touch_down(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {

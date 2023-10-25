@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheSnapperbar {
-    widget_id: TheWidgetId,
+    widget_id: TheId,
     limiter: TheSizeLimiter,
 
     state: TheWidgetState,
@@ -22,7 +22,7 @@ impl TheWidget for TheSnapperbar {
         limiter.set_max_height(22);
 
         Self {
-            widget_id: TheWidgetId::new(name),
+            widget_id: TheId::new(name),
             limiter,
 
             state: TheWidgetState::None,
@@ -35,7 +35,7 @@ impl TheWidget for TheSnapperbar {
         }
     }
 
-    fn id(&self) -> &TheWidgetId {
+    fn id(&self) -> &TheId {
         &self.widget_id
     }
 
@@ -150,15 +150,28 @@ impl TheWidget for TheSnapperbar {
             icon_state = "hover".to_string()
         }
 
-        if let Some(icon) = ctx.ui.icon(format!("dark_snapperbar_{}_front", icon_state).as_str()) {
+        if let Some(icon) = ctx
+            .ui
+            .icon(format!("dark_snapperbar_{}_front", icon_state).as_str())
+        {
             let r = (utuple.0, utuple.1 + 1, 1, icon.dim().height as usize);
-            ctx.draw.copy_slice_3(buffer.pixels_mut(), icon.pixels(), &r, stride);
+            ctx.draw
+                .copy_slice_3(buffer.pixels_mut(), icon.pixels(), &r, stride);
 
-            let r = (utuple.0 + utuple.2 - 1, utuple.1 + 1, 1, icon.dim().height as usize);
-            ctx.draw.copy_slice_3(buffer.pixels_mut(), icon.pixels(), &r, stride);
+            let r = (
+                utuple.0 + utuple.2 - 1,
+                utuple.1 + 1,
+                1,
+                icon.dim().height as usize,
+            );
+            ctx.draw
+                .copy_slice_3(buffer.pixels_mut(), icon.pixels(), &r, stride);
         }
 
-        if let Some(icon) = ctx.ui.icon(format!("dark_snapperbar_{}_middle", icon_state).as_str()) {
+        if let Some(icon) = ctx
+            .ui
+            .icon(format!("dark_snapperbar_{}_middle", icon_state).as_str())
+        {
             for x in 1..utuple.2 - 1 {
                 let r = (utuple.0 + x, utuple.1, 1, icon.dim().height as usize);
                 ctx.draw
@@ -168,15 +181,15 @@ impl TheWidget for TheSnapperbar {
 
         if self.open {
             if let Some(icon) = ctx.ui.icon("snapperbar_open") {
-                        let r = (
-                            utuple.0 + 6,
-                            utuple.1 + 9,
-                            icon.dim().width as usize,
-                            icon.dim().height as usize,
-                        );
-                        ctx.draw
-                            .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
-                    }
+                let r = (
+                    utuple.0 + 6,
+                    utuple.1 + 9,
+                    icon.dim().width as usize,
+                    icon.dim().height as usize,
+                );
+                ctx.draw
+                    .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
+            }
         } else if let Some(icon) = ctx.ui.icon("snapperbar_closed") {
             let r = (
                 utuple.0 + 9,

@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheText {
-    widget_id: TheWidgetId,
+    widget_id: TheId,
 
     limiter: TheSizeLimiter,
 
@@ -21,7 +21,7 @@ impl TheWidget for TheText {
         limiter.set_max_height(21);
 
         Self {
-            widget_id: TheWidgetId::new(name),
+            widget_id: TheId::new(name),
             limiter,
 
             dim: TheDim::zero(),
@@ -32,7 +32,7 @@ impl TheWidget for TheText {
         }
     }
 
-    fn id(&self) -> &TheWidgetId {
+    fn id(&self) -> &TheId {
         &self.widget_id
     }
 
@@ -70,7 +70,8 @@ impl TheWidget for TheText {
     fn calculate_size(&mut self, ctx: &mut TheContext) {
         if let Some(font) = &ctx.ui.font {
             let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
-            self.limiter_mut().set_max_size(vec2i((ceil(size.0 as f32) + 1.0) as i32, size.1 as i32));
+            self.limiter_mut()
+                .set_max_size(vec2i((ceil(size.0 as f32) + 1.0) as i32, size.1 as i32));
         }
     }
 

@@ -9,10 +9,10 @@ pub struct TheUIContext {
     pub code_font: Option<Font>,
     icons: FxHashMap<String, TheRGBABuffer>,
 
-    pub focus: Option<TheWidgetId>,
-    pub keyboard_focus: Option<TheWidgetId>,
-    pub hover: Option<TheWidgetId>,
-    pub overlay: Option<TheWidgetId>,
+    pub focus: Option<TheId>,
+    pub keyboard_focus: Option<TheId>,
+    pub hover: Option<TheId>,
+    pub overlay: Option<TheId>,
 
     pub state_events_sender: Option<Sender<TheEvent>>,
 
@@ -97,7 +97,7 @@ impl TheUIContext {
     }
 
     /// Sets the focus to the given widget
-    pub fn set_focus(&mut self, id: &TheWidgetId) {
+    pub fn set_focus(&mut self, id: &TheId) {
         if !id.equals(&self.focus) {
             if let Some(focus) = &self.focus {
                 self.send(TheEvent::LostFocus(focus.clone()));
@@ -108,7 +108,7 @@ impl TheUIContext {
     }
 
     /// Sets the hover to the given widget
-    pub fn set_hover(&mut self, id: &TheWidgetId) {
+    pub fn set_hover(&mut self, id: &TheId) {
         if !id.equals(&self.hover) {
             if let Some(hover) = &self.hover {
                 self.send(TheEvent::LostHover(hover.clone()));
@@ -119,7 +119,7 @@ impl TheUIContext {
     }
 
     /// Sets the overlay to the given widget. This will call the draw_overlay method of the widget after all other draw calls (for menus etc).
-    pub fn set_overlay(&mut self, id: &TheWidgetId) {
+    pub fn set_overlay(&mut self, id: &TheId) {
         self.overlay = Some(id.clone());
     }
 
@@ -130,7 +130,7 @@ impl TheUIContext {
     }
 
     /// Indicates that the state of the given widget changed
-    pub fn send_widget_state_changed(&mut self, id: &TheWidgetId, state: TheWidgetState) {
+    pub fn send_widget_state_changed(&mut self, id: &TheId, state: TheWidgetState) {
         self.send(TheEvent::StateChanged(id.clone(), state));
     }
 
@@ -146,8 +146,7 @@ impl TheUIContext {
     }
 
     /// Indicates that the state of the given widget changed
-    pub fn send_widget_value_changed(&mut self, id: &TheWidgetId, value: TheValue) {
+    pub fn send_widget_value_changed(&mut self, id: &TheId, value: TheValue) {
         self.send(TheEvent::ValueChanged(id.clone(), value));
     }
-
 }

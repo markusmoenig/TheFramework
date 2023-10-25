@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheTextLayout {
-    widget_id: TheWidgetId,
+    id: TheId,
     limiter: TheSizeLimiter,
 
     dim: TheDim,
@@ -26,7 +26,7 @@ impl TheLayout for TheTextLayout {
         Self: Sized,
     {
         Self {
-            widget_id: TheWidgetId::new(name),
+            id: TheId::new(name),
             limiter: TheSizeLimiter::new(),
 
             dim: TheDim::zero(),
@@ -46,8 +46,8 @@ impl TheLayout for TheTextLayout {
         }
     }
 
-    fn id(&self) -> &TheWidgetId {
-        &self.widget_id
+    fn id(&self) -> &TheId {
+        &self.id
     }
 
     fn set_margin(&mut self, margin: Vec4i) {
@@ -120,11 +120,23 @@ impl TheLayout for TheTextLayout {
                 //     break;
                 // }
 
-                texts_rect.push(((self.dim.buffer_x + x) as usize, (self.dim.buffer_y + y) as usize, text_width, self.text_size as usize));
+                texts_rect.push((
+                    (self.dim.buffer_x + x) as usize,
+                    (self.dim.buffer_y + y) as usize,
+                    text_width,
+                    self.text_size as usize,
+                ));
 
-                w.set_dim(TheDim::new(dim.x + x + text_width as i32, dim.y + y, width, height));
-                w.dim_mut()
-                    .set_buffer_offset(self.dim.buffer_x + x + text_width as i32, self.dim.buffer_y + y);
+                w.set_dim(TheDim::new(
+                    dim.x + x + text_width as i32,
+                    dim.y + y,
+                    width,
+                    height,
+                ));
+                w.dim_mut().set_buffer_offset(
+                    self.dim.buffer_x + x + text_width as i32,
+                    self.dim.buffer_y + y,
+                );
 
                 y += height + self.padding;
             }
@@ -212,5 +224,4 @@ impl TheTextLayoutTrait for TheTextLayout {
     fn set_text_margin(&mut self, text_margin: i32) {
         self.text_margin = text_margin;
     }
-
 }

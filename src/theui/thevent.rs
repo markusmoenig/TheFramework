@@ -10,17 +10,17 @@ pub enum TheEvent {
     MouseUp(TheValue),
 
     // These events define widget states.
-    StateChanged(TheWidgetId, TheWidgetState),
+    StateChanged(TheId, TheWidgetState),
     SetState(String, TheWidgetState),
 
-    ValueChanged(TheWidgetId, TheValue),
+    ValueChanged(TheId, TheValue),
     SetValue(String, TheValue),
 
-    GainedFocus(TheWidgetId),
-    LostFocus(TheWidgetId),
-    GainedHover(TheWidgetId),
-    LostHover(TheWidgetId),
+    GainedFocus(TheId),
+    LostFocus(TheId),
+    GainedHover(TheId),
+    LostHover(TheId),
 
     // These events define layout states.
-    SetStackIndex(TheWidgetId, usize),
+    SetStackIndex(TheId, usize),
 }

@@ -3,29 +3,28 @@ use crate::prelude::*;
 pub mod thecolorbutton;
 pub mod thedropdownmenu;
 pub mod themenubar;
-pub mod thesectionbarbutton;
 pub mod thesectionbar;
+pub mod thesectionbarbutton;
+pub mod thesnapperbar;
 pub mod theswitchbar;
 pub mod thetext;
 pub mod thetextlineedit;
-pub mod thesnapperbar;
 
 pub mod prelude {
     pub use crate::theui::thewidget::thecolorbutton::TheColorButton;
     pub use crate::theui::thewidget::thedropdownmenu::TheDropdownMenu;
     pub use crate::theui::thewidget::thedropdownmenu::TheDropdownMenuTrait;
     pub use crate::theui::thewidget::themenubar::TheMenubar;
+    pub use crate::theui::thewidget::thesectionbar::TheSectionbar;
     pub use crate::theui::thewidget::thesectionbarbutton::TheSectionbarButton;
     pub use crate::theui::thewidget::thesectionbarbutton::TheSectionbarButtonTrait;
-    pub use crate::theui::thewidget::thesectionbar::TheSectionbar;
+    pub use crate::theui::thewidget::thesnapperbar::{TheSnapperbar, TheSnapperbarTrait};
     pub use crate::theui::thewidget::theswitchbar::{TheSwitchbar, TheSwitchbarTrait};
     pub use crate::theui::thewidget::thetext::{TheText, TheTextTrait};
-    pub use crate::theui::thewidget::thesnapperbar::{TheSnapperbar, TheSnapperbarTrait};
 
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
 
     pub use crate::theui::thewidget::TheWidget;
-    pub use crate::theui::thewidget::TheWidgetId;
     pub use crate::theui::thewidget::TheWidgetState;
 }
 
@@ -43,7 +42,7 @@ pub trait TheWidget {
     where
         Self: Sized;
 
-    fn id(&self) -> &TheWidgetId;
+    fn id(&self) -> &TheId;
 
     /// Called during layouts to give Widgets a chance to dynamically change size (for example for when a widgets text changes). The function is supposed to adjust its limiter.
     fn calculate_size(&mut self, ctx: &mut TheContext) {}
@@ -117,37 +116,3 @@ pub trait TheWidget {
     }
 }
 
-/// Defines the identifier for a widget, its name and Uuid.
-#[derive(Clone, Debug)]
-pub struct TheWidgetId {
-    pub name: String,
-    pub uuid: Uuid,
-}
-
-impl TheWidgetId {
-    pub fn new(name: String) -> Self {
-        Self {
-            name,
-            uuid: Uuid::new_v4(),
-        }
-    }
-
-    /// Matches the id against optional names and uuids.
-    pub fn matches(&self, name: Option<&String>, uuid: Option<&Uuid>) -> bool {
-        if name.is_none() && uuid.is_none() {
-            return false;
-        }
-
-        name == Some(&self.name) || uuid == Some(&self.uuid)
-    }
-
-    /// Checks if the ids are equal (reference the same widget).
-    pub fn equals(&self, other: &Option<TheWidgetId>) -> bool {
-        if let Some(other) = other {
-            if self.uuid == other.uuid {
-                return true;
-            }
-        }
-        false
-    }
-}

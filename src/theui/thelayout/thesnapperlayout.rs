@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheSnapperLayout {
-    widget_id: TheWidgetId,
+    id: TheId,
     limiter: TheSizeLimiter,
 
     dim: TheDim,
@@ -22,7 +22,7 @@ impl TheLayout for TheSnapperLayout {
         Self: Sized,
     {
         Self {
-            widget_id: TheWidgetId::new(name),
+            id: TheId::new(name),
             limiter: TheSizeLimiter::new(),
 
             dim: TheDim::zero(),
@@ -38,8 +38,8 @@ impl TheLayout for TheSnapperLayout {
         }
     }
 
-    fn id(&self) -> &TheWidgetId {
-        &self.widget_id
+    fn id(&self) -> &TheId {
+        &self.id
     }
 
     fn set_margin(&mut self, margin: Vec4i) {
@@ -58,7 +58,6 @@ impl TheLayout for TheSnapperLayout {
         let mut open_states = vec![];
 
         for b in &mut self.bars {
-
             if b.is_open() {
                 open_states.push(true);
             } else {
@@ -89,7 +88,6 @@ impl TheLayout for TheSnapperLayout {
         let mut open_states = vec![];
 
         for b in &mut self.bars {
-
             if b.is_open() {
                 open_states.push(true);
             } else {
@@ -150,7 +148,9 @@ impl TheLayout for TheSnapperLayout {
                 let i = index as usize;
 
                 self.bars[i].set_dim(TheDim::new(dim.x + x, dim.y + y, width, 22));
-                self.bars[i].dim_mut().set_buffer_offset(self.dim.buffer_x, self.dim.buffer_y + y);
+                self.bars[i]
+                    .dim_mut()
+                    .set_buffer_offset(self.dim.buffer_x, self.dim.buffer_y + y);
 
                 y += self.bars[i].dim().height;
 

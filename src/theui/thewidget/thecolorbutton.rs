@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheColorButton {
-    widget_id: TheWidgetId,
+    widget_id: TheId,
     limiter: TheSizeLimiter,
 
     dim: TheDim,
@@ -15,7 +15,7 @@ impl TheWidget for TheColorButton {
         Self: Sized,
     {
         Self {
-            widget_id: TheWidgetId::new(name),
+            widget_id: TheId::new(name),
             limiter: TheSizeLimiter::new(),
 
             dim: TheDim::zero(),
@@ -24,7 +24,7 @@ impl TheWidget for TheColorButton {
         }
     }
 
-    fn id(&self) -> &TheWidgetId {
+    fn id(&self) -> &TheId {
         &self.widget_id
     }
 

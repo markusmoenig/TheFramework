@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheStackLayout {
-    widget_id: TheWidgetId,
+    id: TheId,
     dim: TheDim,
     limiter: TheSizeLimiter,
 
@@ -16,7 +16,7 @@ impl TheLayout for TheStackLayout {
         Self: Sized,
     {
         Self {
-            widget_id: TheWidgetId::new(name),
+            id: TheId::new(name),
             dim: TheDim::zero(),
             limiter: TheSizeLimiter::new(),
 
@@ -26,11 +26,8 @@ impl TheLayout for TheStackLayout {
         }
     }
 
-    fn id(&self) -> &TheWidgetId {
-        if !self.layouts.is_empty() && self.index < self.layouts.len() {
-            return self.layouts[self.index].id()
-        }
-        &self.widget_id
+    fn id(&self) -> &TheId {
+        &self.id
     }
 
     fn set_margin(&mut self, margin: Vec4i) {
@@ -78,14 +75,14 @@ impl TheLayout for TheStackLayout {
 
     fn dim(&self) -> &TheDim {
         if !self.layouts.is_empty() && self.index < self.layouts.len() {
-            return self.layouts[self.index].dim()
+            return self.layouts[self.index].dim();
         }
         &self.dim
     }
 
     fn dim_mut(&mut self) -> &mut TheDim {
         if !self.layouts.is_empty() && self.index < self.layouts.len() {
-            return self.layouts[self.index].dim_mut()
+            return self.layouts[self.index].dim_mut();
         }
         &mut self.dim
     }
@@ -120,7 +117,6 @@ impl TheLayout for TheStackLayout {
                     ctx.ui.redraw_all = true;
                     ctx.ui.relayout = true;
                     self.index = *index;
-                    println!("{} ss", index);
                     redraw = true;
                 }
             }
@@ -139,11 +135,10 @@ impl TheLayout for TheStackLayout {
             self.layouts[self.index].draw(buffer, style, ctx);
         }
     }
-
 }
 
 /// TheHLayout specific functions.
-pub trait TheStackLayoutTrait : TheLayout {
+pub trait TheStackLayoutTrait: TheLayout {
     /// Add a layout to the stack.
     fn add_layout(&mut self, widget: Box<dyn TheLayout>);
 

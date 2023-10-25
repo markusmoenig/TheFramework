@@ -3,7 +3,7 @@ use std::sync::mpsc::Receiver;
 
 pub struct Sidebar {
     state_receiver: Option<Receiver<TheEvent>>,
-    stack_layout_id: TheWidgetId,
+    stack_layout_id: TheId,
 }
 
 #[allow(clippy::new_without_default)]
@@ -11,17 +11,15 @@ impl Sidebar {
     pub fn new() -> Self {
         Self {
             state_receiver: None,
-            stack_layout_id: TheWidgetId::new("".to_string()),
+            stack_layout_id: TheId::new("".to_string()),
         }
     }
 
     pub fn init_ui(&mut self, ui: &mut TheUI, _ctx: &mut TheContext) {
-
         let mut sectionbar_canvas = TheCanvas::new();
 
         let mut section_bar_canvas = TheCanvas::new();
-        section_bar_canvas
-            .set_widget(TheSectionbar::new("Sectionbar".to_string()));
+        section_bar_canvas.set_widget(TheSectionbar::new("Sectionbar".to_string()));
         sectionbar_canvas.set_top(section_bar_canvas);
 
         let mut cube_sectionbar_button = TheSectionbarButton::new("Cube".to_string());
@@ -108,11 +106,13 @@ impl Sidebar {
                         if id.name == "Cube" {
                             ctx.ui
                                 .set_widget_state("Sphere".to_string(), TheWidgetState::None);
-                            ctx.ui.send(TheEvent::SetStackIndex(self.stack_layout_id.clone(), 0));
+                            ctx.ui
+                                .send(TheEvent::SetStackIndex(self.stack_layout_id.clone(), 0));
                         } else if id.name == "Sphere" {
                             ctx.ui
                                 .set_widget_state("Cube".to_string(), TheWidgetState::None);
-                            ctx.ui.send(TheEvent::SetStackIndex(self.stack_layout_id.clone(), 1));
+                            ctx.ui
+                                .send(TheEvent::SetStackIndex(self.stack_layout_id.clone(), 1));
                         }
 
                         redraw = true;

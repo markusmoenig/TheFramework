@@ -1,17 +1,17 @@
 use crate::prelude::*;
 
 pub mod thehlayout;
-pub mod thevlayout;
-pub mod thetextlayout;
 pub mod thesnapperlayout;
 pub mod thestacklayout;
+pub mod thetextlayout;
+pub mod thevlayout;
 
 pub mod prelude {
     pub use crate::theui::thelayout::thehlayout::{TheHLayout, TheHLayoutTrait};
-    pub use crate::theui::thelayout::thevlayout::{TheVLayout, TheVLayoutTrait};
-    pub use crate::theui::thelayout::thetextlayout::{TheTextLayout, TheTextLayoutTrait};
     pub use crate::theui::thelayout::thesnapperlayout::{TheSnapperLayout, TheSnapperLayoutTrait};
     pub use crate::theui::thelayout::thestacklayout::{TheStackLayout, TheStackLayoutTrait};
+    pub use crate::theui::thelayout::thetextlayout::{TheTextLayout, TheTextLayoutTrait};
+    pub use crate::theui::thelayout::thevlayout::{TheVLayout, TheVLayoutTrait};
 
     pub use crate::theui::thelayout::TheLayout;
 }
@@ -24,7 +24,7 @@ pub trait TheLayout {
         Self: Sized;
 
     /// Returns the id of the layout.
-    fn id(&self) -> &TheWidgetId;
+    fn id(&self) -> &TheId;
 
     /// Returns a reference to the dimensions of the widget.
     fn dim(&self) -> &TheDim;
