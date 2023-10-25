@@ -103,6 +103,12 @@ impl TheUI {
 
     pub fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {
         self.canvas.resize(ctx.width as i32, ctx.height as i32, ctx);
+        if ctx.ui.relayout {
+            let width = self.canvas.buffer().dim().width;
+            let height = self.canvas.buffer().dim().height;
+            self.canvas.layout(width, height, ctx);
+            ctx.ui.relayout = false;
+        }
         self.canvas.draw(&mut self.style, ctx);
         self.canvas.draw_overlay(&mut self.style, ctx);
         ctx.ui.redraw_all = false;
@@ -172,12 +178,6 @@ impl TheUI {
     }
 
     pub fn update(&mut self, ctx: &mut TheContext) -> bool {
-        if ctx.ui.relayout {
-            let width = self.canvas.buffer().dim().width;
-            let height = self.canvas.buffer().dim().height;
-            self.canvas.layout(width, height, ctx);
-            ctx.ui.relayout = false;
-        }
         self.process_events(ctx);
         self.is_dirty
     }
