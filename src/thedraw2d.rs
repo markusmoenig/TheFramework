@@ -124,6 +124,34 @@ impl TheDraw2D {
         }
     }
 
+    /// Draws the outline of a given rectangle
+    pub fn rect_outline_border(
+        &self,
+        frame: &mut [u8],
+        rect: &(usize, usize, usize, usize),
+        stride: usize,
+        color: &[u8; 4],
+        border: usize,
+    ) {
+        let y = rect.1;
+        for x in rect.0 + border..rect.0 + rect.2 - border {
+            let mut i = x * 4 + y * stride * 4;
+            frame[i..i + 4].copy_from_slice(color);
+
+            i = x * 4 + (y + rect.3 - 1) * stride * 4;
+            frame[i..i + 4].copy_from_slice(color);
+        }
+
+        let x = rect.0;
+        for y in rect.1 + border..rect.1 + rect.3 - border{
+            let mut i = x * 4 + y * stride * 4;
+            frame[i..i + 4].copy_from_slice(color);
+
+            i = (x + rect.2 - 1) * 4 + y * stride * 4;
+            frame[i..i + 4].copy_from_slice(color);
+        }
+    }
+
     /// Draws a circle
     pub fn circle(
         &self,
@@ -519,6 +547,51 @@ impl TheDraw2D {
                         + (y + pos.1 + glyph.y as usize) * stride * 4;
                     let m = alphamap[x + y * metrics.width];
 
+                    frame[i..i + 4].copy_from_slice(&self.mix_color(
+                        background,
+                        color,
+                        m as f32 / 255.0,
+                    ));
+                }
+            }
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    /// Draws the given text
+    pub fn text_blend(
+        &self,
+        frame: &mut [u8],
+        pos: &(usize, usize),
+        stride: usize,
+        font: &Font,
+        size: f32,
+        text: &str,
+        color: &[u8; 4],
+    ) {
+        if text.is_empty() {
+            return;
+        }
+
+        let fonts = &[font];
+
+        let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
+        layout.reset(&LayoutSettings {
+            ..LayoutSettings::default()
+        });
+        layout.append(fonts, &TextStyle::new(text, size, 0));
+
+        for glyph in layout.glyphs() {
+            let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
+            //println!("Metrics: {:?}", glyph);
+
+            for y in 0..metrics.height {
+                for x in 0..metrics.width {
+                    let i = (x + pos.0 + glyph.x as usize) * 4
+                        + (y + pos.1 + glyph.y as usize) * stride * 4;
+                    let m = alphamap[x + y * metrics.width];
+
+                    let background = &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
                     frame[i..i + 4].copy_from_slice(&self.mix_color(
                         background,
                         color,

@@ -20,8 +20,8 @@ use rust_embed::RustEmbed;
 #[exclude = "*.DS_Store"]
 pub struct Embedded;
 
-#[derive(Clone)]
-pub enum WidgetKey {
+#[derive(Clone, Debug, PartialEq)]
+pub enum TheKeyCode {
     Escape,
     Return,
     Delete,
@@ -46,7 +46,7 @@ pub mod prelude {
     pub use crate::thedraw2d::TheVerticalAlign;
 
     pub use crate::thetrait::TheTrait;
-    pub use crate::WidgetKey;
+    pub use crate::TheKeyCode;
 
     #[cfg(feature = "renderer")]
     pub use therenderer::prelude::*;

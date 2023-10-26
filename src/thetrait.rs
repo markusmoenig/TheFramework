@@ -41,7 +41,7 @@ pub trait TheTrait {
     fn key_down(
         &mut self,
         char: Option<char>,
-        key: Option<WidgetKey>,
+        key: Option<TheKeyCode>,
         ctx: &mut TheContext,
     ) -> bool {
         false

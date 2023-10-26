@@ -107,6 +107,11 @@ impl TheUIContext {
         }
     }
 
+    /// Checks if the given id has focus
+    pub fn has_focus(&self, id: &TheId) -> bool {
+        id.equals(&self.focus)
+    }
+
     /// Sets the hover to the given widget
     pub fn set_hover(&mut self, id: &TheId) {
         if !id.equals(&self.hover) {

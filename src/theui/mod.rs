@@ -149,6 +149,7 @@ impl TheUI {
                     TheEvent::LostFocus(id) => {
                         println!("Lost focus {:?}", id);
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
+                            widget.on_event(&TheEvent::LostFocus(widget.id().clone()), ctx);
                             widget.set_needs_redraw(true);
                         }
                     }
@@ -253,6 +254,27 @@ impl TheUI {
             redraw = true;
             ctx.ui.hover = None;
             self.process_events(ctx);
+        }
+        redraw
+    }
+
+    pub fn key_down(
+        &mut self,
+        char: Option<char>,
+        key: Option<TheKeyCode>,
+        ctx: &mut TheContext,
+    ) -> bool {
+        let mut redraw = false;
+        if let Some(id) = &ctx.ui.focus {
+            if let Some(widget) = self.canvas.get_widget(Some(&id.name), Some(&id.uuid)) {
+                let event =  if let Some(c) = char {
+                    TheEvent::KeyDown(TheValue::Char(c))
+                } else {
+                    TheEvent::KeyCodeDown(TheValue::KeyCode(key.unwrap()))
+                };
+                redraw = widget.on_event(&event, ctx);
+                self.process_events(ctx);
+            }
         }
         redraw
     }

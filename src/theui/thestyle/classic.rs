@@ -52,19 +52,36 @@ impl TheStyle for TheClassicStyle {
     ) {
         let stride = buffer.stride();
 
-        let border_color = if widget.id().equals(&ctx.ui.focus) {
-            self.theme().color(SelectedWidgetBorder)
+        if widget.id().equals(&ctx.ui.focus) {
+
+            ctx.draw.rect_outline_border(
+                buffer.pixels_mut(),
+                &widget.dim().to_buffer_shrunk_utuple(shrinker),
+                stride,
+                self.theme().color(SelectedTextEditBorder1),
+                2,
+            );
+
+            shrinker.shrink(1);
+
+            ctx.draw.rect_outline(
+                buffer.pixels_mut(),
+                &widget.dim().to_buffer_shrunk_utuple(shrinker),
+                stride,
+                self.theme().color(SelectedTextEditBorder2),
+            );
+            shrinker.shrink(1);
         } else {
-            self.theme().color(DefaultWidgetBorder)
-        };
+            shrinker.shrink(1);
+            ctx.draw.rect_outline_border(
+                buffer.pixels_mut(),
+                &widget.dim().to_buffer_shrunk_utuple(shrinker),
+                stride,
+                self.theme().color(TextEditBorder),
+                1
+            );
+            shrinker.shrink(1);
+        }
 
-        ctx.draw.rect_outline(
-            buffer.pixels_mut(),
-            &widget.dim().to_buffer_shrunk_utuple(shrinker),
-            stride,
-            border_color,
-        );
-
-        shrinker.shrink(2);
     }
 }

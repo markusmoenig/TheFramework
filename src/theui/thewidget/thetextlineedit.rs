@@ -5,6 +5,10 @@ pub struct TheTextLineEdit {
     limiter: TheSizeLimiter,
 
     text: String,
+    original: String,
+    position: usize,
+
+    font_size: f32,
 
     dim: TheDim,
     is_dirty: bool,
@@ -23,6 +27,10 @@ impl TheWidget for TheTextLineEdit {
             limiter,
 
             text: "".to_string(),
+            original: "".to_string(),
+            position: 0,
+
+            font_size: 14.5,
 
             dim: TheDim::zero(),
             is_dirty: false,
@@ -31,21 +39,6 @@ impl TheWidget for TheTextLineEdit {
 
     fn id(&self) -> &TheId {
         &self.widget_id
-    }
-
-    #[allow(clippy::single_match)]
-    fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
-        let mut redraw = false;
-        // println!("event ({}): {:?}", self.widget_id.name, event);
-        match event {
-            TheEvent::MouseDown(_coord) => {
-                ctx.ui.set_focus(self.id());
-                self.is_dirty = true;
-                redraw = true;
-            }
-            _ => {}
-        }
-        redraw
     }
 
     fn dim(&self) -> &TheDim {
@@ -79,6 +72,147 @@ impl TheWidget for TheTextLineEdit {
         self.is_dirty = redraw;
     }
 
+    #[allow(clippy::single_match)]
+    fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
+        let mut redraw = false;
+        //println!("event ({}): {:?}", self.widget_id.name, event);
+        match event {
+            TheEvent::MouseDown(coord) => {
+                ctx.ui.set_focus(self.id());
+                self.is_dirty = true;
+                redraw = true;
+                self.original = self.text.clone();
+
+                self.position = 0;
+                if let Some(coord) = coord.to_vec2i() {
+                    let x = coord.x - 7;
+                    let mut offset = 0;
+                    let mut found = false;
+                    if !self.text.is_empty() && x >= 0 {
+                        for i in 1..self.text.len() {
+                            let txt = &self.text[0..i];
+                            if let Some(font) = &ctx.ui.font {
+                                let size = ctx.draw.get_text_size(font, self.font_size, txt);
+                                if size.0 as i32 >= x {
+                                    offset = i;
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if found  {
+                            self.position = offset;
+                        } else {
+                            self.position = self.text.len();
+                        }
+                    }
+
+                }
+            },
+            TheEvent::MouseDragged(coord) => {
+                self.is_dirty = true;
+                redraw = true;
+
+                self.position = 0;
+                if let Some(coord) = coord.to_vec2i() {
+                    let x = coord.x - 7;
+                    let mut offset = 0;
+                    let mut found = false;
+                    if !self.text.is_empty() && x >= 0 {
+                        for i in 1..self.text.len() {
+                            let txt = &self.text[0..i];
+                            if let Some(font) = &ctx.ui.font {
+                                let size = ctx.draw.get_text_size(font, self.font_size, txt);
+                                if size.0 as i32 >= x {
+                                    offset = i;
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if found  {
+                            self.position = offset;
+                        } else {
+                            self.position = self.text.len();
+                        }
+                    }
+
+                }
+            },
+            TheEvent::KeyDown(key) => {
+                if let Some(c) = key.to_char() {
+
+                    fn insert_at_char_position(s: &mut String, ch: char, pos: usize) {
+                        // Convert the character position to a byte position
+                        let byte_pos = s.char_indices()
+                            .nth(pos)
+                            .map(|(idx, _)| idx)
+                            .unwrap_or_else(|| s.len());  // If position is out of range, insert at the end
+
+                        // Insert the character
+                        s.insert(byte_pos, ch);
+                    }
+
+                    let mut txt = self.text.clone();
+                    insert_at_char_position(&mut txt,c, self.position);
+
+                    // For now limit the input to the available widget width
+                    // Have to implement scrolling
+                    if let Some(font) = &ctx.ui.font {
+                        let size = ctx.draw.get_text_size(font, self.font_size, txt.as_str());
+                        if (size.0 as i32) < self.dim().width - 12 {
+                            self.text = txt;
+                            self.position += 1;
+                            self.is_dirty = true;
+                            redraw = true;
+                        }
+                    }
+                }
+            },
+            TheEvent::KeyCodeDown(key_code) => {
+                if let Some(key) = key_code.to_key_code() {
+                    if key == TheKeyCode::Delete {
+                        fn delete_at_char_position(s: &mut String, pos: usize) {
+                            // Find the start byte position of the character at the given position
+                            if let Some((start, ch)) = s.char_indices().nth(pos) {
+                                // Calculate the end byte position of the character
+                                let end = start + ch.len_utf8();
+
+                                // Reconstruct the string without the character at the given position
+                                let remaining = s.split_off(end);
+                                s.truncate(start);
+                                s.push_str(&remaining);
+                            }
+                        }
+                        if self.position > 0 {
+                            delete_at_char_position(&mut self.text, self.position - 1);
+                            self.position -= 1;
+                            self.is_dirty = true;
+                            redraw = true;
+                        }
+                    } else if key == TheKeyCode::Left && self.position > 0 {
+                        self.position -= 1;
+                        self.is_dirty = true;
+                        redraw = true;
+                    } else if key == TheKeyCode::Right && self.position < self.text.len() {
+                        self.position += 1;
+                        self.is_dirty = true;
+                        redraw = true;
+                    } else if key == TheKeyCode::Return && self.text != self.original {
+                        ctx.ui.send_widget_value_changed(self.id(), TheValue::Text(self.text.clone()));
+                    }
+                }
+            },
+            TheEvent::LostFocus(_id) => {
+                if self.text != self.original {
+                    ctx.ui.send_widget_value_changed(self.id(), TheValue::Text(self.text.clone()));
+                }
+            }
+            _ => {}
+        }
+        redraw
+    }
+
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
@@ -92,7 +226,7 @@ impl TheWidget for TheTextLineEdit {
         let stride = buffer.stride();
         let mut shrinker = TheDimShrinker::zero();
 
-        style.draw_widget_border(buffer, self, &mut shrinker, ctx);
+        style.draw_text_edit_border(buffer, self, &mut shrinker, ctx);
 
         ctx.draw.rect(
             buffer.pixels_mut(),
@@ -101,18 +235,42 @@ impl TheWidget for TheTextLineEdit {
             style.theme().color(TextEditBackground),
         );
 
+        shrinker.shrink_by(5, 0, 5, 0);
+
         if let Some(font) = &ctx.ui.font {
-            ctx.draw.text_rect_blend(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                font,
-                14.5,
-                &self.text,
-                style.theme().color(TextEditTextColor),
-                TheHorizontalAlign::Left,
-                TheVerticalAlign::Center,
-            );
+            if !self.text.is_empty() {
+                let r = self.dim.to_buffer_shrunk_utuple(&shrinker);
+                ctx.draw.text_blend(
+                    buffer.pixels_mut(),
+                    &(r.0, r.1 - 1),
+                    stride,
+                    font,
+                    self.font_size,
+                    &self.text,
+                    style.theme().color(TextEditTextColor)
+                );
+            }
+
+            if ctx.ui.has_focus(self.id()) {
+
+                let mut shr = shrinker;
+                shr.shrink_by(0, 1, 0, 1);
+                let mut r = self.dim.to_buffer_shrunk_utuple(&shr);
+                r.2 = 2;
+
+                if !self.text.is_empty() && self.position > 0 {
+                    let txt = &self.text[0..self.position];
+                    let size = ctx.draw.get_text_size(font, self.font_size, txt);
+                    r.0 += size.0;
+                }
+
+                ctx.draw.rect(
+                    buffer.pixels_mut(),
+                    &r,
+                    stride,
+                    style.theme().color(TextEditCursorColor),
+                );
+            }
         }
 
         self.is_dirty = false;
@@ -126,5 +284,6 @@ pub trait TheTextLineEditTrait: TheWidget {
 impl TheTextLineEditTrait for TheTextLineEdit {
     fn set_text(&mut self, text: String) {
         self.text = text;
+        self.position = 0;
     }
 }

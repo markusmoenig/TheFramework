@@ -103,40 +103,40 @@ pub extern "C" fn rust_special_key_down(key: u32) -> bool {
     if key == KEY_ESCAPE {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Escape), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Escape), &mut CTX.lock().unwrap())
     } else if key == KEY_RETURN {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Return), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Return), &mut CTX.lock().unwrap())
     } else if key == KEY_DELETE {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Delete), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Delete), &mut CTX.lock().unwrap())
     } else if key == KEY_UP {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Up), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Up), &mut CTX.lock().unwrap())
     } else if key == KEY_RIGHT {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Right), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Right), &mut CTX.lock().unwrap())
     } else if key == KEY_DOWN {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Down), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Down), &mut CTX.lock().unwrap())
     } else if key == KEY_LEFT {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Left), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Left), &mut CTX.lock().unwrap())
     } else if key == KEY_SPACE {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Space), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Space), &mut CTX.lock().unwrap())
     } else {
         //if key == KEY_TAB {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Tab), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Tab), &mut CTX.lock().unwrap())
     }
 }
 

@@ -39,6 +39,7 @@ pub enum TheThemeColors {
     SelectedTextEditBorder1,
     SelectedTextEditBorder2,
     TextEditTextColor,
+    TextEditCursorColor,
 
     MenubarPopupBackground,
     MenubarPopupBorder,
