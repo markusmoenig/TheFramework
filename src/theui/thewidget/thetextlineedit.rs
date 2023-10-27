@@ -100,15 +100,14 @@ impl TheWidget for TheTextLineEdit {
                                 }
                             }
                         }
-                        if found  {
+                        if found {
                             self.position = offset;
                         } else {
                             self.position = self.text.len();
                         }
                     }
-
                 }
-            },
+            }
             TheEvent::MouseDragged(coord) => {
                 self.is_dirty = true;
                 redraw = true;
@@ -130,31 +129,30 @@ impl TheWidget for TheTextLineEdit {
                                 }
                             }
                         }
-                        if found  {
+                        if found {
                             self.position = offset;
                         } else {
                             self.position = self.text.len();
                         }
                     }
-
                 }
-            },
+            }
             TheEvent::KeyDown(key) => {
                 if let Some(c) = key.to_char() {
-
                     fn insert_at_char_position(s: &mut String, ch: char, pos: usize) {
                         // Convert the character position to a byte position
-                        let byte_pos = s.char_indices()
+                        let byte_pos = s
+                            .char_indices()
                             .nth(pos)
                             .map(|(idx, _)| idx)
-                            .unwrap_or_else(|| s.len());  // If position is out of range, insert at the end
+                            .unwrap_or_else(|| s.len()); // If position is out of range, insert at the end
 
                         // Insert the character
                         s.insert(byte_pos, ch);
                     }
 
                     let mut txt = self.text.clone();
-                    insert_at_char_position(&mut txt,c, self.position);
+                    insert_at_char_position(&mut txt, c, self.position);
 
                     // For now limit the input to the available widget width
                     // Have to implement scrolling
@@ -168,7 +166,7 @@ impl TheWidget for TheTextLineEdit {
                         }
                     }
                 }
-            },
+            }
             TheEvent::KeyCodeDown(key_code) => {
                 if let Some(key) = key_code.to_key_code() {
                     if key == TheKeyCode::Delete {
@@ -199,13 +197,17 @@ impl TheWidget for TheTextLineEdit {
                         self.is_dirty = true;
                         redraw = true;
                     } else if key == TheKeyCode::Return && self.text != self.original {
-                        ctx.ui.send_widget_value_changed(self.id(), TheValue::Text(self.text.clone()));
+                        ctx.ui.send_widget_value_changed(
+                            self.id(),
+                            TheValue::Text(self.text.clone()),
+                        );
                     }
                 }
-            },
+            }
             TheEvent::LostFocus(_id) => {
                 if self.text != self.original {
-                    ctx.ui.send_widget_value_changed(self.id(), TheValue::Text(self.text.clone()));
+                    ctx.ui
+                        .send_widget_value_changed(self.id(), TheValue::Text(self.text.clone()));
                 }
             }
             _ => {}
@@ -247,12 +249,11 @@ impl TheWidget for TheTextLineEdit {
                     font,
                     self.font_size,
                     &self.text,
-                    style.theme().color(TextEditTextColor)
+                    style.theme().color(TextEditTextColor),
                 );
             }
 
             if ctx.ui.has_focus(self.id()) {
-
                 let mut shr = shrinker;
                 shr.shrink_by(0, 1, 0, 1);
                 let mut r = self.dim.to_buffer_shrunk_utuple(&shr);

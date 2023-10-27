@@ -1,5 +1,6 @@
 pub mod thecanvas;
 pub mod thedim;
+pub mod theid;
 pub mod thelayout;
 pub mod thergbabuffer;
 pub mod thesizelimiter;
@@ -9,7 +10,6 @@ pub mod theuicontext;
 pub mod thevalue;
 pub mod thevent;
 pub mod thewidget;
-pub mod theid;
 
 use std::sync::mpsc::{self, Receiver, Sender};
 
@@ -129,8 +129,14 @@ impl TheUI {
                 match event {
                     TheEvent::SetStackIndex(id, index) => {
                         if let Some(layout) = self.canvas.get_layout(None, Some(&id.uuid)) {
-                            self.is_dirty =
-                                layout.on_event(&TheEvent::SetStackIndex(id, index), ctx);
+                            if let Some(stack) = layout.as_stack_layout() {
+                                if stack.index() != index {
+                                    stack.set_index(index);
+                                    self.is_dirty = true;
+                                    ctx.ui.redraw_all = true;
+                                    ctx.ui.relayout = true;
+                                }
+                            }
                         }
                     }
                     TheEvent::StateChanged(id, state) => {
@@ -267,7 +273,7 @@ impl TheUI {
         let mut redraw = false;
         if let Some(id) = &ctx.ui.focus {
             if let Some(widget) = self.canvas.get_widget(Some(&id.name), Some(&id.uuid)) {
-                let event =  if let Some(c) = char {
+                let event = if let Some(c) = char {
                     TheEvent::KeyDown(TheValue::Char(c))
                 } else {
                     TheEvent::KeyCodeDown(TheValue::KeyCode(key.unwrap()))

@@ -43,4 +43,9 @@ pub enum TheThemeColors {
 
     MenubarPopupBackground,
     MenubarPopupBorder,
+
+    SliderSmallColor1,
+    SliderSmallColor2,
+    SliderSmallColor3,
+    SliderSmallColor4,
 }

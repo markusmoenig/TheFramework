@@ -38,6 +38,11 @@ impl TheTheme for TheDarkTheme {
         colors.insert(MenubarPopupBackground, [124, 124, 124, 255]);
         colors.insert(MenubarPopupBorder, [153, 153, 153, 255]);
 
+        colors.insert(SliderSmallColor1, [158, 158, 158, 255]);
+        colors.insert(SliderSmallColor2, [174, 174, 174, 255]);
+        colors.insert(SliderSmallColor3, [187, 187, 187, 255]);
+        colors.insert(SliderSmallColor4, [122, 122, 122, 255]);
+
         Self { colors }
     }
 

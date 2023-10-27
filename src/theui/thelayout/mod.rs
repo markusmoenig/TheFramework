@@ -78,8 +78,8 @@ pub trait TheLayout {
         ctx: &mut TheContext,
     );
 
-    /// Process an user driven device event, returns true if we need to redraw.
-    fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
-        false
+    /// Attempts to cast to TheStackLayoutTrait. Only valid for TheStackLayout.
+    fn as_stack_layout(&mut self) -> Option<&mut dyn TheStackLayoutTrait> {
+        None
     }
 }

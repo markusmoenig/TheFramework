@@ -143,7 +143,7 @@ impl TheDraw2D {
         }
 
         let x = rect.0;
-        for y in rect.1 + border..rect.1 + rect.3 - border{
+        for y in rect.1 + border..rect.1 + rect.3 - border {
             let mut i = x * 4 + y * stride * 4;
             frame[i..i + 4].copy_from_slice(color);
 

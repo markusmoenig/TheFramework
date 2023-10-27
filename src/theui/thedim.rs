@@ -125,4 +125,12 @@ impl TheDimShrinker {
         self.right += right * 2;
         self.bottom += bottom * 2;
     }
+
+    /// Resets the shrinker, i.e. sets all fields to 0.
+    pub fn reset(&mut self) {
+        self.left = 0;
+        self.top = 0;
+        self.right = 0;
+        self.bottom = 0;
+    }
 }

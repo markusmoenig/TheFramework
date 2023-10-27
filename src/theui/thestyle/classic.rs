@@ -53,7 +53,6 @@ impl TheStyle for TheClassicStyle {
         let stride = buffer.stride();
 
         if widget.id().equals(&ctx.ui.focus) {
-
             ctx.draw.rect_outline_border(
                 buffer.pixels_mut(),
                 &widget.dim().to_buffer_shrunk_utuple(shrinker),
@@ -78,10 +77,9 @@ impl TheStyle for TheClassicStyle {
                 &widget.dim().to_buffer_shrunk_utuple(shrinker),
                 stride,
                 self.theme().color(TextEditBorder),
-                1
+                1,
             );
             shrinker.shrink(1);
         }
-
     }
 }

@@ -107,24 +107,6 @@ impl TheLayout for TheStackLayout {
         &mut self.limiter
     }
 
-    #[allow(clippy::single_match)]
-    fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
-        let mut redraw = false;
-        // println!("event ({}): {:?}", self.widget_id.name, event);
-        match event {
-            TheEvent::SetStackIndex(_id, index) => {
-                if *index != self.index {
-                    ctx.ui.redraw_all = true;
-                    ctx.ui.relayout = true;
-                    self.index = *index;
-                    redraw = true;
-                }
-            }
-            _ => {}
-        }
-        redraw
-    }
-
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
@@ -135,12 +117,20 @@ impl TheLayout for TheStackLayout {
             self.layouts[self.index].draw(buffer, style, ctx);
         }
     }
+
+    /// Convert to the stack layout trait
+    fn as_stack_layout(&mut self) -> Option<&mut dyn TheStackLayoutTrait> {
+        Some(self)
+    }
 }
 
 /// TheHLayout specific functions.
 pub trait TheStackLayoutTrait: TheLayout {
     /// Add a layout to the stack.
     fn add_layout(&mut self, widget: Box<dyn TheLayout>);
+
+    /// Returns the index of the current layout.
+    fn index(&self) -> usize;
 
     /// Set the index of the current layout.
     fn set_index(&mut self, index: usize);
@@ -149,6 +139,10 @@ pub trait TheStackLayoutTrait: TheLayout {
 impl TheStackLayoutTrait for TheStackLayout {
     fn add_layout(&mut self, layout: Box<dyn TheLayout>) {
         self.layouts.push(layout);
+    }
+
+    fn index(&self) -> usize {
+        self.index
     }
 
     fn set_index(&mut self, index: usize) {

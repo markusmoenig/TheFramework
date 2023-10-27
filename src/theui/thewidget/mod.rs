@@ -5,6 +5,7 @@ pub mod thedropdownmenu;
 pub mod themenubar;
 pub mod thesectionbar;
 pub mod thesectionbarbutton;
+pub mod theslider;
 pub mod thesnapperbar;
 pub mod theswitchbar;
 pub mod thetext;
@@ -18,6 +19,7 @@ pub mod prelude {
     pub use crate::theui::thewidget::thesectionbar::TheSectionbar;
     pub use crate::theui::thewidget::thesectionbarbutton::TheSectionbarButton;
     pub use crate::theui::thewidget::thesectionbarbutton::TheSectionbarButtonTrait;
+    pub use crate::theui::thewidget::theslider::{TheSlider, TheSliderTrait};
     pub use crate::theui::thewidget::thesnapperbar::{TheSnapperbar, TheSnapperbarTrait};
     pub use crate::theui::thewidget::theswitchbar::{TheSwitchbar, TheSwitchbarTrait};
     pub use crate::theui::thewidget::thetext::{TheText, TheTextTrait};
@@ -75,6 +77,11 @@ pub trait TheWidget {
     /// Set the widget state.
     fn set_state(&mut self, state: TheWidgetState) {}
 
+    /// Get the widget value.
+    fn value(&mut self) -> TheValue {
+        TheValue::Empty
+    }
+
     /// Set the widget value.
     fn set_value(&mut self, value: TheValue) {}
 
@@ -115,4 +122,3 @@ pub trait TheWidget {
         false
     }
 }
-
