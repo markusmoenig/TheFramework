@@ -48,4 +48,12 @@ pub enum TheThemeColors {
     SliderSmallColor2,
     SliderSmallColor3,
     SliderSmallColor4,
+
+    MenubarButtonHover,
+    MenubarButtonHoverBorder,
+    MenubarButtonClicked,
+    MenubarButtonClickedBorder,
+
+    MenubarButtonSeparator1,
+    MenubarButtonSeparator2,
 }

@@ -43,6 +43,14 @@ impl TheTheme for TheDarkTheme {
         colors.insert(SliderSmallColor3, [187, 187, 187, 255]);
         colors.insert(SliderSmallColor4, [122, 122, 122, 255]);
 
+        colors.insert(MenubarButtonHover, [157, 157, 157, 255]);
+        colors.insert(MenubarButtonHoverBorder, [179, 179, 179, 255]);
+        colors.insert(MenubarButtonClicked, [149, 149, 149, 255]);
+        colors.insert(MenubarButtonClickedBorder, [204, 204, 204, 255]);
+
+        colors.insert(MenubarButtonSeparator1, [102, 102, 102, 255]);
+        colors.insert(MenubarButtonSeparator2, [148, 148, 148, 255]);
+
         Self { colors }
     }
 

@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use theframework::{prelude::*, theui::thewidget::thetext::TheText};
+use theframework::prelude::*;
 
 pub struct UIDemo {
     sidebar: Sidebar,
@@ -29,17 +29,31 @@ impl TheTrait for UIDemo {
 
         let menubar = TheMenubar::new("Menubar".to_string());
 
-        let mut text = TheText::new("Text".to_string());
-        text.set_text("Testing".to_string());
+        let mut open_button = TheMenubarButton::new("Open".to_string());
+        open_button.set_icon_name("icon_role_load".to_string());
 
-        let mut dropdown = TheDropdownMenu::new("DropDown".to_string());
-        dropdown.add_option("Option #1".to_string());
-        dropdown.add_option("Option #2".to_string());
+        let mut save_button = TheMenubarButton::new("Save".to_string());
+        save_button.set_icon_name("icon_role_save".to_string());
+
+        let mut save_as_button = TheMenubarButton::new("Save As".to_string());
+        save_as_button.set_icon_name("icon_role_save_as".to_string());
+        save_as_button.set_icon_offset(vec2i(2, -5));
+
+        let mut undo_button = TheMenubarButton::new("Undo".to_string());
+        undo_button.set_icon_name("icon_role_undo".to_string());
+
+        let mut redo_button = TheMenubarButton::new("Redo".to_string());
+        redo_button.set_icon_name("icon_role_redo".to_string());
 
         let mut hlayout = TheHLayout::new("Menu Layout".to_string());
         hlayout.set_background_color(None);
-        hlayout.add_widget(Box::new(text));
-        hlayout.add_widget(Box::new(dropdown));
+        hlayout.set_margin(vec4i(40, 5, 20, 0));
+        hlayout.add_widget(Box::new(open_button));
+        hlayout.add_widget(Box::new(save_button));
+        hlayout.add_widget(Box::new(save_as_button));
+        hlayout.add_widget(Box::new(TheMenubarSeparator::new("".to_string())));
+        hlayout.add_widget(Box::new(undo_button));
+        hlayout.add_widget(Box::new(redo_button));
 
         top_canvas.set_widget(menubar);
         top_canvas.set_layout(hlayout);

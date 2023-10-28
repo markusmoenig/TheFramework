@@ -95,7 +95,10 @@ impl TheWidget for TheSlider {
     }
 
     fn set_value(&mut self, value: TheValue) {
-        self.value = value;
+        if value != self.value {
+            self.value = value;
+            self.is_dirty = true;
+        }
     }
 
     #[allow(clippy::single_match)]

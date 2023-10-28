@@ -107,6 +107,11 @@ impl TheUIContext {
         }
     }
 
+    /// Clears the focus state.
+    pub fn clear_focus(&mut self) {
+        self.focus = None;
+    }
+
     /// Checks if the given id has focus
     pub fn has_focus(&self, id: &TheId) -> bool {
         id.equals(&self.focus)
