@@ -1,6 +1,7 @@
 use crate::prelude::*;
 
 pub mod thehlayout;
+pub mod thelistlayout;
 pub mod thesnapperlayout;
 pub mod thestacklayout;
 pub mod thetextlayout;
@@ -8,6 +9,7 @@ pub mod thevlayout;
 
 pub mod prelude {
     pub use crate::theui::thelayout::thehlayout::{TheHLayout, TheHLayoutTrait};
+    pub use crate::theui::thelayout::thelistlayout::{TheListLayout, TheListLayoutTrait};
     pub use crate::theui::thelayout::thesnapperlayout::{TheSnapperLayout, TheSnapperLayoutTrait};
     pub use crate::theui::thelayout::thestacklayout::{TheStackLayout, TheStackLayoutTrait};
     pub use crate::theui::thelayout::thetextlayout::{TheTextLayout, TheTextLayoutTrait};

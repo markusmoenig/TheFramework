@@ -91,6 +91,5 @@ impl TheWidget for TheMenubarSeparator {
             stride,
             style.theme().color(MenubarButtonSeparator2),
         );
-
     }
 }

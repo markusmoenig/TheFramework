@@ -56,7 +56,7 @@ impl TheWidget for TheDropdownMenu {
                     self.original = self.selected;
                 }
                 redraw = true;
-            },
+            }
             TheEvent::MouseDragged(coord) => {
                 if !self.options.is_empty() {
                     if let Some(coord) = coord.to_vec2i() {
@@ -71,7 +71,7 @@ impl TheWidget for TheDropdownMenu {
                     self.is_dirty = true;
                     redraw = true;
                 }
-            },
+            }
             TheEvent::MouseUp(_coord) => {
                 self.is_dirty = true;
                 if self.state == TheWidgetState::Clicked {
@@ -86,7 +86,7 @@ impl TheWidget for TheDropdownMenu {
                     }
                 }
                 redraw = true;
-            },
+            }
             TheEvent::Hover(_coord) => {
                 if self.state != TheWidgetState::Clicked && !self.id().equals(&ctx.ui.hover) {
                     self.is_dirty = true;

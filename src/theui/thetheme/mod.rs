@@ -56,4 +56,10 @@ pub enum TheThemeColors {
 
     MenubarButtonSeparator1,
     MenubarButtonSeparator2,
+
+    ListLayoutBackground,
+    ListItemNormal,
+    ListItemSelected,
+    ListItemHover,
+    ListItemText,
 }

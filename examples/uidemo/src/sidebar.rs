@@ -38,11 +38,24 @@ impl Sidebar {
         sectionbar_canvas.set_layout(vlayout);
 
         // Switchbar
-
         let mut header = TheCanvas::new();
         let mut switchbar = TheSwitchbar::new("Switchbar Header".to_string());
         switchbar.set_text("Section Header".to_string());
         header.set_widget(switchbar);
+
+        // ListLayout
+        let mut list_canvas = TheCanvas::new();
+        let mut list_layout = TheListLayout::new("List Layout".to_string());
+        list_layout.limiter_mut().set_max_size(vec2i(360, 200));
+        list_canvas.set_top(header);
+
+        for i in 0..2 {
+            let mut list_item: TheListItem = TheListItem::new(format!("DropDown {}", i));
+            list_item.set_text(format!("Item #{}", i));
+            list_layout.add_item(list_item);
+        }
+
+        list_canvas.set_layout(list_layout);
 
         // Snapperbar
 
@@ -87,7 +100,7 @@ impl Sidebar {
         stack_layout.set_index(0);
         canvas.set_layout(stack_layout);
 
-        canvas.set_top(header);
+        canvas.set_top(list_canvas);
         canvas.set_right(sectionbar_canvas);
         canvas.top_is_expanding = false;
 

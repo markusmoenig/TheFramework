@@ -51,6 +51,12 @@ impl TheTheme for TheDarkTheme {
         colors.insert(MenubarButtonSeparator1, [102, 102, 102, 255]);
         colors.insert(MenubarButtonSeparator2, [148, 148, 148, 255]);
 
+        colors.insert(ListLayoutBackground, [82, 82, 82, 255]);
+        colors.insert(ListItemNormal, [174, 174, 174, 255]);
+        colors.insert(ListItemSelected, [187, 122, 208, 255]);
+        colors.insert(ListItemHover, [237, 237, 237, 255]);
+        colors.insert(ListItemText, [85, 81, 85, 255]);
+
         Self { colors }
     }
 

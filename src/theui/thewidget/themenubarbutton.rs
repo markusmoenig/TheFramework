@@ -26,7 +26,7 @@ impl TheWidget for TheMenubarButton {
             state: TheWidgetState::None,
 
             icon_name: "".to_string(),
-            icon_offset: vec2i(0,0),
+            icon_offset: vec2i(0, 0),
 
             dim: TheDim::zero(),
             is_dirty: false,
@@ -50,14 +50,14 @@ impl TheWidget for TheMenubarButton {
                 }
                 self.is_dirty = true;
                 redraw = true;
-            },
+            }
             TheEvent::Hover(_coord) => {
                 if self.state != TheWidgetState::Clicked && !self.id().equals(&ctx.ui.hover) {
                     self.is_dirty = true;
                     ctx.ui.set_hover(self.id());
                     redraw = true;
                 }
-            },
+            }
             TheEvent::MouseUp(_coord) => {
                 if self.state == TheWidgetState::Clicked {
                     self.state = TheWidgetState::None;
@@ -65,7 +65,7 @@ impl TheWidget for TheMenubarButton {
                 }
                 self.is_dirty = true;
                 redraw = true;
-            },
+            }
             _ => {}
         }
         redraw
@@ -129,15 +129,13 @@ impl TheWidget for TheMenubarButton {
         }
 
         if self.state != TheWidgetState::None || self.id().equals(&ctx.ui.hover) {
-
             if self.state == TheWidgetState::Clicked {
-
                 ctx.draw.rect_outline_border(
                     buffer.pixels_mut(),
                     &self.dim.to_buffer_shrunk_utuple(&shrinker),
                     stride,
                     style.theme().color(MenubarButtonClickedBorder),
-                    1
+                    1,
                 );
 
                 shrinker.shrink(1);
@@ -149,13 +147,12 @@ impl TheWidget for TheMenubarButton {
                     style.theme().color(MenubarButtonClicked),
                 );
             } else if self.id().equals(&ctx.ui.hover) {
-
                 ctx.draw.rect_outline_border(
                     buffer.pixels_mut(),
                     &self.dim.to_buffer_shrunk_utuple(&shrinker),
                     stride,
                     style.theme().color(MenubarButtonHoverBorder),
-                    1
+                    1,
                 );
 
                 shrinker.shrink(1);
@@ -172,8 +169,10 @@ impl TheWidget for TheMenubarButton {
         if let Some(icon) = ctx.ui.icon(&self.icon_name) {
             let utuple = self.dim.to_buffer_shrunk_utuple(&shrinker);
             let r = (
-                ((utuple.0 + (utuple.2 - icon.dim().width as usize) / 2) as i32 + self.icon_offset.x) as usize,
-                ((utuple.1 + (utuple.3 - icon.dim().height as usize) / 2) as i32 + self.icon_offset.y) as usize,
+                ((utuple.0 + (utuple.2 - icon.dim().width as usize) / 2) as i32
+                    + self.icon_offset.x) as usize,
+                ((utuple.1 + (utuple.3 - icon.dim().height as usize) / 2) as i32
+                    + self.icon_offset.y) as usize,
                 icon.dim().width as usize,
                 icon.dim().height as usize,
             );
