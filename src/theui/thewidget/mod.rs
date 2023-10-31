@@ -2,6 +2,7 @@ use crate::prelude::*;
 
 pub mod thecolorbutton;
 pub mod thedropdownmenu;
+pub mod thelistitem;
 pub mod themenubar;
 pub mod themenubarbutton;
 pub mod themenubarseparator;
@@ -12,15 +13,23 @@ pub mod thesnapperbar;
 pub mod theswitchbar;
 pub mod thetext;
 pub mod thetextlineedit;
-pub mod thelistitem;
+pub mod thetoolbar;
+pub mod thetoolbarbutton;
 
 pub mod prelude {
     pub use crate::theui::thewidget::thecolorbutton::TheColorButton;
+
     pub use crate::theui::thewidget::thedropdownmenu::TheDropdownMenu;
     pub use crate::theui::thewidget::thedropdownmenu::TheDropdownMenuTrait;
+
     pub use crate::theui::thewidget::themenubar::TheMenubar;
     pub use crate::theui::thewidget::themenubarbutton::{TheMenubarButton, TheMenubarButtonTrait};
     pub use crate::theui::thewidget::themenubarseparator::TheMenubarSeparator;
+
+    pub use crate::theui::thewidget::thetoolbar::TheToolbar;
+    pub use crate::theui::thewidget::thetoolbarbutton::{TheToolbarButton, TheToolbarButtonTrait};
+
+    pub use crate::theui::thewidget::thelistitem::{TheListItem, TheListItemTrait};
     pub use crate::theui::thewidget::thesectionbar::TheSectionbar;
     pub use crate::theui::thewidget::thesectionbarbutton::TheSectionbarButton;
     pub use crate::theui::thewidget::thesectionbarbutton::TheSectionbarButtonTrait;
@@ -28,7 +37,6 @@ pub mod prelude {
     pub use crate::theui::thewidget::thesnapperbar::{TheSnapperbar, TheSnapperbarTrait};
     pub use crate::theui::thewidget::theswitchbar::{TheSwitchbar, TheSwitchbarTrait};
     pub use crate::theui::thewidget::thetext::{TheText, TheTextTrait};
-    pub use crate::theui::thewidget::thelistitem::{TheListItem, TheListItemTrait};
 
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
 

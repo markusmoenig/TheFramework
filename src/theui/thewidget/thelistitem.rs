@@ -135,7 +135,7 @@ impl TheWidget for TheListItem {
             &self.dim.to_buffer_shrunk_utuple(&shrinker),
             stride,
             color,
-            1
+            1,
         );
 
         shrinker.shrink(1);
@@ -143,7 +143,7 @@ impl TheWidget for TheListItem {
             buffer.pixels_mut(),
             &self.dim.to_buffer_shrunk_utuple(&shrinker),
             stride,
-            color
+            color,
         );
 
         shrinker.shrink_by(9, 0, 0, 0);
@@ -164,7 +164,6 @@ impl TheWidget for TheListItem {
 
         self.is_dirty = false;
     }
-
 }
 
 pub trait TheListItemTrait {

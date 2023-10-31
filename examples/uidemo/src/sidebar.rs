@@ -55,6 +55,25 @@ impl Sidebar {
             list_layout.add_item(list_item);
         }
 
+        let mut toolbar_canvas = TheCanvas::new();
+        let toolbar_widget = TheToolbar::new("Toolbar".to_string());
+
+        let mut add_button = TheToolbarButton::new("Add".to_string());
+        add_button.set_icon_name("icon_role_add".to_string());
+
+        let mut remove_button = TheToolbarButton::new("Remove".to_string());
+        remove_button.set_icon_name("icon_role_remove".to_string());
+
+        let mut toolbar_hlayout = TheHLayout::new("Toolbar Layout".to_string());
+        toolbar_hlayout.set_background_color(None);
+        toolbar_hlayout.set_margin(vec4i(5, 2, 5, 0));
+        toolbar_hlayout.add_widget(Box::new(add_button));
+        toolbar_hlayout.add_widget(Box::new(remove_button));
+
+        toolbar_canvas.set_layout(toolbar_hlayout);
+        toolbar_canvas.set_widget(toolbar_widget);
+
+        list_canvas.set_bottom(toolbar_canvas);
         list_canvas.set_layout(list_layout);
 
         // Snapperbar
