@@ -26,4 +26,5 @@ pub enum TheEvent {
 
     // These events define layout states.
     SetStackIndex(TheId, usize),
+    NewListItemSelected(TheId, TheId),
 }

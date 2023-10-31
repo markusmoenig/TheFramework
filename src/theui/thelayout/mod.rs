@@ -84,4 +84,9 @@ pub trait TheLayout {
     fn as_stack_layout(&mut self) -> Option<&mut dyn TheStackLayoutTrait> {
         None
     }
+
+    /// Attempts to cast to TheListLayoutTrait. Only valid for TheListLayout.
+    fn as_list_layout(&mut self) -> Option<&mut dyn TheListLayoutTrait> {
+        None
+    }
 }

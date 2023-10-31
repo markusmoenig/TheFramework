@@ -6,7 +6,6 @@ pub struct TheToolbar {
     limiter: TheSizeLimiter,
 
     dim: TheDim,
-    text: String,
     is_dirty: bool,
 }
 
@@ -23,7 +22,6 @@ impl TheWidget for TheToolbar {
             limiter,
 
             dim: TheDim::zero(),
-            text: "".to_string(),
             is_dirty: false,
         }
     }

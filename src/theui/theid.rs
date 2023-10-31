@@ -8,9 +8,20 @@ pub struct TheId {
 }
 
 impl TheId {
+
+    /// Creates an Id based on a given name.
     pub fn new(name: String) -> Self {
         Self {
             name,
+            uuid: Uuid::new_v4(),
+        }
+    }
+
+
+    /// Creates an empty id (an id wth an empty name).
+    pub fn empty() -> Self {
+        Self {
+            name: "".to_string(),
             uuid: Uuid::new_v4(),
         }
     }

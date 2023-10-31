@@ -20,6 +20,8 @@ therenderer = { version = "0.1.0", optional = true }
 rust-embed = { version = "8.0.0", default-features = true, features = ["include-exclude"] }
 png = "0.17.8"
 rustc-hash = "1.1.0"
+rfd = "0.12"
+futures = "0.3"
 
 [dependencies.uuid]
 version = "1.1.2"

@@ -138,16 +138,32 @@ impl TheLayout for TheListLayout {
             self.widgets[i].draw(buffer, style, ctx);
         }
     }
+
+    /// Convert to the list layout trait
+    fn as_list_layout(&mut self) -> Option<&mut dyn TheListLayoutTrait> {
+        Some(self)
+    }
 }
 
 /// TheListLayout specific functions.
 pub trait TheListLayoutTrait {
     /// Add an item
     fn add_item(&mut self, item: TheListItem);
+    /// A new item was selected, manage the selection states
+    fn new_item_selected(&mut self, item: TheId);
 }
 
 impl TheListLayoutTrait for TheListLayout {
-    fn add_item(&mut self, item: TheListItem) {
+
+    fn add_item(&mut self, mut item: TheListItem) {
+        item.set_associated_layout(self.id().clone());
         self.widgets.push(Box::new(item));
+    }
+    fn new_item_selected(&mut self, item: TheId) {
+        for w in &mut self.widgets {
+            if !w.id().equals(&Some(item.clone())) {
+                w.set_state(TheWidgetState::None);
+            }
+        }
     }
 }

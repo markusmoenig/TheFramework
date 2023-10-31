@@ -10,6 +10,8 @@ pub struct TheListItem {
 
     dim: TheDim,
     is_dirty: bool,
+
+    layout_id: TheId,
 }
 
 impl TheWidget for TheListItem {
@@ -30,6 +32,8 @@ impl TheWidget for TheListItem {
 
             dim: TheDim::zero(),
             is_dirty: false,
+
+            layout_id: TheId::empty()
         }
     }
 
@@ -46,6 +50,7 @@ impl TheWidget for TheListItem {
                     self.is_dirty = true;
                     self.state = TheWidgetState::Selected;
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
+                    ctx.ui.send(TheEvent::NewListItemSelected(self.id().clone(), self.layout_id.clone()));
                     ctx.ui.set_focus(self.id());
                     redraw = true;
                 }
@@ -168,10 +173,14 @@ impl TheWidget for TheListItem {
 
 pub trait TheListItemTrait {
     fn set_text(&mut self, text: String);
+    fn set_associated_layout(&mut self, id: TheId);
 }
 
 impl TheListItemTrait for TheListItem {
     fn set_text(&mut self, text: String) {
         self.text = text;
+    }
+    fn set_associated_layout(&mut self, layout_id: TheId) {
+        self.layout_id = layout_id;
     }
 }

@@ -176,7 +176,6 @@ impl TheWidget for TheToolbarButton {
                 icon.dim().width as usize,
                 icon.dim().height as usize,
             );
-            println!("{:?}", r);
             ctx.draw
                 .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
         }

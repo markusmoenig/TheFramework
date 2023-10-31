@@ -127,6 +127,13 @@ impl TheUI {
                 }
 
                 match event {
+                    TheEvent::NewListItemSelected(id, layout_id) => {
+                        if let Some(layout) = self.canvas.get_layout(None, Some(&layout_id.uuid)) {
+                            if let Some(list) = layout.as_list_layout() {
+                                list.new_item_selected(id);
+                            }
+                        }
+                    }
                     TheEvent::SetStackIndex(id, index) => {
                         if let Some(layout) = self.canvas.get_layout(None, Some(&id.uuid)) {
                             if let Some(stack) = layout.as_stack_layout() {
