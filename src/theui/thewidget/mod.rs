@@ -15,6 +15,7 @@ pub mod thetext;
 pub mod thetextlineedit;
 pub mod thetoolbar;
 pub mod thetoolbarbutton;
+pub mod theverticalscrollbar;
 
 pub mod prelude {
     pub use crate::theui::thewidget::thecolorbutton::TheColorButton;
@@ -37,6 +38,9 @@ pub mod prelude {
     pub use crate::theui::thewidget::thesnapperbar::{TheSnapperbar, TheSnapperbarTrait};
     pub use crate::theui::thewidget::theswitchbar::{TheSwitchbar, TheSwitchbarTrait};
     pub use crate::theui::thewidget::thetext::{TheText, TheTextTrait};
+    pub use crate::theui::thewidget::theverticalscrollbar::{
+        TheVerticalScrollbar, TheVerticalScrollbarTrait,
+    };
 
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
 
@@ -134,5 +138,15 @@ pub trait TheWidget {
     /// Process an user driven device event, returns true if we need to redraw.
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         false
+    }
+
+    /// Attempts to cast to TheListItemTrait. Only valid for TheListItem.
+    fn as_list_item(&mut self) -> Option<&mut dyn TheListItemTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheVerticalScrollbarTrait. Only valid for TheVerticalScrollbar.
+    fn as_vertical_scrollbar(&mut self) -> Option<&mut dyn TheVerticalScrollbarTrait> {
+        None
     }
 }

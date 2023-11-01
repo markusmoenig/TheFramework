@@ -62,7 +62,7 @@ impl TheDraw2D {
         color: &[u8; 4],
         safe_rect: &(usize, usize, usize, usize),
     ) {
-        let dest_stride_isize = stride as isize;
+        let dest_stride_isize: isize = stride as isize;
         for y in rect.1..rect.1 + rect.3 as isize {
             if y >= safe_rect.1 as isize && y < (safe_rect.1 + safe_rect.3) as isize {
                 for x in rect.0..rect.0 + rect.2 as isize {
@@ -149,6 +149,52 @@ impl TheDraw2D {
 
             i = (x + rect.2 - 1) * 4 + y * stride * 4;
             frame[i..i + 4].copy_from_slice(color);
+        }
+    }
+
+    /// Draws the outline of a given rectangle
+    pub fn rect_outline_border_safe(
+        &self,
+        frame: &mut [u8],
+        rect: &(isize, isize, usize, usize),
+        stride: usize,
+        color: &[u8; 4],
+        border: isize,
+        safe_rect: &(usize, usize, usize, usize),
+    ) {
+        let dest_stride_isize: isize = stride as isize;
+        let y = rect.1;
+        if y >= safe_rect.1 as isize && y < (safe_rect.1 + safe_rect.3) as isize {
+            for x in rect.0 + border..rect.0 + rect.2 as isize - border {
+                if x >= safe_rect.0 as isize && x < (safe_rect.0 + safe_rect.2) as isize {
+                    let mut i = (x * 4 + y * dest_stride_isize * 4) as usize;
+                    frame[i..i + 4].copy_from_slice(color);
+
+                    if (y + rect.3 as isize - 1) >= safe_rect.1 as isize
+                        && (y + rect.3 as isize - 1) < (safe_rect.1 + safe_rect.3) as isize
+                    {
+                        i = (x * 4 + (y + rect.3 as isize - 1) * dest_stride_isize * 4) as usize;
+                        frame[i..i + 4].copy_from_slice(color);
+                    }
+                }
+            }
+        }
+
+        let x = rect.0;
+        if x >= safe_rect.0 as isize && x < (safe_rect.0 + safe_rect.2) as isize {
+            for y in rect.1 + border..rect.1 + rect.3 as isize - border {
+                if y >= safe_rect.1 as isize && y < (safe_rect.1 + safe_rect.3) as isize {
+                    let mut i = (x * 4 + y * dest_stride_isize * 4) as usize;
+                    frame[i..i + 4].copy_from_slice(color);
+
+                    if (x + rect.2 as isize - 1) >= safe_rect.0 as isize
+                        && (x + rect.2 as isize - 1) < (safe_rect.0 + safe_rect.2) as isize
+                    {
+                        i = ((x + rect.2 as isize - 1) * 4 + y * dest_stride_isize * 4) as usize;
+                        frame[i..i + 4].copy_from_slice(color);
+                    }
+                }
+            }
         }
     }
 

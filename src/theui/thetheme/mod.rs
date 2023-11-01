@@ -62,4 +62,6 @@ pub enum TheThemeColors {
     ListItemSelected,
     ListItemHover,
     ListItemText,
+
+    ScrollbarBackground,
 }

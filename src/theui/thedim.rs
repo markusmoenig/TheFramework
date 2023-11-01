@@ -77,6 +77,33 @@ impl TheDim {
         )
     }
 
+    /// Returns a safe rectangle in the buffer for the offset and the given widget size.
+    pub fn to_buffer_safe_rect_utuple(
+        &self,
+        buffer: &TheRGBABuffer,
+    ) -> Option<(usize, usize, usize, usize)> {
+        if self.buffer_y > buffer.dim().height {
+            return None;
+        }
+
+        let mut r = (
+            self.buffer_x as usize,
+            self.buffer_y as usize,
+            self.width as usize,
+            self.height as usize,
+        );
+
+        if self.width + self.buffer_x > buffer.dim().width {
+            r.2 = (self.width + self.buffer_x - buffer.dim().width) as usize;
+        }
+
+        if self.height + self.buffer_y > buffer.dim().height {
+            r.3 = (self.height + self.buffer_y - buffer.dim().height) as usize;
+        }
+
+        Some(r)
+    }
+
     /// Returns the dimension as an usize tuple relative to the buffer origin (used by the drawing routines)
     pub fn to_buffer_shrunk_utuple(
         &self,
@@ -85,6 +112,19 @@ impl TheDim {
         (
             (self.buffer_x + shrinker.left) as usize,
             (self.buffer_y + shrinker.top) as usize,
+            (self.width - shrinker.right) as usize,
+            (self.height - shrinker.bottom) as usize,
+        )
+    }
+
+    /// Returns the dimension as an usize tuple relative to the buffer origin (used by the drawing routines)
+    pub fn to_buffer_shrunk_ituple(
+        &self,
+        shrinker: &TheDimShrinker,
+    ) -> (isize, isize, usize, usize) {
+        (
+            (self.buffer_x + shrinker.left) as isize,
+            (self.buffer_y + shrinker.top) as isize,
             (self.width - shrinker.right) as usize,
             (self.height - shrinker.bottom) as usize,
         )

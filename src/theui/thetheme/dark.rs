@@ -57,6 +57,8 @@ impl TheTheme for TheDarkTheme {
         colors.insert(ListItemHover, [237, 237, 237, 255]);
         colors.insert(ListItemText, [85, 81, 85, 255]);
 
+        colors.insert(ScrollbarBackground, [139, 139, 139, 255]);
+
         Self { colors }
     }
 

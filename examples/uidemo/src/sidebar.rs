@@ -49,8 +49,8 @@ impl Sidebar {
         list_layout.limiter_mut().set_max_size(vec2i(360, 200));
         list_canvas.set_top(header);
 
-        for i in 0..2 {
-            let mut list_item: TheListItem = TheListItem::new(format!("DropDown {}", i));
+        for i in 0..10 {
+            let mut list_item: TheListItem = TheListItem::new(format!("List Item {}", i));
             list_item.set_text(format!("Item #{}", i));
             list_layout.add_item(list_item);
         }

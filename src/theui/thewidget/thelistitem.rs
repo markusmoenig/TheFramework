@@ -12,6 +12,8 @@ pub struct TheListItem {
     is_dirty: bool,
 
     layout_id: TheId,
+
+    safe_rect: Option<(usize, usize, usize, usize)>,
 }
 
 impl TheWidget for TheListItem {
@@ -33,7 +35,8 @@ impl TheWidget for TheListItem {
             dim: TheDim::zero(),
             is_dirty: false,
 
-            layout_id: TheId::empty()
+            layout_id: TheId::empty(),
+            safe_rect: None,
         }
     }
 
@@ -50,7 +53,10 @@ impl TheWidget for TheListItem {
                     self.is_dirty = true;
                     self.state = TheWidgetState::Selected;
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
-                    ctx.ui.send(TheEvent::NewListItemSelected(self.id().clone(), self.layout_id.clone()));
+                    ctx.ui.send(TheEvent::NewListItemSelected(
+                        self.id().clone(),
+                        self.layout_id.clone(),
+                    ));
                     ctx.ui.set_focus(self.id());
                     redraw = true;
                 }
@@ -121,64 +127,76 @@ impl TheWidget for TheListItem {
             return;
         }
 
-        let mut color = if self.state == TheWidgetState::Selected {
-            style.theme().color(ListItemSelected)
-        } else {
-            style.theme().color(ListItemNormal)
-        };
+        if let Some(safe_rect) = self.safe_rect {
+            let mut color = if self.state == TheWidgetState::Selected {
+                style.theme().color(ListItemSelected)
+            } else {
+                style.theme().color(ListItemNormal)
+            };
 
-        if self.state != TheWidgetState::Selected && self.id().equals(&ctx.ui.hover) {
-            color = style.theme().color(ListItemHover);
-        }
+            if self.state != TheWidgetState::Selected && self.id().equals(&ctx.ui.hover) {
+                color = style.theme().color(ListItemHover);
+            }
 
-        let stride = buffer.stride();
-        let mut shrinker = TheDimShrinker::zero();
-        shrinker.shrink_by(1, 0, 1, 0);
+            let stride = buffer.stride();
+            let mut shrinker = TheDimShrinker::zero();
+            //shrinker.shrink_by(0, 0, 0, 0);
 
-        ctx.draw.rect_outline_border(
-            buffer.pixels_mut(),
-            &self.dim.to_buffer_shrunk_utuple(&shrinker),
-            stride,
-            color,
-            1,
-        );
-
-        shrinker.shrink(1);
-        ctx.draw.rect(
-            buffer.pixels_mut(),
-            &self.dim.to_buffer_shrunk_utuple(&shrinker),
-            stride,
-            color,
-        );
-
-        shrinker.shrink_by(9, 0, 0, 0);
-
-        if let Some(font) = &ctx.ui.font {
-            ctx.draw.text_rect_blend(
+            ctx.draw.rect_outline_border_safe(
                 buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                &self.dim.to_buffer_shrunk_ituple(&shrinker),
                 stride,
-                font,
-                13.0,
-                &self.text,
-                style.theme().color(ListItemText),
-                TheHorizontalAlign::Left,
-                TheVerticalAlign::Center,
+                color,
+                1,
+                &safe_rect,
             );
-        }
 
-        self.is_dirty = false;
+            shrinker.shrink(1);
+            ctx.draw.rect_safe(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_shrunk_ituple(&shrinker),
+                stride,
+                color,
+                &safe_rect,
+            );
+
+            shrinker.shrink_by(9, 0, 0, 0);
+
+            if let Some(font) = &ctx.ui.font {
+                ctx.draw.text_rect_blend(
+                    buffer.pixels_mut(),
+                    &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                    stride,
+                    font,
+                    13.0,
+                    &self.text,
+                    style.theme().color(ListItemText),
+                    TheHorizontalAlign::Left,
+                    TheVerticalAlign::Center,
+                );
+            }
+
+            self.is_dirty = false;
+        }
+    }
+
+    fn as_list_item(&mut self) -> Option<&mut dyn TheListItemTrait> {
+        Some(self)
     }
 }
 
 pub trait TheListItemTrait {
     fn set_text(&mut self, text: String);
     fn set_associated_layout(&mut self, id: TheId);
+    fn set_safe_rect(&mut self, safe_rect: Option<(usize, usize, usize, usize)>);
 }
 
 impl TheListItemTrait for TheListItem {
     fn set_text(&mut self, text: String) {
         self.text = text;
+    }
+    fn set_safe_rect(&mut self, safe_rect: Option<(usize, usize, usize, usize)>) {
+        self.safe_rect = safe_rect;
     }
     fn set_associated_layout(&mut self, layout_id: TheId) {
         self.layout_id = layout_id;
