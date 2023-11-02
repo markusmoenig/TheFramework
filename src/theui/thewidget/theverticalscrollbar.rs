@@ -49,24 +49,33 @@ impl TheWidget for TheVerticalScrollbar {
         // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
             TheEvent::MouseDown(coord) => {
-                self.is_dirty = true;
-                if self.state != TheWidgetState::Clicked {
-                    self.state = TheWidgetState::Clicked;
-                    ctx.ui.send_widget_state_changed(self.id(), self.state);
-                    ctx.ui.set_focus(self.id());
-                }
+
+                let dim = TheDim::new(0, self.scrollbar_position() as i32, self.dim.width, self.scrollbar_thumb_height());
                 if let Some(coord) = coord.to_vec2i() {
-                    self.mouse_down_coord = coord;
+                    if dim.contains(coord) {
+                        self.is_dirty = true;
+                        if self.state != TheWidgetState::Clicked {
+                            self.state = TheWidgetState::Clicked;
+                            ctx.ui.send_widget_state_changed(self.id(), self.state);
+                            ctx.ui.set_focus(self.id());
+                            self.mouse_down_coord = coord;
+                        }
+                    } else {
+                        self.is_dirty = true;
+                        self.scroll_from_track_click(coord.y);
+                    }
                 }
                 redraw = true;
             }
             TheEvent::MouseDragged(coord) => {
-                self.is_dirty = true;
-                redraw = true;
-                if let Some(coord) = coord.to_vec2i() {
-                    let d = coord - self.mouse_down_coord;
-                    self.scroll_by(d.y);
-                    self.mouse_down_coord = coord;
+                if self.state == TheWidgetState::Clicked {
+                    self.is_dirty = true;
+                    redraw = true;
+                    if let Some(coord) = coord.to_vec2i() {
+                        let d = coord - self.mouse_down_coord;
+                        self.adjust_scroll_from_thumb_delta(d.y);
+                        self.mouse_down_coord = coord;
+                    }
                 }
             }
             TheEvent::MouseUp(_coord) => {
@@ -77,11 +86,22 @@ impl TheWidget for TheVerticalScrollbar {
                 }
                 redraw = true;
             }
-            TheEvent::Hover(_coord) => {
-                if self.state != TheWidgetState::Clicked && !self.id().equals(&ctx.ui.hover) {
-                    self.is_dirty = true;
-                    ctx.ui.set_hover(self.id());
-                    redraw = true;
+            TheEvent::Hover(coord) => {
+                if self.state != TheWidgetState::Clicked {
+                    let dim = TheDim::new(0, self.scrollbar_position() as i32, self.dim.width, self.scrollbar_thumb_height());
+                    if let Some(coord) = coord.to_vec2i() {
+                        if dim.contains(coord) {
+                            if !self.id().equals(&ctx.ui.hover) {
+                                self.is_dirty = true;
+                                ctx.ui.set_hover(self.id());
+                                redraw = true;
+                            }
+                        } else {
+                            self.is_dirty = true;
+                            ctx.ui.clear_hover();
+                            redraw = true;
+                        }
+                    }
                 }
             }
             _ => {}
@@ -165,10 +185,9 @@ impl TheWidget for TheVerticalScrollbar {
             icon_name = "dark_vertical_scrollbar_hover_".to_string()
         }
 
-        let scroll_bar_height = (self.dim.height as f32 * self.scrollbar_thumb_proportional_height()).floor() as i32;
-        let offset = (self.dim.height as f32 * self.scrollbar_position()) as usize; //self.scroll_offset as usize;
-
-        println!("{} {}", offset, self.scrollbar_position());
+        let scroll_bar_height = self.scrollbar_thumb_height();
+        let offset = self.scrollbar_position() as usize;
+        //println!("{} {}", offset, self.scrollbar_position());
 
         if scroll_bar_height >= 5 {
             if let Some(icon) = ctx.ui.icon(&(icon_name.clone() + "top")) {
@@ -224,7 +243,7 @@ pub trait TheVerticalScrollbarTrait {
     /// Returns the total height of the content.
     fn total_height(&self) -> i32;
 
-    /// Sets the total heigh of the content.
+    /// Sets the total height of the content.
     fn set_total_height(&mut self, value: i32);
 
     /// Returns the visible height of the widget.
@@ -239,33 +258,62 @@ pub trait TheVerticalScrollbarTrait {
     /// Helper function to scroll by a certain amount (delta).
     /// This can be positive (to scroll down) or negative (to scroll up).
     fn scroll_by(&mut self, delta: i32) {
-        let new_offset = (self.scroll_offset() + delta)
-            .max(0)
-            .min(self.total_height() - self.viewport_height());
+        let new_offset = (self.scroll_offset() + delta).max(0).min(self.total_height() - self.viewport_height());
         self.set_scroll_offset(new_offset);
     }
 
     /// Helper function to determine if the scrollbar is needed.
     fn needs_scrollbar(&self) -> bool;
 
-    /// Get the position of the scrollbar slider as a ratio in the range 0 to 1.
-    /// Useful for drawing the scrollbar thumb.
+    /// Get the maximum scroll offset for the thumb.
+    fn max_thumb_offset(&self) -> i32 {
+        self.viewport_height() - self.scrollbar_thumb_height()
+    }
+
+    /// Get the position of the scrollbar slider, accounting for the border.
     fn scrollbar_position(&self) -> f32 {
         if self.needs_scrollbar() {
-            (self.scroll_offset() as f32 + 0.0) / (self.total_height() - self.viewport_height()) as f32
+            (self.scroll_offset() as f32 * self.max_thumb_offset() as f32) / (self.total_height() - self.viewport_height()) as f32
         } else {
             0.0
         }
     }
 
     /// Get the height of the scrollbar slider (thumb) as a proportion of the viewport height.
-    fn scrollbar_thumb_proportional_height(&self) -> f32 {
-        if self.needs_scrollbar() {
-            self.viewport_height() as f32 / self.total_height() as f32
-        } else {
-            1.0
-        }
+    fn scrollbar_thumb_height(&self) -> i32 {
+        (self.viewport_height() as f32 * (self.viewport_height() as f32 / self.total_height() as f32)) as i32
     }
+
+    /// Adjust the scroll offset based on the mouse's delta movement on the thumb.
+    fn adjust_scroll_from_thumb_delta(&mut self, delta_y: i32) {
+        let thumb_height = self.scrollbar_thumb_height();
+        let scale_factor = (self.total_height() - self.viewport_height()) as f32 / (self.viewport_height() - thumb_height) as f32;
+
+        let content_delta_y = (delta_y as f32 * scale_factor) as i32;
+
+        self.scroll_by(content_delta_y);
+    }
+
+    /// Scroll content based on a click on the scrollbar track.
+    fn scroll_from_track_click(&mut self, click_y: i32) {
+        let thumb_top = self.scrollbar_position() as i32;
+        let thumb_bottom = thumb_top + self.scrollbar_thumb_height();
+
+        let new_offset;
+        if click_y < thumb_top {
+            // Page up
+            new_offset = self.scroll_offset() - self.viewport_height();
+        } else if click_y > thumb_bottom {
+            // Page down
+            new_offset = self.scroll_offset() + self.viewport_height();
+        } else {
+            return;
+        }
+
+        let clamped_offset = new_offset.max(0).min(self.total_height() - self.viewport_height());
+        self.set_scroll_offset(clamped_offset);
+    }
+
 }
 
 impl TheVerticalScrollbarTrait for TheVerticalScrollbar {

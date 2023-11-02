@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use std::ops::Range;
 
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
 pub struct TheRGBABuffer {
@@ -82,6 +83,21 @@ impl TheRGBABuffer {
         for h in 0..other.dim.height {
             let s = (h * other.dim.width * 4) as usize;
             let d = ((h + y) * self.dim.width * 4 + x * 4) as usize;
+            dest[d..d + width].copy_from_slice(&other.buffer[s..s + width]);
+        }
+    }
+
+    /// Copy the vertical range of the other buffer into this buffer at the given coordinates.
+    pub fn copy_vertical_range_into(&mut self, x: i32, y: i32, other: &TheRGBABuffer, range: Range<i32>) {
+        let dest = &mut self.buffer[..];
+        let width = (other.dim.width * 4) as usize;
+
+        for (dh, h) in range.enumerate() {
+            if h >= other.dim.height {
+                break;
+            }
+            let s = (h * other.dim.width * 4) as usize;
+            let d = ((dh as i32 + y) * self.dim.width * 4 + x * 4) as usize;
             dest[d..d + width].copy_from_slice(&other.buffer[s..s + width]);
         }
     }

@@ -8,6 +8,8 @@ pub struct TheListLayout {
 
     widgets: Vec<Box<dyn TheWidget>>,
 
+    list_buffer: TheRGBABuffer,
+
     vertical_scrollbar: Box<dyn TheWidget>,
     vertical_scrollbar_visible: bool,
 
@@ -28,6 +30,7 @@ impl TheLayout for TheListLayout {
             dim: TheDim::zero(),
 
             widgets: vec![],
+            list_buffer: TheRGBABuffer::empty(),
 
             vertical_scrollbar: Box::new(TheVerticalScrollbar::new(
                 "Vertical Scrollbar".to_string(),
@@ -65,8 +68,13 @@ impl TheLayout for TheListLayout {
             return Some(&mut self.vertical_scrollbar);
         }
 
+        let mut scroll_offset = vec2i(0, 0);
+        if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+            scroll_offset = vec2i(0, scroll_bar.scroll_offset());
+        }
+
         let widgets = self.widgets();
-        widgets.iter_mut().find(|w| w.dim().contains(coord))
+        widgets.iter_mut().find(|w| w.dim().contains(coord + scroll_offset))
     }
 
     fn get_widget(
@@ -131,13 +139,15 @@ impl TheLayout for TheListLayout {
                 width -= 13;
             }
 
+            self.list_buffer.set_dim(TheDim::new(0, 0, width, total_height));
+
             for index in 0..items {
                 let i = index as usize;
 
                 self.widgets[i].set_dim(TheDim::new(dim.x + x, dim.y + y, width - 1, 17));
                 self.widgets[i]
                     .dim_mut()
-                    .set_buffer_offset(self.dim.buffer_x, self.dim.buffer_y + y);
+                    .set_buffer_offset(x, y);
 
                 y += 17 + 3;
             }
@@ -162,11 +172,11 @@ impl TheLayout for TheListLayout {
             return;
         }
 
-        let stride = buffer.stride();
-        let utuple: (usize, usize, usize, usize) = self.dim.to_buffer_utuple();
+        let stride = self.list_buffer.stride();
+        let utuple: (usize, usize, usize, usize) = self.list_buffer.dim().to_buffer_utuple();
 
         ctx.draw.rect(
-            buffer.pixels_mut(),
+            self.list_buffer.pixels_mut(),
             &utuple,
             stride,
             style.theme().color(ListLayoutBackground),
@@ -177,19 +187,22 @@ impl TheLayout for TheListLayout {
         }
 
         let items = self.widgets.len();
-        let safe_rect = self.dim().to_buffer_safe_rect_utuple(buffer);
 
-        println!("{:?}", safe_rect);
+        let mut scroll_offset = 0;
+        if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+            scroll_offset = scroll_bar.scroll_offset();
+        }
 
         for i in 0..items {
-            if self.widgets[i].dim().buffer_y < self.dim.buffer_y + self.dim.height {
-                if let Some(list_item) = self.widgets[i].as_list_item() {
-                    list_item.set_safe_rect(safe_rect);
-                }
-
-                self.widgets[i].draw(buffer, style, ctx);
-            }
+            self.widgets[i].draw(&mut self.list_buffer, style, ctx);
         }
+
+        if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+            let offset = scroll_bar.scroll_offset();
+            let range = offset..offset + self.dim.height;
+            buffer.copy_vertical_range_into(self.dim.buffer_x, self.dim.buffer_y, &self.list_buffer, range);
+        }
+
     }
 
     /// Convert to the list layout trait

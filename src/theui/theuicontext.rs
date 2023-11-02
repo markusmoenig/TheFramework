@@ -128,6 +128,11 @@ impl TheUIContext {
         }
     }
 
+    /// Clears the hover state.
+    pub fn clear_hover(&mut self) {
+        self.hover = None;
+    }
+
     /// Sets the overlay to the given widget. This will call the draw_overlay method of the widget after all other draw calls (for menus etc).
     pub fn set_overlay(&mut self, id: &TheId) {
         self.overlay = Some(id.clone());
