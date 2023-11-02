@@ -192,6 +192,16 @@ impl TheUI {
     }
 
     pub fn update(&mut self, ctx: &mut TheContext) -> bool {
+
+        // Check if the result of an FileRequester is available, and if yes, send the result
+        if let Some(rx) = &ctx.ui.file_requester_receiver {
+            let rc = rx.1.try_recv();
+            if let Ok(paths) = rc {
+                ctx.ui.send(TheEvent::FileRequesterResult(rx.0.clone(), paths));
+                ctx.ui.file_requester_receiver = None;
+            }
+        }
+
         self.process_events(ctx);
         self.is_dirty
     }

@@ -2,7 +2,8 @@ use crate::prelude::*;
 use crate::Embedded;
 use fontdue::Font;
 
-use std::sync::mpsc::Sender;
+use std::path::PathBuf;
+use std::sync::mpsc::{self, Sender, Receiver};
 
 pub struct TheUIContext {
     pub font: Option<Font>,
@@ -18,6 +19,8 @@ pub struct TheUIContext {
 
     pub redraw_all: bool,
     pub relayout: bool,
+
+    pub file_requester_receiver: Option<(TheId, Receiver<Vec<PathBuf>>)>
 }
 
 impl Default for TheUIContext {
@@ -85,6 +88,8 @@ impl TheUIContext {
 
             redraw_all: false,
             relayout: false,
+
+            file_requester_receiver: None,
         }
     }
 
@@ -163,5 +168,54 @@ impl TheUIContext {
     /// Indicates that the state of the given widget changed
     pub fn send_widget_value_changed(&mut self, id: &TheId, value: TheValue) {
         self.send(TheEvent::ValueChanged(id.clone(), value));
+    }
+
+    /// Opens a file requester with the given title and extensions. Upon completion a TheEvent::FileRequesterResult event will be send.
+    pub fn open_file_requester(&mut self, id: TheId, title: String, extensions: Vec<String>) {
+        let (tx, rx): (Sender<Vec<PathBuf>>, Receiver<Vec<PathBuf>>) = mpsc::channel();
+
+        let task = rfd::AsyncFileDialog::new()
+            .add_filter("Extensions", &extensions)
+            .set_title(title)
+            .pick_files();
+
+        std::thread::spawn(move || {
+            let files = futures::executor::block_on(task);
+
+            if let Some(files) = files {
+                let mut ff = vec![];
+                for f in files {
+                    ff.push(f.path().to_path_buf());
+                }
+                tx.send(ff).unwrap();
+            } else {
+                tx.send(vec![]).unwrap();
+            }
+        });
+
+        self.file_requester_receiver = Some((id, rx));
+    }
+
+    /// Opens a save file requester with the given title and extensions. Upon completion a TheEvent::FileRequesterResult event will be send.
+    pub fn save_file_requester(&mut self, id: TheId, title: String, extensions: Vec<String>) {
+        let (tx, rx): (Sender<Vec<PathBuf>>, Receiver<Vec<PathBuf>>) = mpsc::channel();
+
+        let task = rfd::AsyncFileDialog::new()
+            .add_filter("Extensions", &extensions)
+            .set_title(title)
+            .save_file();
+
+        std::thread::spawn(move || {
+            let file = futures::executor::block_on(task);
+
+            if let Some(file) = file {
+                let ff = vec![file.path().to_path_buf()];
+                tx.send(ff).unwrap();
+            } else {
+                tx.send(vec![]).unwrap();
+            }
+        });
+
+        self.file_requester_receiver = Some((id, rx));
     }
 }

@@ -138,7 +138,11 @@ impl Sidebar {
                     TheEvent::StateChanged(id, _state) => {
                         //println!("app Widget State changed {:?}: {:?}", id, state);
 
-                        if id.name == "Cube" {
+                        if id.name == "Add" {
+                            ctx.ui.open_file_requester(TheId::new("MyID".into()), "Open Image".into(), vec!["png".to_string()] );
+                            ctx.ui.set_widget_state("Add".to_string(), TheWidgetState::None);
+                            ctx.ui.clear_hover();
+                        } else if id.name == "Cube" {
                             ctx.ui
                                 .set_widget_state("Sphere".to_string(), TheWidgetState::None);
                             ctx.ui
@@ -151,6 +155,9 @@ impl Sidebar {
                         }
 
                         redraw = true;
+                    }
+                    TheEvent::FileRequesterResult(id, paths) => {
+                        println!("{:?} {:?}", id, paths);
                     }
                     _ => {}
                 }

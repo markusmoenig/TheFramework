@@ -27,4 +27,8 @@ pub enum TheEvent {
     // These events define layout states.
     SetStackIndex(TheId, usize),
     NewListItemSelected(TheId, TheId),
+
+    // FileRequester
+    FileRequesterResult(TheId, Vec<std::path::PathBuf>),
+
 }

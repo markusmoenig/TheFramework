@@ -188,11 +188,6 @@ impl TheLayout for TheListLayout {
 
         let items = self.widgets.len();
 
-        let mut scroll_offset = 0;
-        if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
-            scroll_offset = scroll_bar.scroll_offset();
-        }
-
         for i in 0..items {
             self.widgets[i].draw(&mut self.list_buffer, style, ctx);
         }
