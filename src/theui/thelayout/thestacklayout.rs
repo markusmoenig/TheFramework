@@ -62,6 +62,18 @@ impl TheLayout for TheStackLayout {
         None
     }
 
+    fn get_layout(
+        &mut self,
+        name: Option<&String>,
+        uuid: Option<&Uuid>,
+    ) -> Option<&mut Box<dyn TheLayout>> {
+        println!("{} {:?}", self.id.name, name);
+        if !self.layouts.is_empty() && self.index < self.layouts.len() {
+            return self.layouts[self.index].get_layout(name, uuid);
+        }
+        None
+    }
+
     fn get_widget(
         &mut self,
         name: Option<&String>,

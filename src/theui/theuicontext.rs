@@ -218,4 +218,22 @@ impl TheUIContext {
 
         self.file_requester_receiver = Some((id, rx));
     }
+
+    /// Decode image
+    pub fn decode_image(&mut self, id: TheId, path: PathBuf) {
+        if let Ok(data) = std::fs::File::open(path.clone()) {
+            let decoder = png::Decoder::new(data);
+            if let Ok(mut reader) = decoder.read_info() {
+                let mut buf = vec![0; reader.output_buffer_size()];
+                let info = reader.next_frame(&mut buf).unwrap();
+                let bytes = &buf[..info.buffer_size()];
+
+                let buffer = TheRGBABuffer::from(bytes.to_vec(), info.width, info.height);
+                let name = path.file_stem().and_then(|f| f.to_str()).unwrap_or("");
+
+                self.send(TheEvent::ImageDecodeResult(id, name.to_string(), buffer));
+            }
+        }
+
+    }
 }

@@ -124,6 +124,10 @@ impl TheLayout for TheListLayout {
                 total_height += (items - 1) * 3;
             }
 
+            if total_height < dim.height {
+                total_height = dim.height;
+            }
+
             self.vertical_scrollbar
                 .set_dim(TheDim::new(dim.x + width - 13, dim.y, 13, dim.height));
             self.vertical_scrollbar
@@ -144,7 +148,7 @@ impl TheLayout for TheListLayout {
             for index in 0..items {
                 let i = index as usize;
 
-                self.widgets[i].set_dim(TheDim::new(dim.x + x, dim.y + y, width - 1, 17));
+                self.widgets[i].set_dim(TheDim::new(dim.x + x, dim.y + y, width - 2, 17));
                 self.widgets[i]
                     .dim_mut()
                     .set_buffer_offset(x, y);
@@ -192,9 +196,14 @@ impl TheLayout for TheListLayout {
             self.widgets[i].draw(&mut self.list_buffer, style, ctx);
         }
 
-        if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
-            let offset = scroll_bar.scroll_offset();
-            let range = offset..offset + self.dim.height;
+        if self.vertical_scrollbar_visible {
+            if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+                let offset = scroll_bar.scroll_offset();
+                let range = offset..offset + self.dim.height;
+                buffer.copy_vertical_range_into(self.dim.buffer_x, self.dim.buffer_y, &self.list_buffer, range);
+            }
+        } else if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+            let range = 0..scroll_bar.total_height();
             buffer.copy_vertical_range_into(self.dim.buffer_x, self.dim.buffer_y, &self.list_buffer, range);
         }
 

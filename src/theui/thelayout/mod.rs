@@ -62,6 +62,14 @@ pub trait TheLayout {
         false
     }
 
+    fn get_layout(
+        &mut self,
+        name: Option<&String>,
+        uuid: Option<&Uuid>,
+    ) -> Option<&mut Box<dyn TheLayout>> {
+        None
+    }
+
     fn get_widget(
         &mut self,
         name: Option<&String>,

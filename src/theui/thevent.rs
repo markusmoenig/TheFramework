@@ -28,7 +28,8 @@ pub enum TheEvent {
     SetStackIndex(TheId, usize),
     NewListItemSelected(TheId, TheId),
 
-    // FileRequester
+    // Utility
     FileRequesterResult(TheId, Vec<std::path::PathBuf>),
+    ImageDecodeResult(TheId, String, TheRGBABuffer)
 
 }

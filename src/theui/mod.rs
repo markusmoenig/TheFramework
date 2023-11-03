@@ -121,6 +121,7 @@ impl TheUI {
     pub fn process_events(&mut self, ctx: &mut TheContext) {
         if let Some(receiver) = &mut self.state_events_receiver {
             while let Ok(event) = receiver.try_recv() {
+
                 // Resend event to all app listeners
                 for (name, sender) in &self.app_state_events {
                     sender.send(event.clone()).unwrap();
@@ -147,39 +148,39 @@ impl TheUI {
                         }
                     }
                     TheEvent::StateChanged(id, state) => {
-                        println!("Widget State changed {:?}: {:?}", id, state);
+                        //println!("Widget State changed {:?}: {:?}", id, state);
                     }
                     TheEvent::SetState(name, state) => {
-                        println!("Set State {:?}: {:?}", name, state);
+                        //println!("Set State {:?}: {:?}", name, state);
                         if let Some(widget) = self.canvas.get_widget(Some(&name), None) {
                             widget.set_state(state);
                         }
                         self.is_dirty = true;
                     }
                     TheEvent::GainedFocus(id) => {
-                        println!("Gained focus {:?}", id);
+                        //println!("Gained focus {:?}", id);
                     }
                     TheEvent::LostFocus(id) => {
-                        println!("Lost focus {:?}", id);
+                        //println!("Lost focus {:?}", id);
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
                             widget.on_event(&TheEvent::LostFocus(widget.id().clone()), ctx);
                             widget.set_needs_redraw(true);
                         }
                     }
                     TheEvent::GainedHover(id) => {
-                        println!("Gained hover {:?}", id);
+                        //println!("Gained hover {:?}", id);
                     }
                     TheEvent::LostHover(id) => {
-                        println!("Lost hover {:?}", id);
+                        //println!("Lost hover {:?}", id);
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
                             widget.set_needs_redraw(true);
                         }
                     }
                     TheEvent::ValueChanged(id, value) => {
-                        println!("Widget Value changed {:?}: {:?}", id, value);
+                        //println!("Widget Value changed {:?}: {:?}", id, value);
                     }
                     TheEvent::SetValue(name, value) => {
-                        println!("Set Value {:?}: {:?}", name, value);
+                        //println!("Set Value {:?}: {:?}", name, value);
                         if let Some(widget) = self.canvas.get_widget(Some(&name), None) {
                             widget.set_value(value);
                         }

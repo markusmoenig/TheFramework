@@ -229,32 +229,38 @@ impl TheCanvas {
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheLayout>> {
         if let Some(left) = &mut self.left {
-            if let Some(widget) = left.get_layout(name, uuid) {
-                return Some(widget);
+            if let Some(layout) = left.get_layout(name, uuid) {
+                return Some(layout);
             }
         }
 
         if let Some(top) = &mut self.top {
-            if let Some(widget) = top.get_layout(name, uuid) {
-                return Some(widget);
+            if let Some(layout) = top.get_layout(name, uuid) {
+                return Some(layout);
             }
         }
 
         if let Some(right) = &mut self.right {
-            if let Some(widget) = right.get_layout(name, uuid) {
-                return Some(widget);
+            if let Some(layout) = right.get_layout(name, uuid) {
+                return Some(layout);
             }
         }
 
         if let Some(bottom) = &mut self.bottom {
-            if let Some(widget) = bottom.get_layout(name, uuid) {
-                return Some(widget);
+            if let Some(layout) = bottom.get_layout(name, uuid) {
+                return Some(layout);
             }
         }
 
         if let Some(layout) = &mut self.layout {
             if layout.id().matches(name, uuid) {
                 return Some(layout);
+            }
+
+            if let Some(layout) = layout.as_stack_layout() {
+                if let Some(layout) = layout.get_layout(name, uuid) {
+                    return Some(layout);
+                }
             }
         }
 

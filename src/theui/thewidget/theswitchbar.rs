@@ -63,6 +63,13 @@ impl TheWidget for TheSwitchbar {
         self.is_dirty
     }
 
+    fn set_value(&mut self, value: TheValue) {
+        if let Some(text) = value.to_string() {
+            self.text = text;
+            self.is_dirty = true;
+        }
+    }
+
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
@@ -112,7 +119,7 @@ impl TheWidget for TheSwitchbar {
                 stride,
                 font,
                 15.0,
-                &self.id().name,
+                &self.text,
                 &WHITE,
                 TheHorizontalAlign::Left,
                 TheVerticalAlign::Center,
