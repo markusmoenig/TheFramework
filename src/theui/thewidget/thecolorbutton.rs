@@ -80,7 +80,7 @@ impl TheWidget for TheColorButton {
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
-        let stride = buffer.stride();
+        let stride: usize = buffer.stride();
         let mut shrinker = TheDimShrinker::zero();
 
         if !self.dim().is_valid() {

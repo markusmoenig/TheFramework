@@ -31,7 +31,7 @@ impl TheWidget for TheListItem {
             text: "".to_string(),
 
             dim: TheDim::zero(),
-            is_dirty: false,
+            is_dirty: true,
 
             layout_id: TheId::empty(),
         }
@@ -186,6 +186,7 @@ pub trait TheListItemTrait {
 impl TheListItemTrait for TheListItem {
     fn set_text(&mut self, text: String) {
         self.text = text;
+        self.is_dirty = true;
     }
     fn set_associated_layout(&mut self, layout_id: TheId) {
         self.layout_id = layout_id;

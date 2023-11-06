@@ -15,7 +15,7 @@ impl Sidebar {
         }
     }
 
-    pub fn init_ui(&mut self, ui: &mut TheUI, _ctx: &mut TheContext) {
+    pub fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
         let mut sectionbar_canvas = TheCanvas::new();
 
         let mut section_bar_canvas = TheCanvas::new();
@@ -52,7 +52,7 @@ impl Sidebar {
         for i in 0..25 {
             let mut list_item: TheListItem = TheListItem::new(format!("List Item {}", i));
             list_item.set_text(format!("Item #{}", i));
-            list_layout.add_item(list_item);
+            list_layout.add_item(list_item, ctx);
         }
 
         let mut toolbar_canvas = TheCanvas::new();

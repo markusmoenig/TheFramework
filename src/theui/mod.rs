@@ -63,7 +63,7 @@ pub struct TheUI {
 
     app_state_events: FxHashMap<String, Sender<TheEvent>>,
 
-    is_dirty: bool,
+    pub is_dirty: bool,
 }
 
 impl Default for TheUI {

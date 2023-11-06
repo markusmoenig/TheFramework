@@ -16,6 +16,7 @@ pub mod thetextlineedit;
 pub mod thetoolbar;
 pub mod thetoolbarbutton;
 pub mod theverticalscrollbar;
+pub mod thergbaview;
 
 pub mod prelude {
     pub use crate::theui::thewidget::thecolorbutton::TheColorButton;
@@ -43,6 +44,7 @@ pub mod prelude {
     };
 
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
+    pub use crate::theui::thewidget::thergbaview::{TheRGBAView, TheRGBAViewTrait};
 
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetState;
@@ -140,6 +142,8 @@ pub trait TheWidget {
         false
     }
 
+    // Casting
+
     /// Attempts to cast to TheListItemTrait. Only valid for TheListItem.
     fn as_list_item(&mut self) -> Option<&mut dyn TheListItemTrait> {
         None
@@ -147,6 +151,11 @@ pub trait TheWidget {
 
     /// Attempts to cast to TheVerticalScrollbarTrait. Only valid for TheVerticalScrollbar.
     fn as_vertical_scrollbar(&mut self) -> Option<&mut dyn TheVerticalScrollbarTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheRGBAView. Only valid for TheVerticalScrollbar.
+    fn as_rgba_view(&mut self) -> Option<&mut dyn TheRGBAViewTrait> {
         None
     }
 }

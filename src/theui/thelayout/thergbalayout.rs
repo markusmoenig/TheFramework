@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-pub struct TheListLayout {
+pub struct TheRGBALayout {
     id: TheId,
     limiter: TheSizeLimiter,
 
@@ -8,7 +8,7 @@ pub struct TheListLayout {
 
     widgets: Vec<Box<dyn TheWidget>>,
 
-    list_buffer: TheRGBABuffer,
+    rgba_view: Box<dyn TheWidget>,
 
     vertical_scrollbar: Box<dyn TheWidget>,
     vertical_scrollbar_visible: bool,
@@ -18,7 +18,7 @@ pub struct TheListLayout {
     background: Option<TheThemeColors>,
 }
 
-impl TheLayout for TheListLayout {
+impl TheLayout for TheRGBALayout {
     fn new(name: String) -> Self
     where
         Self: Sized,
@@ -30,7 +30,8 @@ impl TheLayout for TheListLayout {
             dim: TheDim::zero(),
 
             widgets: vec![],
-            list_buffer: TheRGBABuffer::empty(),
+
+            rgba_view: Box::new(TheRGBAView::new("RGBA View".into())),
 
             vertical_scrollbar: Box::new(TheVerticalScrollbar::new(
                 "Vertical Scrollbar".to_string(),
@@ -114,18 +115,15 @@ impl TheLayout for TheListLayout {
         if self.dim != dim || ctx.ui.relayout {
             self.dim = dim;
 
-            let x = 1;
-            let mut y = 1;
             let mut width = dim.width;
 
-            let items = self.widgets.len() as i32;
-            let mut total_height = 1 + items * 17 + 1;
-            if items > 0 {
-                total_height += (items - 1) * 3;
-            }
+            let mut buffer_dim = TheDim::zero();
 
-            if total_height < dim.height {
-                total_height = dim.height;
+            let mut zoom : f32 = 0.0;
+
+            if let Some(rgba_view) = self.rgba_view.as_rgba_view() {
+                buffer_dim = *rgba_view.buffer().dim();
+                zoom = rgba_view.zoom();
             }
 
             self.vertical_scrollbar
@@ -135,7 +133,7 @@ impl TheLayout for TheListLayout {
                 .set_buffer_offset(self.dim.buffer_x + width - 13, self.dim.buffer_y);
 
             if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
-                scroll_bar.set_total_height(total_height);
+                scroll_bar.set_total_height((buffer_dim.height as f32 * zoom) as i32);
                 self.vertical_scrollbar_visible = scroll_bar.needs_scrollbar();
             }
 
@@ -143,18 +141,8 @@ impl TheLayout for TheListLayout {
                 width -= 13;
             }
 
-            self.list_buffer.set_dim(TheDim::new(0, 0, width, total_height));
+            self.rgba_view.set_dim(TheDim::new(dim.x, dim.y, width, dim.height));
 
-            for index in 0..items {
-                let i = index as usize;
-
-                self.widgets[i].set_dim(TheDim::new(dim.x + x, dim.y + y, width - 2, 17));
-                self.widgets[i]
-                    .dim_mut()
-                    .set_buffer_offset(x, y);
-
-                y += 17 + 3;
-            }
         }
     }
 
@@ -176,72 +164,37 @@ impl TheLayout for TheListLayout {
             return;
         }
 
-        let stride = self.list_buffer.stride();
-        let utuple: (usize, usize, usize, usize) = self.list_buffer.dim().to_buffer_utuple();
+        if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+            let offset = scroll_bar.scroll_offset();
+            println!("{}", offset);
+            if let Some(rgba_view) = self.rgba_view.as_rgba_view() {
+                rgba_view.set_scroll_offset(vec2i(0, offset));
+            }
+        }
 
-        ctx.draw.rect(
-            self.list_buffer.pixels_mut(),
-            &utuple,
-            stride,
-            style.theme().color(ListLayoutBackground),
-        );
+        self.rgba_view.draw(buffer, style, ctx);
 
         if self.vertical_scrollbar_visible {
             self.vertical_scrollbar.draw(buffer, style, ctx);
         }
-
-        let items = self.widgets.len();
-
-        for i in 0..items {
-            self.widgets[i].draw(&mut self.list_buffer, style, ctx);
-        }
-
-        if self.vertical_scrollbar_visible {
-            if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
-                let offset = scroll_bar.scroll_offset();
-                let range = offset..offset + self.dim.height;
-                buffer.copy_vertical_range_into(self.dim.buffer_x, self.dim.buffer_y, &self.list_buffer, range);
-            }
-        } else if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
-            let range = 0..scroll_bar.total_height();
-            buffer.copy_vertical_range_into(self.dim.buffer_x, self.dim.buffer_y, &self.list_buffer, range);
-        }
-
     }
 
-    /// Convert to the list layout trait
-    fn as_list_layout(&mut self) -> Option<&mut dyn TheListLayoutTrait> {
+    /// Convert to the rgba layout trait
+    fn as_rgba_layout(&mut self) -> Option<&mut dyn TheRGBALayoutTrait> {
         Some(self)
     }
 }
 
-/// TheListLayout specific functions.
-pub trait TheListLayoutTrait {
-    /// Add an item
-    fn add_item(&mut self, item: TheListItem, ctx: &mut TheContext);
-    /// A new item was selected, manage the selection states
-    fn new_item_selected(&mut self, item: TheId);
-    /// Deselect all items
-    fn deselect_all(&mut self);
+/// TheRGBALayout specific functions.
+pub trait TheRGBALayoutTrait {
+    fn set_buffer(&mut self, buffer: TheRGBABuffer);
+
 }
 
-impl TheListLayoutTrait for TheListLayout {
-    fn add_item(&mut self, mut item: TheListItem, ctx: &mut TheContext) {
-        item.set_associated_layout(self.id().clone());
-        self.widgets.push(Box::new(item));
-        ctx.ui.relayout = true;
-    }
-    fn new_item_selected(&mut self, item: TheId) {
-        for w in &mut self.widgets {
-            if !w.id().equals(&Some(item.clone())) {
-                w.set_state(TheWidgetState::None);
-            }
+impl TheRGBALayoutTrait for TheRGBALayout {
+    fn set_buffer(&mut self, buffer: TheRGBABuffer) {
+        if let Some(rgba) = self.rgba_view.as_rgba_view() {
+            rgba.set_buffer(buffer);
         }
     }
-    fn deselect_all(&mut self) {
-        for w in &mut self.widgets {
-            w.set_state(TheWidgetState::None);
-        }
-    }
-
 }
