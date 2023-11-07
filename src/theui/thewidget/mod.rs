@@ -16,6 +16,7 @@ pub mod thetextlineedit;
 pub mod thetoolbar;
 pub mod thetoolbarbutton;
 pub mod theverticalscrollbar;
+pub mod thehorizontalscrollbar;
 pub mod thergbaview;
 
 pub mod prelude {
@@ -41,6 +42,9 @@ pub mod prelude {
     pub use crate::theui::thewidget::thetext::{TheText, TheTextTrait};
     pub use crate::theui::thewidget::theverticalscrollbar::{
         TheVerticalScrollbar, TheVerticalScrollbarTrait,
+    };
+    pub use crate::theui::thewidget::thehorizontalscrollbar::{
+        TheHorizontalScrollbar, TheHorizontalScrollbarTrait,
     };
 
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
@@ -135,6 +139,7 @@ pub trait TheWidget {
         false
     }
 
+    /// Sets the internal redraw flag of the widget to the given value.
     fn set_needs_redraw(&mut self, redraw: bool) {}
 
     /// Process an user driven device event, returns true if we need to redraw.
@@ -146,6 +151,11 @@ pub trait TheWidget {
 
     /// Attempts to cast to TheListItemTrait. Only valid for TheListItem.
     fn as_list_item(&mut self) -> Option<&mut dyn TheListItemTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheHorizontalScrollbarTrait. Only valid for TheHorizontalScrollbar.
+    fn as_horizontal_scrollbar(&mut self) -> Option<&mut dyn TheHorizontalScrollbarTrait> {
         None
     }
 

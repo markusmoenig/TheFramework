@@ -13,6 +13,9 @@ pub struct TheRGBALayout {
     vertical_scrollbar: Box<dyn TheWidget>,
     vertical_scrollbar_visible: bool,
 
+    horizontal_scrollbar: Box<dyn TheWidget>,
+    horizontal_scrollbar_visible: bool,
+
     margin: Vec4i,
 
     background: Option<TheThemeColors>,
@@ -37,6 +40,11 @@ impl TheLayout for TheRGBALayout {
                 "Vertical Scrollbar".to_string(),
             )),
             vertical_scrollbar_visible: false,
+
+            horizontal_scrollbar: Box::new(TheHorizontalScrollbar::new(
+                "Horizontal Scrollbar".to_string(),
+            )),
+            horizontal_scrollbar_visible: false,
 
             margin: vec4i(0, 0, 0, 0),
 
@@ -69,6 +77,10 @@ impl TheLayout for TheRGBALayout {
             return Some(&mut self.vertical_scrollbar);
         }
 
+        if self.horizontal_scrollbar_visible && self.horizontal_scrollbar.dim().contains(coord) {
+            return Some(&mut self.horizontal_scrollbar);
+        }
+
         let mut scroll_offset = vec2i(0, 0);
         if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
             scroll_offset = vec2i(0, scroll_bar.scroll_offset());
@@ -87,11 +99,19 @@ impl TheLayout for TheRGBALayout {
             return Some(&mut self.vertical_scrollbar);
         }
 
+        if self.horizontal_scrollbar_visible && self.horizontal_scrollbar.id().matches(name, uuid) {
+            return Some(&mut self.horizontal_scrollbar);
+        }
+
         self.widgets.iter_mut().find(|w| w.id().matches(name, uuid))
     }
 
     fn needs_redraw(&mut self) -> bool {
         if self.vertical_scrollbar_visible && self.vertical_scrollbar.needs_redraw() {
+            return true;
+        }
+
+        if self.horizontal_scrollbar_visible && self.horizontal_scrollbar.needs_redraw() {
             return true;
         }
 
@@ -115,19 +135,22 @@ impl TheLayout for TheRGBALayout {
         if self.dim != dim || ctx.ui.relayout {
             self.dim = dim;
 
-            let mut width = dim.width;
+            let mut width: i32 = dim.width;
+            let mut height: i32 = dim.height;
 
             let mut buffer_dim = TheDim::zero();
 
-            let mut zoom : f32 = 0.0;
+            let mut zoom : f32 = 1.0;
 
             if let Some(rgba_view) = self.rgba_view.as_rgba_view() {
                 buffer_dim = *rgba_view.buffer().dim();
                 zoom = rgba_view.zoom();
             }
 
+            // Vertical
+
             self.vertical_scrollbar
-                .set_dim(TheDim::new(dim.x + width - 13, dim.y, 13, dim.height));
+                .set_dim(TheDim::new(dim.x + width - 13, dim.y, 13, dim.height - 13));
             self.vertical_scrollbar
                 .dim_mut()
                 .set_buffer_offset(self.dim.buffer_x + width - 13, self.dim.buffer_y);
@@ -137,11 +160,25 @@ impl TheLayout for TheRGBALayout {
                 self.vertical_scrollbar_visible = scroll_bar.needs_scrollbar();
             }
 
-            if self.vertical_scrollbar_visible {
-                width -= 13;
+            // Horizontal
+
+            self.horizontal_scrollbar
+                .set_dim(TheDim::new(dim.x, dim.y + height - 13, width - 13, 13));
+            self.horizontal_scrollbar
+                .dim_mut()
+                .set_buffer_offset(self.dim.buffer_x, self.dim.buffer_y + height - 13);
+
+            if let Some(scroll_bar) = self.horizontal_scrollbar.as_horizontal_scrollbar() {
+                scroll_bar.set_total_width((buffer_dim.width as f32 * zoom) as i32);
+                self.horizontal_scrollbar_visible = scroll_bar.needs_scrollbar();
             }
 
-            self.rgba_view.set_dim(TheDim::new(dim.x, dim.y, width, dim.height));
+            if self.vertical_scrollbar_visible || self.horizontal_scrollbar_visible {
+                width -= 13;
+                height -= 13;
+            }
+
+            self.rgba_view.set_dim(TheDim::new(dim.x, dim.y, width, height));
 
         }
     }
@@ -164,18 +201,25 @@ impl TheLayout for TheRGBALayout {
             return;
         }
 
+        let mut scroll_offset = vec2i(0, 0);
+
         if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
-            let offset = scroll_bar.scroll_offset();
-            println!("{}", offset);
-            if let Some(rgba_view) = self.rgba_view.as_rgba_view() {
-                rgba_view.set_scroll_offset(vec2i(0, offset));
-            }
+            scroll_offset.y = scroll_bar.scroll_offset();
+        }
+
+        if let Some(scroll_bar) = self.horizontal_scrollbar.as_horizontal_scrollbar() {
+            scroll_offset.x = scroll_bar.scroll_offset();
+        }
+
+        if let Some(rgba_view) = self.rgba_view.as_rgba_view() {
+            rgba_view.set_scroll_offset(scroll_offset);
         }
 
         self.rgba_view.draw(buffer, style, ctx);
 
-        if self.vertical_scrollbar_visible {
+        if self.vertical_scrollbar_visible || self.horizontal_scrollbar_visible {
             self.vertical_scrollbar.draw(buffer, style, ctx);
+            self.horizontal_scrollbar.draw(buffer, style, ctx);
         }
     }
 
