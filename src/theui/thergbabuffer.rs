@@ -88,7 +88,13 @@ impl TheRGBABuffer {
     }
 
     /// Copy the vertical range of the other buffer into this buffer at the given coordinates.
-    pub fn copy_vertical_range_into(&mut self, x: i32, y: i32, other: &TheRGBABuffer, range: Range<i32>) {
+    pub fn copy_vertical_range_into(
+        &mut self,
+        x: i32,
+        y: i32,
+        other: &TheRGBABuffer,
+        range: Range<i32>,
+    ) {
         let dest = &mut self.buffer[..];
         let width = (other.dim.width * 4) as usize;
 

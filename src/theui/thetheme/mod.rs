@@ -69,5 +69,4 @@ pub enum TheThemeColors {
     TabbarBackground,
     TabbarConnector,
     TabbarText,
-
 }

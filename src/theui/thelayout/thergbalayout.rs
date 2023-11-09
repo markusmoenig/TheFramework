@@ -87,7 +87,9 @@ impl TheLayout for TheRGBALayout {
         }
 
         let widgets = self.widgets();
-        widgets.iter_mut().find(|w| w.dim().contains(coord + scroll_offset))
+        widgets
+            .iter_mut()
+            .find(|w| w.dim().contains(coord + scroll_offset))
     }
 
     fn get_widget(
@@ -140,7 +142,7 @@ impl TheLayout for TheRGBALayout {
 
             let mut buffer_dim = TheDim::zero();
 
-            let mut zoom : f32 = 1.0;
+            let mut zoom: f32 = 1.0;
 
             if let Some(rgba_view) = self.rgba_view.as_rgba_view() {
                 buffer_dim = *rgba_view.buffer().dim();
@@ -149,8 +151,12 @@ impl TheLayout for TheRGBALayout {
 
             // Vertical
 
-            self.vertical_scrollbar
-                .set_dim(TheDim::new(dim.x + width - 13, dim.y, 13, dim.height - 13));
+            self.vertical_scrollbar.set_dim(TheDim::new(
+                dim.x + width - 13,
+                dim.y,
+                13,
+                dim.height - 13,
+            ));
             self.vertical_scrollbar
                 .dim_mut()
                 .set_buffer_offset(self.dim.buffer_x + width - 13, self.dim.buffer_y);
@@ -162,8 +168,12 @@ impl TheLayout for TheRGBALayout {
 
             // Horizontal
 
-            self.horizontal_scrollbar
-                .set_dim(TheDim::new(dim.x, dim.y + height - 13, width - 13, 13));
+            self.horizontal_scrollbar.set_dim(TheDim::new(
+                dim.x,
+                dim.y + height - 13,
+                width - 13,
+                13,
+            ));
             self.horizontal_scrollbar
                 .dim_mut()
                 .set_buffer_offset(self.dim.buffer_x, self.dim.buffer_y + height - 13);
@@ -178,8 +188,8 @@ impl TheLayout for TheRGBALayout {
                 height -= 13;
             }
 
-            self.rgba_view.set_dim(TheDim::new(dim.x, dim.y, width, height));
-
+            self.rgba_view
+                .set_dim(TheDim::new(dim.x, dim.y, width, height));
         }
     }
 
@@ -223,7 +233,12 @@ impl TheLayout for TheRGBALayout {
 
             let stride = buffer.stride();
 
-            let utuple = ((self.dim().buffer_x + self.dim.width - 13) as usize, (self.dim.buffer_y + self.dim.height - 13) as usize, 13, 13);
+            let utuple = (
+                (self.dim().buffer_x + self.dim.width - 13) as usize,
+                (self.dim.buffer_y + self.dim.height - 13) as usize,
+                13,
+                13,
+            );
 
             ctx.draw.rect(
                 buffer.pixels_mut(),
@@ -232,7 +247,12 @@ impl TheLayout for TheRGBALayout {
                 style.theme().color(ScrollbarBackground),
             );
 
-            let utuple = ((self.dim().buffer_x) as usize, (self.dim.buffer_y + self.dim.height - 13) as usize, self.dim.width as usize, 1);
+            let utuple = (
+                (self.dim().buffer_x) as usize,
+                (self.dim.buffer_y + self.dim.height - 13) as usize,
+                self.dim.width as usize,
+                1,
+            );
 
             ctx.draw.rect(
                 buffer.pixels_mut(),
@@ -241,7 +261,12 @@ impl TheLayout for TheRGBALayout {
                 style.theme().color(ScrollbarSeparator),
             );
 
-            let utuple = ((self.dim().buffer_x + self.dim.width - 13) as usize, (self.dim.buffer_y) as usize, 1, self.dim.height as usize);
+            let utuple = (
+                (self.dim().buffer_x + self.dim.width - 13) as usize,
+                (self.dim.buffer_y) as usize,
+                1,
+                self.dim.height as usize,
+            );
 
             ctx.draw.rect(
                 buffer.pixels_mut(),
@@ -261,7 +286,6 @@ impl TheLayout for TheRGBALayout {
 /// TheRGBALayout specific functions.
 pub trait TheRGBALayoutTrait {
     fn set_buffer(&mut self, buffer: TheRGBABuffer);
-
 }
 
 impl TheRGBALayoutTrait for TheRGBALayout {

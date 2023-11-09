@@ -74,7 +74,9 @@ impl TheLayout for TheListLayout {
         }
 
         let widgets = self.widgets();
-        widgets.iter_mut().find(|w| w.dim().contains(coord + scroll_offset))
+        widgets
+            .iter_mut()
+            .find(|w| w.dim().contains(coord + scroll_offset))
     }
 
     fn get_widget(
@@ -143,15 +145,14 @@ impl TheLayout for TheListLayout {
                 width -= 13;
             }
 
-            self.list_buffer.set_dim(TheDim::new(0, 0, width, total_height));
+            self.list_buffer
+                .set_dim(TheDim::new(0, 0, width, total_height));
 
             for index in 0..items {
                 let i = index as usize;
 
                 self.widgets[i].set_dim(TheDim::new(dim.x + x, dim.y + y, width - 2, 17));
-                self.widgets[i]
-                    .dim_mut()
-                    .set_buffer_offset(x, y);
+                self.widgets[i].dim_mut().set_buffer_offset(x, y);
 
                 y += 17 + 3;
             }
@@ -200,13 +201,22 @@ impl TheLayout for TheListLayout {
             if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
                 let offset = scroll_bar.scroll_offset();
                 let range = offset..offset + self.dim.height;
-                buffer.copy_vertical_range_into(self.dim.buffer_x, self.dim.buffer_y, &self.list_buffer, range);
+                buffer.copy_vertical_range_into(
+                    self.dim.buffer_x,
+                    self.dim.buffer_y,
+                    &self.list_buffer,
+                    range,
+                );
             }
         } else if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
             let range = 0..scroll_bar.total_height();
-            buffer.copy_vertical_range_into(self.dim.buffer_x, self.dim.buffer_y, &self.list_buffer, range);
+            buffer.copy_vertical_range_into(
+                self.dim.buffer_x,
+                self.dim.buffer_y,
+                &self.list_buffer,
+                range,
+            );
         }
-
     }
 
     /// Convert to the list layout trait
@@ -243,5 +253,4 @@ impl TheListLayoutTrait for TheListLayout {
             w.set_state(TheWidgetState::None);
         }
     }
-
 }

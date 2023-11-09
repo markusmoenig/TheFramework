@@ -1,8 +1,8 @@
 pub mod theapp;
+pub mod thecolor;
 pub mod thecontext;
 pub mod thedraw2d;
 pub mod thetrait;
-pub mod thecolor;
 
 #[cfg(feature = "ui")]
 pub mod theui;
@@ -41,11 +41,11 @@ pub mod prelude {
     pub use uuid::*;
 
     pub use crate::theapp::TheApp;
+    pub use crate::thecolor::TheColor;
     pub use crate::thecontext::TheContext;
     pub use crate::thedraw2d::TheDraw2D;
     pub use crate::thedraw2d::TheHorizontalAlign;
     pub use crate::thedraw2d::TheVerticalAlign;
-    pub use crate::thecolor::TheColor;
 
     pub use crate::thetrait::TheTrait;
     pub use crate::TheKeyCode;

@@ -121,7 +121,6 @@ impl TheUI {
     pub fn process_events(&mut self, ctx: &mut TheContext) {
         if let Some(receiver) = &mut self.state_events_receiver {
             while let Ok(event) = receiver.try_recv() {
-
                 // Resend event to all app listeners
                 for (name, sender) in &self.app_state_events {
                     sender.send(event.clone()).unwrap();
@@ -194,12 +193,12 @@ impl TheUI {
     }
 
     pub fn update(&mut self, ctx: &mut TheContext) -> bool {
-
         // Check if the result of an FileRequester is available, and if yes, send the result
         if let Some(rx) = &ctx.ui.file_requester_receiver {
             let rc = rx.1.try_recv();
             if let Ok(paths) = rc {
-                ctx.ui.send(TheEvent::FileRequesterResult(rx.0.clone(), paths));
+                ctx.ui
+                    .send(TheEvent::FileRequesterResult(rx.0.clone(), paths));
                 ctx.ui.file_requester_receiver = None;
             }
         }

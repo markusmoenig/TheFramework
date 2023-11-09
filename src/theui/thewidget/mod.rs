@@ -2,23 +2,23 @@ use crate::prelude::*;
 
 pub mod thecolorbutton;
 pub mod thedropdownmenu;
+pub mod thehorizontalscrollbar;
 pub mod thelistitem;
 pub mod themenubar;
 pub mod themenubarbutton;
 pub mod themenubarseparator;
+pub mod thergbaview;
 pub mod thesectionbar;
 pub mod thesectionbarbutton;
 pub mod theslider;
 pub mod thesnapperbar;
 pub mod theswitchbar;
+pub mod thetabbar;
 pub mod thetext;
 pub mod thetextlineedit;
 pub mod thetoolbar;
 pub mod thetoolbarbutton;
 pub mod theverticalscrollbar;
-pub mod thehorizontalscrollbar;
-pub mod thergbaview;
-pub mod thetabbar;
 
 pub mod prelude {
     pub use crate::theui::thewidget::thecolorbutton::TheColorButton;
@@ -33,6 +33,9 @@ pub mod prelude {
     pub use crate::theui::thewidget::thetoolbar::TheToolbar;
     pub use crate::theui::thewidget::thetoolbarbutton::{TheToolbarButton, TheToolbarButtonTrait};
 
+    pub use crate::theui::thewidget::thehorizontalscrollbar::{
+        TheHorizontalScrollbar, TheHorizontalScrollbarTrait,
+    };
     pub use crate::theui::thewidget::thelistitem::{TheListItem, TheListItemTrait};
     pub use crate::theui::thewidget::thesectionbar::TheSectionbar;
     pub use crate::theui::thewidget::thesectionbarbutton::TheSectionbarButton;
@@ -44,13 +47,10 @@ pub mod prelude {
     pub use crate::theui::thewidget::theverticalscrollbar::{
         TheVerticalScrollbar, TheVerticalScrollbarTrait,
     };
-    pub use crate::theui::thewidget::thehorizontalscrollbar::{
-        TheHorizontalScrollbar, TheHorizontalScrollbarTrait,
-    };
 
-    pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
     pub use crate::theui::thewidget::thergbaview::{TheRGBAView, TheRGBAViewTrait};
     pub use crate::theui::thewidget::thetabbar::{TheTabbar, TheTabbarTrait};
+    pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
 
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetState;
@@ -170,4 +170,10 @@ pub trait TheWidget {
     fn as_rgba_view(&mut self) -> Option<&mut dyn TheRGBAViewTrait> {
         None
     }
+
+    /// Attempts to cast to TheTabbarTrait. Only valid for TheTabbar.
+    fn as_tabbar(&mut self) -> Option<&mut dyn TheTabbarTrait> {
+        None
+    }
+
 }

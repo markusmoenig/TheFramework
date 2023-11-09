@@ -3,7 +3,7 @@ use crate::Embedded;
 use fontdue::Font;
 
 use std::path::PathBuf;
-use std::sync::mpsc::{self, Sender, Receiver};
+use std::sync::mpsc::{self, Receiver, Sender};
 
 pub struct TheUIContext {
     pub font: Option<Font>,
@@ -20,7 +20,7 @@ pub struct TheUIContext {
     pub redraw_all: bool,
     pub relayout: bool,
 
-    pub file_requester_receiver: Option<(TheId, Receiver<Vec<PathBuf>>)>
+    pub file_requester_receiver: Option<(TheId, Receiver<Vec<PathBuf>>)>,
 }
 
 impl Default for TheUIContext {
@@ -234,6 +234,5 @@ impl TheUIContext {
                 self.send(TheEvent::ImageDecodeResult(id, name.to_string(), buffer));
             }
         }
-
     }
 }

@@ -1,4 +1,4 @@
-use crate::{prelude::*, browser::Browser};
+use crate::{browser::Browser, prelude::*};
 use theframework::prelude::*;
 
 pub struct UIDemo {
@@ -13,7 +13,7 @@ impl TheTrait for UIDemo {
     {
         Self {
             sidebar: Sidebar::new(),
-            browser: Browser::new()
+            browser: Browser::new(),
         }
     }
 

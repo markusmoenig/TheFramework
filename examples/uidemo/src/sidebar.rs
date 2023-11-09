@@ -22,11 +22,11 @@ impl Sidebar {
         section_bar_canvas.set_widget(TheSectionbar::new("Sectionbar".to_string()));
         sectionbar_canvas.set_top(section_bar_canvas);
 
-        let mut cube_sectionbar_button = TheSectionbarButton::new("Cube".to_string());
-        cube_sectionbar_button.set_text("Cube".to_string());
+        let mut cube_sectionbar_button = TheSectionbarButton::new("Layout #1".to_string());
+        cube_sectionbar_button.set_text("Layout 1".to_string());
 
-        let mut sphere_sectionbar_button = TheSectionbarButton::new("Sphere".to_string());
-        sphere_sectionbar_button.set_text("Sphere".to_string());
+        let mut sphere_sectionbar_button = TheSectionbarButton::new("Layout #2".to_string());
+        sphere_sectionbar_button.set_text("Layout 2".to_string());
 
         let mut vlayout = TheVLayout::new("Context Buttons".to_string());
         vlayout.add_widget(Box::new(cube_sectionbar_button));
@@ -139,8 +139,13 @@ impl Sidebar {
                         //println!("app Widget State changed {:?}: {:?}", id, state);
 
                         if id.name == "Open" {
-                            ctx.ui.open_file_requester(TheId::new("MyID".into()), "Open".into(), vec![] );
-                            ctx.ui.set_widget_state("Open".to_string(), TheWidgetState::None);
+                            ctx.ui.open_file_requester(
+                                TheId::new("MyID".into()),
+                                "Open".into(),
+                                vec![],
+                            );
+                            ctx.ui
+                                .set_widget_state("Open".to_string(), TheWidgetState::None);
                             ctx.ui.clear_hover();
                         } else if id.name == "Cube" {
                             ctx.ui

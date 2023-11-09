@@ -2,20 +2,22 @@ use crate::prelude::*;
 
 pub mod thehlayout;
 pub mod thelistlayout;
+pub mod thergbalayout;
 pub mod thesnapperlayout;
 pub mod thestacklayout;
+pub mod thetablayout;
 pub mod thetextlayout;
 pub mod thevlayout;
-pub mod thergbalayout;
 
 pub mod prelude {
     pub use crate::theui::thelayout::thehlayout::{TheHLayout, TheHLayoutTrait};
     pub use crate::theui::thelayout::thelistlayout::{TheListLayout, TheListLayoutTrait};
+    pub use crate::theui::thelayout::thergbalayout::{TheRGBALayout, TheRGBALayoutTrait};
     pub use crate::theui::thelayout::thesnapperlayout::{TheSnapperLayout, TheSnapperLayoutTrait};
     pub use crate::theui::thelayout::thestacklayout::{TheStackLayout, TheStackLayoutTrait};
+    pub use crate::theui::thelayout::thetablayout::{TheTabLayout, TheTabLayoutTrait};
     pub use crate::theui::thelayout::thetextlayout::{TheTextLayout, TheTextLayoutTrait};
     pub use crate::theui::thelayout::thevlayout::{TheVLayout, TheVLayoutTrait};
-    pub use crate::theui::thelayout::thergbalayout::{TheRGBALayout, TheRGBALayoutTrait};
 
     pub use crate::theui::thelayout::TheLayout;
 }
@@ -102,6 +104,11 @@ pub trait TheLayout {
 
     /// Attempts to cast to TheRGBALayoutTrait. Only valid for TheRGBALayout.
     fn as_rgba_layout(&mut self) -> Option<&mut dyn TheRGBALayoutTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheTabLayoutTrait. Only valid for TheTabLayout.
+    fn as_tab_layout(&mut self) -> Option<&mut dyn TheTabLayoutTrait> {
         None
     }
 }

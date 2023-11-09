@@ -173,8 +173,7 @@ impl TheWidget for TheTabbar {
 
         let mut x = 0;
 
-        for (index,text) in self.tabs.iter().enumerate() {
-
+        for (index, text) in self.tabs.iter().enumerate() {
             let mut icon_name = if Some(index as i32) == self.selected_index {
                 "dark_tabbar_selected".to_string()
             } else {
@@ -188,7 +187,7 @@ impl TheWidget for TheTabbar {
             if let Some(icon) = ctx.ui.icon(&icon_name) {
                 let r = (
                     utuple.0 + x,
-                    utuple.1,
+                    utuple.1 + 1,
                     icon.dim().width as usize,
                     icon.dim().height as usize,
                 );
@@ -215,12 +214,7 @@ impl TheWidget for TheTabbar {
             if index < self.tabs.len() - 1 {
                 // Connector
 
-                let r = (
-                    utuple.0 + x,
-                    utuple.1 + utuple.3 - 1,
-                    2,
-                    1,
-                );
+                let r = (utuple.0 + x, utuple.1 + utuple.3 - 1, 2, 1);
                 ctx.draw.rect(
                     buffer.pixels_mut(),
                     &r,
@@ -232,76 +226,17 @@ impl TheWidget for TheTabbar {
             }
         }
 
-        /*
-        let utuple: (usize, usize, usize, usize) = self.dim.to_buffer_utuple();
-
-        let mut icon_name = if self.state == TheWidgetState::Clicked {
-            "dark_dropdown_clicked".to_string()
-        } else {
-            "dark_dropdown_normal".to_string()
-        };
-
-        if self.state != TheWidgetState::Clicked && self.id().equals(&ctx.ui.hover) {
-            icon_name = "dark_dropdown_hover".to_string()
-        }
-        if self.state != TheWidgetState::Clicked && self.id().equals(&ctx.ui.focus) {
-            icon_name = "dark_dropdown_focus".to_string()
-        }
-
-        let text_color = if self.state == TheWidgetState::Selected {
-            style.theme().color(SectionbarSelectedTextColor)
-        } else {
-            style.theme().color(SectionbarNormalTextColor)
-        };
-
-        if let Some(icon) = ctx.ui.icon(&icon_name) {
-            let off = if icon.dim().width == 140 { 1 } else { 0 };
-            let r = (
-                utuple.0 + off,
-                utuple.1 + off,
-                icon.dim().width as usize,
-                icon.dim().height as usize,
-            );
-            ctx.draw
-                .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
-        }
-
-        if let Some(icon) = ctx.ui.icon("dark_dropdown_marker") {
-            let r = (
-                utuple.0 + 129,
-                utuple.1 + 7,
-                icon.dim().width as usize,
-                icon.dim().height as usize,
-            );
-            ctx.draw
-                .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
-        }
-
-        shrinker.shrink_by(8, 0, 12, 0);
-
-        if !self.tabs.is_empty() {
-            if let Some(font) = &ctx.ui.font {
-                ctx.draw.text_rect_blend(
-                    buffer.pixels_mut(),
-                    &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                    stride,
-                    font,
-                    12.5,
-                    self.tabs[self.selected as usize].as_str(),
-                    text_color,
-                    TheHorizontalAlign::Left,
-                    TheVerticalAlign::Center,
-                );
-            }
-        }*/
-
         self.is_dirty = false;
     }
 
+    fn as_tabbar(&mut self) -> Option<&mut dyn TheTabbarTrait> {
+        Some(self)
+    }
 }
 
 pub trait TheTabbarTrait {
     fn add_tab(&mut self, name: String);
+    fn selection_index(&self) -> Option<i32>;
     fn selection(&self) -> Option<String>;
     fn set_selection(&mut self, name: String);
 }
@@ -309,6 +244,9 @@ pub trait TheTabbarTrait {
 impl TheTabbarTrait for TheTabbar {
     fn add_tab(&mut self, name: String) {
         self.tabs.push(name);
+    }
+    fn selection_index(&self) -> Option<i32> {
+        self.selected_index
     }
     fn selection(&self) -> Option<String> {
         if let Some(index) = self.selected_index {
@@ -320,7 +258,7 @@ impl TheTabbarTrait for TheTabbar {
     }
     fn set_selection(&mut self, name: String) {
         self.is_dirty = true;
-        for (index,text) in self.tabs.iter().enumerate() {
+        for (index, text) in self.tabs.iter().enumerate() {
             if name == *text {
                 self.selected_index = Some(index as i32);
                 return;

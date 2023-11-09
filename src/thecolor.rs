@@ -11,7 +11,6 @@ pub struct TheColor {
 }
 
 impl TheColor {
-
     /// Creates a color from u8 values.
     pub fn from_u8(r: u8, g: u8, b: u8, a: u8) -> Self {
         Self {
@@ -23,7 +22,7 @@ impl TheColor {
     }
 
     /// Creates a color from u8 values.
-    pub fn from_u8_array(color: [u8;4]) -> Self {
+    pub fn from_u8_array(color: [u8; 4]) -> Self {
         Self {
             r: color[0] as f32 / 255.0,
             g: color[1] as f32 / 255.0,
@@ -53,13 +52,18 @@ impl TheColor {
     }
 
     /// Creates an [f32;4] array
-    pub fn to_array(&self) -> [f32;4] {
+    pub fn to_array(&self) -> [f32; 4] {
         [self.r, self.g, self.b, self.a]
     }
 
     /// Creates an [u8;4] array
-    pub fn to_u8_array(&self) -> [u8;4] {
-        [(self.r * 255.0) as u8, (self.g * 255.0) as u8, (self.b * 255.0) as u8, (self.a * 255.0) as u8]
+    pub fn to_u8_array(&self) -> [u8; 4] {
+        [
+            (self.r * 255.0) as u8,
+            (self.g * 255.0) as u8,
+            (self.b * 255.0) as u8,
+            (self.a * 255.0) as u8,
+        ]
     }
 }
 

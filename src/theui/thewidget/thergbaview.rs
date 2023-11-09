@@ -133,7 +133,6 @@ impl TheWidget for TheRGBAView {
 
         let stride: usize = buffer.stride();
 
-
         if !self.buffer.is_valid() {
             ctx.draw.rect(
                 buffer.pixels_mut(),
@@ -221,7 +220,6 @@ impl TheWidget for TheRGBAView {
             }
         }*/
 
-
         self.is_dirty = false;
     }
 
@@ -242,7 +240,6 @@ pub trait TheRGBAViewTrait {
 }
 
 impl TheRGBAViewTrait for TheRGBAView {
-
     fn buffer(&self) -> &TheRGBABuffer {
         &self.buffer
     }

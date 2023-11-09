@@ -18,10 +18,7 @@ impl TheId {
 
     /// Creates an Id based on a given name and uuid.
     pub fn new_with_id(name: String, uuid: Uuid) -> Self {
-        Self {
-            name,
-            uuid
-        }
+        Self { name, uuid }
     }
 
     /// Creates an empty id (an id wth an empty name).

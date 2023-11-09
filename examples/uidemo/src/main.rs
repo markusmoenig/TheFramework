@@ -1,8 +1,8 @@
 use theframework::*;
 
+pub mod browser;
 pub mod demo;
 pub mod sidebar;
-pub mod browser;
 
 use crate::demo::UIDemo;
 

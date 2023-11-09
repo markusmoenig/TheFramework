@@ -48,8 +48,12 @@ impl TheWidget for TheHorizontalScrollbar {
         // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
             TheEvent::MouseDown(coord) => {
-
-                let dim = TheDim::new(self.scrollbar_position() as i32, 0, self.scrollbar_thumb_width(), self.dim.height);
+                let dim = TheDim::new(
+                    self.scrollbar_position() as i32,
+                    0,
+                    self.scrollbar_thumb_width(),
+                    self.dim.height,
+                );
                 if let Some(coord) = coord.to_vec2i() {
                     if dim.contains(coord) {
                         self.is_dirty = true;
@@ -87,7 +91,12 @@ impl TheWidget for TheHorizontalScrollbar {
             }
             TheEvent::Hover(coord) => {
                 if self.state != TheWidgetState::Clicked {
-                    let dim = TheDim::new(self.scrollbar_position() as i32, 0, self.scrollbar_thumb_width(), self.dim.height);
+                    let dim = TheDim::new(
+                        self.scrollbar_position() as i32,
+                        0,
+                        self.scrollbar_thumb_width(),
+                        self.dim.height,
+                    );
                     if let Some(coord) = coord.to_vec2i() {
                         if dim.contains(coord) {
                             if !self.id().equals(&ctx.ui.hover) {
@@ -256,7 +265,9 @@ pub trait TheHorizontalScrollbarTrait {
     /// Helper function to scroll by a certain amount (delta).
     /// This can be positive (to scroll down) or negative (to scroll up).
     fn scroll_by(&mut self, delta: i32) {
-        let new_offset = (self.scroll_offset() + delta).max(0).min(self.total_width() - self.viewport_width());
+        let new_offset = (self.scroll_offset() + delta)
+            .max(0)
+            .min(self.total_width() - self.viewport_width());
         self.set_scroll_offset(new_offset);
     }
 
@@ -271,7 +282,8 @@ pub trait TheHorizontalScrollbarTrait {
     /// Get the position of the scrollbar slider, accounting for the border.
     fn scrollbar_position(&self) -> f32 {
         if self.needs_scrollbar() {
-            (self.scroll_offset() as f32 * self.max_thumb_offset() as f32) / (self.total_width() - self.viewport_width()) as f32
+            (self.scroll_offset() as f32 * self.max_thumb_offset() as f32)
+                / (self.total_width() - self.viewport_width()) as f32
         } else {
             0.0
         }
@@ -279,13 +291,15 @@ pub trait TheHorizontalScrollbarTrait {
 
     /// Get the height of the scrollbar slider (thumb) as a proportion of the viewport height.
     fn scrollbar_thumb_width(&self) -> i32 {
-        (self.viewport_width() as f32 * (self.viewport_width() as f32 / self.total_width() as f32)) as i32
+        (self.viewport_width() as f32 * (self.viewport_width() as f32 / self.total_width() as f32))
+            as i32
     }
 
     /// Adjust the scroll offset based on the mouse's delta movement on the thumb.
     fn adjust_scroll_from_thumb_delta(&mut self, delta_x: i32) {
         let thumb_height = self.scrollbar_thumb_width();
-        let scale_factor = (self.total_width() - self.viewport_width()) as f32 / (self.viewport_width() - thumb_height) as f32;
+        let scale_factor = (self.total_width() - self.viewport_width()) as f32
+            / (self.viewport_width() - thumb_height) as f32;
 
         let content_delta_x = (delta_x as f32 * scale_factor) as i32;
 
@@ -308,10 +322,11 @@ pub trait TheHorizontalScrollbarTrait {
             return;
         }
 
-        let clamped_offset = new_offset.max(0).min(self.total_width() - self.viewport_width());
+        let clamped_offset = new_offset
+            .max(0)
+            .min(self.total_width() - self.viewport_width());
         self.set_scroll_offset(clamped_offset);
     }
-
 }
 
 impl TheHorizontalScrollbarTrait for TheHorizontalScrollbar {
