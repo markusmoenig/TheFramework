@@ -11,7 +11,7 @@ impl Sidebar {
     pub fn new() -> Self {
         Self {
             state_receiver: None,
-            stack_layout_id: TheId::empty()
+            stack_layout_id: TheId::empty(),
         }
     }
 
@@ -22,10 +22,12 @@ impl Sidebar {
         section_bar_canvas.set_widget(TheSectionbar::new(TheId::named("Sectionbar".to_string())));
         sectionbar_canvas.set_top(section_bar_canvas);
 
-        let mut cube_sectionbar_button = TheSectionbarButton::new(TheId::named("Layout #1".to_string()));
+        let mut cube_sectionbar_button =
+            TheSectionbarButton::new(TheId::named("Layout #1".to_string()));
         cube_sectionbar_button.set_text("Layout 1".to_string());
 
-        let mut sphere_sectionbar_button = TheSectionbarButton::new(TheId::named("Layout #2".to_string()));
+        let mut sphere_sectionbar_button =
+            TheSectionbarButton::new(TheId::named("Layout #2".to_string()));
         sphere_sectionbar_button.set_text("Layout 2".to_string());
 
         let mut vlayout = TheVLayout::new(TheId::named("Context Buttons".to_string()));
@@ -50,7 +52,8 @@ impl Sidebar {
         list_canvas.set_top(header);
 
         for i in 0..25 {
-            let mut list_item: TheListItem = TheListItem::new(TheId::named(format!("List Item {}", i)));
+            let mut list_item: TheListItem =
+                TheListItem::new(TheId::named(format!("List Item {}", i)));
             list_item.set_text(format!("Item #{}", i));
             list_layout.add_item(list_item, ctx);
         }

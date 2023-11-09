@@ -36,14 +36,14 @@ impl TheLayout for TheRGBALayout {
 
             rgba_view: Box::new(TheRGBAView::new(TheId::named("RGBA View".into()))),
 
-            vertical_scrollbar: Box::new(TheVerticalScrollbar::new(
-                TheId::named("Vertical Scrollbar".to_string()),
-            )),
+            vertical_scrollbar: Box::new(TheVerticalScrollbar::new(TheId::named(
+                "Vertical Scrollbar".to_string(),
+            ))),
             vertical_scrollbar_visible: false,
 
-            horizontal_scrollbar: Box::new(TheHorizontalScrollbar::new(
-                TheId::named("Horizontal Scrollbar".to_string()),
-            )),
+            horizontal_scrollbar: Box::new(TheHorizontalScrollbar::new(TheId::named(
+                "Horizontal Scrollbar".to_string(),
+            ))),
             horizontal_scrollbar_visible: false,
 
             margin: vec4i(0, 0, 0, 0),

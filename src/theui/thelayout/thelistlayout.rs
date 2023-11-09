@@ -32,9 +32,9 @@ impl TheLayout for TheListLayout {
             widgets: vec![],
             list_buffer: TheRGBABuffer::empty(),
 
-            vertical_scrollbar: Box::new(TheVerticalScrollbar::new(
-                TheId::named("Vertical Scrollbar".to_string()),
-            )),
+            vertical_scrollbar: Box::new(TheVerticalScrollbar::new(TheId::named(
+                "Vertical Scrollbar".to_string(),
+            ))),
             vertical_scrollbar_visible: false,
 
             margin: vec4i(0, 0, 0, 0),
