@@ -1,6 +1,14 @@
 use crate::prelude::*;
+use fontdue::{Font, Metrics};
 
-pub struct TheTextLineEdit {
+#[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
+pub enum TheTextEditMode {
+    Text,
+    Rhai,
+    Settings,
+}
+
+pub struct TheTextEdit {
     id: TheId,
     limiter: TheSizeLimiter,
 
@@ -12,15 +20,56 @@ pub struct TheTextLineEdit {
 
     dim: TheDim,
     is_dirty: bool,
+
+    cursor_offset: usize,
+    pub cursor_pos: (usize, usize),
+    pub cursor_rect: (usize, usize, usize, usize),
+
+    needs_update: bool,
+    pub mode: TheTextEditMode,
+
+    line_numbers_buffer: Vec<u8>,
+    line_numbers_size: (usize, usize),
+
+    text_buffer: Vec<u8>,
+    text_buffer_size: (usize, usize),
+
+    metrics: FxHashMap<char, (Metrics, Vec<u8>)>,
+    advance_width: usize,
+    advance_height: usize,
+
+    shift: bool,
+    ctrl: bool,
+    alt: bool,
+    logo: bool,
+
+    //pub theme: Theme,
+    //pub settings: Settings,
+    error: Option<(String, Option<usize>)>,
+
+    mouse_wheel_delta: (isize, isize),
+    offset: (isize, isize),
+    max_offset: (usize, usize),
+
+    range_buffer: (usize, usize),
+    range_start: Option<(usize, usize)>,
+    range_end: Option<(usize, usize)>,
+
+    last_pos: (usize, usize),
+    last_click: u128,
+    click_stage: i32,
+
+    code_safe_rect: (usize, usize, usize, usize),
+
+    pub drag_pos: Option<(usize, usize)>,
 }
 
-impl TheWidget for TheTextLineEdit {
+impl TheWidget for TheTextEdit {
     fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
-        let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_height(20);
+        let limiter = TheSizeLimiter::new();
 
         Self {
             id,
@@ -34,6 +83,48 @@ impl TheWidget for TheTextLineEdit {
 
             dim: TheDim::zero(),
             is_dirty: false,
+
+            cursor_offset: 0,
+            cursor_pos: (0, 0),
+            cursor_rect: (0, 0, 2, 0),
+
+            needs_update: true,
+            mode: TheTextEditMode::Rhai,
+
+            line_numbers_buffer: vec![0; 1],
+            line_numbers_size: (0, 0),
+
+            text_buffer: vec![0; 1],
+            text_buffer_size: (0, 0),
+
+            metrics: FxHashMap::default(),
+            advance_width: 10,
+            advance_height: 22,
+
+            shift: false,
+            ctrl: false,
+            alt: false,
+            logo: false,
+
+            //theme                       : Theme::new(),
+            //settings                    : Settings::new(),
+            error: None,
+
+            mouse_wheel_delta: (0, 0),
+            offset: (0, 0),
+            max_offset: (0, 0),
+
+            range_buffer: (0, 0),
+            range_start: None,
+            range_end: None,
+
+            last_pos: (0, 0),
+            last_click: 0,
+            click_stage: 0,
+
+            code_safe_rect: (0, 0, 0, 0),
+
+            drag_pos: None,
         }
     }
 
@@ -278,11 +369,11 @@ impl TheWidget for TheTextLineEdit {
     }
 }
 
-pub trait TheTextLineEditTrait: TheWidget {
+pub trait TheTextEditTrait: TheWidget {
     fn set_text(&mut self, text: String);
 }
 
-impl TheTextLineEditTrait for TheTextLineEdit {
+impl TheTextEditTrait for TheTextEdit {
     fn set_text(&mut self, text: String) {
         self.text = text;
         self.position = 0;

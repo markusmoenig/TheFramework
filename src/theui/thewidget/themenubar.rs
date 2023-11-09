@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheMenubar {
-    widget_id: TheId,
+    id: TheId,
 
     limiter: TheSizeLimiter,
 
@@ -11,7 +11,7 @@ pub struct TheMenubar {
 }
 
 impl TheWidget for TheMenubar {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
@@ -19,7 +19,7 @@ impl TheWidget for TheMenubar {
         limiter.set_max_height(43);
 
         Self {
-            widget_id: TheId::new(name),
+            id,
             limiter,
 
             dim: TheDim::zero(),
@@ -29,7 +29,7 @@ impl TheWidget for TheMenubar {
     }
 
     fn id(&self) -> &TheId {
-        &self.widget_id
+        &self.id
     }
 
     // fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {

@@ -13,16 +13,16 @@ pub struct TheTabLayout {
 }
 
 impl TheLayout for TheTabLayout {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
         Self {
-            id: TheId::new(name),
+            id,
             dim: TheDim::zero(),
             limiter: TheSizeLimiter::new(),
 
-            tabbar: Box::new(TheTabbar::new("Tabbar".into())),
+            tabbar: Box::new(TheTabbar::new(TheId::named("Tabbar".into()))),
 
             widgets: vec![],
             layouts: vec![],
@@ -34,15 +34,13 @@ impl TheLayout for TheTabLayout {
         &self.id
     }
 
-    fn set_margin(&mut self, _margin: Vec4i) {
-    }
+    fn set_margin(&mut self, _margin: Vec4i) {}
 
     fn widgets(&mut self) -> &mut Vec<Box<dyn TheWidget>> {
         &mut self.widgets
     }
 
     fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
-
         if self.tabbar.dim().contains(coord) {
             return Some(&mut self.tabbar);
         }
@@ -78,7 +76,6 @@ impl TheLayout for TheTabLayout {
         name: Option<&String>,
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheWidget>> {
-
         if self.tabbar.id().matches(name, uuid) {
             return Some(&mut self.tabbar);
         }
@@ -102,7 +99,6 @@ impl TheLayout for TheTabLayout {
     }
 
     fn needs_redraw(&mut self) -> bool {
-
         if self.tabbar.needs_redraw() {
             return true;
         }
@@ -137,12 +133,8 @@ impl TheLayout for TheTabLayout {
         if self.dim != dim || ctx.ui.relayout {
             self.dim = dim;
 
-            self.tabbar.set_dim(TheDim::new(
-                dim.x,
-                dim.y,
-                dim.width,
-                22,
-            ));
+            self.tabbar
+                .set_dim(TheDim::new(dim.x, dim.y, dim.width, 22));
 
             self.tabbar
                 .dim_mut()
@@ -156,8 +148,7 @@ impl TheLayout for TheTabLayout {
                     dim.height - 22 - 2,
                 ));
 
-                w
-                    .dim_mut()
+                w.dim_mut()
                     .set_buffer_offset(self.dim.buffer_x + 1, self.dim.buffer_y + 23);
             }
         }

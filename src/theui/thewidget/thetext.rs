@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheText {
-    widget_id: TheId,
+    id: TheId,
 
     limiter: TheSizeLimiter,
 
@@ -13,7 +13,7 @@ pub struct TheText {
 }
 
 impl TheWidget for TheText {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
@@ -21,7 +21,7 @@ impl TheWidget for TheText {
         limiter.set_max_height(21);
 
         Self {
-            widget_id: TheId::new(name),
+            id,
             limiter,
 
             dim: TheDim::zero(),
@@ -33,7 +33,7 @@ impl TheWidget for TheText {
     }
 
     fn id(&self) -> &TheId {
-        &self.widget_id
+        &self.id
     }
 
     // fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {

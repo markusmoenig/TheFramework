@@ -15,6 +15,7 @@ pub mod thesnapperbar;
 pub mod theswitchbar;
 pub mod thetabbar;
 pub mod thetext;
+pub mod thetextedit;
 pub mod thetextlineedit;
 pub mod thetoolbar;
 pub mod thetoolbarbutton;
@@ -50,6 +51,7 @@ pub mod prelude {
 
     pub use crate::theui::thewidget::thergbaview::{TheRGBAView, TheRGBAViewTrait};
     pub use crate::theui::thewidget::thetabbar::{TheTabbar, TheTabbarTrait};
+    pub use crate::theui::thewidget::thetextedit::{TheTextEdit, TheTextEditTrait};
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
 
     pub use crate::theui::thewidget::TheWidget;
@@ -66,7 +68,7 @@ pub enum TheWidgetState {
 /// TheWidget trait defines the asbtract functionality of a widget.
 #[allow(unused)]
 pub trait TheWidget {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized;
 
@@ -175,5 +177,4 @@ pub trait TheWidget {
     fn as_tabbar(&mut self) -> Option<&mut dyn TheTabbarTrait> {
         None
     }
-
 }

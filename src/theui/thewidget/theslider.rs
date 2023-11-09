@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheSlider {
-    widget_id: TheId,
+    id: TheId,
     limiter: TheSizeLimiter,
     state: TheWidgetState,
 
@@ -17,7 +17,7 @@ pub struct TheSlider {
 }
 
 impl TheWidget for TheSlider {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
@@ -25,7 +25,7 @@ impl TheWidget for TheSlider {
         limiter.set_max_height(13);
 
         Self {
-            widget_id: TheId::new(name),
+            id,
             limiter,
 
             state: TheWidgetState::None,
@@ -43,7 +43,7 @@ impl TheWidget for TheSlider {
     }
 
     fn id(&self) -> &TheId {
-        &self.widget_id
+        &self.id
     }
 
     fn dim(&self) -> &TheDim {

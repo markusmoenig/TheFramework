@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheDropdownMenu {
-    widget_id: TheId,
+    id: TheId,
     limiter: TheSizeLimiter,
 
     state: TheWidgetState,
@@ -15,7 +15,7 @@ pub struct TheDropdownMenu {
 }
 
 impl TheWidget for TheDropdownMenu {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
@@ -24,7 +24,7 @@ impl TheWidget for TheDropdownMenu {
         limiter.set_max_height(20);
 
         Self {
-            widget_id: TheId::new(name),
+            id,
             limiter,
 
             state: TheWidgetState::None,
@@ -39,7 +39,7 @@ impl TheWidget for TheDropdownMenu {
     }
 
     fn id(&self) -> &TheId {
-        &self.widget_id
+        &self.id
     }
 
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {

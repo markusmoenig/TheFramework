@@ -11,12 +11,12 @@ pub struct TheStackLayout {
 }
 
 impl TheLayout for TheStackLayout {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
         Self {
-            id: TheId::new(name),
+            id,
             dim: TheDim::zero(),
             limiter: TheSizeLimiter::new(),
 

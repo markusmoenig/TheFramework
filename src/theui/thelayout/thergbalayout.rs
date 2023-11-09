@@ -22,27 +22,27 @@ pub struct TheRGBALayout {
 }
 
 impl TheLayout for TheRGBALayout {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
         Self {
-            id: TheId::new(name),
+            id,
             limiter: TheSizeLimiter::new(),
 
             dim: TheDim::zero(),
 
             widgets: vec![],
 
-            rgba_view: Box::new(TheRGBAView::new("RGBA View".into())),
+            rgba_view: Box::new(TheRGBAView::new(TheId::named("RGBA View".into()))),
 
             vertical_scrollbar: Box::new(TheVerticalScrollbar::new(
-                "Vertical Scrollbar".to_string(),
+                TheId::named("Vertical Scrollbar".to_string()),
             )),
             vertical_scrollbar_visible: false,
 
             horizontal_scrollbar: Box::new(TheHorizontalScrollbar::new(
-                "Horizontal Scrollbar".to_string(),
+                TheId::named("Horizontal Scrollbar".to_string()),
             )),
             horizontal_scrollbar_visible: false,
 

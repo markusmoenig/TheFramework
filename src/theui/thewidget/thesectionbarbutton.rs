@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheSectionbarButton {
-    widget_id: TheId,
+    id: TheId,
     limiter: TheSizeLimiter,
 
     state: TheWidgetState,
@@ -12,7 +12,7 @@ pub struct TheSectionbarButton {
 }
 
 impl TheWidget for TheSectionbarButton {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
@@ -20,7 +20,7 @@ impl TheWidget for TheSectionbarButton {
         limiter.set_max_size(vec2i(81, 47));
 
         Self {
-            widget_id: TheId::new(name),
+            id,
             limiter,
 
             state: TheWidgetState::None,
@@ -32,7 +32,7 @@ impl TheWidget for TheSectionbarButton {
     }
 
     fn id(&self) -> &TheId {
-        &self.widget_id
+        &self.id
     }
 
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {

@@ -19,12 +19,12 @@ pub struct TheListLayout {
 }
 
 impl TheLayout for TheListLayout {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
         Self {
-            id: TheId::new(name),
+            id,
             limiter: TheSizeLimiter::new(),
 
             dim: TheDim::zero(),
@@ -33,7 +33,7 @@ impl TheLayout for TheListLayout {
             list_buffer: TheRGBABuffer::empty(),
 
             vertical_scrollbar: Box::new(TheVerticalScrollbar::new(
-                "Vertical Scrollbar".to_string(),
+                TheId::named("Vertical Scrollbar".to_string()),
             )),
             vertical_scrollbar_visible: false,
 

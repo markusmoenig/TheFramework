@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheHorizontalScrollbar {
-    widget_id: TheId,
+    id: TheId,
     limiter: TheSizeLimiter,
 
     state: TheWidgetState,
@@ -16,7 +16,7 @@ pub struct TheHorizontalScrollbar {
 }
 
 impl TheWidget for TheHorizontalScrollbar {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
@@ -24,7 +24,7 @@ impl TheWidget for TheHorizontalScrollbar {
         limiter.set_max_height(20);
 
         Self {
-            widget_id: TheId::new(name),
+            id,
             limiter,
 
             state: TheWidgetState::None,
@@ -40,7 +40,7 @@ impl TheWidget for TheHorizontalScrollbar {
     }
 
     fn id(&self) -> &TheId {
-        &self.widget_id
+        &self.id
     }
 
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {

@@ -15,12 +15,12 @@ pub struct TheHLayout {
 }
 
 impl TheLayout for TheHLayout {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
         Self {
-            id: TheId::new(name),
+            id,
             limiter: TheSizeLimiter::new(),
 
             dim: TheDim::zero(),

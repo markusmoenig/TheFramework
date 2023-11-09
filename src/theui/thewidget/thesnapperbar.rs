@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheSnapperbar {
-    widget_id: TheId,
+    id: TheId,
     limiter: TheSizeLimiter,
 
     state: TheWidgetState,
@@ -14,7 +14,7 @@ pub struct TheSnapperbar {
 }
 
 impl TheWidget for TheSnapperbar {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
@@ -22,7 +22,7 @@ impl TheWidget for TheSnapperbar {
         limiter.set_max_height(22);
 
         Self {
-            widget_id: TheId::new(name),
+            id,
             limiter,
 
             state: TheWidgetState::None,
@@ -36,7 +36,7 @@ impl TheWidget for TheSnapperbar {
     }
 
     fn id(&self) -> &TheId {
-        &self.widget_id
+        &self.id
     }
 
     // fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {

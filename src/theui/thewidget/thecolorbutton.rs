@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheColorButton {
-    widget_id: TheId,
+    id: TheId,
     limiter: TheSizeLimiter,
 
     dim: TheDim,
@@ -10,12 +10,12 @@ pub struct TheColorButton {
 }
 
 impl TheWidget for TheColorButton {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
         Self {
-            widget_id: TheId::new(name),
+            id,
             limiter: TheSizeLimiter::new(),
 
             dim: TheDim::zero(),
@@ -25,7 +25,7 @@ impl TheWidget for TheColorButton {
     }
 
     fn id(&self) -> &TheId {
-        &self.widget_id
+        &self.id
     }
 
     #[allow(clippy::single_match)]

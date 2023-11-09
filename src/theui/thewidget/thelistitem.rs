@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheListItem {
-    widget_id: TheId,
+    id: TheId,
     limiter: TheSizeLimiter,
 
     state: TheWidgetState,
@@ -15,7 +15,7 @@ pub struct TheListItem {
 }
 
 impl TheWidget for TheListItem {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
@@ -23,7 +23,7 @@ impl TheWidget for TheListItem {
         limiter.set_max_height(17);
 
         Self {
-            widget_id: TheId::new(name),
+            id,
             limiter,
 
             state: TheWidgetState::None,
@@ -38,7 +38,7 @@ impl TheWidget for TheListItem {
     }
 
     fn id(&self) -> &TheId {
-        &self.widget_id
+        &self.id
     }
 
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {

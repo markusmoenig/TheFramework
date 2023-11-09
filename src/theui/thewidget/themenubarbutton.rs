@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheMenubarButton {
-    widget_id: TheId,
+    id: TheId,
     limiter: TheSizeLimiter,
     state: TheWidgetState,
 
@@ -13,7 +13,7 @@ pub struct TheMenubarButton {
 }
 
 impl TheWidget for TheMenubarButton {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
@@ -21,7 +21,7 @@ impl TheWidget for TheMenubarButton {
         limiter.set_max_size(vec2i(35, 35));
 
         Self {
-            widget_id: TheId::new(name),
+            id,
             limiter,
             state: TheWidgetState::None,
 
@@ -34,7 +34,7 @@ impl TheWidget for TheMenubarButton {
     }
 
     fn id(&self) -> &TheId {
-        &self.widget_id
+        &self.id
     }
 
     #[allow(clippy::single_match)]

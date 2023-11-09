@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheTabbar {
-    widget_id: TheId,
+    id: TheId,
     limiter: TheSizeLimiter,
 
     state: TheWidgetState,
@@ -18,7 +18,7 @@ pub struct TheTabbar {
 }
 
 impl TheWidget for TheTabbar {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
@@ -26,7 +26,7 @@ impl TheWidget for TheTabbar {
         limiter.set_max_height(22);
 
         Self {
-            widget_id: TheId::new(name),
+            id,
             limiter,
 
             state: TheWidgetState::None,
@@ -44,7 +44,7 @@ impl TheWidget for TheTabbar {
     }
 
     fn id(&self) -> &TheId {
-        &self.widget_id
+        &self.id
     }
 
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {

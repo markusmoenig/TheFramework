@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct TheMenubarSeparator {
-    widget_id: TheId,
+    id: TheId,
     limiter: TheSizeLimiter,
 
     dim: TheDim,
@@ -9,7 +9,7 @@ pub struct TheMenubarSeparator {
 }
 
 impl TheWidget for TheMenubarSeparator {
-    fn new(name: String) -> Self
+    fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
@@ -17,7 +17,7 @@ impl TheWidget for TheMenubarSeparator {
         limiter.set_max_size(vec2i(10, 33));
 
         Self {
-            widget_id: TheId::new(name),
+            id,
             limiter,
 
             dim: TheDim::zero(),
@@ -26,7 +26,7 @@ impl TheWidget for TheMenubarSeparator {
     }
 
     fn id(&self) -> &TheId {
-        &self.widget_id
+        &self.id
     }
 
     fn dim(&self) -> &TheDim {
