@@ -18,6 +18,7 @@ pub mod thetoolbarbutton;
 pub mod theverticalscrollbar;
 pub mod thehorizontalscrollbar;
 pub mod thergbaview;
+pub mod thetabbar;
 
 pub mod prelude {
     pub use crate::theui::thewidget::thecolorbutton::TheColorButton;
@@ -49,6 +50,7 @@ pub mod prelude {
 
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
     pub use crate::theui::thewidget::thergbaview::{TheRGBAView, TheRGBAViewTrait};
+    pub use crate::theui::thewidget::thetabbar::{TheTabbar, TheTabbarTrait};
 
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetState;

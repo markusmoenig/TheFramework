@@ -173,6 +173,7 @@ impl TheUI {
                     TheEvent::LostHover(id) => {
                         //println!("Lost hover {:?}", id);
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
+                            widget.on_event(&TheEvent::LostHover(widget.id().clone()), ctx);
                             widget.set_needs_redraw(true);
                         }
                     }

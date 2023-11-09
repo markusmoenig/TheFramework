@@ -1,8 +1,9 @@
-use crate::prelude::*;
+use crate::{prelude::*, browser::Browser};
 use theframework::prelude::*;
 
 pub struct UIDemo {
     sidebar: Sidebar,
+    browser: Browser,
 }
 
 impl TheTrait for UIDemo {
@@ -12,6 +13,7 @@ impl TheTrait for UIDemo {
     {
         Self {
             sidebar: Sidebar::new(),
+            browser: Browser::new()
         }
     }
 
@@ -63,18 +65,20 @@ impl TheTrait for UIDemo {
 
         // Bottom
 
+        self.browser.init_ui(ui, ctx);
+
+        /*
         let mut bottom_canvas = TheCanvas::new();
 
         let mut yellow_color = TheColorButton::new("Yellow".to_string());
         yellow_color.set_color([255, 255, 0, 255]);
         yellow_color.limiter_mut().set_max_height(200);
-        bottom_canvas.set_widget(yellow_color);
+        bottom_canvas.set_widget(yellow_color);*/
 
         //
 
         ui.canvas.set_left(left_canvas);
         ui.canvas.set_top(top_canvas);
-        ui.canvas.set_bottom(bottom_canvas);
         ui.canvas
             .set_widget(TheColorButton::new("White".to_string()));
     }

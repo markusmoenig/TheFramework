@@ -87,7 +87,7 @@ impl TheWidget for TheHorizontalScrollbar {
             }
             TheEvent::Hover(coord) => {
                 if self.state != TheWidgetState::Clicked {
-                    let dim = TheDim::new(self.scrollbar_position() as i32, 0, self.dim.width, self.scrollbar_thumb_width());
+                    let dim = TheDim::new(self.scrollbar_position() as i32, 0, self.scrollbar_thumb_width(), self.dim.height);
                     if let Some(coord) = coord.to_vec2i() {
                         if dim.contains(coord) {
                             if !self.id().equals(&ctx.ui.hover) {
@@ -283,13 +283,13 @@ pub trait TheHorizontalScrollbarTrait {
     }
 
     /// Adjust the scroll offset based on the mouse's delta movement on the thumb.
-    fn adjust_scroll_from_thumb_delta(&mut self, delta_y: i32) {
+    fn adjust_scroll_from_thumb_delta(&mut self, delta_x: i32) {
         let thumb_height = self.scrollbar_thumb_width();
         let scale_factor = (self.total_width() - self.viewport_width()) as f32 / (self.viewport_width() - thumb_height) as f32;
 
-        let content_delta_y = (delta_y as f32 * scale_factor) as i32;
+        let content_delta_x = (delta_x as f32 * scale_factor) as i32;
 
-        self.scroll_by(content_delta_y);
+        self.scroll_by(content_delta_x);
     }
 
     /// Scroll content based on a click on the scrollbar track.

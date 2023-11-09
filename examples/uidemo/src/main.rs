@@ -2,6 +2,7 @@ use theframework::*;
 
 pub mod demo;
 pub mod sidebar;
+pub mod browser;
 
 use crate::demo::UIDemo;
 

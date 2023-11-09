@@ -64,4 +64,10 @@ pub enum TheThemeColors {
     ListItemText,
 
     ScrollbarBackground,
+    ScrollbarSeparator,
+
+    TabbarBackground,
+    TabbarConnector,
+    TabbarText,
+
 }

@@ -220,6 +220,35 @@ impl TheLayout for TheRGBALayout {
         if self.vertical_scrollbar_visible || self.horizontal_scrollbar_visible {
             self.vertical_scrollbar.draw(buffer, style, ctx);
             self.horizontal_scrollbar.draw(buffer, style, ctx);
+
+            let stride = buffer.stride();
+
+            let utuple = ((self.dim().buffer_x + self.dim.width - 13) as usize, (self.dim.buffer_y + self.dim.height - 13) as usize, 13, 13);
+
+            ctx.draw.rect(
+                buffer.pixels_mut(),
+                &utuple,
+                stride,
+                style.theme().color(ScrollbarBackground),
+            );
+
+            let utuple = ((self.dim().buffer_x) as usize, (self.dim.buffer_y + self.dim.height - 13) as usize, self.dim.width as usize, 1);
+
+            ctx.draw.rect(
+                buffer.pixels_mut(),
+                &utuple,
+                stride,
+                style.theme().color(ScrollbarSeparator),
+            );
+
+            let utuple = ((self.dim().buffer_x + self.dim.width - 13) as usize, (self.dim.buffer_y) as usize, 1, self.dim.height as usize);
+
+            ctx.draw.rect(
+                buffer.pixels_mut(),
+                &utuple,
+                stride,
+                style.theme().color(ScrollbarSeparator),
+            );
         }
     }
 

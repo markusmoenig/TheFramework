@@ -58,6 +58,11 @@ impl TheTheme for TheDarkTheme {
         colors.insert(ListItemText, [85, 81, 85, 255]);
 
         colors.insert(ScrollbarBackground, [139, 139, 139, 255]);
+        colors.insert(ScrollbarSeparator, [119, 119, 119, 255]);
+
+        colors.insert(TabbarBackground, [82, 82, 82, 255]);
+        colors.insert(TabbarConnector, [137, 137, 137, 255]);
+        colors.insert(TabbarText, [244, 244, 244, 255]);
 
         Self { colors }
     }
