@@ -1,11 +1,11 @@
-# Circle
+# UIdemo
 
-Draws and moves a circle based on user input.
+Provides a demo of the user interface option of TheFramework.
 
 ## Running on the Desktop
 
 ```bash
-cargo run --release --package circle
+cargo run --release --package uidemo
 ```
 
 Will run the example on the Desktop utilizing pixels and winit.
@@ -21,7 +21,7 @@ rustup target add wasm32-unknown-unknown
 Build the project and start a local server to host it:
 
 ```bash
-cargo run-wasm --release --package circle
+cargo run-wasm --release --package uidemo
 ```
 
 Open http://localhost:8000/ in your browser to run the example.
@@ -29,7 +29,7 @@ Open http://localhost:8000/ in your browser to run the example.
 To build the project without serving it:
 
 ```bash
-cargo run-wasm --release --build-only --package circle
+cargo run-wasm --release --build-only --package uidemo
 ```
 
 ## Building for Xcode
@@ -45,7 +45,7 @@ crate-type = ["staticlib"]
 and than build to a static lib via
 
 ```bash
-cargo build --release --package circle
+cargo build --release --package uidemo
 ```
 
 Copy the resulting librust.a lib to the Xcode/TheFramework folder, open the project in Xcode and run or deploy it.
