@@ -19,18 +19,18 @@ impl Sidebar {
         let mut sectionbar_canvas = TheCanvas::new();
 
         let mut section_bar_canvas = TheCanvas::new();
-        section_bar_canvas.set_widget(TheSectionbar::new(TheId::named("Sectionbar".to_string())));
+        section_bar_canvas.set_widget(TheSectionbar::new(TheId::named("Sectionbar")));
         sectionbar_canvas.set_top(section_bar_canvas);
 
         let mut cube_sectionbar_button =
-            TheSectionbarButton::new(TheId::named("Layout #1".to_string()));
+            TheSectionbarButton::new(TheId::named("Layout #1"));
         cube_sectionbar_button.set_text("Layout 1".to_string());
 
         let mut sphere_sectionbar_button =
-            TheSectionbarButton::new(TheId::named("Layout #2".to_string()));
+            TheSectionbarButton::new(TheId::named("Layout #2"));
         sphere_sectionbar_button.set_text("Layout 2".to_string());
 
-        let mut vlayout = TheVLayout::new(TheId::named("Context Buttons".to_string()));
+        let mut vlayout = TheVLayout::new(TheId::named("Context Buttons"));
         vlayout.add_widget(Box::new(cube_sectionbar_button));
         vlayout.add_widget(Box::new(sphere_sectionbar_button));
         vlayout.set_margin(vec4i(5, 10, 5, 10));
@@ -41,33 +41,33 @@ impl Sidebar {
 
         // Switchbar
         let mut header = TheCanvas::new();
-        let mut switchbar = TheSwitchbar::new(TheId::named("Switchbar Header".to_string()));
+        let mut switchbar = TheSwitchbar::new(TheId::named("Switchbar Header"));
         switchbar.set_text("Section Header".to_string());
         header.set_widget(switchbar);
 
         // ListLayout
         let mut list_canvas = TheCanvas::new();
-        let mut list_layout = TheListLayout::new(TheId::named("List Layout".to_string()));
+        let mut list_layout = TheListLayout::new(TheId::named("List Layout"));
         list_layout.limiter_mut().set_max_size(vec2i(360, 200));
         list_canvas.set_top(header);
 
         for i in 0..25 {
             let mut list_item: TheListItem =
-                TheListItem::new(TheId::named(format!("List Item {}", i)));
+                TheListItem::new(TheId::named(format!("List Item {}", i).as_str()));
             list_item.set_text(format!("Item #{}", i));
             list_layout.add_item(list_item, ctx);
         }
 
         let mut toolbar_canvas = TheCanvas::new();
-        let toolbar_widget = TheToolbar::new(TheId::named("Toolbar".to_string()));
+        let toolbar_widget = TheToolbar::new(TheId::named("Toolbar"));
 
-        let mut add_button = TheToolbarButton::new(TheId::named("Add".to_string()));
+        let mut add_button = TheToolbarButton::new(TheId::named("Add"));
         add_button.set_icon_name("icon_role_add".to_string());
 
-        let mut remove_button = TheToolbarButton::new(TheId::named("Remove".to_string()));
+        let mut remove_button = TheToolbarButton::new(TheId::named("Remove"));
         remove_button.set_icon_name("icon_role_remove".to_string());
 
-        let mut toolbar_hlayout = TheHLayout::new(TheId::named("Toolbar Layout".to_string()));
+        let mut toolbar_hlayout = TheHLayout::new(TheId::named("Toolbar Layout"));
         toolbar_hlayout.set_background_color(None);
         toolbar_hlayout.set_margin(vec4i(5, 2, 5, 0));
         toolbar_hlayout.add_widget(Box::new(add_button));
@@ -81,36 +81,36 @@ impl Sidebar {
 
         // Snapperbar
 
-        let mut snapperbar = TheSnapperbar::new(TheId::named("Snapperbar Header".to_string()));
+        let mut snapperbar = TheSnapperbar::new(TheId::named("Snapperbar Header"));
         snapperbar.set_text("Snapperbar".to_string());
 
         // ---
 
-        let mut text_layout = TheTextLayout::new(TheId::named("Text Layout".to_string()));
+        let mut text_layout = TheTextLayout::new(TheId::named("Text Layout"));
         //text_layout.set_text_margin(50);
 
-        let text_line_edit = TheTextLineEdit::new(TheId::named("Text Line Edit".to_string()));
+        let text_line_edit = TheTextLineEdit::new(TheId::named("Text Line Edit"));
         text_layout.add_pair("Text Line Edit".to_string(), Box::new(text_line_edit));
 
-        let slider = TheSlider::new(TheId::named("Slider".to_string()));
+        let slider = TheSlider::new(TheId::named("Slider"));
         text_layout.add_pair("Slider".to_string(), Box::new(slider));
 
         for i in 0..10 {
-            let mut dropdown = TheDropdownMenu::new(TheId::named(format!("DropDown {}", i)));
+            let mut dropdown = TheDropdownMenu::new(TheId::named(format!("DropDown {}", i).as_str()));
             dropdown.add_option("Option #1".to_string());
             dropdown.add_option("Option #2".to_string());
             text_layout.add_pair(format!("Item #{}", i), Box::new(dropdown));
         }
 
-        let mut snapper_layout = TheSnapperLayout::new(TheId::named("Snapper Layout".to_string()));
+        let mut snapper_layout = TheSnapperLayout::new(TheId::named("Snapper Layout"));
         snapper_layout.add_pair(Box::new(snapperbar), Box::new(text_layout));
         snapper_layout.limiter_mut().set_max_width(360);
 
         let mut canvas = TheCanvas::new();
-        let mut stack_layout = TheStackLayout::new(TheId::named("Stack Layout".to_string()));
+        let mut stack_layout = TheStackLayout::new(TheId::named("Stack Layout"));
         stack_layout.add_layout(Box::new(snapper_layout));
 
-        let mut test_layout = TheVLayout::new(TheId::named("Dummy".to_string()));
+        let mut test_layout = TheVLayout::new(TheId::named("Dummy"));
         test_layout.limiter_mut().set_max_width(360);
         let mut dummy_text = TheText::new(TheId::empty());
         dummy_text.set_text("Test".to_string());
@@ -143,7 +143,7 @@ impl Sidebar {
 
                         if id.name == "Open" {
                             ctx.ui.open_file_requester(
-                                TheId::named("MyID".into()),
+                                TheId::named("MyID"),
                                 "Open".into(),
                                 vec![],
                             );

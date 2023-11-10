@@ -9,16 +9,16 @@ pub struct TheId {
 
 impl TheId {
     /// Creates an Id based on a given name.
-    pub fn named(name: String) -> Self {
+    pub fn named(name: &str) -> Self {
         Self {
-            name,
+            name: name.to_string(),
             uuid: Uuid::new_v4(),
         }
     }
 
     /// Creates an Id based on a given name and uuid.
-    pub fn named_with_id(name: String, uuid: Uuid) -> Self {
-        Self { name, uuid }
+    pub fn named_with_id(name: &str, uuid: Uuid) -> Self {
+        Self { name: name.to_string(), uuid }
     }
 
     /// Creates an empty id (an id wth an empty name).

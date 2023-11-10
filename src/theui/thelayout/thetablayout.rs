@@ -22,7 +22,7 @@ impl TheLayout for TheTabLayout {
             dim: TheDim::zero(),
             limiter: TheSizeLimiter::new(),
 
-            tabbar: Box::new(TheTabbar::new(TheId::named("Tabbar".into()))),
+            tabbar: Box::new(TheTabbar::new(TheId::named("Tabbar"))),
 
             widgets: vec![],
             layouts: vec![],

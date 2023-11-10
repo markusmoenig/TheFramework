@@ -16,14 +16,14 @@ impl Browser {
     pub fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
         let mut canvas = TheCanvas::new();
 
-        let mut tab_layout = TheTabLayout::new(TheId::named("TabLayout".to_string()));
+        let mut tab_layout = TheTabLayout::new(TheId::named("TabLayout"));
         tab_layout.limiter_mut().set_max_height(222);
 
-        let mut yellow_color = TheColorButton::new(TheId::named("Yellow".to_string()));
+        let mut yellow_color = TheColorButton::new(TheId::named("Yellow"));
         yellow_color.set_color([255, 255, 0, 255]);
         tab_layout.add_widget("Yellow".to_string(), Box::new(yellow_color));
 
-        let mut red_color = TheColorButton::new(TheId::named("Red".to_string()));
+        let mut red_color = TheColorButton::new(TheId::named("Red"));
         red_color.set_color([255, 0, 0, 255]);
         tab_layout.add_widget("Red".to_string(), Box::new(red_color));
 

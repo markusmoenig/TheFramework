@@ -21,7 +21,7 @@ impl TheTrait for UIDemo {
         // Left
         let mut left_canvas = TheCanvas::new();
 
-        let mut blue_color = TheColorButton::new(TheId::named("Blue".to_string()));
+        let mut blue_color = TheColorButton::new(TheId::named("Blue"));
         blue_color.set_color([0, 0, 255, 255]);
         blue_color.limiter_mut().set_max_width(60);
         left_canvas.set_widget(blue_color);
@@ -29,25 +29,25 @@ impl TheTrait for UIDemo {
         // Top
         let mut top_canvas = TheCanvas::new();
 
-        let menubar = TheMenubar::new(TheId::named("Menubar".to_string()));
+        let menubar = TheMenubar::new(TheId::named("Menubar"));
 
-        let mut open_button = TheMenubarButton::new(TheId::named("Open".to_string()));
+        let mut open_button = TheMenubarButton::new(TheId::named("Open"));
         open_button.set_icon_name("icon_role_load".to_string());
 
-        let mut save_button = TheMenubarButton::new(TheId::named("Save".to_string()));
+        let mut save_button = TheMenubarButton::new(TheId::named("Save"));
         save_button.set_icon_name("icon_role_save".to_string());
 
-        let mut save_as_button = TheMenubarButton::new(TheId::named("Save As".to_string()));
+        let mut save_as_button = TheMenubarButton::new(TheId::named("Save As"));
         save_as_button.set_icon_name("icon_role_save_as".to_string());
         save_as_button.set_icon_offset(vec2i(2, -5));
 
-        let mut undo_button = TheMenubarButton::new(TheId::named("Undo".to_string()));
+        let mut undo_button = TheMenubarButton::new(TheId::named("Undo"));
         undo_button.set_icon_name("icon_role_undo".to_string());
 
-        let mut redo_button = TheMenubarButton::new(TheId::named("Redo".to_string()));
+        let mut redo_button = TheMenubarButton::new(TheId::named("Redo"));
         redo_button.set_icon_name("icon_role_redo".to_string());
 
-        let mut hlayout = TheHLayout::new(TheId::named("Menu Layout".to_string()));
+        let mut hlayout = TheHLayout::new(TheId::named("Menu Layout"));
         hlayout.set_background_color(None);
         hlayout.set_margin(vec4i(40, 5, 20, 0));
         hlayout.add_widget(Box::new(open_button));
@@ -80,7 +80,7 @@ impl TheTrait for UIDemo {
         ui.canvas.set_left(left_canvas);
         ui.canvas.set_top(top_canvas);
         ui.canvas
-            .set_widget(TheColorButton::new(TheId::named("White".to_string())));
+            .set_widget(TheColorButton::new(TheId::named("White")));
     }
 
     fn update_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) -> bool {

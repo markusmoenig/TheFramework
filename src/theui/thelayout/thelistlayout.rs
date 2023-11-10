@@ -33,7 +33,7 @@ impl TheLayout for TheListLayout {
             list_buffer: TheRGBABuffer::empty(),
 
             vertical_scrollbar: Box::new(TheVerticalScrollbar::new(TheId::named(
-                "Vertical Scrollbar".to_string(),
+                "Vertical Scrollbar",
             ))),
             vertical_scrollbar_visible: false,
 
