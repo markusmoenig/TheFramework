@@ -114,6 +114,20 @@ impl TheWidget for TheListItem {
         true
     }
 
+    fn set_value(&mut self, value: TheValue) {
+        match value {
+            TheValue::Empty => {
+                self.text = "".to_string();
+                self.is_dirty = true;
+            }
+            TheValue::Text(text) => {
+                self.text = text.clone();
+                self.is_dirty = true;
+            }
+            _ => {}
+        }
+    }
+
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,

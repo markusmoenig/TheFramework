@@ -215,6 +215,20 @@ impl TheWidget for TheTextLineEdit {
         redraw
     }
 
+    fn set_value(&mut self, value: TheValue) {
+        match value {
+            TheValue::Empty => {
+                self.text = "".to_string();
+                self.is_dirty = true;
+            }
+            TheValue::Text(text) => {
+                self.text = text.clone();
+                self.is_dirty = true;
+            }
+            _ => {}
+        }
+    }
+
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
@@ -286,5 +300,6 @@ impl TheTextLineEditTrait for TheTextLineEdit {
     fn set_text(&mut self, text: String) {
         self.text = text;
         self.position = 0;
+        self.is_dirty = true;
     }
 }

@@ -241,6 +241,8 @@ pub trait TheListLayoutTrait {
     fn clear(&mut self);
     /// Deselect all items.
     fn deselect_all(&mut self);
+    /// Returns the id of the selected item (if any).
+    fn selected(&self) -> Option<TheId>;
 }
 
 impl TheListLayoutTrait for TheListLayout {
@@ -268,5 +270,14 @@ impl TheListLayoutTrait for TheListLayout {
             w.set_state(TheWidgetState::None);
         }
         self.is_dirty = true;
+    }
+
+    fn selected(&self) -> Option<TheId>{
+        for w in &self.widgets {
+            if w.state() == TheWidgetState::Selected {
+                return Some(w.id().clone());
+            }
+        }
+        None
     }
 }

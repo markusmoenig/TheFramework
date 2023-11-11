@@ -210,10 +210,11 @@ impl TheUI {
                     TheEvent::ValueChanged(id, value) => {
                         //println!("Widget Value changed {:?}: {:?}", id, value);
                     }
-                    TheEvent::SetValue(name, value) => {
+                    TheEvent::SetValue(uuid, value) => {
                         //println!("Set Value {:?}: {:?}", name, value);
-                        if let Some(widget) = self.canvas.get_widget(Some(&name), None) {
-                            widget.set_value(value);
+                        if let Some(widget) = self.canvas.get_widget(None, Some(&uuid)) {
+                            widget.set_value(value.clone());
+                            ctx.ui.send_widget_value_changed(widget.id(), value);
                         }
                         self.is_dirty = true;
                     }

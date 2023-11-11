@@ -17,7 +17,7 @@ pub enum TheEvent {
     SetState(String, TheWidgetState),
 
     ValueChanged(TheId, TheValue),
-    SetValue(String, TheValue),
+    SetValue(Uuid, TheValue),
 
     GainedFocus(TheId),
     LostFocus(TheId),
