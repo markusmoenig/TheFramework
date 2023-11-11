@@ -20,8 +20,11 @@ therenderer = { version = "0.1.0", optional = true }
 rust-embed = { version = "8.0.0", default-features = true, features = ["include-exclude"] }
 png = "0.17.8"
 rustc-hash = "1.1.0"
-rfd = "0.12"
-futures = "0.3"
+rfd = { version = "0.12", optional = true }
+futures = { version = "0.3", optional = true }
+serde = { version = "1.0", features = ["derive"], optional = false}
+serde_json = { version = "1.0", optional = false }
+flate2 = { version = "1.0", optional = true }
 
 [dependencies.uuid]
 version = "1.1.2"
@@ -41,7 +44,7 @@ web-sys = { version = "0.3", features = ["GpuTextureFormat"] }
 
 [features]
 renderer = ["therenderer"]
-ui = []
+ui = ["futures", "rfd", "flate2"]
 pixels_winit = ["pixels", "winit", "winit_input_helper"]
 default = ["pixels_winit"]
 

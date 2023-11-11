@@ -2,7 +2,7 @@ use crate::prelude::*;
 use std::ops::RangeInclusive;
 
 /// TheValue contains all possible values used by widgets and layouts. Encapsulating them in an enum alllows easy transfer and comparison of values.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum TheValue {
     Empty,
     Coordinate(Vec2i),

@@ -66,6 +66,9 @@ pub trait TheLayout {
         false
     }
 
+    /// Relayouts the layout.
+    fn relayout(&mut self, ctx: &mut TheContext) {}
+
     fn get_layout(
         &mut self,
         name: Option<&String>,

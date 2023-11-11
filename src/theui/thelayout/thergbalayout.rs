@@ -125,6 +125,12 @@ impl TheLayout for TheRGBALayout {
         false
     }
 
+    fn relayout(&mut self, ctx: &mut TheContext) {
+        let dim = self.dim;
+        self.dim = TheDim::zero();
+        self.set_dim(dim, ctx);
+    }
+
     fn dim(&self) -> &TheDim {
         &self.dim
     }
@@ -190,6 +196,9 @@ impl TheLayout for TheRGBALayout {
 
             self.rgba_view
                 .set_dim(TheDim::new(dim.x, dim.y, width, height));
+            self.rgba_view
+                .dim_mut()
+                .set_buffer_offset(self.dim.buffer_x, self.dim.buffer_y);
         }
     }
 
@@ -285,13 +294,36 @@ impl TheLayout for TheRGBALayout {
 
 /// TheRGBALayout specific functions.
 pub trait TheRGBALayoutTrait {
+    /// Set the buffer to be displayed.
     fn set_buffer(&mut self, buffer: TheRGBABuffer);
+    /// Get the current scroll offset for the scrollbars.
+    fn scroll_offset(&mut self) -> Vec2i;
+    // Set the scroll offset for the scrollbars.
+    fn set_scroll_offset(&mut self, offset: Vec2i);
 }
 
 impl TheRGBALayoutTrait for TheRGBALayout {
     fn set_buffer(&mut self, buffer: TheRGBABuffer) {
         if let Some(rgba) = self.rgba_view.as_rgba_view() {
             rgba.set_buffer(buffer);
+        }
+    }
+    fn scroll_offset(&mut self) -> Vec2i {
+        let mut offset = Vec2i::zero();
+        if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+            offset.y = scroll_bar.scroll_offset();
+        }
+        if let Some(scroll_bar) = self.horizontal_scrollbar.as_horizontal_scrollbar() {
+            offset.x = scroll_bar.scroll_offset();
+        }
+        offset
+    }
+    fn set_scroll_offset(&mut self, offset: Vec2i) {
+        if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+            scroll_bar.set_scroll_offset(offset.y);
+        }
+        if let Some(scroll_bar) = self.horizontal_scrollbar.as_horizontal_scrollbar() {
+            scroll_bar.set_scroll_offset(offset.x);
         }
     }
 }

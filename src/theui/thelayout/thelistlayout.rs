@@ -16,6 +16,8 @@ pub struct TheListLayout {
     margin: Vec4i,
 
     background: Option<TheThemeColors>,
+
+    is_dirty: bool,
 }
 
 impl TheLayout for TheListLayout {
@@ -40,6 +42,7 @@ impl TheLayout for TheListLayout {
             margin: vec4i(0, 0, 0, 0),
 
             background: Some(TextLayoutBackground),
+            is_dirty: false,
         }
     }
 
@@ -101,7 +104,8 @@ impl TheLayout for TheListLayout {
                 return true;
             }
         }
-        false
+
+        self.is_dirty
     }
 
     fn dim(&self) -> &TheDim {
@@ -217,6 +221,8 @@ impl TheLayout for TheListLayout {
                 range,
             );
         }
+
+        self.is_dirty = false;
     }
 
     /// Convert to the list layout trait
@@ -227,11 +233,13 @@ impl TheLayout for TheListLayout {
 
 /// TheListLayout specific functions.
 pub trait TheListLayoutTrait {
-    /// Add an item
+    /// Adds an item.
     fn add_item(&mut self, item: TheListItem, ctx: &mut TheContext);
-    /// A new item was selected, manage the selection states
+    /// A new item was selected, manage the selection states.
     fn new_item_selected(&mut self, item: TheId);
-    /// Deselect all items
+    /// Remove all items.
+    fn clear(&mut self);
+    /// Deselect all items.
     fn deselect_all(&mut self);
 }
 
@@ -241,6 +249,7 @@ impl TheListLayoutTrait for TheListLayout {
         self.widgets.push(Box::new(item));
         ctx.ui.relayout = true;
     }
+
     fn new_item_selected(&mut self, item: TheId) {
         for w in &mut self.widgets {
             if !w.id().equals(&Some(item.clone())) {
@@ -248,9 +257,16 @@ impl TheListLayoutTrait for TheListLayout {
             }
         }
     }
+
+    fn clear(&mut self) {
+        self.widgets.clear();
+        self.is_dirty = true;
+    }
+
     fn deselect_all(&mut self) {
         for w in &mut self.widgets {
             w.set_state(TheWidgetState::None);
         }
+        self.is_dirty = true;
     }
 }

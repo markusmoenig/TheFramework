@@ -193,8 +193,13 @@ impl TheWidget for TheHorizontalScrollbar {
             icon_name = "dark_horizontal_scrollbar_hover_".to_string()
         }
 
-        let scroll_bar_width = self.scrollbar_thumb_width();
-        let offset = self.scrollbar_position() as usize;
+        let mut scroll_bar_width = self.scrollbar_thumb_width();
+        let mut offset = self.scrollbar_position() as usize;
+
+        if scroll_bar_width > self.dim.width {
+            offset = 0;
+            scroll_bar_width = self.dim.width;
+        }
 
         if scroll_bar_width >= 5 {
             if let Some(icon) = ctx.ui.icon(&(icon_name.clone() + "left")) {
@@ -348,6 +353,7 @@ impl TheHorizontalScrollbarTrait for TheHorizontalScrollbar {
 
     fn set_scroll_offset(&mut self, offset: i32) {
         self.scroll_offset = offset;
+        self.is_dirty = true;
     }
 
     fn needs_scrollbar(&self) -> bool {

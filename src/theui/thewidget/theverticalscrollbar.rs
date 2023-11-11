@@ -173,7 +173,6 @@ impl TheWidget for TheVerticalScrollbar {
         }
 
         let stride = buffer.stride();
-        //let mut shrinker = TheDimShrinker::zero();
 
         let utuple: (usize, usize, usize, usize) = self.dim.to_buffer_utuple();
 
@@ -194,9 +193,13 @@ impl TheWidget for TheVerticalScrollbar {
             icon_name = "dark_vertical_scrollbar_hover_".to_string()
         }
 
-        let scroll_bar_height = self.scrollbar_thumb_height();
-        let offset = self.scrollbar_position() as usize;
-        //println!("{} {}", offset, self.scrollbar_position());
+        let mut scroll_bar_height = self.scrollbar_thumb_height();
+        let mut offset = self.scrollbar_position() as usize;
+
+        if scroll_bar_height > self.dim.height {
+            offset = 0;
+            scroll_bar_height = self.dim.height;
+        }
 
         if scroll_bar_height >= 5 {
             if let Some(icon) = ctx.ui.icon(&(icon_name.clone() + "top")) {
@@ -350,6 +353,7 @@ impl TheVerticalScrollbarTrait for TheVerticalScrollbar {
 
     fn set_scroll_offset(&mut self, offset: i32) {
         self.scroll_offset = offset;
+        self.is_dirty = true;
     }
 
     fn needs_scrollbar(&self) -> bool {

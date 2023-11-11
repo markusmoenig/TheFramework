@@ -22,12 +22,10 @@ impl Sidebar {
         section_bar_canvas.set_widget(TheSectionbar::new(TheId::named("Sectionbar")));
         sectionbar_canvas.set_top(section_bar_canvas);
 
-        let mut cube_sectionbar_button =
-            TheSectionbarButton::new(TheId::named("Layout #1"));
+        let mut cube_sectionbar_button = TheSectionbarButton::new(TheId::named("Layout #1"));
         cube_sectionbar_button.set_text("Layout 1".to_string());
 
-        let mut sphere_sectionbar_button =
-            TheSectionbarButton::new(TheId::named("Layout #2"));
+        let mut sphere_sectionbar_button = TheSectionbarButton::new(TheId::named("Layout #2"));
         sphere_sectionbar_button.set_text("Layout 2".to_string());
 
         let mut vlayout = TheVLayout::new(TheId::named("Context Buttons"));
@@ -96,7 +94,8 @@ impl Sidebar {
         text_layout.add_pair("Slider".to_string(), Box::new(slider));
 
         for i in 0..10 {
-            let mut dropdown = TheDropdownMenu::new(TheId::named(format!("DropDown {}", i).as_str()));
+            let mut dropdown =
+                TheDropdownMenu::new(TheId::named(format!("DropDown {}", i).as_str()));
             dropdown.add_option("Option #1".to_string());
             dropdown.add_option("Option #2".to_string());
             text_layout.add_pair(format!("Item #{}", i), Box::new(dropdown));
@@ -142,11 +141,8 @@ impl Sidebar {
                         //println!("app Widget State changed {:?}: {:?}", id, state);
 
                         if id.name == "Open" {
-                            ctx.ui.open_file_requester(
-                                TheId::named("MyID"),
-                                "Open".into(),
-                                vec![],
-                            );
+                            ctx.ui
+                                .open_file_requester(TheId::named("MyID"), "Open".into(), TheFileExtension::new("PNG".into(), vec!["png".to_string()]));
                             ctx.ui
                                 .set_widget_state("Open".to_string(), TheWidgetState::None);
                             ctx.ui.clear_hover();

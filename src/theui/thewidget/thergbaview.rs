@@ -175,7 +175,7 @@ impl TheWidget for TheRGBAView {
                 let src_y = (target_y as f32 - offset_y) / self.zoom;
 
                 // Calculate the index for the destination pixel
-                let target_index = (target_y * target.dim().width + target_x) as usize * 4;
+                let target_index = ((self.dim.buffer_y + target_y) * target.dim().width + target_x + self.dim.buffer_x) as usize * 4;
 
                 if src_x >= 0.0 && src_x < src_width && src_y >= 0.0 && src_y < src_height {
                     // Perform nearest neighbor interpolation

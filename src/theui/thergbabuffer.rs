@@ -1,10 +1,13 @@
 use crate::prelude::*;
 use std::ops::Range;
 
-#[derive(PartialEq, PartialOrd, Clone, Debug)]
+use super::{compress, decompress};
+
+#[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]
 pub struct TheRGBABuffer {
     dim: TheDim,
 
+    #[serde(serialize_with = "compress", deserialize_with = "decompress")]
     buffer: Vec<u8>,
 }
 

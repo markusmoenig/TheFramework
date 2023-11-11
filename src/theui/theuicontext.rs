@@ -5,6 +5,21 @@ use fontdue::Font;
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 
+/// TheFileExtension is used to specify supported file extensions in the load and save file requesters.
+pub struct TheFileExtension {
+    pub name: String,
+    pub extensions: Vec<String>
+}
+
+impl TheFileExtension {
+    pub fn new(name: String, extensions: Vec<String>) -> Self {
+        Self {
+            name,
+            extensions
+        }
+    }
+}
+
 pub struct TheUIContext {
     pub font: Option<Font>,
     pub code_font: Option<Font>,
@@ -171,11 +186,11 @@ impl TheUIContext {
     }
 
     /// Opens a file requester with the given title and extensions. Upon completion a TheEvent::FileRequesterResult event will be send.
-    pub fn open_file_requester(&mut self, id: TheId, title: String, extensions: Vec<String>) {
+    pub fn open_file_requester(&mut self, id: TheId, title: String, extension: TheFileExtension) {
         let (tx, rx): (Sender<Vec<PathBuf>>, Receiver<Vec<PathBuf>>) = mpsc::channel();
 
         let task = rfd::AsyncFileDialog::new()
-            .add_filter("Extensions", &extensions)
+            .add_filter(extension.name, &extension.extensions)
             .set_title(title)
             .pick_files();
 
@@ -197,11 +212,11 @@ impl TheUIContext {
     }
 
     /// Opens a save file requester with the given title and extensions. Upon completion a TheEvent::FileRequesterResult event will be send.
-    pub fn save_file_requester(&mut self, id: TheId, title: String, extensions: Vec<String>) {
+    pub fn save_file_requester(&mut self, id: TheId, title: String, extension: TheFileExtension) {
         let (tx, rx): (Sender<Vec<PathBuf>>, Receiver<Vec<PathBuf>>) = mpsc::channel();
 
         let task = rfd::AsyncFileDialog::new()
-            .add_filter("Extensions", &extensions)
+            .add_filter(extension.name, &extension.extensions)
             .set_title(title)
             .save_file();
 

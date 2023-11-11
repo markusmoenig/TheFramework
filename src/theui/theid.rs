@@ -18,7 +18,10 @@ impl TheId {
 
     /// Creates an Id based on a given name and uuid.
     pub fn named_with_id(name: &str, uuid: Uuid) -> Self {
-        Self { name: name.to_string(), uuid }
+        Self {
+            name: name.to_string(),
+            uuid,
+        }
     }
 
     /// Creates an empty id (an id wth an empty name).

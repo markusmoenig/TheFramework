@@ -20,8 +20,9 @@ use rust_embed::RustEmbed;
 #[exclude = "*.txt"]
 #[exclude = "*.DS_Store"]
 pub struct Embedded;
+pub use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum TheKeyCode {
     Escape,
     Return,
