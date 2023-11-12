@@ -8,15 +8,12 @@ use std::sync::mpsc::{self, Receiver, Sender};
 /// TheFileExtension is used to specify supported file extensions in the load and save file requesters.
 pub struct TheFileExtension {
     pub name: String,
-    pub extensions: Vec<String>
+    pub extensions: Vec<String>,
 }
 
 impl TheFileExtension {
     pub fn new(name: String, extensions: Vec<String>) -> Self {
-        Self {
-            name,
-            extensions
-        }
+        Self { name, extensions }
     }
 }
 

@@ -8,8 +8,14 @@ pub struct TheRGBAView {
     background: RGBA,
 
     buffer: TheRGBABuffer,
+
     scroll_offset: Vec2i,
     zoom: f32,
+
+    grid: Option<i32>,
+    grid_color: RGBA,
+    selected: FxHashSet<(i32, i32)>,
+    selection_color: RGBA,
 
     dim: TheDim,
     is_dirty: bool,
@@ -35,6 +41,11 @@ impl TheWidget for TheRGBAView {
             scroll_offset: vec2i(0, 0),
             zoom: 1.0,
 
+            grid: Some(24),
+            grid_color: [200, 200, 200, 255],
+            selected: FxHashSet::default(),
+            selection_color: [255, 255, 255, 180],
+
             background: BLACK,
 
             dim: TheDim::zero(),
@@ -50,9 +61,9 @@ impl TheWidget for TheRGBAView {
 
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
-        // println!("event ({}): {:?}", self.widget_id.name, event);
+        //println!("event ({}): {:?}", self.id.name, event);
         match event {
-            TheEvent::MouseDown(_coord) => {
+            TheEvent::MouseDown(coord) => {
                 if self.state != TheWidgetState::Selected {
                     self.is_dirty = true;
                     self.state = TheWidgetState::Selected;
@@ -63,6 +74,57 @@ impl TheWidget for TheRGBAView {
                     ));
                     ctx.ui.set_focus(self.id());
                     redraw = true;
+                }
+
+                // Selection handling
+                if let Some(grid) = self.grid {
+                    if let Some(coord) = coord.to_vec2i() {
+                        let centered_offset_x = if (self.zoom * self.buffer.dim().width as f32)
+                            < self.dim.width as f32
+                        {
+                            (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32)
+                                / 2.0
+                        } else {
+                            0.0
+                        };
+                        let centered_offset_y = if (self.zoom * self.buffer.dim().height as f32)
+                            < self.dim.height as f32
+                        {
+                            (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32)
+                                / 2.0
+                                + grid as f32
+                        } else {
+                            0.0
+                        };
+
+                        let source_x = ((coord.x as f32 - centered_offset_x) / self.zoom
+                            + self.scroll_offset.x as f32)
+                            .round() as i32;
+                        let source_y = ((coord.y as f32 - centered_offset_y) / self.zoom
+                            + self.scroll_offset.y as f32)
+                            .round() as i32;
+
+                        if source_x >= 0
+                            && source_x < self.buffer.dim().width
+                            && source_y >= 0
+                            && source_y < self.buffer.dim().height
+                        {
+                            let grid_x = source_x / grid;
+                            let grid_y = source_y / grid;
+
+                            if grid_x * grid < self.buffer.dim().width
+                                && grid_y * grid < self.buffer.dim().height
+                            {
+                                //println!("{} {}", grid_x, grid_y);
+                                if self.selected.contains(&(grid_x, grid_y)) {
+                                    self.selected.remove(&(grid_x, grid_y));
+                                } else {
+                                    self.selected.insert((grid_x, grid_y));
+                                }
+                                redraw = true;
+                            }
+                        }
+                    }
                 }
             }
             TheEvent::Hover(_coord) => {
@@ -131,6 +193,15 @@ impl TheWidget for TheRGBAView {
             return;
         }
 
+        pub fn mix_color(a: &[u8; 4], b: &[u8; 4], v: f32) -> [u8; 4] {
+            [
+                (((1.0 - v) * (a[0] as f32 / 255.0) + b[0] as f32 / 255.0 * v) * 255.0) as u8,
+                (((1.0 - v) * (a[1] as f32 / 255.0) + b[1] as f32 / 255.0 * v) * 255.0) as u8,
+                (((1.0 - v) * (a[2] as f32 / 255.0) + b[2] as f32 / 255.0 * v) * 255.0) as u8,
+                255,
+            ]
+        }
+
         let stride: usize = buffer.stride();
 
         if !self.buffer.is_valid() {
@@ -175,7 +246,18 @@ impl TheWidget for TheRGBAView {
                 let src_y = (target_y as f32 - offset_y) / self.zoom;
 
                 // Calculate the index for the destination pixel
-                let target_index = ((self.dim.buffer_y + target_y) * target.dim().width + target_x + self.dim.buffer_x) as usize * 4;
+                let target_index = ((self.dim.buffer_y + target_y) * target.dim().width
+                    + target_x
+                    + self.dim.buffer_x) as usize
+                    * 4;
+
+                if let Some(grid) = self.grid {
+                    if src_x as i32 % grid == 0 || src_y as i32 % grid == 0 {
+                        target.pixels_mut()[target_index..target_index + 4]
+                            .copy_from_slice(&self.grid_color);
+                        continue;
+                    }
+                }
 
                 if src_x >= 0.0 && src_x < src_width && src_y >= 0.0 && src_y < src_height {
                     // Perform nearest neighbor interpolation
@@ -183,9 +265,31 @@ impl TheWidget for TheRGBAView {
                     let src_y = src_y as i32;
                     let src_index = (src_y * self.buffer.stride() as i32 + src_x) as usize * 4;
 
+                    let mut copy = true;
+                    if let Some(grid) = self.grid {
+                        if self.selected.contains(&(src_x / grid, src_y / grid)) {
+                            let s = self.buffer.pixels();
+                            let c = &[
+                                s[src_index],
+                                s[src_index + 1],
+                                s[src_index + 2],
+                                s[src_index + 3],
+                            ];
+                            let m = mix_color(
+                                c,
+                                &self.selection_color,
+                                self.selection_color[3] as f32 / 255.0,
+                            );
+                            target.pixels_mut()[target_index..target_index + 4].copy_from_slice(&m);
+                            copy = false;
+                        }
+                    }
+
                     // Copy the pixel from the source buffer to the target buffer
-                    target.pixels_mut()[target_index..target_index + 4]
-                        .copy_from_slice(&self.buffer.pixels()[src_index..src_index + 4]);
+                    if copy {
+                        target.pixels_mut()[target_index..target_index + 4]
+                            .copy_from_slice(&self.buffer.pixels()[src_index..src_index + 4]);
+                    }
                 } else {
                     // Set the pixel to black if it's out of the source bounds
                     target.pixels_mut()[target_index..target_index + 4].fill(0);
@@ -235,6 +339,9 @@ pub trait TheRGBAViewTrait {
     fn zoom(&self) -> f32;
     fn set_zoom(&mut self, zoom: f32);
     fn set_scroll_offset(&mut self, offset: Vec2i);
+    fn set_grid(&mut self, grid: Option<i32>);
+    fn set_grid_color(&mut self, color: RGBA);
+    fn set_selection_color(&mut self, color: RGBA);
 
     fn set_associated_layout(&mut self, id: TheId);
 }
@@ -261,5 +368,14 @@ impl TheRGBAViewTrait for TheRGBAView {
     }
     fn set_associated_layout(&mut self, layout_id: TheId) {
         self.layout_id = layout_id;
+    }
+    fn set_grid(&mut self, grid: Option<i32>) {
+        self.grid = grid;
+    }
+    fn set_grid_color(&mut self, color: RGBA) {
+        self.grid_color = color;
+    }
+    fn set_selection_color(&mut self, color: RGBA) {
+        self.selection_color = color;
     }
 }

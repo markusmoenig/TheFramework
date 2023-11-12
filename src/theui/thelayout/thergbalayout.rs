@@ -86,6 +86,10 @@ impl TheLayout for TheRGBALayout {
             scroll_offset = vec2i(0, scroll_bar.scroll_offset());
         }
 
+        if self.rgba_view.dim().contains(coord) {
+            return Some(&mut self.rgba_view);
+        }
+
         let widgets = self.widgets();
         widgets
             .iter_mut()
@@ -103,6 +107,10 @@ impl TheLayout for TheRGBALayout {
 
         if self.horizontal_scrollbar_visible && self.horizontal_scrollbar.id().matches(name, uuid) {
             return Some(&mut self.horizontal_scrollbar);
+        }
+
+        if self.rgba_view.id().matches(name, uuid) {
+            return Some(&mut self.rgba_view);
         }
 
         self.widgets.iter_mut().find(|w| w.id().matches(name, uuid))

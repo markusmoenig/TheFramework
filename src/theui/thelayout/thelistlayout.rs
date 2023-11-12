@@ -272,7 +272,7 @@ impl TheListLayoutTrait for TheListLayout {
         self.is_dirty = true;
     }
 
-    fn selected(&self) -> Option<TheId>{
+    fn selected(&self) -> Option<TheId> {
         for w in &self.widgets {
             if w.state() == TheWidgetState::Selected {
                 return Some(w.id().clone());

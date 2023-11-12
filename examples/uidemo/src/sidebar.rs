@@ -141,8 +141,11 @@ impl Sidebar {
                         //println!("app Widget State changed {:?}: {:?}", id, state);
 
                         if id.name == "Open" {
-                            ctx.ui
-                                .open_file_requester(TheId::named("MyID"), "Open".into(), TheFileExtension::new("PNG".into(), vec!["png".to_string()]));
+                            ctx.ui.open_file_requester(
+                                TheId::named("MyID"),
+                                "Open".into(),
+                                TheFileExtension::new("PNG".into(), vec!["png".to_string()]),
+                            );
                             ctx.ui
                                 .set_widget_state("Open".to_string(), TheWidgetState::None);
                             ctx.ui.clear_hover();
