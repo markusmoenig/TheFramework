@@ -8,6 +8,9 @@ pub struct TheToolbarButton {
     icon_name: String,
     icon_offset: Vec2i,
 
+    text: String,
+    text_size: f32,
+
     dim: TheDim,
     is_dirty: bool,
 }
@@ -27,6 +30,9 @@ impl TheWidget for TheToolbarButton {
 
             icon_name: "".to_string(),
             icon_offset: vec2i(0, 0),
+
+            text: "".to_string(),
+            text_size: 13.0,
 
             dim: TheDim::zero(),
             is_dirty: false,
@@ -115,6 +121,16 @@ impl TheWidget for TheToolbarButton {
         true
     }
 
+    fn calculate_size(&mut self, ctx: &mut TheContext) {
+        if !self.text.is_empty() {
+            if let Some(font) = &ctx.ui.font {
+                let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
+                self.limiter_mut()
+                    .set_max_width(ceil(size.0 as f32) as i32 + 15);
+            }
+        }
+    }
+
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
@@ -180,6 +196,22 @@ impl TheWidget for TheToolbarButton {
                 .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
         }
 
+        if !self.text.is_empty() {
+            if let Some(font) = &ctx.ui.font {
+                ctx.draw.text_rect_blend(
+                    buffer.pixels_mut(),
+                    &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                    stride,
+                    font,
+                    self.text_size,
+                    &self.text,
+                    &WHITE,
+                    TheHorizontalAlign::Center,
+                    TheVerticalAlign::Center,
+                );
+            }
+        }
+
         self.is_dirty = false;
     }
 }
@@ -187,6 +219,7 @@ impl TheWidget for TheToolbarButton {
 pub trait TheToolbarButtonTrait {
     fn set_icon_name(&mut self, text: String);
     fn set_icon_offset(&mut self, offset: Vec2i);
+    fn set_text(&mut self, text: String);
 }
 
 impl TheToolbarButtonTrait for TheToolbarButton {
@@ -195,5 +228,8 @@ impl TheToolbarButtonTrait for TheToolbarButton {
     }
     fn set_icon_offset(&mut self, offset: Vec2i) {
         self.icon_offset = offset;
+    }
+    fn set_text(&mut self, text: String) {
+        self.text = text;
     }
 }

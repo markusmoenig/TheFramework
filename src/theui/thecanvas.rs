@@ -13,10 +13,11 @@ pub struct TheCanvas {
 
     buffer: TheRGBABuffer,
 
-    left: Option<Box<TheCanvas>>,
-    top: Option<Box<TheCanvas>>,
-    right: Option<Box<TheCanvas>>,
-    bottom: Option<Box<TheCanvas>>,
+    pub left: Option<Box<TheCanvas>>,
+    pub top: Option<Box<TheCanvas>>,
+    pub right: Option<Box<TheCanvas>>,
+    pub bottom: Option<Box<TheCanvas>>,
+    pub center: Option<Box<TheCanvas>>,
 
     widget: Option<Box<dyn TheWidget>>,
     layout: Option<Box<dyn TheLayout>>,
@@ -47,6 +48,7 @@ impl TheCanvas {
             top: None,
             right: None,
             bottom: None,
+            center: None,
 
             widget: None,
             layout: None,
@@ -132,6 +134,11 @@ impl TheCanvas {
         self.bottom = Some(Box::new(canvas));
     }
 
+    /// Sets the canvas in the center of this canvas.
+    pub fn set_center(&mut self, canvas: TheCanvas) {
+        self.center = Some(Box::new(canvas));
+    }
+
     /// Resize the canvas if needed
     pub fn resize(&mut self, width: i32, height: i32, ctx: &mut TheContext) {
         if width != self.dim.width || height != self.dim.height {
@@ -174,6 +181,12 @@ impl TheCanvas {
             }
         }
 
+        if let Some(center) = &mut self.center {
+            if let Some(canvas) = center.get_canvas(uuid) {
+                return Some(canvas);
+            }
+        }
+
         None
     }
 
@@ -207,15 +220,21 @@ impl TheCanvas {
             }
         }
 
-        if let Some(layout) = &mut self.layout {
-            if let Some(child) = layout.get_widget(name, uuid) {
-                return Some(child);
-            }
-        }
-
-        if let Some(widget) = &mut self.widget {
-            if widget.id().matches(name, uuid) {
+        if let Some(center) = &mut self.center {
+            if let Some(widget) = center.get_widget(name, uuid) {
                 return Some(widget);
+            }
+        } else {
+            if let Some(layout) = &mut self.layout {
+                if let Some(child) = layout.get_widget(name, uuid) {
+                    return Some(child);
+                }
+            }
+
+            if let Some(widget) = &mut self.widget {
+                if widget.id().matches(name, uuid) {
+                    return Some(widget);
+                }
             }
         }
 
@@ -252,7 +271,11 @@ impl TheCanvas {
             }
         }
 
-        if let Some(layout) = &mut self.layout {
+        if let Some(center) = &mut self.center {
+            if let Some(layout) = center.get_layout(name, uuid) {
+                return Some(layout);
+            }
+        } else if let Some(layout) = &mut self.layout {
             if layout.id().matches(name, uuid) {
                 return Some(layout);
             }
@@ -293,15 +316,21 @@ impl TheCanvas {
             }
         }
 
-        if let Some(layout) = &mut self.layout {
-            if let Some(widget) = layout.get_widget_at_coord(coord) {
+        if let Some(center) = &mut self.center {
+            if let Some(widget) = center.get_widget_at_coord(coord) {
                 return Some(widget);
             }
-        }
+        } else {
+            if let Some(layout) = &mut self.layout {
+                if let Some(widget) = layout.get_widget_at_coord(coord) {
+                    return Some(widget);
+                }
+            }
 
-        if let Some(widget) = &mut self.widget {
-            if widget.dim().contains(coord) {
-                return Some(widget);
+            if let Some(widget) = &mut self.widget {
+                if widget.dim().contains(coord) {
+                    return Some(widget);
+                }
             }
         }
 
@@ -388,17 +417,25 @@ impl TheCanvas {
             h -= bottom_height;
         }
 
-        if let Some(widget) = &mut self.widget {
-            let dim = TheDim::new(x, y, w, h);
-            widget.set_dim(dim);
-            widget.dim_mut().set_buffer_offset(buffer_x, buffer_y);
-        }
+        if let Some(center) = &mut self.center {
+            center.set_dim(
+                TheDim::new(x, y, w, h),
+                ctx,
+            );
+            center.offset = vec2i(buffer_x, buffer_y);
+        } else {
+            if let Some(widget) = &mut self.widget {
+                let dim = TheDim::new(x, y, w, h);
+                widget.set_dim(dim);
+                widget.dim_mut().set_buffer_offset(buffer_x, buffer_y);
+            }
 
-        if let Some(layout) = &mut self.layout {
-            let mut dim = TheDim::new(x, y, w, h);
-            dim.buffer_x = buffer_x;
-            dim.buffer_y = buffer_y;
-            layout.set_dim(dim, ctx);
+            if let Some(layout) = &mut self.layout {
+                let mut dim = TheDim::new(x, y, w, h);
+                dim.buffer_x = buffer_x;
+                dim.buffer_y = buffer_y;
+                layout.set_dim(dim, ctx);
+            }
         }
     }
 
@@ -428,25 +465,32 @@ impl TheCanvas {
                 .copy_into(bottom.offset.x, bottom.offset.y, &bottom.buffer);
         }
 
-        // If a layout needs a redraw, make sure to redraw the widget as well as items in the layout may be transparent (text)
 
-        let mut force_widget_redraw = false;
+        if let Some(center) = &mut self.center {
+            center.draw(style, ctx);
+            self.buffer
+                .copy_into(center.offset.x, center.offset.y, &center.buffer);
+        } else {
+            // If a layout needs a redraw, make sure to redraw the widget as well as items in the layout may be transparent (text)
 
-        if let Some(layout) = &mut self.layout {
-            force_widget_redraw = layout.needs_redraw();
-        }
+            let mut force_widget_redraw = false;
 
-        if let Some(widget) = &mut self.widget {
-            // println!("drawing widget {}, {:?}", widget.id().name, widget.dim());
-            if ctx.ui.redraw_all || widget.needs_redraw() || force_widget_redraw {
-                widget.draw(&mut self.buffer, style, ctx);
+            if let Some(layout) = &mut self.layout {
+                force_widget_redraw = layout.needs_redraw();
             }
-        }
 
-        if let Some(layout) = &mut self.layout {
-            // println!("drawing layout {}, {:?}", layout.id().name, layout.dim());
-            if ctx.ui.redraw_all || layout.needs_redraw() || layout.widgets().is_empty() {
-                layout.draw(&mut self.buffer, style, ctx);
+            if let Some(widget) = &mut self.widget {
+                // println!("drawing widget {}, {:?}", widget.id().name, widget.dim());
+                if ctx.ui.redraw_all || widget.needs_redraw() || force_widget_redraw {
+                    widget.draw(&mut self.buffer, style, ctx);
+                }
+            }
+
+            if let Some(layout) = &mut self.layout {
+                // println!("drawing layout {}, {:?}", layout.id().name, layout.dim());
+                if ctx.ui.redraw_all || layout.needs_redraw() || layout.widgets().is_empty() {
+                    layout.draw(&mut self.buffer, style, ctx);
+                }
             }
         }
     }

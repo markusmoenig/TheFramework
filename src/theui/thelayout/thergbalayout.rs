@@ -306,8 +306,10 @@ pub trait TheRGBALayoutTrait {
     fn set_buffer(&mut self, buffer: TheRGBABuffer);
     /// Get the current scroll offset for the scrollbars.
     fn scroll_offset(&mut self) -> Vec2i;
-    // Set the scroll offset for the scrollbars.
+    /// Set the scroll offset for the scrollbars.
     fn set_scroll_offset(&mut self, offset: Vec2i);
+    /// Returns a mutable reference to the underlying TheRGBAView.
+    fn rgba_view_mut(&mut self) -> &mut Box<dyn TheWidget>;
 }
 
 impl TheRGBALayoutTrait for TheRGBALayout {
@@ -333,5 +335,8 @@ impl TheRGBALayoutTrait for TheRGBALayout {
         if let Some(scroll_bar) = self.horizontal_scrollbar.as_horizontal_scrollbar() {
             scroll_bar.set_scroll_offset(offset.x);
         }
+    }
+    fn rgba_view_mut(&mut self) -> &mut Box<dyn TheWidget> {
+        &mut self.rgba_view
     }
 }

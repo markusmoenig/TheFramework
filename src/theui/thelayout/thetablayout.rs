@@ -56,7 +56,7 @@ impl TheLayout for TheTabLayout {
             }
         }
 
-        if index < self.widgets.len() {
+        if index < self.widgets.len() && self.widgets[index].dim().contains(coord) {
             return Some(&mut self.widgets[index]);
         }
 
@@ -91,7 +91,7 @@ impl TheLayout for TheTabLayout {
             }
         }
 
-        if index < self.widgets.len() {
+        if index < self.widgets.len() && self.widgets[index].id().matches(name, uuid) {
             return Some(&mut self.widgets[index]);
         }
 

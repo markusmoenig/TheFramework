@@ -41,7 +41,7 @@ impl TheWidget for TheRGBAView {
             scroll_offset: vec2i(0, 0),
             zoom: 1.0,
 
-            grid: Some(24),
+            grid: None,
             grid_color: [200, 200, 200, 255],
             selected: FxHashSet::default(),
             selection_color: [255, 255, 255, 180],
@@ -92,7 +92,6 @@ impl TheWidget for TheRGBAView {
                         {
                             (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32)
                                 / 2.0
-                                + grid as f32
                         } else {
                             0.0
                         };
@@ -218,8 +217,8 @@ impl TheWidget for TheRGBAView {
 
         let src_width = self.buffer.dim().width as f32;
         let src_height = self.buffer.dim().height as f32;
-        let target_width = target.dim().width as f32;
-        let target_height = target.dim().height as f32;
+        let target_width = self.dim().width as f32;
+        let target_height = self.dim().height as f32;
 
         // Calculate the scaled dimensions of the source image
         let scaled_width = src_width * self.zoom;
@@ -344,6 +343,11 @@ pub trait TheRGBAViewTrait {
     fn set_selection_color(&mut self, color: RGBA);
 
     fn set_associated_layout(&mut self, id: TheId);
+
+    fn selection(&self) -> FxHashSet<(i32, i32)>;
+    fn selection_as_dim(&self) -> TheDim;
+    fn selection_sorted(&self) -> Vec<(i32, i32)>;
+    fn set_selection(&mut self, selection: FxHashSet<(i32, i32)>);
 }
 
 impl TheRGBAViewTrait for TheRGBAView {
@@ -377,5 +381,33 @@ impl TheRGBAViewTrait for TheRGBAView {
     }
     fn set_selection_color(&mut self, color: RGBA) {
         self.selection_color = color;
+    }
+    fn selection(&self) -> FxHashSet<(i32, i32)> {
+        self.selected.clone()
+    }
+    fn selection_as_dim(&self) -> TheDim {
+        let (mut min_x, mut min_y) = (i32::MAX, i32::MAX);
+        let (mut max_x, mut max_y) = (i32::MIN, i32::MIN);
+
+        for &(x, y) in &self.selected {
+            if x < min_x { min_x = x; }
+            if x > max_x { max_x = x; }
+            if y < min_y { min_y = y; }
+            if y > max_y { max_y = y; }
+        }
+
+        let width = max_x - min_x + 1;
+        let height = max_y - min_y + 1;
+
+        TheDim::new(min_x, min_y, width, height)
+    }
+    fn selection_sorted(&self) -> Vec<(i32, i32)> {
+        let mut vec: Vec<(i32, i32)> = self.selected.clone().into_iter().collect();
+        vec.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
+        vec
+    }
+    fn set_selection(&mut self, selection: FxHashSet<(i32, i32)>) {
+        self.selected = selection;
+        self.is_dirty = true;
     }
 }

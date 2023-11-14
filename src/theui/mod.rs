@@ -292,6 +292,7 @@ impl TheUI {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
         if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
+            // println!("Hover {:?}", widget.id());
             let event = TheEvent::Hover(TheValue::Coordinate(widget.dim().to_local(coord)));
             redraw = widget.on_event(&event, ctx);
 
