@@ -57,6 +57,13 @@ pub enum TheThemeColors {
     MenubarButtonSeparator1,
     MenubarButtonSeparator2,
 
+    ToolbarButtonNormal,
+    ToolbarButtonNormalBorder,
+    ToolbarButtonHover,
+    ToolbarButtonHoverBorder,
+    ToolbarButtonClicked,
+    ToolbarButtonClickedBorder,
+
     ListLayoutBackground,
     ListItemNormal,
     ListItemSelected,
@@ -69,4 +76,8 @@ pub enum TheThemeColors {
     TabbarBackground,
     TabbarConnector,
     TabbarText,
+
+    TraybarBorder,
+    TraybarBackground,
+    TraybarBottomBorder,
 }

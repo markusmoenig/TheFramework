@@ -418,10 +418,7 @@ impl TheCanvas {
         }
 
         if let Some(center) = &mut self.center {
-            center.set_dim(
-                TheDim::new(x, y, w, h),
-                ctx,
-            );
+            center.set_dim(TheDim::new(x, y, w, h), ctx);
             center.offset = vec2i(buffer_x, buffer_y);
         } else {
             if let Some(widget) = &mut self.widget {
@@ -464,7 +461,6 @@ impl TheCanvas {
             self.buffer
                 .copy_into(bottom.offset.x, bottom.offset.y, &bottom.buffer);
         }
-
 
         if let Some(center) = &mut self.center {
             center.draw(style, ctx);

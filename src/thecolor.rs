@@ -11,6 +11,17 @@ pub struct TheColor {
 }
 
 impl TheColor {
+
+    /// Creates a color from u8 values.
+    pub fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
+        Self {
+            r,
+            g,
+            b,
+            a,
+        }
+    }
+
     /// Creates a color from u8 values.
     pub fn from_u8(r: u8, g: u8, b: u8, a: u8) -> Self {
         Self {
@@ -64,6 +75,10 @@ impl TheColor {
             (self.b * 255.0) as u8,
             (self.a * 255.0) as u8,
         ]
+    }
+
+    pub fn as_srgba(&self) -> TheColor {
+        TheColor::new(powf(self.r, 0.45), powf(self.g, 0.45), powf(self.b, 0.45), powf(self.a, 0.45))
     }
 }
 

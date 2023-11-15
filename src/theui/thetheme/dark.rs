@@ -51,6 +51,13 @@ impl TheTheme for TheDarkTheme {
         colors.insert(MenubarButtonSeparator1, [102, 102, 102, 255]);
         colors.insert(MenubarButtonSeparator2, [148, 148, 148, 255]);
 
+        colors.insert(ToolbarButtonNormal, [99, 99, 99, 255]);
+        colors.insert(ToolbarButtonNormalBorder, [87, 87, 87, 255]);
+        colors.insert(ToolbarButtonHover, [157, 157, 157, 255]);
+        colors.insert(ToolbarButtonHoverBorder, [179, 179, 179, 255]);
+        colors.insert(ToolbarButtonClicked, [149, 149, 149, 255]);
+        colors.insert(ToolbarButtonClickedBorder, [204, 204, 204, 255]);
+
         colors.insert(ListLayoutBackground, [82, 82, 82, 255]);
         colors.insert(ListItemNormal, [174, 174, 174, 255]);
         colors.insert(ListItemSelected, [187, 122, 208, 255]);
@@ -63,6 +70,10 @@ impl TheTheme for TheDarkTheme {
         colors.insert(TabbarBackground, [82, 82, 82, 255]);
         colors.insert(TabbarConnector, [137, 137, 137, 255]);
         colors.insert(TabbarText, [244, 244, 244, 255]);
+
+        colors.insert(TraybarBorder, [153, 153, 153, 255]);
+        colors.insert(TraybarBackground, [118, 118, 118, 255]);
+        colors.insert(TraybarBottomBorder, [89, 89, 89, 255]);
 
         Self { colors }
     }

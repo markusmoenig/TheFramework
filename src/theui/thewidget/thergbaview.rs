@@ -390,10 +390,18 @@ impl TheRGBAViewTrait for TheRGBAView {
         let (mut max_x, mut max_y) = (i32::MIN, i32::MIN);
 
         for &(x, y) in &self.selected {
-            if x < min_x { min_x = x; }
-            if x > max_x { max_x = x; }
-            if y < min_y { min_y = y; }
-            if y > max_y { max_y = y; }
+            if x < min_x {
+                min_x = x;
+            }
+            if x > max_x {
+                max_x = x;
+            }
+            if y < min_y {
+                min_y = y;
+            }
+            if y > max_y {
+                max_y = y;
+            }
         }
 
         let width = max_x - min_x + 1;

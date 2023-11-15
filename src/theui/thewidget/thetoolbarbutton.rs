@@ -21,7 +21,7 @@ impl TheWidget for TheToolbarButton {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(19, 19));
+        limiter.set_max_size(vec2i(20, 20));
 
         Self {
             id,
@@ -138,10 +138,29 @@ impl TheWidget for TheToolbarButton {
         ctx: &mut TheContext,
     ) {
         let stride = buffer.stride();
-        let mut shrinker = TheDimShrinker::zero();
+        let mut shrinker: TheDimShrinker = TheDimShrinker::zero();
 
         if !self.dim().is_valid() {
             return;
+        }
+
+        if self.state == TheWidgetState::None && !self.id().equals(&ctx.ui.hover){
+            ctx.draw.rect_outline_border(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                stride,
+                style.theme().color(ToolbarButtonNormalBorder),
+                1,
+            );
+
+            shrinker.shrink(1);
+
+            ctx.draw.rect(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                stride,
+                style.theme().color(ToolbarButtonNormal),
+            );
         }
 
         if self.state != TheWidgetState::None || self.id().equals(&ctx.ui.hover) {
@@ -150,7 +169,7 @@ impl TheWidget for TheToolbarButton {
                     buffer.pixels_mut(),
                     &self.dim.to_buffer_shrunk_utuple(&shrinker),
                     stride,
-                    style.theme().color(MenubarButtonClickedBorder),
+                    style.theme().color(ToolbarButtonClickedBorder),
                     1,
                 );
 
@@ -160,14 +179,14 @@ impl TheWidget for TheToolbarButton {
                     buffer.pixels_mut(),
                     &self.dim.to_buffer_shrunk_utuple(&shrinker),
                     stride,
-                    style.theme().color(MenubarButtonClicked),
+                    style.theme().color(ToolbarButtonClicked),
                 );
             } else if self.id().equals(&ctx.ui.hover) {
                 ctx.draw.rect_outline_border(
                     buffer.pixels_mut(),
                     &self.dim.to_buffer_shrunk_utuple(&shrinker),
                     stride,
-                    style.theme().color(MenubarButtonHoverBorder),
+                    style.theme().color(ToolbarButtonHover),
                     1,
                 );
 
@@ -177,7 +196,7 @@ impl TheWidget for TheToolbarButton {
                     buffer.pixels_mut(),
                     &self.dim.to_buffer_shrunk_utuple(&shrinker),
                     stride,
-                    style.theme().color(MenubarButtonHoverBorder),
+                    style.theme().color(ToolbarButtonHoverBorder),
                 );
             }
         }
