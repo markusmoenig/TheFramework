@@ -63,7 +63,7 @@ pub mod prelude {
 
     pub use crate::theui::thecanvas::*;
     pub use crate::theui::thedim::*;
-    pub use crate::theui::thergbabuffer::TheRGBABuffer;
+    pub use crate::theui::thergbabuffer::{TheRGBABuffer, TheRGBARegion};
     pub use crate::theui::thesizelimiter::TheSizeLimiter;
     pub use crate::theui::theuicontext::*;
     pub use crate::theui::TheUI;

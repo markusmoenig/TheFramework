@@ -64,6 +64,13 @@ pub enum TheThemeColors {
     ToolbarButtonClicked,
     ToolbarButtonClickedBorder,
 
+    TraybarButtonNormal,
+    TraybarButtonNormalBorder,
+    TraybarButtonHover,
+    TraybarButtonHoverBorder,
+    TraybarButtonClicked,
+    TraybarButtonClickedBorder,
+
     ListLayoutBackground,
     ListItemNormal,
     ListItemSelected,

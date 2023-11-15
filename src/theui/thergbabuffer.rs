@@ -111,3 +111,24 @@ impl TheRGBABuffer {
         }
     }
 }
+
+#[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]
+pub struct TheRGBARegion {
+    pub x: usize,
+    pub y: usize,
+    pub width: usize,
+    pub height: usize,
+}
+
+/// TheRGBARegion points to a rectangular region in TheRGBABuffer. Used for tile management.
+impl TheRGBARegion {
+    /// Creates a new region of the given dimension.
+    pub fn new(x: usize, y: usize, width: usize, height: usize) -> Self {
+        Self {
+            x,
+            y,
+            width,
+            height,
+        }
+    }
+}

@@ -58,6 +58,13 @@ impl TheTheme for TheDarkTheme {
         colors.insert(ToolbarButtonClicked, [149, 149, 149, 255]);
         colors.insert(ToolbarButtonClickedBorder, [204, 204, 204, 255]);
 
+        colors.insert(TraybarButtonNormal, [123, 123, 123, 255]);
+        colors.insert(TraybarButtonNormalBorder, [108, 108, 108, 255]);
+        colors.insert(TraybarButtonHover, [157, 157, 157, 255]);
+        colors.insert(TraybarButtonHoverBorder, [179, 179, 179, 255]);
+        colors.insert(TraybarButtonClicked, [149, 149, 149, 255]);
+        colors.insert(TraybarButtonClickedBorder, [204, 204, 204, 255]);
+
         colors.insert(ListLayoutBackground, [82, 82, 82, 255]);
         colors.insert(ListItemNormal, [174, 174, 174, 255]);
         colors.insert(ListItemSelected, [187, 122, 208, 255]);

@@ -20,6 +20,7 @@ pub mod thetextlineedit;
 pub mod thetoolbar;
 pub mod thetoolbarbutton;
 pub mod thetraybar;
+pub mod thetraybarbutton;
 pub mod theverticalscrollbar;
 
 pub mod prelude {
@@ -55,6 +56,7 @@ pub mod prelude {
     pub use crate::theui::thewidget::thetextedit::{TheTextEdit, TheTextEditTrait};
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
     pub use crate::theui::thewidget::thetraybar::TheTraybar;
+    pub use crate::theui::thewidget::thetraybarbutton::{TheTraybarButton, TheTraybarButtonTrait};
 
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetState;

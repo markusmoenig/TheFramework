@@ -347,6 +347,7 @@ pub trait TheRGBAViewTrait {
     fn selection(&self) -> FxHashSet<(i32, i32)>;
     fn selection_as_dim(&self) -> TheDim;
     fn selection_sorted(&self) -> Vec<(i32, i32)>;
+    fn selection_as_regions(&self) -> Vec<TheRGBARegion>;
     fn set_selection(&mut self, selection: FxHashSet<(i32, i32)>);
 }
 
@@ -413,6 +414,21 @@ impl TheRGBAViewTrait for TheRGBAView {
         let mut vec: Vec<(i32, i32)> = self.selected.clone().into_iter().collect();
         vec.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
         vec
+    }
+    fn selection_as_regions(&self) -> Vec<TheRGBARegion> {
+        let mut regions = vec![];
+        let sorted = self.selection_sorted();
+        if let Some(grid) = self.grid {
+            for s in sorted {
+                regions.push(TheRGBARegion::new(
+                    s.0 as usize,
+                    s.1 as usize,
+                    grid as usize,
+                    grid as usize,
+                ))
+            }
+        }
+        regions
     }
     fn set_selection(&mut self, selection: FxHashSet<(i32, i32)>) {
         self.selected = selection;

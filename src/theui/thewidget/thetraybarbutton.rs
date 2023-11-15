@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-pub struct TheToolbarButton {
+pub struct TheTraybarButton {
     id: TheId,
     limiter: TheSizeLimiter,
     state: TheWidgetState,
@@ -15,7 +15,7 @@ pub struct TheToolbarButton {
     is_dirty: bool,
 }
 
-impl TheWidget for TheToolbarButton {
+impl TheWidget for TheTraybarButton {
     fn new(id: TheId) -> Self
     where
         Self: Sized,
@@ -149,7 +149,7 @@ impl TheWidget for TheToolbarButton {
                 buffer.pixels_mut(),
                 &self.dim.to_buffer_shrunk_utuple(&shrinker),
                 stride,
-                style.theme().color(ToolbarButtonNormalBorder),
+                style.theme().color(TraybarButtonNormalBorder),
                 1,
             );
 
@@ -159,7 +159,7 @@ impl TheWidget for TheToolbarButton {
                 buffer.pixels_mut(),
                 &self.dim.to_buffer_shrunk_utuple(&shrinker),
                 stride,
-                style.theme().color(ToolbarButtonNormal),
+                style.theme().color(TraybarButtonNormal),
             );
         }
 
@@ -169,7 +169,7 @@ impl TheWidget for TheToolbarButton {
                     buffer.pixels_mut(),
                     &self.dim.to_buffer_shrunk_utuple(&shrinker),
                     stride,
-                    style.theme().color(ToolbarButtonClickedBorder),
+                    style.theme().color(TraybarButtonClickedBorder),
                     1,
                 );
 
@@ -179,14 +179,14 @@ impl TheWidget for TheToolbarButton {
                     buffer.pixels_mut(),
                     &self.dim.to_buffer_shrunk_utuple(&shrinker),
                     stride,
-                    style.theme().color(ToolbarButtonClicked),
+                    style.theme().color(TraybarButtonClicked),
                 );
             } else if self.id().equals(&ctx.ui.hover) {
                 ctx.draw.rect_outline_border(
                     buffer.pixels_mut(),
                     &self.dim.to_buffer_shrunk_utuple(&shrinker),
                     stride,
-                    style.theme().color(ToolbarButtonHover),
+                    style.theme().color(TraybarButtonHover),
                     1,
                 );
 
@@ -196,7 +196,7 @@ impl TheWidget for TheToolbarButton {
                     buffer.pixels_mut(),
                     &self.dim.to_buffer_shrunk_utuple(&shrinker),
                     stride,
-                    style.theme().color(ToolbarButtonHoverBorder),
+                    style.theme().color(TraybarButtonHoverBorder),
                 );
             }
         }
@@ -235,13 +235,13 @@ impl TheWidget for TheToolbarButton {
     }
 }
 
-pub trait TheToolbarButtonTrait {
+pub trait TheTraybarButtonTrait {
     fn set_icon_name(&mut self, text: String);
     fn set_icon_offset(&mut self, offset: Vec2i);
     fn set_text(&mut self, text: String);
 }
 
-impl TheToolbarButtonTrait for TheToolbarButton {
+impl TheTraybarButtonTrait for TheTraybarButton {
     fn set_icon_name(&mut self, text: String) {
         self.icon_name = text;
     }
