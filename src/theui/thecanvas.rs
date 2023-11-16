@@ -280,10 +280,8 @@ impl TheCanvas {
                 return Some(layout);
             }
 
-            if let Some(layout) = layout.as_stack_layout() {
-                if let Some(layout) = layout.get_layout(name, uuid) {
-                    return Some(layout);
-                }
+            if let Some(layout) = layout.get_layout(name, uuid) {
+                return Some(layout);
             }
         }
 

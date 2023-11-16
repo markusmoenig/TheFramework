@@ -36,6 +36,30 @@ impl TheColor {
         }
     }
 
+    /// Creates a color from a hex value.
+    pub fn from_hex(hex_color: &str ) -> Self {
+        let mut r = 255;
+        let mut g = 255;
+        let mut b = 255;
+        let mut a = 255;
+
+        if hex_color.len() == 7 || hex_color.len() == 9 {
+            if let Ok(rr) = u8::from_str_radix(&hex_color[1..3], 16) { r = rr; }
+            if let Ok(gg) = u8::from_str_radix(&hex_color[3..5], 16) { g = gg; }
+            if let Ok(bb) = u8::from_str_radix(&hex_color[5..7], 16) { b = bb; }
+            if hex_color.len() == 9 {
+                if let Ok(aa) = u8::from_str_radix(&hex_color[7..9], 16) { a = aa; }
+            }
+        }
+
+        Self {
+            r: r as f32 / 255.0,
+            g: g as f32 / 255.0,
+            b: b as f32 / 255.0,
+            a: a as f32 / 255.0,
+        }
+    }
+
     /// Creates a white color.
     pub fn white() -> Self {
         Self {

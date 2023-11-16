@@ -5,6 +5,8 @@ pub struct TheStackLayout {
     dim: TheDim,
     limiter: TheSizeLimiter,
 
+    canvas: Vec<TheCanvas>,
+
     widgets: Vec<Box<dyn TheWidget>>,
     layouts: Vec<Box<dyn TheLayout>>,
     index: usize,
@@ -19,6 +21,8 @@ impl TheLayout for TheStackLayout {
             id,
             dim: TheDim::zero(),
             limiter: TheSizeLimiter::new(),
+
+            canvas: vec![],
 
             widgets: vec![],
             layouts: vec![],
@@ -48,16 +52,22 @@ impl TheLayout for TheStackLayout {
         }
     }
 
+    fn needs_redraw(&mut self) -> bool {
+
+        // if self.widgets.is_empty() {
+        //     return false;
+        // }
+
+        true
+    }
+
     fn widgets(&mut self) -> &mut Vec<Box<dyn TheWidget>> {
-        if !self.layouts.is_empty() && self.index < self.layouts.len() {
-            return self.layouts[self.index].widgets();
-        }
         &mut self.widgets
     }
 
     fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
-        if !self.layouts.is_empty() && self.index < self.layouts.len() {
-            return self.layouts[self.index].get_widget_at_coord(coord);
+        if !self.canvas.is_empty() && self.index < self.canvas.len() {
+            return self.canvas[self.index].get_widget_at_coord(coord);
         }
         None
     }
@@ -67,7 +77,10 @@ impl TheLayout for TheStackLayout {
         name: Option<&String>,
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheLayout>> {
-        self.layouts.iter_mut().find(|h| h.id().matches(name, uuid))
+        if !self.canvas.is_empty() && self.index < self.canvas.len() {
+            return self.canvas[self.index].get_layout(name, uuid);
+        }
+        None
     }
 
     fn get_widget(
@@ -75,43 +88,34 @@ impl TheLayout for TheStackLayout {
         name: Option<&String>,
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheWidget>> {
-        if !self.layouts.is_empty() && self.index < self.layouts.len() {
-            return self.layouts[self.index].get_widget(name, uuid);
+        if !self.canvas.is_empty() && self.index < self.canvas.len() {
+            return self.canvas[self.index].get_widget(name, uuid);
         }
         None
     }
 
     fn dim(&self) -> &TheDim {
-        if !self.layouts.is_empty() && self.index < self.layouts.len() {
-            return self.layouts[self.index].dim();
-        }
         &self.dim
     }
 
     fn dim_mut(&mut self) -> &mut TheDim {
-        if !self.layouts.is_empty() && self.index < self.layouts.len() {
-            return self.layouts[self.index].dim_mut();
-        }
         &mut self.dim
     }
 
     fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {
-        if !self.layouts.is_empty() && self.index < self.layouts.len() {
-            self.layouts[self.index].set_dim(dim, ctx);
+        if self.dim != dim || ctx.ui.relayout {
+            self.dim = dim;
+            if !self.canvas.is_empty() && self.index < self.canvas.len() {
+                self.canvas[self.index].set_dim(dim, ctx);
+            }
         }
     }
 
     fn limiter(&self) -> &TheSizeLimiter {
-        if !self.layouts.is_empty() && self.index < self.layouts.len() {
-            return self.layouts[self.index].limiter();
-        }
         &self.limiter
     }
 
     fn limiter_mut(&mut self) -> &mut TheSizeLimiter {
-        if !self.layouts.is_empty() && self.index < self.layouts.len() {
-            return self.layouts[self.index].limiter_mut();
-        }
         &mut self.limiter
     }
 
@@ -121,8 +125,14 @@ impl TheLayout for TheStackLayout {
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
-        if !self.layouts.is_empty() && self.index < self.layouts.len() {
-            self.layouts[self.index].draw(buffer, style, ctx);
+        if !self.canvas.is_empty() && self.index < self.canvas.len() {
+
+            self.canvas[self.index].draw(style, ctx);
+            buffer.copy_into(
+                self.dim.buffer_x,
+                self.dim.buffer_y,
+                self.canvas[self.index].buffer(),
+            );
         }
     }
 
@@ -134,8 +144,8 @@ impl TheLayout for TheStackLayout {
 
 /// TheHLayout specific functions.
 pub trait TheStackLayoutTrait: TheLayout {
-    /// Add a layout to the stack.
-    fn add_layout(&mut self, widget: Box<dyn TheLayout>);
+    /// Add a canvas to the stack.
+    fn add_canvas(&mut self, canvas: TheCanvas);
 
     /// Returns the index of the current layout.
     fn index(&self) -> usize;
@@ -145,8 +155,8 @@ pub trait TheStackLayoutTrait: TheLayout {
 }
 
 impl TheStackLayoutTrait for TheStackLayout {
-    fn add_layout(&mut self, layout: Box<dyn TheLayout>) {
-        self.layouts.push(layout);
+    fn add_canvas(&mut self, canvas: TheCanvas) {
+        self.canvas.push(canvas);
     }
 
     fn index(&self) -> usize {

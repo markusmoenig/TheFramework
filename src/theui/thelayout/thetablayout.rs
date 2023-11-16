@@ -7,8 +7,9 @@ pub struct TheTabLayout {
 
     tabbar: Box<dyn TheWidget>,
 
+    canvas: Vec<TheCanvas>,
+
     widgets: Vec<Box<dyn TheWidget>>,
-    layouts: Vec<Box<dyn TheLayout>>,
     index: usize,
 }
 
@@ -24,8 +25,8 @@ impl TheLayout for TheTabLayout {
 
             tabbar: Box::new(TheTabbar::new(TheId::named("Tabbar"))),
 
+            canvas: vec![],
             widgets: vec![],
-            layouts: vec![],
             index: 0,
         }
     }
@@ -45,7 +46,7 @@ impl TheLayout for TheTabLayout {
             return Some(&mut self.tabbar);
         }
 
-        if self.widgets.is_empty() {
+        if self.canvas.is_empty() {
             return None;
         }
 
@@ -56,8 +57,8 @@ impl TheLayout for TheTabLayout {
             }
         }
 
-        if index < self.widgets.len() && self.widgets[index].dim().contains(coord) {
-            return Some(&mut self.widgets[index]);
+        if index < self.canvas.len() {
+            return self.canvas[index].get_widget_at_coord(coord);
         }
 
         None
@@ -68,7 +69,19 @@ impl TheLayout for TheTabLayout {
         name: Option<&String>,
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheLayout>> {
-        self.layouts.iter_mut().find(|h| h.id().matches(name, uuid))
+
+        let mut index = 0;
+        if let Some(tabbar) = self.tabbar.as_tabbar() {
+            if let Some(i) = tabbar.selection_index() {
+                index = i as usize;
+            }
+        }
+
+        if index < self.canvas.len() {
+            return self.canvas[index].get_layout(name, uuid);
+        }
+
+        None
     }
 
     fn get_widget(
@@ -80,7 +93,7 @@ impl TheLayout for TheTabLayout {
             return Some(&mut self.tabbar);
         }
 
-        if self.widgets.is_empty() {
+        if self.canvas.is_empty() {
             return None;
         }
 
@@ -91,8 +104,8 @@ impl TheLayout for TheTabLayout {
             }
         }
 
-        if index < self.widgets.len() && self.widgets[index].id().matches(name, uuid) {
-            return Some(&mut self.widgets[index]);
+        if index < self.canvas.len() {
+            return self.canvas[index].get_widget(name, uuid);
         }
 
         None
@@ -103,20 +116,9 @@ impl TheLayout for TheTabLayout {
             return true;
         }
 
-        if self.widgets.is_empty() {
-            return false;
-        }
-
-        let mut index = 0;
-        if let Some(tabbar) = self.tabbar.as_tabbar() {
-            if let Some(i) = tabbar.selection_index() {
-                index = i as usize;
-            }
-        }
-
-        if index < self.widgets.len() {
-            return self.widgets[index].needs_redraw();
-        }
+        // if self.widgets.is_empty() {
+        //     return false;
+        // }
 
         false
     }
@@ -140,16 +142,11 @@ impl TheLayout for TheTabLayout {
                 .dim_mut()
                 .set_buffer_offset(self.dim.buffer_x, self.dim.buffer_y);
 
-            for w in &mut self.widgets {
-                w.set_dim(TheDim::new(
-                    dim.x + 1,
-                    dim.y + 23,
-                    dim.width - 2,
-                    dim.height - 22 - 2,
-                ));
-
-                w.dim_mut()
-                    .set_buffer_offset(self.dim.buffer_x + 1, self.dim.buffer_y + 23);
+            for c in &mut self.canvas {
+                c.set_dim(
+                    TheDim::new(dim.x + 1, dim.y + 23, dim.width - 2, dim.height - 22 - 2),
+                    ctx,
+                );
             }
         }
     }
@@ -180,7 +177,7 @@ impl TheLayout for TheTabLayout {
 
         self.tabbar.draw(buffer, style, ctx);
 
-        if self.widgets.is_empty() {
+        if self.canvas.is_empty() {
             return;
         }
 
@@ -191,8 +188,13 @@ impl TheLayout for TheTabLayout {
             }
         }
 
-        if index < self.widgets.len() {
-            self.widgets[index].draw(buffer, style, ctx);
+        if index < self.canvas.len() {
+            self.canvas[index].draw(style, ctx);
+            buffer.copy_into(
+                self.dim.buffer_x + 1,
+                self.dim.buffer_y + 23,
+                self.canvas[index].buffer(),
+            );
         }
     }
 
@@ -204,22 +206,21 @@ impl TheLayout for TheTabLayout {
 
 /// TheTabLayoutTrait specific functions.
 pub trait TheTabLayoutTrait: TheLayout {
-    /// Add a layout to the stack.
-    fn add_widget(&mut self, name: String, widget: Box<dyn TheWidget>);
-
-    /// Returns the index of the current layout.
+    /// Add a canvas to the stack.
+    fn add_canvas(&mut self, name: String, canvas: TheCanvas);
+    /// Returns the index of the current canvas.
     fn index(&self) -> usize;
 
-    /// Set the index of the current layout.
+    /// Set the index of the current canvas.
     fn set_index(&mut self, index: usize);
 }
 
 impl TheTabLayoutTrait for TheTabLayout {
-    fn add_widget(&mut self, name: String, widget: Box<dyn TheWidget>) {
+    fn add_canvas(&mut self, name: String, canvas: TheCanvas) {
         if let Some(tabbar) = self.tabbar.as_tabbar() {
             tabbar.add_tab(name);
         }
-        self.widgets.push(widget);
+        self.canvas.push(canvas);
     }
 
     fn index(&self) -> usize {

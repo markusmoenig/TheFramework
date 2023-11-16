@@ -19,13 +19,15 @@ impl Browser {
         let mut tab_layout = TheTabLayout::new(TheId::named("TabLayout"));
         tab_layout.limiter_mut().set_max_height(222);
 
+        let mut yellow_canvas = TheCanvas::default();
         let mut yellow_color = TheColorButton::new(TheId::named("Yellow"));
         yellow_color.set_color([255, 255, 0, 255]);
-        tab_layout.add_widget("Yellow".to_string(), Box::new(yellow_color));
+        yellow_canvas.set_widget(yellow_color);
+        tab_layout.add_canvas("Yellow".to_string(), yellow_canvas);
 
         let mut red_color = TheColorButton::new(TheId::named("Red"));
         red_color.set_color([255, 0, 0, 255]);
-        tab_layout.add_widget("Red".to_string(), Box::new(red_color));
+        // tab_layout.add_widget("Red".to_string(), Box::new(red_color));
 
         canvas.set_layout(tab_layout);
 
