@@ -235,6 +235,7 @@ impl TheWidget for TheTabbar {
 }
 
 pub trait TheTabbarTrait {
+    fn clear(&mut self);
     fn add_tab(&mut self, name: String);
     fn selection_index(&self) -> Option<i32>;
     fn selection(&self) -> Option<String>;
@@ -242,6 +243,10 @@ pub trait TheTabbarTrait {
 }
 
 impl TheTabbarTrait for TheTabbar {
+    fn clear(&mut self) {
+        self.tabs.clear();
+        self.is_dirty = true;
+    }
     fn add_tab(&mut self, name: String) {
         self.tabs.push(name);
     }

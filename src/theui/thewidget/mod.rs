@@ -22,6 +22,7 @@ pub mod thetoolbarbutton;
 pub mod thetraybar;
 pub mod thetraybarbutton;
 pub mod theverticalscrollbar;
+pub mod thestatusbar;
 
 pub mod prelude {
     pub use crate::theui::thewidget::thecolorbutton::TheColorButton;
@@ -57,6 +58,7 @@ pub mod prelude {
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
     pub use crate::theui::thewidget::thetraybar::TheTraybar;
     pub use crate::theui::thewidget::thetraybarbutton::{TheTraybarButton, TheTraybarButtonTrait};
+    pub use crate::theui::thewidget::thestatusbar::TheStatusbar;
 
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetState;
@@ -179,6 +181,11 @@ pub trait TheWidget {
 
     /// Attempts to cast to TheTabbarTrait. Only valid for TheTabbar.
     fn as_tabbar(&mut self) -> Option<&mut dyn TheTabbarTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheTextLineEditTrait. Only valid for TheTextLineEdit.
+    fn as_text_line_edit(&mut self) -> Option<&mut dyn TheTextLineEditTrait> {
         None
     }
 }

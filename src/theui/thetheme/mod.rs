@@ -76,6 +76,7 @@ pub enum TheThemeColors {
     ListItemSelected,
     ListItemHover,
     ListItemText,
+    ListItemIconBorder,
 
     ScrollbarBackground,
     ScrollbarSeparator,
@@ -87,4 +88,7 @@ pub enum TheThemeColors {
     TraybarBorder,
     TraybarBackground,
     TraybarBottomBorder,
+
+    StatusbarStart,
+    StatusbarEnd
 }

@@ -70,6 +70,7 @@ impl TheTheme for TheDarkTheme {
         colors.insert(ListItemSelected, [187, 122, 208, 255]);
         colors.insert(ListItemHover, [237, 237, 237, 255]);
         colors.insert(ListItemText, [85, 81, 85, 255]);
+        colors.insert(ListItemIconBorder, [139, 139, 139, 255]);
 
         colors.insert(ScrollbarBackground, [139, 139, 139, 255]);
         colors.insert(ScrollbarSeparator, [119, 119, 119, 255]);
@@ -81,6 +82,9 @@ impl TheTheme for TheDarkTheme {
         colors.insert(TraybarBorder, [153, 153, 153, 255]);
         colors.insert(TraybarBackground, [118, 118, 118, 255]);
         colors.insert(TraybarBottomBorder, [89, 89, 89, 255]);
+
+        colors.insert(StatusbarStart, [84, 84, 84, 255]);
+        colors.insert(StatusbarEnd, [99, 99, 99, 255]);
 
         Self { colors }
     }

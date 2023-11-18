@@ -101,21 +101,24 @@ impl Sidebar {
             text_layout.add_pair(format!("Item #{}", i), Box::new(dropdown));
         }
 
+        let mut snapper_canvas = TheCanvas::new();
         let mut snapper_layout = TheSnapperLayout::new(TheId::named("Snapper Layout"));
         snapper_layout.add_pair(Box::new(snapperbar), Box::new(text_layout));
         snapper_layout.limiter_mut().set_max_width(360);
+        snapper_canvas.set_layout(snapper_layout);
 
         let mut canvas = TheCanvas::new();
         let mut stack_layout = TheStackLayout::new(TheId::named("Stack Layout"));
-        stack_layout.add_layout(Box::new(snapper_layout));
+        stack_layout.add_canvas(snapper_canvas);
 
+        let mut test_canvas = TheCanvas::new();
         let mut test_layout = TheVLayout::new(TheId::named("Dummy"));
         test_layout.limiter_mut().set_max_width(360);
         let mut dummy_text = TheText::new(TheId::empty());
         dummy_text.set_text("Test".to_string());
-
         test_layout.add_widget(Box::new(dummy_text));
-        stack_layout.add_layout(Box::new(test_layout));
+        test_canvas.set_layout(test_layout);
+        stack_layout.add_canvas(test_canvas);
 
         self.stack_layout_id = stack_layout.id().clone();
         stack_layout.set_index(0);

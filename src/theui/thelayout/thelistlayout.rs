@@ -16,6 +16,7 @@ pub struct TheListLayout {
     margin: Vec4i,
 
     background: Option<TheThemeColors>,
+    item_size: i32,
 
     is_dirty: bool,
 }
@@ -42,6 +43,8 @@ impl TheLayout for TheListLayout {
             margin: vec4i(0, 0, 0, 0),
 
             background: Some(TextLayoutBackground),
+            item_size: 17,
+
             is_dirty: false,
         }
     }
@@ -125,7 +128,7 @@ impl TheLayout for TheListLayout {
             let mut width = dim.width;
 
             let items = self.widgets.len() as i32;
-            let mut total_height = 1 + items * 17 + 1;
+            let mut total_height = 1 + items * self.item_size + 1;
             if items > 0 {
                 total_height += (items - 1) * 3;
             }
@@ -155,10 +158,10 @@ impl TheLayout for TheListLayout {
             for index in 0..items {
                 let i = index as usize;
 
-                self.widgets[i].set_dim(TheDim::new(dim.x + x, dim.y + y, width - 2, 17));
+                self.widgets[i].set_dim(TheDim::new(dim.x + x, dim.y + y, width - 2, self.item_size));
                 self.widgets[i].dim_mut().set_buffer_offset(x, y);
 
-                y += 17 + 3;
+                y += self.item_size + 3;
             }
         }
     }
@@ -243,6 +246,8 @@ pub trait TheListLayoutTrait {
     fn deselect_all(&mut self);
     /// Returns the id of the selected item (if any).
     fn selected(&self) -> Option<TheId>;
+    /// Set the height of the items
+    fn set_item_size(&mut self, item_size: i32);
 }
 
 impl TheListLayoutTrait for TheListLayout {
@@ -280,4 +285,9 @@ impl TheListLayoutTrait for TheListLayout {
         }
         None
     }
+    fn set_item_size(&mut self, item_size: i32) {
+        self.item_size = item_size;
+        self.is_dirty = true;
+    }
+
 }

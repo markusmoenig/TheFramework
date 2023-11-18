@@ -421,8 +421,8 @@ impl TheRGBAViewTrait for TheRGBAView {
         if let Some(grid) = self.grid {
             for s in sorted {
                 regions.push(TheRGBARegion::new(
-                    s.0 as usize,
-                    s.1 as usize,
+                    (s.0 * grid) as usize,
+                    (s.1 * grid) as usize,
                     grid as usize,
                     grid as usize,
                 ))

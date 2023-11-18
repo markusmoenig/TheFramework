@@ -180,7 +180,7 @@ impl TheWidget for TheSnapperbar {
         }
 
         if self.open {
-            if let Some(icon) = ctx.ui.icon("snapperbar_open") {
+            if let Some(icon) = ctx.ui.icon("dark_snapperbar_open") {
                 let r = (
                     utuple.0 + 6,
                     utuple.1 + 9,
@@ -190,7 +190,7 @@ impl TheWidget for TheSnapperbar {
                 ctx.draw
                     .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
             }
-        } else if let Some(icon) = ctx.ui.icon("snapperbar_closed") {
+        } else if let Some(icon) = ctx.ui.icon("dark_snapperbar_closed") {
             let r = (
                 utuple.0 + 9,
                 utuple.1 + 6,

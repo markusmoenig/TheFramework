@@ -46,11 +46,11 @@ impl TheWidget for TheTraybarButton {
     #[allow(clippy::single_match)]
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
-        // println!("event ({}): {:?}", self.widget_id.name, event);
+        //println!("event ({}): {:?}", self.id.name, event);
         match event {
             TheEvent::MouseDown(_coord) => {
                 if self.state != TheWidgetState::Clicked {
-                    self.state = TheWidgetState::Clicked;
+                    //self.state = TheWidgetState::Clicked;
                     ctx.ui.set_focus(self.id());
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
                 }

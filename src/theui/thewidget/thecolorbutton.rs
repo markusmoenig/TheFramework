@@ -3,6 +3,7 @@ use crate::prelude::*;
 pub struct TheColorButton {
     id: TheId,
     limiter: TheSizeLimiter,
+    state: TheWidgetState,
 
     dim: TheDim,
     color: RGBA,
@@ -14,9 +15,12 @@ impl TheWidget for TheColorButton {
     where
         Self: Sized,
     {
+        let mut limiter = TheSizeLimiter::new();
+        limiter.set_max_size(vec2i(20, 20));
         Self {
             id,
-            limiter: TheSizeLimiter::new(),
+            limiter,
+            state: TheWidgetState::None,
 
             dim: TheDim::zero(),
             color: WHITE,
@@ -34,7 +38,13 @@ impl TheWidget for TheColorButton {
         // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
             TheEvent::MouseDown(_coord) => {
-                ctx.ui.set_focus(self.id());
+                if self.state == TheWidgetState::Selected {
+                    self.state = TheWidgetState::None;
+                    ctx.ui.send_widget_state_changed(self.id(), self.state);
+                } else if self.state != TheWidgetState::Selected {
+                    self.state = TheWidgetState::Selected;
+                    ctx.ui.send_widget_state_changed(self.id(), self.state);
+                }
                 self.is_dirty = true;
                 redraw = true;
             }
@@ -58,6 +68,11 @@ impl TheWidget for TheColorButton {
         }
     }
 
+    fn set_state(&mut self, state: TheWidgetState) {
+        self.state = state;
+        self.is_dirty = true;
+    }
+
     fn limiter(&self) -> &TheSizeLimiter {
         &self.limiter
     }
@@ -77,7 +92,7 @@ impl TheWidget for TheColorButton {
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
-        style: &mut Box<dyn TheStyle>,
+        _style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
         let stride: usize = buffer.stride();
@@ -87,28 +102,44 @@ impl TheWidget for TheColorButton {
             return;
         }
 
-        style.draw_widget_border(buffer, self, &mut shrinker, ctx);
+        //style.draw_widget_border(buffer, self, &mut shrinker, ctx);
 
-        ctx.draw.rect(
+        ctx.draw.rect_outline_border(
             buffer.pixels_mut(),
             &self.dim.to_buffer_shrunk_utuple(&shrinker),
             stride,
             &self.color,
+            1
         );
 
-        if let Some(font) = &ctx.ui.font {
-            ctx.draw.text_rect_blend(
+        if self.state == TheWidgetState::Selected {
+            shrinker.shrink(1);
+            ctx.draw.rect(
                 buffer.pixels_mut(),
                 &self.dim.to_buffer_shrunk_utuple(&shrinker),
                 stride,
-                font,
-                15.0,
-                &self.id().name,
-                &BLACK,
-                TheHorizontalAlign::Center,
-                TheVerticalAlign::Center,
+                &self.color,
             );
+            ctx.draw.rect(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                stride,
+                &self.color            );
         }
+
+        // if let Some(font) = &ctx.ui.font {
+        //     ctx.draw.text_rect_blend(
+        //         buffer.pixels_mut(),
+        //         &self.dim.to_buffer_shrunk_utuple(&shrinker),
+        //         stride,
+        //         font,
+        //         15.0,
+        //         &self.id().name,
+        //         &BLACK,
+        //         TheHorizontalAlign::Center,
+        //         TheVerticalAlign::Center,
+        //     );
+        // }
 
         self.is_dirty = false;
     }

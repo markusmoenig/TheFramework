@@ -7,6 +7,8 @@ pub mod thetrait;
 #[cfg(feature = "ui")]
 pub mod theui;
 
+pub mod thescript;
+
 pub use crate::theapp::TheApp;
 pub use crate::thecontext::TheContext;
 pub use crate::thetrait::TheTrait;
@@ -56,4 +58,6 @@ pub mod prelude {
 
     #[cfg(feature = "ui")]
     pub use crate::theui::prelude::*;
+
+    pub use crate::thescript::prelude::*;
 }

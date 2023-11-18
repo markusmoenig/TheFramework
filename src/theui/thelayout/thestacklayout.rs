@@ -53,7 +53,6 @@ impl TheLayout for TheStackLayout {
     }
 
     fn needs_redraw(&mut self) -> bool {
-
         // if self.widgets.is_empty() {
         //     return false;
         // }
@@ -126,7 +125,6 @@ impl TheLayout for TheStackLayout {
         ctx: &mut TheContext,
     ) {
         if !self.canvas.is_empty() && self.index < self.canvas.len() {
-
             self.canvas[self.index].draw(style, ctx);
             buffer.copy_into(
                 self.dim.buffer_x,

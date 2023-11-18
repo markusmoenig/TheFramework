@@ -106,6 +106,7 @@ impl Default for TheUI {
 #[allow(unused)]
 impl TheUI {
     pub fn new() -> Self {
+
         Self {
             canvas: TheCanvas::new(),
 
@@ -334,5 +335,23 @@ impl TheUI {
             }
         }
         redraw
+    }
+
+    /// Gets a given widget by name
+    pub fn get_widget(&mut self, name: &str) -> Option<&mut Box<dyn TheWidget>> {
+        self.canvas.get_widget(Some(&name.to_string()), None)
+    }
+
+    /// Gets a given text line edit by name
+    pub fn get_text_line_edit(&mut self, name: &str) -> Option<&mut dyn TheTextLineEditTrait> {
+        if let Some(text_line_edit) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            return text_line_edit.as_text_line_edit();
+        }
+        None
+    }
+
+    /// Gets a given layout by name
+    pub fn get_layout(&mut self, name: &str) -> Option<&mut Box<dyn TheLayout>> {
+        self.canvas.get_layout(Some(&name.to_string()), None)
     }
 }

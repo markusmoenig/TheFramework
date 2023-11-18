@@ -11,6 +11,8 @@ pub struct TheListItem {
     dim: TheDim,
     is_dirty: bool,
 
+    icon: Option<TheRGBABuffer>,
+
     layout_id: TheId,
 }
 
@@ -32,6 +34,8 @@ impl TheWidget for TheListItem {
 
             dim: TheDim::zero(),
             is_dirty: true,
+
+            icon: None,
 
             layout_id: TheId::empty(),
         }
@@ -168,20 +172,46 @@ impl TheWidget for TheListItem {
             color,
         );
 
-        shrinker.shrink_by(9, 0, 0, 0);
-
-        if let Some(font) = &ctx.ui.font {
-            ctx.draw.text_rect_blend(
+        if let Some(icon) = &self.icon {
+            let ut = self.dim.to_buffer_shrunk_utuple(&shrinker);
+            ctx.draw.rect_outline_border(
                 buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                &(ut.0 + 1, ut.1 + 1, 38, 38),
                 stride,
-                font,
-                13.0,
-                &self.text,
-                style.theme().color(ListItemText),
-                TheHorizontalAlign::Left,
-                TheVerticalAlign::Center,
+                style.theme().color(ListItemIconBorder),
+                1,
             );
+            ctx.draw.copy_slice(buffer.pixels_mut(), icon.pixels(), &(ut.0 + 2, ut.1 + 2, 36, 36), stride);
+
+            if let Some(font) = &ctx.ui.font {
+                ctx.draw.text_rect_blend(
+                    buffer.pixels_mut(),
+                    &(ut.0 + 38 + 7 + 5, ut.1 + 7, (self.dim.width - 38 - 7 - 10) as usize, 13),
+                    stride,
+                    font,
+                    12.0,
+                    &self.text,
+                    style.theme().color(ListItemText),
+                    TheHorizontalAlign::Left,
+                    TheVerticalAlign::Center,
+                );
+            }
+        } else {
+            shrinker.shrink_by(9, 0, 0, 0);
+
+            if let Some(font) = &ctx.ui.font {
+                ctx.draw.text_rect_blend(
+                    buffer.pixels_mut(),
+                    &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                    stride,
+                    font,
+                    13.0,
+                    &self.text,
+                    style.theme().color(ListItemText),
+                    TheHorizontalAlign::Left,
+                    TheVerticalAlign::Center,
+                );
+            }
         }
 
         self.is_dirty = false;
@@ -195,6 +225,8 @@ impl TheWidget for TheListItem {
 pub trait TheListItemTrait {
     fn set_text(&mut self, text: String);
     fn set_associated_layout(&mut self, id: TheId);
+    fn set_size(&mut self, size: i32);
+    fn set_icon(&mut self, icon: TheRGBABuffer);
 }
 
 impl TheListItemTrait for TheListItem {
@@ -204,5 +236,12 @@ impl TheListItemTrait for TheListItem {
     }
     fn set_associated_layout(&mut self, layout_id: TheId) {
         self.layout_id = layout_id;
+    }
+    fn set_size(&mut self, size: i32) {
+        self.limiter_mut().set_max_height(size);
+        self.is_dirty = true;
+    }
+    fn set_icon(&mut self, icon: TheRGBABuffer) {
+        self.icon = Some(icon);
     }
 }

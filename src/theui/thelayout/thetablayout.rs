@@ -69,7 +69,6 @@ impl TheLayout for TheTabLayout {
         name: Option<&String>,
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheLayout>> {
-
         let mut index = 0;
         if let Some(tabbar) = self.tabbar.as_tabbar() {
             if let Some(i) = tabbar.selection_index() {
@@ -206,16 +205,24 @@ impl TheLayout for TheTabLayout {
 
 /// TheTabLayoutTrait specific functions.
 pub trait TheTabLayoutTrait: TheLayout {
+    /// Clear the canvas.
+    fn clear(&mut self);
     /// Add a canvas to the stack.
     fn add_canvas(&mut self, name: String, canvas: TheCanvas);
     /// Returns the index of the current canvas.
     fn index(&self) -> usize;
-
     /// Set the index of the current canvas.
     fn set_index(&mut self, index: usize);
 }
 
 impl TheTabLayoutTrait for TheTabLayout {
+    fn clear(&mut self) {
+        if let Some(tabbar) = self.tabbar.as_tabbar() {
+            tabbar.clear();
+        }
+        self.canvas.clear();
+    }
+
     fn add_canvas(&mut self, name: String, canvas: TheCanvas) {
         if let Some(tabbar) = self.tabbar.as_tabbar() {
             tabbar.add_tab(name);

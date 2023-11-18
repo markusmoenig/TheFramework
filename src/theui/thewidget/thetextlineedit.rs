@@ -12,6 +12,7 @@ pub struct TheTextLineEdit {
 
     dim: TheDim,
     is_dirty: bool,
+    embedded: bool,
 }
 
 impl TheWidget for TheTextLineEdit {
@@ -30,10 +31,12 @@ impl TheWidget for TheTextLineEdit {
             original: "".to_string(),
             position: 0,
 
-            font_size: 14.5,
+            font_size: 14.0,
 
             dim: TheDim::zero(),
             is_dirty: false,
+
+            embedded: false,
         }
     }
 
@@ -241,8 +244,9 @@ impl TheWidget for TheTextLineEdit {
 
         let stride = buffer.stride();
         let mut shrinker = TheDimShrinker::zero();
+        let embedded = self.embedded;
 
-        style.draw_text_edit_border(buffer, self, &mut shrinker, ctx);
+        style.draw_text_edit_border(buffer, self, &mut shrinker, ctx, embedded);
 
         ctx.draw.rect(
             buffer.pixels_mut(),
@@ -290,16 +294,32 @@ impl TheWidget for TheTextLineEdit {
 
         self.is_dirty = false;
     }
+
+    fn as_text_line_edit(&mut self) -> Option<&mut dyn TheTextLineEditTrait> {
+        Some(self)
+    }
 }
 
 pub trait TheTextLineEditTrait: TheWidget {
+    fn text(&self) -> String;
     fn set_text(&mut self, text: String);
+    fn set_font_size(&mut self, font_size: f32);
+    fn set_embedded(&mut self, embedded: bool);
 }
 
 impl TheTextLineEditTrait for TheTextLineEdit {
+    fn text(&self) -> String {
+        self.text.clone()
+    }
     fn set_text(&mut self, text: String) {
         self.text = text;
         self.position = 0;
         self.is_dirty = true;
+    }
+    fn set_font_size(&mut self, font_size: f32) {
+        self.font_size = font_size;
+    }
+    fn set_embedded(&mut self, embedded: bool) {
+        self.embedded = embedded;
     }
 }

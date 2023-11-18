@@ -33,6 +33,7 @@ pub trait TheStyle {
         widget: &mut dyn TheWidget,
         shrinker: &mut TheDimShrinker,
         ctx: &mut TheContext,
+        draw_focus: bool,
     ) {
     }
 }
