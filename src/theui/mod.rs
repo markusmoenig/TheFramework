@@ -63,7 +63,9 @@ pub mod prelude {
 
     pub use crate::theui::thecanvas::*;
     pub use crate::theui::thedim::*;
-    pub use crate::theui::thergbabuffer::{TheRGBABuffer, TheRGBARegion};
+    pub use crate::theui::thergbabuffer::{
+        TheRGBABuffer, TheRGBARegion, TheRGBARegionSequence, TheRGBATile,
+    };
     pub use crate::theui::thesizelimiter::TheSizeLimiter;
     pub use crate::theui::theuicontext::*;
     pub use crate::theui::TheUI;
@@ -106,7 +108,6 @@ impl Default for TheUI {
 #[allow(unused)]
 impl TheUI {
     pub fn new() -> Self {
-
         Self {
             canvas: TheCanvas::new(),
 
@@ -353,5 +354,21 @@ impl TheUI {
     /// Gets a given layout by name
     pub fn get_layout(&mut self, name: &str) -> Option<&mut Box<dyn TheLayout>> {
         self.canvas.get_layout(Some(&name.to_string()), None)
+    }
+
+    /// Gets a given TheRGBALayout by name
+    pub fn get_list_layout(&mut self, name: &str) -> Option<&mut dyn TheListLayoutTrait> {
+        if let Some(text_line_edit) = self.canvas.get_layout(Some(&name.to_string()), None) {
+            return text_line_edit.as_list_layout();
+        }
+        None
+    }
+
+    /// Gets a given TheRGBALayout by name
+    pub fn get_rgba_layout(&mut self, name: &str) -> Option<&mut dyn TheRGBALayoutTrait> {
+        if let Some(text_line_edit) = self.canvas.get_layout(Some(&name.to_string()), None) {
+            return text_line_edit.as_rgba_layout();
+        }
+        None
     }
 }

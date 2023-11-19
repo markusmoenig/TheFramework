@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use std::ops::Range;
+use std::ops::{Index, IndexMut, Range};
 
 use super::{compress, decompress};
 
@@ -135,6 +135,39 @@ impl TheRGBABuffer {
 
         new_buffer
     }
+
+    /// Extracts a region from the buffer.
+    pub fn extract_region(&self, region: &TheRGBARegion) -> TheRGBABuffer {
+        let mut tile_buffer =
+            TheRGBABuffer::new(TheDim::new(0, 0, region.width as i32, region.height as i32));
+
+        for y in 0..region.height as i32 {
+            for x in 0..region.width as i32 {
+                let buffer_index = ((self.dim.y + region.y as i32 + y) * self.dim.width
+                    + self.dim.x
+                    + region.x as i32
+                    + x) as usize
+                    * 4;
+                let tile_index = (y * region.width as i32 + x) as usize * 4;
+
+                if buffer_index < self.buffer.len() && tile_index < tile_buffer.buffer.len() {
+                    tile_buffer.buffer[tile_index..tile_index + 4]
+                        .copy_from_slice(&self.buffer[buffer_index..buffer_index + 4]);
+                }
+            }
+        }
+
+        tile_buffer
+    }
+
+    /// Extracts the regions of the sequence from the buffer.
+    pub fn extract_sequence(&self, sequence: &TheRGBARegionSequence) -> Vec<TheRGBABuffer> {
+        sequence
+            .regions
+            .iter()
+            .map(|region| self.extract_region(region))
+            .collect()
+    }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]
@@ -160,13 +193,17 @@ impl TheRGBARegion {
     /// Scales the region of the buffer to a new width and height.
     pub fn scale(&self, buffer: &TheRGBABuffer, new_width: i32, new_height: i32) -> TheRGBABuffer {
         // Extract the region from the buffer
-        let mut region_buffer = TheRGBABuffer::new(TheDim::new(0, 0, self.width as i32, self.height as i32));
+        let mut region_buffer =
+            TheRGBABuffer::new(TheDim::new(0, 0, self.width as i32, self.height as i32));
         for y in 0..self.height as i32 {
             for x in 0..self.width as i32 {
-                let buffer_index = ((self.y as i32 + y) * buffer.dim().width + self.x as i32 + x) as usize * 4;
+                let buffer_index =
+                    ((self.y as i32 + y) * buffer.dim().width + self.x as i32 + x) as usize * 4;
                 let region_index = (y * self.width as i32 + x) as usize * 4;
 
-                if buffer_index < buffer.pixels().len() && region_index < region_buffer.pixels_mut().len() {
+                if buffer_index < buffer.pixels().len()
+                    && region_index < region_buffer.pixels_mut().len()
+                {
                     region_buffer.pixels_mut()[region_index..region_index + 4]
                         .copy_from_slice(&buffer.pixels()[buffer_index..buffer_index + 4]);
                 }
@@ -175,5 +212,64 @@ impl TheRGBARegion {
 
         // Scale the extracted region
         region_buffer.scaled(new_width, new_height)
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]
+pub struct TheRGBARegionSequence {
+    pub regions: Vec<TheRGBARegion>,
+}
+
+impl Default for TheRGBARegionSequence {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// TheRGBARegionSequence holds an array of RGBA regions, used to identify a tile.
+impl TheRGBARegionSequence {
+    pub fn new() -> Self {
+        Self { regions: vec![] }
+    }
+}
+
+// Implement Index and IndexMut
+impl Index<usize> for TheRGBARegionSequence {
+    type Output = TheRGBARegion;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.regions[index]
+    }
+}
+
+impl IndexMut<usize> for TheRGBARegionSequence {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.regions[index]
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]
+pub struct TheRGBATile {
+    pub id: Uuid,
+    pub buffer: Vec<TheRGBABuffer>,
+    pub role: u8,
+    pub blocking: bool,
+}
+
+impl Default for TheRGBATile {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// TheRGBARegionSequence holds an array of RGBA regions, used to identify a tile.
+impl TheRGBATile {
+    pub fn new() -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            buffer: vec![],
+            role: 0,
+            blocking: false,
+        }
     }
 }

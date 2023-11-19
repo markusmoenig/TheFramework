@@ -90,5 +90,5 @@ pub enum TheThemeColors {
     TraybarBottomBorder,
 
     StatusbarStart,
-    StatusbarEnd
+    StatusbarEnd,
 }

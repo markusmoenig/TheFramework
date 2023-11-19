@@ -704,12 +704,18 @@ impl TheCompiler {
         self.parse_precedence(rule.precedence.next_higher());
 
         match operator_type {
-            TokenType::BangEqual => self.emit_instructions(TheInstruction::Equal, TheInstruction::Not),
+            TokenType::BangEqual => {
+                self.emit_instructions(TheInstruction::Equal, TheInstruction::Not)
+            }
             TokenType::EqualEqual => self.emit_instruction(TheInstruction::Equal),
             TokenType::Greater => self.emit_instruction(TheInstruction::Greater),
-            TokenType::GreaterEqual => self.emit_instructions(TheInstruction::Less, TheInstruction::Not),
+            TokenType::GreaterEqual => {
+                self.emit_instructions(TheInstruction::Less, TheInstruction::Not)
+            }
             TokenType::Less => self.emit_instruction(TheInstruction::Less),
-            TokenType::LessEqual => self.emit_instructions(TheInstruction::Greater, TheInstruction::Not),
+            TokenType::LessEqual => {
+                self.emit_instructions(TheInstruction::Greater, TheInstruction::Not)
+            }
             TokenType::Plus => self.emit_instruction(TheInstruction::Add),
             TokenType::Minus => self.emit_instruction(TheInstruction::Subtract),
             TokenType::Star => self.emit_instruction(TheInstruction::Multiply),

@@ -54,7 +54,6 @@ impl TheStyle for TheClassicStyle {
         let stride = buffer.stride();
 
         if widget.id().equals(&ctx.ui.focus) {
-
             if !embedded {
                 ctx.draw.rect_outline_border(
                     buffer.pixels_mut(),

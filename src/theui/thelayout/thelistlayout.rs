@@ -158,7 +158,12 @@ impl TheLayout for TheListLayout {
             for index in 0..items {
                 let i = index as usize;
 
-                self.widgets[i].set_dim(TheDim::new(dim.x + x, dim.y + y, width - 2, self.item_size));
+                self.widgets[i].set_dim(TheDim::new(
+                    dim.x + x,
+                    dim.y + y,
+                    width - 2,
+                    self.item_size,
+                ));
                 self.widgets[i].dim_mut().set_buffer_offset(x, y);
 
                 y += self.item_size + 3;
@@ -289,5 +294,4 @@ impl TheListLayoutTrait for TheListLayout {
         self.item_size = item_size;
         self.is_dirty = true;
     }
-
 }

@@ -109,7 +109,7 @@ impl TheWidget for TheColorButton {
             &self.dim.to_buffer_shrunk_utuple(&shrinker),
             stride,
             &self.color,
-            1
+            1,
         );
 
         if self.state == TheWidgetState::Selected {
@@ -124,7 +124,8 @@ impl TheWidget for TheColorButton {
                 buffer.pixels_mut(),
                 &self.dim.to_buffer_shrunk_utuple(&shrinker),
                 stride,
-                &self.color            );
+                &self.color,
+            );
         }
 
         // if let Some(font) = &ctx.ui.font {

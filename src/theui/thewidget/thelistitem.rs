@@ -181,12 +181,22 @@ impl TheWidget for TheListItem {
                 style.theme().color(ListItemIconBorder),
                 1,
             );
-            ctx.draw.copy_slice(buffer.pixels_mut(), icon.pixels(), &(ut.0 + 2, ut.1 + 2, 36, 36), stride);
+            ctx.draw.copy_slice(
+                buffer.pixels_mut(),
+                icon.pixels(),
+                &(ut.0 + 2, ut.1 + 2, 36, 36),
+                stride,
+            );
 
             if let Some(font) = &ctx.ui.font {
                 ctx.draw.text_rect_blend(
                     buffer.pixels_mut(),
-                    &(ut.0 + 38 + 7 + 5, ut.1 + 7, (self.dim.width - 38 - 7 - 10) as usize, 13),
+                    &(
+                        ut.0 + 38 + 7 + 5,
+                        ut.1 + 7,
+                        (self.dim.width - 38 - 7 - 10) as usize,
+                        13,
+                    ),
                     stride,
                     font,
                     12.0,

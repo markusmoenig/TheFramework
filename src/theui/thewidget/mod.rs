@@ -12,6 +12,7 @@ pub mod thesectionbar;
 pub mod thesectionbarbutton;
 pub mod theslider;
 pub mod thesnapperbar;
+pub mod thestatusbar;
 pub mod theswitchbar;
 pub mod thetabbar;
 pub mod thetext;
@@ -22,7 +23,6 @@ pub mod thetoolbarbutton;
 pub mod thetraybar;
 pub mod thetraybarbutton;
 pub mod theverticalscrollbar;
-pub mod thestatusbar;
 
 pub mod prelude {
     pub use crate::theui::thewidget::thecolorbutton::TheColorButton;
@@ -52,13 +52,15 @@ pub mod prelude {
         TheVerticalScrollbar, TheVerticalScrollbarTrait,
     };
 
-    pub use crate::theui::thewidget::thergbaview::{TheRGBAView, TheRGBAViewTrait};
+    pub use crate::theui::thewidget::thergbaview::{
+        TheRGBAView, TheRGBAViewMode, TheRGBAViewTrait,
+    };
+    pub use crate::theui::thewidget::thestatusbar::TheStatusbar;
     pub use crate::theui::thewidget::thetabbar::{TheTabbar, TheTabbarTrait};
     pub use crate::theui::thewidget::thetextedit::{TheTextEdit, TheTextEditTrait};
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
     pub use crate::theui::thewidget::thetraybar::TheTraybar;
     pub use crate::theui::thewidget::thetraybarbutton::{TheTraybarButton, TheTraybarButtonTrait};
-    pub use crate::theui::thewidget::thestatusbar::TheStatusbar;
 
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetState;

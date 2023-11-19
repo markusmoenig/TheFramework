@@ -1,5 +1,11 @@
 use crate::prelude::*;
 
+pub enum TheRGBAViewMode {
+    Display,
+    TileSelection,
+    TileEditor,
+}
+
 pub struct TheRGBAView {
     id: TheId,
     limiter: TheSizeLimiter,
@@ -16,6 +22,10 @@ pub struct TheRGBAView {
     grid_color: RGBA,
     selected: FxHashSet<(i32, i32)>,
     selection_color: RGBA,
+
+    mode: TheRGBAViewMode,
+    tile_map: FxHashMap<(i32, i32), Uuid>,
+    tiles: FxHashMap<Uuid, TheRGBATile>,
 
     dim: TheDim,
     is_dirty: bool,
@@ -36,6 +46,7 @@ impl TheWidget for TheRGBAView {
             limiter,
 
             state: TheWidgetState::None,
+            background: BLACK,
 
             buffer: TheRGBABuffer::empty(),
             scroll_offset: vec2i(0, 0),
@@ -46,7 +57,10 @@ impl TheWidget for TheRGBAView {
             selected: FxHashSet::default(),
             selection_color: [255, 255, 255, 180],
 
-            background: BLACK,
+            mode: TheRGBAViewMode::Display,
+
+            tile_map: FxHashMap::default(),
+            tiles: FxHashMap::default(),
 
             dim: TheDim::zero(),
             is_dirty: true,
@@ -347,8 +361,10 @@ pub trait TheRGBAViewTrait {
     fn selection(&self) -> FxHashSet<(i32, i32)>;
     fn selection_as_dim(&self) -> TheDim;
     fn selection_sorted(&self) -> Vec<(i32, i32)>;
-    fn selection_as_regions(&self) -> Vec<TheRGBARegion>;
+    fn selection_as_sequence(&self) -> TheRGBARegionSequence;
     fn set_selection(&mut self, selection: FxHashSet<(i32, i32)>);
+    fn set_mode(&mut self, mode: TheRGBAViewMode);
+    fn set_tiles(&mut self, tiles: FxHashMap<Uuid, TheRGBATile>);
 }
 
 impl TheRGBAViewTrait for TheRGBAView {
@@ -415,12 +431,12 @@ impl TheRGBAViewTrait for TheRGBAView {
         vec.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
         vec
     }
-    fn selection_as_regions(&self) -> Vec<TheRGBARegion> {
-        let mut regions = vec![];
+    fn selection_as_sequence(&self) -> TheRGBARegionSequence {
+        let mut sequence = TheRGBARegionSequence::new();
         let sorted = self.selection_sorted();
         if let Some(grid) = self.grid {
             for s in sorted {
-                regions.push(TheRGBARegion::new(
+                sequence.regions.push(TheRGBARegion::new(
                     (s.0 * grid) as usize,
                     (s.1 * grid) as usize,
                     grid as usize,
@@ -428,10 +444,16 @@ impl TheRGBAViewTrait for TheRGBAView {
                 ))
             }
         }
-        regions
+        sequence
     }
     fn set_selection(&mut self, selection: FxHashSet<(i32, i32)>) {
         self.selected = selection;
         self.is_dirty = true;
+    }
+    fn set_tiles(&mut self, tiles: FxHashMap<Uuid, TheRGBATile>) {
+        self.tiles = tiles;
+    }
+    fn set_mode(&mut self, mode: TheRGBAViewMode) {
+        self.mode = mode;
     }
 }
