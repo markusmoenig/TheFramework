@@ -76,8 +76,10 @@ impl TheLayout for TheStackLayout {
         name: Option<&String>,
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheLayout>> {
-        if !self.canvas.is_empty() && self.index < self.canvas.len() {
-            return self.canvas[self.index].get_layout(name, uuid);
+        for canvas in &mut self.canvas {
+            if let Some(layout) = canvas.get_layout(name, uuid) {
+                return Some(layout);
+            }
         }
         None
     }
@@ -87,9 +89,14 @@ impl TheLayout for TheStackLayout {
         name: Option<&String>,
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheWidget>> {
-        if !self.canvas.is_empty() && self.index < self.canvas.len() {
-            return self.canvas[self.index].get_widget(name, uuid);
+        for canvas in &mut self.canvas {
+            if let Some(widget) = canvas.get_widget(name, uuid) {
+                return Some(widget);
+            }
         }
+        // if !self.canvas.is_empty() && self.index < self.canvas.len() {
+        //     return self.canvas[self.index].get_widget(name, uuid);
+        // }
         None
     }
 

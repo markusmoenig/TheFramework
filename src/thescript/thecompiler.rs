@@ -125,8 +125,8 @@ pub struct TheCompiler {
 
     current: Function,
 
-    pub nodes: Vec<Node>,
-    current_node: Option<usize>,
+    pub objects: Vec<Object>,
+    current_object: Option<usize>,
 }
 
 impl Default for TheCompiler {
@@ -203,8 +203,8 @@ impl TheCompiler {
             rules,
             current: Function::new("script".to_string(), FunctionType::Script),
 
-            nodes: vec![],
-            current_node: None,
+            objects: vec![],
+            current_object: None,
         }
     }
 
@@ -247,20 +247,23 @@ impl TheCompiler {
     }
 
     fn declaration(&mut self) {
-        if self.indent() == 0 {
-            if self.matches(TokenType::Identifier) {
-                self.node_declaration();
-            } else if self.matches(TokenType::Let) {
-                self.var_declaration();
-            } else {
-                println!("{:?}", self.parser.previous.kind);
-                self.error_at_current("Expected node identifier or 'let'.");
-                self.advance();
-                if self.parser.panic_mode {
-                    self.synchronize();
-                }
-                return;
-            }
+        // if self.indent() == 0 {
+        //     if self.matches(TokenType::Identifier) {
+        //         self.object_declaration();
+        //     } else if self.matches(TokenType::Let) {
+        //         self.var_declaration();
+        //     } else {
+        //         println!("{:?}", self.parser.previous.kind);
+        //         self.error_at_current("Expected node identifier or 'let'.");
+        //         self.advance();
+        //         if self.parser.panic_mode {
+        //             self.synchronize();
+        //         }
+        //         return;
+        //     }
+
+        if self.matches(TokenType::Class) {
+            self.class_declaration();
         } else if self.matches(TokenType::Let) {
             self.var_declaration();
         } else {
@@ -272,12 +275,12 @@ impl TheCompiler {
         }
     }
 
-    fn node_declaration(&mut self) {
-        if self.current_node.is_none() && self.check(TokenType::Less) == true {
+    fn class_declaration(&mut self) {
+        if self.current_object.is_none() && self.check(TokenType::Less) {
             let node_type_name = self.parser.previous.lexeme.clone();
 
-            self.current_node = Some(self.nodes.len());
-            self.nodes.push(Node::new(node_type_name));
+            self.current_object = Some(self.objects.len());
+            self.objects.push(Object::new(node_type_name));
 
             // Read the properties
             while self.check(TokenType::Less) == true {
@@ -314,12 +317,12 @@ impl TheCompiler {
             }
             self.consume(TokenType::CodeBlock, "Expect '--' after node code block.");
         }
-        self.current_node = None;
+        self.current_object = None;
     }
 
-    fn gcn(&mut self) -> Option<&mut Node> {
-        if self.current_node.is_some() {
-            return Some(&mut self.nodes[self.current_node.unwrap()]);
+    fn gcn(&mut self) -> Option<&mut Object> {
+        if self.current_object.is_some() {
+            return Some(&mut self.objects[self.current_object.unwrap()]);
         }
         None
     }
@@ -827,10 +830,10 @@ impl TheCompiler {
     }
 
     fn current_chunk(&mut self) -> &mut TheChunk {
-        if self.current_node.is_some() {
-            return &mut self.gcn().unwrap().chunk;
+        if self.current_object.is_some() {
+            &mut self.gcn().unwrap().chunk
         } else {
-            return &mut self.current.function.chunk;
+            &mut self.current.function.chunk
         }
     }
 

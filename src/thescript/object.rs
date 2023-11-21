@@ -9,12 +9,12 @@ use crate::prelude::*;
 // }
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct Node {
+pub struct Object {
     pub name: String,
     pub chunk: TheChunk,
 }
 
-impl Node {
+impl Object {
     pub fn new(name: String) -> Self {
         println!("new node {}", name);
 

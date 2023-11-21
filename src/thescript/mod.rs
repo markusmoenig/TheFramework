@@ -1,5 +1,5 @@
 //pub mod render;
-pub mod node;
+pub mod object;
 pub mod thechunk;
 pub mod thecompiler;
 pub mod thescanner;
@@ -7,7 +7,7 @@ pub mod thevm;
 pub mod value;
 
 pub mod prelude {
-    pub use crate::thescript::node::*;
+    pub use crate::thescript::object::*;
     pub use crate::thescript::thechunk::*;
     pub use crate::thescript::thecompiler::*;
     pub use crate::thescript::thescanner::*;

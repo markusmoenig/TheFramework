@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+#[derive(PartialEq, Clone, Debug)]
 pub enum TheRGBAViewMode {
     Display,
     TileSelection,
@@ -24,8 +25,6 @@ pub struct TheRGBAView {
     selection_color: RGBA,
 
     mode: TheRGBAViewMode,
-    tile_map: FxHashMap<(i32, i32), Uuid>,
-    tiles: FxHashMap<Uuid, TheRGBATile>,
 
     dim: TheDim,
     is_dirty: bool,
@@ -59,9 +58,6 @@ impl TheWidget for TheRGBAView {
 
             mode: TheRGBAViewMode::Display,
 
-            tile_map: FxHashMap::default(),
-            tiles: FxHashMap::default(),
-
             dim: TheDim::zero(),
             is_dirty: true,
 
@@ -90,54 +86,63 @@ impl TheWidget for TheRGBAView {
                     redraw = true;
                 }
 
-                // Selection handling
-                if let Some(grid) = self.grid {
-                    if let Some(coord) = coord.to_vec2i() {
-                        let centered_offset_x = if (self.zoom * self.buffer.dim().width as f32)
-                            < self.dim.width as f32
-                        {
-                            (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32)
-                                / 2.0
-                        } else {
-                            0.0
-                        };
-                        let centered_offset_y = if (self.zoom * self.buffer.dim().height as f32)
-                            < self.dim.height as f32
-                        {
-                            (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32)
-                                / 2.0
-                        } else {
-                            0.0
-                        };
-
-                        let source_x = ((coord.x as f32 - centered_offset_x) / self.zoom
-                            + self.scroll_offset.x as f32)
-                            .round() as i32;
-                        let source_y = ((coord.y as f32 - centered_offset_y) / self.zoom
-                            + self.scroll_offset.y as f32)
-                            .round() as i32;
-
-                        if source_x >= 0
-                            && source_x < self.buffer.dim().width
-                            && source_y >= 0
-                            && source_y < self.buffer.dim().height
-                        {
-                            let grid_x = source_x / grid;
-                            let grid_y = source_y / grid;
-
-                            if grid_x * grid < self.buffer.dim().width
-                                && grid_y * grid < self.buffer.dim().height
+                if self.mode != TheRGBAViewMode::Display {
+                    if let Some(grid) = self.grid {
+                        if let Some(coord) = coord.to_vec2i() {
+                            let centered_offset_x = if (self.zoom * self.buffer.dim().width as f32)
+                                < self.dim.width as f32
                             {
-                                //println!("{} {}", grid_x, grid_y);
-                                if self.selected.contains(&(grid_x, grid_y)) {
-                                    self.selected.remove(&(grid_x, grid_y));
-                                } else {
-                                    self.selected.insert((grid_x, grid_y));
+                                (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32)
+                                    / 2.0
+                            } else {
+                                0.0
+                            };
+                            let centered_offset_y = if (self.zoom * self.buffer.dim().height as f32)
+                                < self.dim.height as f32
+                            {
+                                (self.dim.height as f32
+                                    - self.zoom * self.buffer.dim().height as f32)
+                                    / 2.0
+                            } else {
+                                0.0
+                            };
+
+                            let source_x = ((coord.x as f32 - centered_offset_x) / self.zoom
+                                + self.scroll_offset.x as f32)
+                                .round() as i32;
+                            let source_y = ((coord.y as f32 - centered_offset_y) / self.zoom
+                                + self.scroll_offset.y as f32)
+                                .round() as i32;
+
+                            if source_x >= 0
+                                && source_x < self.buffer.dim().width
+                                && source_y >= 0
+                                && source_y < self.buffer.dim().height
+                            {
+                                let grid_x = source_x / grid;
+                                let grid_y = source_y / grid;
+
+                                if grid_x * grid < self.buffer.dim().width
+                                    && grid_y * grid < self.buffer.dim().height
+                                {
+                                    println!("{} {}", grid_x, grid_y);
+                                    if self.mode == TheRGBAViewMode::TileSelection {
+                                        if self.selected.contains(&(grid_x, grid_y)) {
+                                            self.selected.remove(&(grid_x, grid_y));
+                                        } else {
+                                            self.selected.insert((grid_x, grid_y));
+                                        }
+                                    } else if self.mode == TheRGBAViewMode::TileEditor {
+                                        ctx.ui.send(TheEvent::TileEditorClicked(
+                                            self.id.clone(),
+                                            TheValue::Coordinate(vec2i(grid_x, grid_y)),
+                                        ));
+                                    }
                                 }
-                                redraw = true;
                             }
                         }
                     }
+                    redraw = true;
                 }
             }
             TheEvent::Hover(_coord) => {
@@ -347,6 +352,7 @@ impl TheWidget for TheRGBAView {
 
 pub trait TheRGBAViewTrait {
     fn buffer(&self) -> &TheRGBABuffer;
+    fn buffer_mut(&mut self) -> &mut TheRGBABuffer;
     fn set_buffer(&mut self, buffer: TheRGBABuffer);
     fn set_background(&mut self, color: RGBA);
     fn zoom(&self) -> f32;
@@ -364,12 +370,14 @@ pub trait TheRGBAViewTrait {
     fn selection_as_sequence(&self) -> TheRGBARegionSequence;
     fn set_selection(&mut self, selection: FxHashSet<(i32, i32)>);
     fn set_mode(&mut self, mode: TheRGBAViewMode);
-    fn set_tiles(&mut self, tiles: FxHashMap<Uuid, TheRGBATile>);
 }
 
 impl TheRGBAViewTrait for TheRGBAView {
     fn buffer(&self) -> &TheRGBABuffer {
         &self.buffer
+    }
+    fn buffer_mut(&mut self) -> &mut TheRGBABuffer {
+        &mut self.buffer
     }
     fn set_buffer(&mut self, buffer: TheRGBABuffer) {
         self.buffer = buffer;
@@ -449,9 +457,6 @@ impl TheRGBAViewTrait for TheRGBAView {
     fn set_selection(&mut self, selection: FxHashSet<(i32, i32)>) {
         self.selected = selection;
         self.is_dirty = true;
-    }
-    fn set_tiles(&mut self, tiles: FxHashMap<Uuid, TheRGBATile>) {
-        self.tiles = tiles;
     }
     fn set_mode(&mut self, mode: TheRGBAViewMode) {
         self.mode = mode;

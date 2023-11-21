@@ -24,6 +24,8 @@ pub enum TheEvent {
     GainedHover(TheId),
     LostHover(TheId),
 
+    TileEditorClicked(TheId, TheValue),
+
     // These events define layout states.
     SetStackIndex(TheId, usize),
     NewListItemSelected(TheId, TheId),
