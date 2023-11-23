@@ -351,6 +351,14 @@ impl TheUI {
         None
     }
 
+    /// Gets a given drop down menu by name
+    pub fn get_drop_down_menu(&mut self, name: &str) -> Option<&mut dyn TheDropdownMenuTrait> {
+        if let Some(drop_down_menu) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            return drop_down_menu.as_drop_down_menu();
+        }
+        None
+    }
+
     /// Gets a given layout by name
     pub fn get_layout(&mut self, name: &str) -> Option<&mut Box<dyn TheLayout>> {
         self.canvas.get_layout(Some(&name.to_string()), None)

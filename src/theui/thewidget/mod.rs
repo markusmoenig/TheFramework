@@ -182,6 +182,11 @@ pub trait TheWidget {
         None
     }
 
+    /// Attempts to cast to TheDropdownMenuTrait. Only valid for TheDropdownMenu.
+    fn as_drop_down_menu(&mut self) -> Option<&mut dyn TheDropdownMenuTrait> {
+        None
+    }
+
     /// Attempts to cast to TheHorizontalScrollbarTrait. Only valid for TheHorizontalScrollbar.
     fn as_horizontal_scrollbar(&mut self) -> Option<&mut dyn TheHorizontalScrollbarTrait> {
         None

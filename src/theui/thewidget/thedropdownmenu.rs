@@ -288,14 +288,22 @@ impl TheWidget for TheDropdownMenu {
 
         buffer
     }
+
+    fn as_drop_down_menu(&mut self) -> Option<&mut dyn TheDropdownMenuTrait> {
+        Some(self)
+    }
 }
 
 pub trait TheDropdownMenuTrait {
     fn add_option(&mut self, option: String);
+    fn selected_index(&self) -> usize;
 }
 
 impl TheDropdownMenuTrait for TheDropdownMenu {
     fn add_option(&mut self, option: String) {
         self.options.push(option);
+    }
+    fn selected_index(&self) -> usize {
+        self.selected as usize
     }
 }
