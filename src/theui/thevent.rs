@@ -24,6 +24,7 @@ pub enum TheEvent {
     GainedHover(TheId),
     LostHover(TheId),
 
+    TileSelectionChanged(TheId),
     TileEditorClicked(TheId, TheValue),
 
     // These events define layout states.

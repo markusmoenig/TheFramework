@@ -3,6 +3,7 @@ use crate::prelude::*;
 use super::TheThemeColors;
 
 pub struct TheDarkTheme {
+    temp_color: RGBA,
     colors: FxHashMap<TheThemeColors, RGBA>,
 }
 
@@ -86,7 +87,13 @@ impl TheTheme for TheDarkTheme {
         colors.insert(StatusbarStart, [84, 84, 84, 255]);
         colors.insert(StatusbarEnd, [99, 99, 99, 255]);
 
-        Self { colors }
+        colors.insert(DividerStart, [102, 102, 102, 255]);
+        colors.insert(DividerEnd, [148, 148, 148, 255]);
+
+        Self {
+            temp_color: BLACK,
+            colors,
+        }
     }
 
     fn color(&self, of: TheThemeColors) -> &RGBA {
@@ -95,5 +102,23 @@ impl TheTheme for TheDarkTheme {
         } else {
             &[0, 0, 0, 255]
         }
+    }
+
+    /// Returns the disabled color value for the given color
+    fn color_disabled(&mut self, of: TheThemeColors) -> &RGBA {
+        let mut d = *self.color(of);
+        d[0] = (d[0] as f32 * 0.75) as u8;
+        d[1] = (d[1] as f32 * 0.75) as u8;
+        d[2] = (d[2] as f32 * 0.75) as u8;
+        self.temp_color = d;
+        &self.temp_color
+    }
+
+    /// Returns the disabled color value for the given color
+    fn color_disabled_t(&mut self, of: TheThemeColors) -> &RGBA {
+        let mut d = *self.color(of);
+        d[3] = (d[3] as f32 * 0.75) as u8;
+        self.temp_color = d;
+        &self.temp_color
     }
 }

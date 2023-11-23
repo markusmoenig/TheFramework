@@ -44,6 +44,16 @@ impl TheSizeLimiter {
         self.max_size.x = width;
     }
 
+    /// Returns the max width.
+    pub fn get_max_width(&self) -> i32 {
+        self.max_size.x
+    }
+
+    /// Returns the max height.
+    pub fn get_max_height(&self) -> i32 {
+        self.max_size.y
+    }
+
     /// Sets the maximum height of the limiter.
     pub fn set_max_height(&mut self, height: i32) {
         self.max_size.y = height;

@@ -125,13 +125,15 @@ impl TheWidget for TheRGBAView {
                                 if grid_x * grid < self.buffer.dim().width
                                     && grid_y * grid < self.buffer.dim().height
                                 {
-                                    println!("{} {}", grid_x, grid_y);
+                                    //println!("{} {}", grid_x, grid_y);
                                     if self.mode == TheRGBAViewMode::TileSelection {
                                         if self.selected.contains(&(grid_x, grid_y)) {
                                             self.selected.remove(&(grid_x, grid_y));
                                         } else {
                                             self.selected.insert((grid_x, grid_y));
                                         }
+                                        ctx.ui
+                                            .send(TheEvent::TileSelectionChanged(self.id.clone()));
                                     } else if self.mode == TheRGBAViewMode::TileEditor {
                                         ctx.ui.send(TheEvent::TileEditorClicked(
                                             self.id.clone(),
@@ -368,6 +370,7 @@ pub trait TheRGBAViewTrait {
     fn selection_as_dim(&self) -> TheDim;
     fn selection_sorted(&self) -> Vec<(i32, i32)>;
     fn selection_as_sequence(&self) -> TheRGBARegionSequence;
+    fn selection_as_tile(&self) -> TheRGBATile;
     fn set_selection(&mut self, selection: FxHashSet<(i32, i32)>);
     fn set_mode(&mut self, mode: TheRGBAViewMode);
 }
@@ -406,6 +409,7 @@ impl TheRGBAViewTrait for TheRGBAView {
     }
     fn set_selection_color(&mut self, color: RGBA) {
         self.selection_color = color;
+        self.is_dirty = true;
     }
     fn selection(&self) -> FxHashSet<(i32, i32)> {
         self.selected.clone()
@@ -453,6 +457,13 @@ impl TheRGBAViewTrait for TheRGBAView {
             }
         }
         sequence
+    }
+    fn selection_as_tile(&self) -> TheRGBATile {
+        let sequence = self.selection_as_sequence();
+        let buffer = self.buffer.extract_sequence(&sequence);
+        let mut tile = TheRGBATile::new();
+        tile.buffer = buffer;
+        tile
     }
     fn set_selection(&mut self, selection: FxHashSet<(i32, i32)>) {
         self.selected = selection;

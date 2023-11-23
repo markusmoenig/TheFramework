@@ -14,8 +14,8 @@ impl TheStyle for TheClassicStyle {
         Self { dark }
     }
 
-    fn theme(&self) -> &Box<dyn TheTheme> {
-        &self.dark
+    fn theme(&mut self) -> &mut Box<dyn TheTheme> {
+        &mut self.dark
     }
 
     fn draw_widget_border(
@@ -50,6 +50,7 @@ impl TheStyle for TheClassicStyle {
         shrinker: &mut TheDimShrinker,
         ctx: &mut TheContext,
         embedded: bool,
+        disabled: bool,
     ) {
         let stride = buffer.stride();
 
@@ -59,7 +60,11 @@ impl TheStyle for TheClassicStyle {
                     buffer.pixels_mut(),
                     &widget.dim().to_buffer_shrunk_utuple(shrinker),
                     stride,
-                    self.theme().color(SelectedTextEditBorder1),
+                    if disabled {
+                        self.theme().color_disabled(SelectedTextEditBorder1)
+                    } else {
+                        self.theme().color(SelectedTextEditBorder1)
+                    },
                     2,
                 );
             }
@@ -71,14 +76,22 @@ impl TheStyle for TheClassicStyle {
                     buffer.pixels_mut(),
                     &widget.dim().to_buffer_shrunk_utuple(shrinker),
                     stride,
-                    self.theme().color(SelectedTextEditBorder2),
+                    if disabled {
+                        self.theme().color_disabled(SelectedTextEditBorder2)
+                    } else {
+                        self.theme().color(SelectedTextEditBorder2)
+                    },
                 );
             } else {
                 ctx.draw.rect_outline(
                     buffer.pixels_mut(),
                     &widget.dim().to_buffer_shrunk_utuple(shrinker),
                     stride,
-                    self.theme().color(TextEditBorder),
+                    if disabled {
+                        self.theme().color_disabled(TextEditBorder)
+                    } else {
+                        self.theme().color(TextEditBorder)
+                    },
                 );
             }
             shrinker.shrink(1);
@@ -88,7 +101,11 @@ impl TheStyle for TheClassicStyle {
                 buffer.pixels_mut(),
                 &widget.dim().to_buffer_shrunk_utuple(shrinker),
                 stride,
-                self.theme().color(TextEditBorder),
+                if disabled {
+                    self.theme().color_disabled(TextEditBorder)
+                } else {
+                    self.theme().color(TextEditBorder)
+                },
                 1,
             );
             shrinker.shrink(1);

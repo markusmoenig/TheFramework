@@ -1,8 +1,11 @@
 use crate::prelude::*;
 
+pub mod thecheckbutton;
 pub mod thecolorbutton;
 pub mod thedropdownmenu;
+pub mod thehdivider;
 pub mod thehorizontalscrollbar;
+pub mod theiconview;
 pub mod thelistitem;
 pub mod themenubar;
 pub mod themenubarbutton;
@@ -12,6 +15,7 @@ pub mod thesectionbar;
 pub mod thesectionbarbutton;
 pub mod theslider;
 pub mod thesnapperbar;
+pub mod thespacer;
 pub mod thestatusbar;
 pub mod theswitchbar;
 pub mod thetabbar;
@@ -52,9 +56,13 @@ pub mod prelude {
         TheVerticalScrollbar, TheVerticalScrollbarTrait,
     };
 
+    pub use crate::theui::thewidget::thecheckbutton::TheCheckButton;
+    pub use crate::theui::thewidget::thehdivider::TheHDivider;
+    pub use crate::theui::thewidget::theiconview::{TheIconView, TheIconViewTrait};
     pub use crate::theui::thewidget::thergbaview::{
         TheRGBAView, TheRGBAViewMode, TheRGBAViewTrait,
     };
+    pub use crate::theui::thewidget::thespacer::TheSpacer;
     pub use crate::theui::thewidget::thestatusbar::TheStatusbar;
     pub use crate::theui::thewidget::thetabbar::{TheTabbar, TheTabbarTrait};
     pub use crate::theui::thewidget::thetextedit::{TheTextEdit, TheTextEditTrait};
@@ -154,6 +162,14 @@ pub trait TheWidget {
     /// Sets the internal redraw flag of the widget to the given value.
     fn set_needs_redraw(&mut self, redraw: bool) {}
 
+    /// Returns true if the widget is disabled
+    fn disabled(&self) -> bool {
+        false
+    }
+
+    /// Set the disabled state of the widget
+    fn set_disabled(&mut self, disabled: bool) {}
+
     /// Process an user driven device event, returns true if we need to redraw.
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         false
@@ -188,6 +204,11 @@ pub trait TheWidget {
 
     /// Attempts to cast to TheTextLineEditTrait. Only valid for TheTextLineEdit.
     fn as_text_line_edit(&mut self) -> Option<&mut dyn TheTextLineEditTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheIconViewTrait. Only valid for TheIconView.
+    fn as_icon_view(&mut self) -> Option<&mut dyn TheIconViewTrait> {
         None
     }
 }

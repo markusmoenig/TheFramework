@@ -80,7 +80,6 @@ impl TheLayout for TheHLayout {
             self.dim = dim;
 
             let mut x = self.margin.x;
-            let y = self.margin.y;
 
             for w in &mut self.widgets {
                 w.calculate_size(ctx);
@@ -90,6 +89,14 @@ impl TheLayout for TheHLayout {
                 // Limit to visible area
                 if x + width > dim.width {
                     break;
+                }
+
+                let mut y = self.margin.y;
+                if self.dim.height > self.margin.y + self.margin.w {
+                    let off = (self.dim.height - self.margin.y - self.margin.w - height) / 2;
+                    if y + off + height < self.dim.height {
+                        y += off;
+                    }
                 }
 
                 w.set_dim(TheDim::new(dim.x + x, dim.y + y, width, height));

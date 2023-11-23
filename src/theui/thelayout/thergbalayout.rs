@@ -26,6 +26,9 @@ impl TheLayout for TheRGBALayout {
     where
         Self: Sized,
     {
+        let name = id.name.clone();
+        let rgba_view = TheRGBAView::new(TheId::named((name.clone() + " View").as_str()));
+
         Self {
             id,
             limiter: TheSizeLimiter::new(),
@@ -34,15 +37,15 @@ impl TheLayout for TheRGBALayout {
 
             widgets: vec![],
 
-            rgba_view: Box::new(TheRGBAView::new(TheId::named("RGBA View"))),
+            rgba_view: Box::new(rgba_view),
 
             vertical_scrollbar: Box::new(TheVerticalScrollbar::new(TheId::named(
-                "Vertical Scrollbar",
+                (name.clone() + " Vertical Scrollbar").as_str(),
             ))),
             vertical_scrollbar_visible: false,
 
             horizontal_scrollbar: Box::new(TheHorizontalScrollbar::new(TheId::named(
-                "Horizontal Scrollbar",
+                (name + " Horizontal Scrollbar").as_str(),
             ))),
             horizontal_scrollbar_visible: false,
 

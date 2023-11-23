@@ -4,6 +4,8 @@ pub struct TheTextLineEdit {
     id: TheId,
     limiter: TheSizeLimiter,
 
+    is_disabled: bool,
+
     text: String,
     original: String,
     position: usize,
@@ -27,6 +29,8 @@ impl TheWidget for TheTextLineEdit {
             id,
             limiter,
 
+            is_disabled: false,
+
             text: "".to_string(),
             original: "".to_string(),
             position: 0,
@@ -42,6 +46,17 @@ impl TheWidget for TheTextLineEdit {
 
     fn id(&self) -> &TheId {
         &self.id
+    }
+
+    fn disabled(&self) -> bool {
+        self.is_disabled
+    }
+
+    fn set_disabled(&mut self, disabled: bool) {
+        if disabled != self.is_disabled {
+            self.is_disabled = disabled;
+            self.is_dirty = true;
+        }
     }
 
     fn dim(&self) -> &TheDim {
@@ -79,6 +94,9 @@ impl TheWidget for TheTextLineEdit {
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         //println!("event ({}): {:?}", self.widget_id.name, event);
+        if self.is_disabled {
+            return false;
+        }
         match event {
             TheEvent::MouseDown(coord) => {
                 ctx.ui.set_focus(self.id());
@@ -245,15 +263,25 @@ impl TheWidget for TheTextLineEdit {
         let stride = buffer.stride();
         let mut shrinker = TheDimShrinker::zero();
         let embedded = self.embedded;
+        let disabled = self.is_disabled;
 
-        style.draw_text_edit_border(buffer, self, &mut shrinker, ctx, embedded);
+        style.draw_text_edit_border(buffer, self, &mut shrinker, ctx, embedded, disabled);
 
-        ctx.draw.rect(
-            buffer.pixels_mut(),
-            &self.dim.to_buffer_shrunk_utuple(&shrinker),
-            stride,
-            style.theme().color(TextEditBackground),
-        );
+        if !self.is_disabled {
+            ctx.draw.rect(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                stride,
+                style.theme().color(TextEditBackground),
+            );
+        } else {
+            ctx.draw.blend_rect(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                stride,
+                style.theme().color_disabled_t(TextEditBackground),
+            );
+        }
 
         shrinker.shrink_by(5, 0, 5, 0);
 

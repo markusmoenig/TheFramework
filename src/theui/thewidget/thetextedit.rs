@@ -319,7 +319,7 @@ impl TheWidget for TheTextEdit {
         let stride = buffer.stride();
         let mut shrinker = TheDimShrinker::zero();
 
-        style.draw_text_edit_border(buffer, self, &mut shrinker, ctx, true);
+        style.draw_text_edit_border(buffer, self, &mut shrinker, ctx, true, true);
 
         ctx.draw.rect(
             buffer.pixels_mut(),

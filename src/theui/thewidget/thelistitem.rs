@@ -7,6 +7,7 @@ pub struct TheListItem {
     state: TheWidgetState,
 
     text: String,
+    sub_text: String,
 
     dim: TheDim,
     is_dirty: bool,
@@ -31,6 +32,7 @@ impl TheWidget for TheListItem {
             state: TheWidgetState::None,
 
             text: "".to_string(),
+            sub_text: "".to_string(),
 
             dim: TheDim::zero(),
             is_dirty: true,
@@ -193,7 +195,7 @@ impl TheWidget for TheListItem {
                     buffer.pixels_mut(),
                     &(
                         ut.0 + 38 + 7 + 5,
-                        ut.1 + 7,
+                        ut.1 + 5,
                         (self.dim.width - 38 - 7 - 10) as usize,
                         13,
                     ),
@@ -205,6 +207,25 @@ impl TheWidget for TheListItem {
                     TheHorizontalAlign::Left,
                     TheVerticalAlign::Center,
                 );
+
+                if !self.sub_text.is_empty() {
+                    ctx.draw.text_rect_blend(
+                        buffer.pixels_mut(),
+                        &(
+                            ut.0 + 38 + 7 + 5,
+                            ut.1 + 22,
+                            (self.dim.width - 38 - 7 - 10) as usize,
+                            13,
+                        ),
+                        stride,
+                        font,
+                        12.0,
+                        &self.sub_text,
+                        style.theme().color(ListItemText),
+                        TheHorizontalAlign::Left,
+                        TheVerticalAlign::Center,
+                    );
+                }
             }
         } else {
             shrinker.shrink_by(9, 0, 0, 0);
@@ -234,6 +255,7 @@ impl TheWidget for TheListItem {
 
 pub trait TheListItemTrait {
     fn set_text(&mut self, text: String);
+    fn set_sub_text(&mut self, sub_text: String);
     fn set_associated_layout(&mut self, id: TheId);
     fn set_size(&mut self, size: i32);
     fn set_icon(&mut self, icon: TheRGBABuffer);
@@ -242,6 +264,10 @@ pub trait TheListItemTrait {
 impl TheListItemTrait for TheListItem {
     fn set_text(&mut self, text: String) {
         self.text = text;
+        self.is_dirty = true;
+    }
+    fn set_sub_text(&mut self, sub_text: String) {
+        self.sub_text = sub_text;
         self.is_dirty = true;
     }
     fn set_associated_layout(&mut self, layout_id: TheId) {

@@ -71,7 +71,7 @@ impl TheWidget for TheText {
         if let Some(font) = &ctx.ui.font {
             let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
             self.limiter_mut()
-                .set_max_size(vec2i((ceil(size.0 as f32) + 1.0) as i32, size.1 as i32));
+                .set_max_size(vec2i(size.0 as i32 + 1, size.1 as i32));
         }
     }
 

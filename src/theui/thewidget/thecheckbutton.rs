@@ -1,29 +1,28 @@
 use crate::prelude::*;
 
-pub struct TheColorButton {
+pub struct TheCheckButton {
     id: TheId,
     limiter: TheSizeLimiter,
     state: TheWidgetState,
 
     dim: TheDim,
-    color: RGBA,
     is_dirty: bool,
 }
 
-impl TheWidget for TheColorButton {
+impl TheWidget for TheCheckButton {
     fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(20, 20));
+        limiter.set_max_size(vec2i(16, 18));
+
         Self {
             id,
             limiter,
             state: TheWidgetState::None,
 
             dim: TheDim::zero(),
-            color: WHITE,
             is_dirty: false,
         }
     }
@@ -38,16 +37,28 @@ impl TheWidget for TheColorButton {
         // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
             TheEvent::MouseDown(_coord) => {
-                if self.state == TheWidgetState::Selected {
-                    self.state = TheWidgetState::None;
-                    ctx.ui.send_widget_state_changed(self.id(), self.state);
-                } else if self.state != TheWidgetState::Selected {
+                if self.state != TheWidgetState::Selected {
                     self.state = TheWidgetState::Selected;
-                    ctx.ui.send_widget_state_changed(self.id(), self.state);
+                } else {
+                    self.state = TheWidgetState::None;
                 }
+
+                ctx.ui.set_focus(self.id());
+                ctx.ui.send_widget_state_changed(self.id(), self.state);
                 self.is_dirty = true;
                 redraw = true;
             }
+            TheEvent::Hover(_coord) => {
+                if self.state != TheWidgetState::Selected && !self.id().equals(&ctx.ui.hover) {
+                    self.is_dirty = true;
+                    ctx.ui.set_hover(self.id());
+                    redraw = true;
+                }
+            }
+            // TheEvent::MouseUp(_coord) => {
+            //     self.is_dirty = true;
+            //     redraw = true;
+            // }
             _ => {}
         }
         redraw
@@ -68,11 +79,6 @@ impl TheWidget for TheColorButton {
         }
     }
 
-    fn set_state(&mut self, state: TheWidgetState) {
-        self.state = state;
-        self.is_dirty = true;
-    }
-
     fn limiter(&self) -> &TheSizeLimiter {
         &self.limiter
     }
@@ -89,55 +95,53 @@ impl TheWidget for TheColorButton {
         self.is_dirty = redraw;
     }
 
+    fn state(&self) -> TheWidgetState {
+        self.state
+    }
+
+    fn set_state(&mut self, state: TheWidgetState) {
+        self.state = state;
+        self.is_dirty = true;
+    }
+
+    fn supports_hover(&mut self) -> bool {
+        true
+    }
+
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
         _style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
-        let stride: usize = buffer.stride();
-        let mut shrinker = TheDimShrinker::zero();
+        let stride = buffer.stride();
 
         if !self.dim().is_valid() {
             return;
         }
 
-        //style.draw_widget_border(buffer, self, &mut shrinker, ctx);
+        let mut icon_name = "dark_checkbutton_normal".to_string();
 
-        ctx.draw.rect_outline_border(
-            buffer.pixels_mut(),
-            &self.dim.to_buffer_shrunk_utuple(&shrinker),
-            stride,
-            &self.color,
-            1,
-        );
+        if self.id().equals(&ctx.ui.hover) || self.id().equals(&ctx.ui.focus) {
+            icon_name = "dark_checkbutton_focus".to_string();
+        }
 
         if self.state == TheWidgetState::Selected {
-            shrinker.shrink(1);
-            ctx.draw.rect(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                &self.color,
+            icon_name += "_selected";
+        }
+
+        if let Some(icon) = ctx.ui.icon(icon_name.as_str()) {
+            let utuple = self.dim.to_buffer_utuple();
+            let r = (
+                (utuple.0 + (utuple.2 - icon.dim().width as usize) / 2),
+                utuple.1 + 3,
+                icon.dim().width as usize,
+                icon.dim().height as usize,
             );
-            ctx.draw.rect(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                &self.color,
-            );
+            ctx.draw
+                .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
         }
 
         self.is_dirty = false;
-    }
-}
-
-pub trait TheColorColorButtonTrait {
-    fn set_color(&mut self, color: RGBA);
-}
-
-impl TheColorColorButtonTrait for TheColorButton {
-    fn set_color(&mut self, color: RGBA) {
-        self.color = color;
     }
 }

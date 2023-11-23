@@ -14,7 +14,7 @@ pub trait TheStyle {
 
     #[allow(clippy::borrowed_box)]
     /// Returns the current theme of the style
-    fn theme(&self) -> &Box<dyn TheTheme>;
+    fn theme(&mut self) -> &mut Box<dyn TheTheme>;
 
     /// Draw the widget border
     fn draw_widget_border(
@@ -34,6 +34,7 @@ pub trait TheStyle {
         shrinker: &mut TheDimShrinker,
         ctx: &mut TheContext,
         draw_focus: bool,
+        disabled: bool,
     ) {
     }
 }
