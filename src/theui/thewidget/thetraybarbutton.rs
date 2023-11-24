@@ -5,6 +5,8 @@ pub struct TheTraybarButton {
     limiter: TheSizeLimiter,
     state: TheWidgetState,
 
+    is_disabled: bool,
+
     icon_name: String,
     icon_offset: Vec2i,
 
@@ -36,6 +38,7 @@ impl TheWidget for TheTraybarButton {
 
             dim: TheDim::zero(),
             is_dirty: false,
+            is_disabled: false,
         }
     }
 
@@ -45,6 +48,7 @@ impl TheWidget for TheTraybarButton {
 
     #[allow(clippy::single_match)]
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
+        if self.is_disabled { return false; }
         let mut redraw = false;
         //println!("event ({}): {:?}", self.id.name, event);
         match event {
@@ -89,6 +93,18 @@ impl TheWidget for TheTraybarButton {
         if self.dim != dim {
             self.dim = dim;
             self.is_dirty = true;
+        }
+    }
+
+    fn disabled(&self) -> bool {
+        self.is_disabled
+    }
+
+    fn set_disabled(&mut self, disabled: bool) {
+        if disabled != self.is_disabled {
+            self.is_disabled = disabled;
+            self.is_dirty = true;
+            self.state = TheWidgetState::None;
         }
     }
 
@@ -144,7 +160,26 @@ impl TheWidget for TheTraybarButton {
             return;
         }
 
-        if self.state == TheWidgetState::None && !self.id().equals(&ctx.ui.hover) {
+        if self.is_disabled {
+            ctx.draw.rect_outline_border(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                stride,
+                style.theme().color(TraybarButtonDisabledBorder),
+                1,
+            );
+
+            shrinker.shrink(1);
+
+            ctx.draw.rect(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                stride,
+                style.theme().color(TraybarButtonDisabledBackground),
+            );
+        }
+
+        if !self.is_disabled && self.state == TheWidgetState::None && !self.id().equals(&ctx.ui.hover) {
             ctx.draw.rect_outline_border(
                 buffer.pixels_mut(),
                 &self.dim.to_buffer_shrunk_utuple(&shrinker),
@@ -163,7 +198,7 @@ impl TheWidget for TheTraybarButton {
             );
         }
 
-        if self.state != TheWidgetState::None || self.id().equals(&ctx.ui.hover) {
+        if !self.is_disabled && self.state != TheWidgetState::None || self.id().equals(&ctx.ui.hover) {
             if self.state == TheWidgetState::Clicked {
                 ctx.draw.rect_outline_border(
                     buffer.pixels_mut(),

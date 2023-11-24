@@ -247,6 +247,8 @@ pub trait TheListLayoutTrait {
     fn new_item_selected(&mut self, item: TheId);
     /// Remove all items.
     fn clear(&mut self);
+    /// Remove the given list item from the list.
+    fn remove(&mut self, id: TheId);
     /// Deselect all items.
     fn deselect_all(&mut self);
     /// Returns the id of the selected item (if any).
@@ -272,6 +274,11 @@ impl TheListLayoutTrait for TheListLayout {
 
     fn clear(&mut self) {
         self.widgets.clear();
+        self.is_dirty = true;
+    }
+
+    fn remove(&mut self, id: TheId) {
+        self.widgets.retain(|item| *item.id() != id);
         self.is_dirty = true;
     }
 

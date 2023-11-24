@@ -7,6 +7,12 @@ pub struct TheId {
     pub uuid: Uuid,
 }
 
+impl PartialEq for TheId {
+    fn eq(&self, other: &Self) -> bool {
+        self.uuid == other.uuid
+    }
+}
+
 impl TheId {
     /// Creates an Id based on a given name.
     pub fn named(name: &str) -> Self {

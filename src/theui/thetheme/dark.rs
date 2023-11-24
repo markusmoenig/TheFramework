@@ -65,6 +65,8 @@ impl TheTheme for TheDarkTheme {
         colors.insert(TraybarButtonHoverBorder, [179, 179, 179, 255]);
         colors.insert(TraybarButtonClicked, [149, 149, 149, 255]);
         colors.insert(TraybarButtonClickedBorder, [204, 204, 204, 255]);
+        colors.insert(TraybarButtonDisabledBorder, [111, 111, 111, 255]);
+        colors.insert(TraybarButtonDisabledBackground, [119, 119, 119, 255]);
 
         colors.insert(ListLayoutBackground, [82, 82, 82, 255]);
         colors.insert(ListItemNormal, [174, 174, 174, 255]);
@@ -96,11 +98,20 @@ impl TheTheme for TheDarkTheme {
         }
     }
 
+    /// Return the given theme color.
     fn color(&self, of: TheThemeColors) -> &RGBA {
         if let Some(color) = self.colors.get(&of) {
             color
         } else {
             &[0, 0, 0, 255]
+        }
+    }
+
+    fn color_disabled_switch(&mut self, of: TheThemeColors, disabled: bool) -> &RGBA {
+        if disabled {
+            self.color_disabled(of)
+        } else {
+            self.color(of)
         }
     }
 

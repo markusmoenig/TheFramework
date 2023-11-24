@@ -16,6 +16,9 @@ pub trait TheTheme {
     /// Returns the color of the given theme color.
     fn color(&self, of: TheThemeColors) -> &RGBA;
 
+    /// Returns the given color or its disabled version.
+    fn color_disabled_switch(&mut self, of: TheThemeColors, disabled: bool) -> &RGBA;
+
     /// Returns the disabled color value for the given color
     fn color_disabled(&mut self, of: TheThemeColors) -> &RGBA;
 
@@ -76,6 +79,8 @@ pub enum TheThemeColors {
     TraybarButtonHoverBorder,
     TraybarButtonClicked,
     TraybarButtonClickedBorder,
+    TraybarButtonDisabledBorder,
+    TraybarButtonDisabledBackground,
 
     ListLayoutBackground,
     ListItemNormal,
