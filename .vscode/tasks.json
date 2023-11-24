@@ -19,6 +19,23 @@
             }
         },
         {
+            "label": "cargo run code demo",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run",
+                "--release",
+                "--package",
+                "codedemo",
+                // "--",
+                // "arg1"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
             "label": "cargo run circle",
             "type": "shell",
             "command": "cargo",
