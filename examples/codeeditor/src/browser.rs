@@ -16,7 +16,6 @@ impl Browser {
     pub fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
         let mut canvas = TheCanvas::new();
 
-
         let mut tab_layout = TheTabLayout::new(TheId::named("TabLayout"));
         tab_layout.limiter_mut().set_max_height(222);
 
@@ -33,7 +32,6 @@ impl Browser {
         canvas.set_layout(tab_layout);
 
         ui.canvas.set_bottom(canvas);
-
     }
 
     #[allow(clippy::single_match)]

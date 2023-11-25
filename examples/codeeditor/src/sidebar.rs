@@ -16,7 +16,6 @@ impl Sidebar {
     }
 
     pub fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
-
         /*
         let mut sectionbar_canvas = TheCanvas::new();
 

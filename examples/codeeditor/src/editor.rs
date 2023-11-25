@@ -11,6 +11,23 @@ impl TheTrait for CodeEditor {
     where
         Self: Sized,
     {
+        let mut code_ctx = TheCodeContext::new();
+
+        code_ctx
+            .code
+            .insert((0, 0), TheAtom::Value(TheValue::Int(2)));
+        code_ctx.code.insert((2, 0), TheAtom::Add());
+        code_ctx
+            .code
+            .insert((1, 0), TheAtom::Value(TheValue::Int(5)));
+
+        let mut compiler = TheCompiler::new();
+        let rc = compiler.compile(code_ctx);
+
+        if let Ok(mut pipe) = rc {
+            pipe.execute();
+        }
+
         Self {
             sidebar: Sidebar::new(),
             browser: Browser::new(),
@@ -18,7 +35,6 @@ impl TheTrait for CodeEditor {
     }
 
     fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
-
         // Top
         let mut top_canvas = TheCanvas::new();
 

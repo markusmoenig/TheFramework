@@ -48,7 +48,9 @@ impl TheWidget for TheTraybarButton {
 
     #[allow(clippy::single_match)]
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
-        if self.is_disabled { return false; }
+        if self.is_disabled {
+            return false;
+        }
         let mut redraw = false;
         //println!("event ({}): {:?}", self.id.name, event);
         match event {
@@ -179,7 +181,10 @@ impl TheWidget for TheTraybarButton {
             );
         }
 
-        if !self.is_disabled && self.state == TheWidgetState::None && !self.id().equals(&ctx.ui.hover) {
+        if !self.is_disabled
+            && self.state == TheWidgetState::None
+            && !self.id().equals(&ctx.ui.hover)
+        {
             ctx.draw.rect_outline_border(
                 buffer.pixels_mut(),
                 &self.dim.to_buffer_shrunk_utuple(&shrinker),
@@ -198,7 +203,9 @@ impl TheWidget for TheTraybarButton {
             );
         }
 
-        if !self.is_disabled && self.state != TheWidgetState::None || self.id().equals(&ctx.ui.hover) {
+        if !self.is_disabled && self.state != TheWidgetState::None
+            || self.id().equals(&ctx.ui.hover)
+        {
             if self.state == TheWidgetState::Clicked {
                 ctx.draw.rect_outline_border(
                     buffer.pixels_mut(),

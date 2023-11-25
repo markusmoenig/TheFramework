@@ -86,9 +86,11 @@ impl TheWidget for TheIconView {
                 ),
                 stride,
                 self.tile.buffer[self.index].pixels(),
-                &(self.tile.buffer[0].dim().width as usize, self.tile.buffer[0].dim().height as usize),
-                1.0
-
+                &(
+                    self.tile.buffer[0].dim().width as usize,
+                    self.tile.buffer[0].dim().height as usize,
+                ),
+                1.0,
             );
         }
 

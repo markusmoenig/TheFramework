@@ -1,24 +1,22 @@
 use crate::prelude::*;
 
-pub type TheExeNodeCall =
-    fn(ops: Vec<TheValue>, values: Vec<TheValue>) -> TheValue;
+pub type TheExeNodeCall = fn(stack: &mut Vec<TheValue>, values: &Vec<TheValue>);
 
+#[derive(Clone)]
 pub struct TheExeNode {
     pub call: TheExeNodeCall,
-    pub values: Vec<TheValue>
+    pub values: Vec<TheValue>,
 }
 
 impl TheExeNode {
     pub fn new(call: TheExeNodeCall, values: Vec<TheValue>) -> Self {
-        Self {
-            call,
-            values
-        }
+        Self { call, values }
     }
 }
 
+#[derive(Clone)]
 pub struct TheExePipeline {
-    pub nodes: Vec<TheExeNode>
+    pub nodes: Vec<TheExeNode>,
 }
 
 impl Default for TheExePipeline {
@@ -29,8 +27,19 @@ impl Default for TheExePipeline {
 
 impl TheExePipeline {
     pub fn new() -> Self {
-        Self {
-            nodes: vec![]
+        Self { nodes: vec![] }
+    }
+
+    pub fn add(&mut self, node: TheExeNode) {
+        self.nodes.push(node);
+    }
+
+    pub fn execute(&mut self) {
+        let mut stack: Vec<TheValue> = Vec::with_capacity(10);
+
+        for n in &self.nodes {
+            (n.call)(&mut stack, &n.values);
+            println!("{:?}", stack);
         }
     }
 }

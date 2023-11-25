@@ -382,10 +382,7 @@ impl TheUI {
 
     /// Set the disabled state of the given widget.
     pub fn set_widget_disabled_state(&mut self, name: &str, ctx: &mut TheContext, disabled: bool) {
-        if let Some(widget) = self
-            .canvas
-            .get_widget(Some(&name.to_string()), None)
-        {
+        if let Some(widget) = self.canvas.get_widget(Some(&name.to_string()), None) {
             widget.set_disabled(disabled);
             if disabled && widget.id().equals(&ctx.ui.hover) {
                 ctx.ui.clear_hover();
