@@ -16,10 +16,14 @@ impl TheTrait for CodeEditor {
         code_ctx
             .code
             .insert((0, 0), TheAtom::Value(TheValue::Int(2)));
-        code_ctx.code.insert((2, 0), TheAtom::Add());
+        code_ctx.code.insert((1, 0), TheAtom::Add());
         code_ctx
             .code
-            .insert((1, 0), TheAtom::Value(TheValue::Int(5)));
+            .insert((2, 0), TheAtom::Value(TheValue::Int(5)));
+        code_ctx.code.insert((3, 0), TheAtom::Multiply());
+        code_ctx
+            .code
+            .insert((4, 0), TheAtom::Value(TheValue::Int(5)));
 
         let mut compiler = TheCompiler::new();
         let rc = compiler.compile(code_ctx);

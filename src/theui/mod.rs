@@ -392,4 +392,15 @@ impl TheUI {
             }
         }
     }
+
+    #[cfg(feature = "code")]
+    pub fn create_code_list(&self, ctx: &mut TheContext) -> TheListLayout {
+        let mut code_layout = TheListLayout::new(TheId::named("Code List"));
+
+        let mut item = TheListItem::new(TheId::empty());
+        item.set_text("Value".to_string());
+        code_layout.add_item(item, ctx);
+
+        code_layout
+    }
 }

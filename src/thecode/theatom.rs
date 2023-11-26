@@ -1,17 +1,18 @@
 use crate::prelude::*;
 
-#[derive(Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum TheAtom {
-    Error,
     Value(TheValue),
     Add(),
+    Multiply(),
+    Stop,
 }
 
 impl TheAtom {
     pub fn to_node(&self) -> TheExeNode {
         match self {
-            TheAtom::Error => {
-                let call: TheExeNodeCall = |stack: &mut Vec<TheValue>, values: &Vec<TheValue>| {};
+            TheAtom::Stop => {
+                let call: TheExeNodeCall = |_stack: &mut Vec<TheValue>, _values: &Vec<TheValue>| {};
                 TheExeNode::new(call, vec![])
             }
             TheAtom::Value(value) => {
@@ -30,14 +31,24 @@ impl TheAtom {
 
                 TheExeNode::new(call, vec![])
             }
+            TheAtom::Multiply() => {
+                let call: TheExeNodeCall = |stack: &mut Vec<TheValue>, _values: &Vec<TheValue>| {
+                    let a = stack.pop().unwrap().to_i32().unwrap();
+                    let b = stack.pop().unwrap().to_i32().unwrap();
+                    stack.push(TheValue::Int(a * b));
+                };
+
+                TheExeNode::new(call, vec![])
+            }
         }
     }
 
     pub fn to_kind(&self) -> TheAtomKind {
         match self {
-            TheAtom::Error => TheAtomKind::Error,
-            TheAtom::Value(value) => TheAtomKind::Number,
+            TheAtom::Stop => TheAtomKind::Eof,
+            TheAtom::Value(_value) => TheAtomKind::Number,
             TheAtom::Add() => TheAtomKind::Plus,
+            TheAtom::Multiply() => TheAtomKind::Star,
         }
     }
 }

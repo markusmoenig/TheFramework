@@ -113,9 +113,11 @@ impl TheWidget for TheSwitchbar {
         shrinker.shrink_by(30, 1, 0, 0);
 
         if let Some(font) = &ctx.ui.font {
+            let mut r = self.dim.to_buffer_shrunk_utuple(&shrinker);
+            r.3 = 21;
             ctx.draw.text_rect_blend(
                 buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                &r,
                 stride,
                 font,
                 15.0,

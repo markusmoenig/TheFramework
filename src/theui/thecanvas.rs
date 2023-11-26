@@ -2,6 +2,7 @@ use crate::prelude::*;
 
 pub struct TheCanvas {
     pub uuid: Uuid,
+    pub limiter: TheSizeLimiter,
 
     /// The relative offset to the parent canvas
     pub offset: Vec2i,
@@ -34,6 +35,7 @@ impl TheCanvas {
     pub fn new() -> Self {
         Self {
             uuid: Uuid::new_v4(),
+            limiter: TheSizeLimiter::new(),
 
             offset: Vec2i::zero(),
 
@@ -65,23 +67,13 @@ impl TheCanvas {
     }
 
     /// Returns a reference to the limiter of the widget.
-    fn _limiter(&self) -> Option<&TheSizeLimiter> {
-        if let Some(widget) = &self.widget {
-            return Some(widget.limiter());
-        } else if let Some(layout) = &self.layout {
-            return Some(layout.limiter());
-        }
-        None
+    fn limiter(&self) -> &TheSizeLimiter {
+        & self.limiter
     }
 
     /// Returns a mutable reference to the limiter of the widget.
-    fn _limiter_mut(&mut self) -> Option<&mut TheSizeLimiter> {
-        if let Some(widget) = &mut self.widget {
-            return Some(widget.limiter_mut());
-        } else if let Some(layout) = &mut self.layout {
-            return Some(layout.limiter_mut());
-        }
-        None
+    pub fn limiter_mut(&mut self) -> &mut TheSizeLimiter {
+        &mut self.limiter
     }
 
     /// Returns the width of the limiter considering the maximum width of the widget.
@@ -90,6 +82,8 @@ impl TheCanvas {
             return widget.limiter().get_width(max_width);
         } else if let Some(layout) = &self.layout {
             return layout.limiter().get_width(max_width);
+        } else if let Some(center) = &self.center {
+            return center.limiter().get_width(max_width);
         }
         max_width
     }
@@ -100,6 +94,8 @@ impl TheCanvas {
             return widget.limiter().get_height(max_height);
         } else if let Some(layout) = &self.layout {
             return layout.limiter().get_height(max_height);
+        } else if let Some(center) = &self.center {
+            return center.limiter().get_height(max_height);
         }
         max_height
     }
@@ -416,6 +412,8 @@ impl TheCanvas {
         }
 
         if let Some(center) = &mut self.center {
+            //let width = center.get_limiter_width(w);
+
             center.set_dim(TheDim::new(x, y, w, h), ctx);
             center.offset = vec2i(buffer_x, buffer_y);
         } else {
