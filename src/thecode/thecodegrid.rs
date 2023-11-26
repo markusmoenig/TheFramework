@@ -1,16 +1,17 @@
 use crate::prelude::*;
 
-pub struct TheCodeContext {
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct TheCodeGrid {
     pub code: FxHashMap<(u32, u32), TheAtom>,
 }
 
-impl Default for TheCodeContext {
+impl Default for TheCodeGrid {
     fn default() -> Self {
-        TheCodeContext::new()
+        TheCodeGrid::new()
     }
 }
 
-impl TheCodeContext {
+impl TheCodeGrid {
     pub fn new() -> Self {
         Self {
             code: FxHashMap::default(),

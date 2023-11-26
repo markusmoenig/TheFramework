@@ -68,7 +68,7 @@ impl TheCanvas {
 
     /// Returns a reference to the limiter of the widget.
     fn limiter(&self) -> &TheSizeLimiter {
-        & self.limiter
+        &self.limiter
     }
 
     /// Returns a mutable reference to the limiter of the widget.

@@ -11,7 +11,7 @@ impl TheTrait for CodeEditor {
     where
         Self: Sized,
     {
-        let mut code_ctx = TheCodeContext::new();
+        let mut code_ctx = TheCodeGrid::new();
 
         code_ctx
             .code
@@ -83,12 +83,14 @@ impl TheTrait for CodeEditor {
         //
 
         ui.canvas.set_top(top_canvas);
-        ui.canvas
-            .set_widget(TheColorButton::new(TheId::named("White")));
+
+        let code_layout = TheCodeLayout::new(TheId::named("Code Layout"));
+
+        ui.canvas.set_layout(code_layout);
     }
 
     fn update_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
         //self.sidebar.update_ui(ui, ctx)
-        true
+        false
     }
 }

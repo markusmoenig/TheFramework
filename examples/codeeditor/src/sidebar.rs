@@ -16,13 +16,10 @@ impl Sidebar {
     }
 
     pub fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
-
         let width = 320;
 
         let mut text_layout: TheTextLayout = TheTextLayout::new(TheId::named("Values Layout"));
-        text_layout
-            .limiter_mut()
-            .set_max_width(width);
+        text_layout.limiter_mut().set_max_width(width);
 
         // let name_edit = TheTextLineEdit::new(TheId::named("Region Name Edit"));
         // text_layout.add_pair("Name".to_string(), Box::new(name_edit));
@@ -37,9 +34,7 @@ impl Sidebar {
         let mut list_canvas = TheCanvas::new();
 
         let mut code_layout = ui.create_code_list(ctx);
-        code_layout
-            .limiter_mut()
-            .set_max_size(vec2i(width, 400));
+        code_layout.limiter_mut().set_max_size(vec2i(width, 400));
         list_canvas.set_layout(code_layout);
         list_canvas.set_top(list_header);
 

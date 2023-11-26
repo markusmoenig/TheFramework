@@ -1,6 +1,8 @@
 use crate::prelude::*;
 
 pub mod thecheckbutton;
+#[cfg(feature = "code")]
+pub mod thecodeview;
 pub mod thecolorbutton;
 pub mod thedropdownmenu;
 pub mod thehdivider;
@@ -69,6 +71,9 @@ pub mod prelude {
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
     pub use crate::theui::thewidget::thetraybar::TheTraybar;
     pub use crate::theui::thewidget::thetraybarbutton::{TheTraybarButton, TheTraybarButtonTrait};
+
+    #[cfg(feature = "code")]
+    pub use crate::theui::thewidget::thecodeview::{TheCodeView, TheCodeViewTrait};
 
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetState;
@@ -214,6 +219,11 @@ pub trait TheWidget {
 
     /// Attempts to cast to TheIconViewTrait. Only valid for TheIconView.
     fn as_icon_view(&mut self) -> Option<&mut dyn TheIconViewTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheCodeViewTrait. Only valid for TheCodeView.
+    fn as_code_view(&mut self) -> Option<&mut dyn TheCodeViewTrait> {
         None
     }
 }

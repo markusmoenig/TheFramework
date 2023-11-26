@@ -116,7 +116,7 @@ impl TheCompiler {
         }
     }
 
-    pub fn compile(&mut self, ctx: TheCodeContext) -> Result<TheExePipeline, String> {
+    pub fn compile(&mut self, ctx: TheCodeGrid) -> Result<TheExePipeline, String> {
         self.pipe = TheExePipeline::new();
 
         let mut code = vec![];
@@ -145,7 +145,6 @@ impl TheCompiler {
         while !self.matches(TheAtomKind::Eof) {
             self.parse_precedence(ThePrecedence::Assignment);
         }
-
 
         Ok(self.pipe.clone())
     }
@@ -255,7 +254,9 @@ impl TheCompiler {
     /// Error at the given token
     fn error_at(&mut self, _token: TheAtom, message: &str) {
         println!("error {}", message);
-        if self.parser.panic_mode { return; }
+        if self.parser.panic_mode {
+            return;
+        }
         self.parser.panic_mode = true;
         self.parser.error_message = message.to_owned();
         //self.parser.error_line = self.parser.previous.line;
