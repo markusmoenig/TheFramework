@@ -343,6 +343,11 @@ impl TheUI {
         self.canvas.get_widget(Some(&name.to_string()), None)
     }
 
+    /// Gets a given widget by id
+    pub fn get_widget_id(&mut self, id: Uuid) -> Option<&mut Box<dyn TheWidget>> {
+        self.canvas.get_widget(None, Some(&id))
+    }
+
     /// Gets a given text line edit by name
     pub fn get_text_line_edit(&mut self, name: &str) -> Option<&mut dyn TheTextLineEditTrait> {
         if let Some(text_line_edit) = self.canvas.get_widget(Some(&name.to_string()), None) {
@@ -374,8 +379,17 @@ impl TheUI {
 
     /// Gets a given TheRGBALayout by name
     pub fn get_rgba_layout(&mut self, name: &str) -> Option<&mut dyn TheRGBALayoutTrait> {
-        if let Some(text_line_edit) = self.canvas.get_layout(Some(&name.to_string()), None) {
-            return text_line_edit.as_rgba_layout();
+        if let Some(layout) = self.canvas.get_layout(Some(&name.to_string()), None) {
+            return layout.as_rgba_layout();
+        }
+        None
+    }
+
+    /// Gets a given TheRGBALayout by name
+    #[cfg(feature = "code")]
+    pub fn get_code_layout(&mut self, name: &str) -> Option<&mut dyn TheCodeLayoutTrait> {
+        if let Some(layout) = self.canvas.get_layout(Some(&name.to_string()), None) {
+            return layout.as_code_layout();
         }
         None
     }
@@ -397,10 +411,22 @@ impl TheUI {
     pub fn create_code_list(&self, ctx: &mut TheContext) -> TheListLayout {
         let mut code_layout = TheListLayout::new(TheId::named("Code List"));
 
-        let mut item = TheListItem::new(TheId::empty());
+        let mut item = TheListItem::new(TheId::named("Code List Item"));
         item.set_text("Value".to_string());
         code_layout.add_item(item, ctx);
 
         code_layout
+    }
+
+    #[cfg(feature = "code")]
+    pub fn create_code_atom(&self, name: &str) -> TheAtom {
+        match name  {
+            "Integer" => {
+                TheAtom::Value(TheValue::Int(10))
+            }
+            _ => {
+                TheAtom::Stop
+            }
+        }
     }
 }

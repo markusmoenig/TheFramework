@@ -84,13 +84,12 @@ impl TheTrait for CodeEditor {
 
         ui.canvas.set_top(top_canvas);
 
-        let code_layout = TheCodeLayout::new(TheId::named("Code Layout"));
+        let code_layout = TheCodeLayout::new(TheId::named("Code Editor"));
 
         ui.canvas.set_layout(code_layout);
     }
 
     fn update_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
-        //self.sidebar.update_ui(ui, ctx)
-        false
+        self.sidebar.update_ui(ui, ctx)
     }
 }

@@ -127,7 +127,7 @@ pub trait TheWidget {
     fn set_state(&mut self, state: TheWidgetState) {}
 
     /// Get the widget value.
-    fn value(&mut self) -> TheValue {
+    fn value(&self) -> TheValue {
         TheValue::Empty
     }
 

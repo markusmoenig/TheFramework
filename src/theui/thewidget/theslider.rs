@@ -90,7 +90,7 @@ impl TheWidget for TheSlider {
         true
     }
 
-    fn value(&mut self) -> TheValue {
+    fn value(&self) -> TheValue {
         self.value.clone()
     }
 

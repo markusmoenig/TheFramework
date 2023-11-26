@@ -120,6 +120,10 @@ impl TheWidget for TheListItem {
         true
     }
 
+    fn value(&self) -> TheValue {
+        TheValue::Text(self.text.clone())
+    }
+
     fn set_value(&mut self, value: TheValue) {
         match value {
             TheValue::Empty => {

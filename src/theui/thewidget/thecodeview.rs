@@ -24,7 +24,7 @@ pub struct TheCodeView {
 
     grid: Option<i32>,
     grid_color: RGBA,
-    selected: Option<(i32, i32)>,
+    selected: Option<(u32, u32)>,
     selection_color: RGBA,
 
     mode: TheRGBAViewMode,
@@ -99,6 +99,7 @@ impl TheWidget for TheCodeView {
                 if let Some(coord) = coord.to_vec2i() {
                     self.selected = self.get_code_grid_offset(coord);
                     self.code_is_dirty = true;
+                    ctx.ui.send(TheEvent::CodeEditorSelectionChanged(self.id().clone(), self.selected));
                 }
 
                 redraw = true;
@@ -162,7 +163,7 @@ impl TheWidget for TheCodeView {
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
-        _style: &mut Box<dyn TheStyle>,
+        style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
         if !self.dim().is_valid() || !self.buffer.dim().is_valid() {
@@ -179,20 +180,52 @@ impl TheWidget for TheCodeView {
 
             for y in 0..grid_y {
                 for x in 0..grid_x {
-                    let color = if Some((x, y)) == self.selected {
+                    let mut color = if Some((x, y)) == self.selected {
                         &WHITE
                     } else {
-                        &[128, 128, 128, 255]
+                        &[20, 20, 20, 255]
                     };
+
+                    let rect =
+                      (
+                            (x * self.grid_size as u32) as usize,
+                            (y * self.grid_size as u32) as usize,
+                            self.grid_size as usize,
+                            self.grid_size as usize,
+                        );
+
+                    if let Some(atom) = self.code_grid.code.get(&(x, y)) {
+
+                        let mut main_text : Option<String> = None;
+
+                        match atom {
+                            TheAtom::Value(v) => {
+                                main_text = Some("Value".to_string());
+                            }
+                            _ => {}
+                        }
+
+                        if let Some(font) = &ctx.ui.font {
+                            if let Some(main_text) = main_text {
+                                ctx.draw.text_rect_blend(
+                                    self.buffer.pixels_mut(),
+                                    &rect,
+                                    stride,
+                                    font,
+                                    14.0,
+                                    &main_text,
+                                    &WHITE,//style.theme().color(ListItemText),
+                                    TheHorizontalAlign::Center,
+                                    TheVerticalAlign::Center,
+                                );
+                            }
+                        }
+
+                    }
 
                     ctx.draw.rect_outline_border(
                         self.buffer.pixels_mut(),
-                        &(
-                            (x * self.grid_size) as usize,
-                            (y * self.grid_size) as usize,
-                            self.grid_size as usize,
-                            self.grid_size as usize,
-                        ),
+                        &rect,
                         stride,
                         color,
                         1,
@@ -311,8 +344,9 @@ pub trait TheCodeViewTrait {
 
     fn set_associated_layout(&mut self, id: TheId);
 
-    fn selected(&self) -> Option<(i32, i32)>;
-    fn get_code_grid_offset(&self, coord: Vec2i) -> Option<(i32, i32)>;
+    fn selected(&self) -> Option<(u32, u32)>;
+    fn set_grid_atom(&mut self, coord: (u32, u32), atom: TheAtom);
+    fn get_code_grid_offset(&self, coord: Vec2i) -> Option<(u32, u32)>;
 }
 
 impl TheCodeViewTrait for TheCodeView {
@@ -367,10 +401,14 @@ impl TheCodeViewTrait for TheCodeView {
         self.selection_color = color;
         self.is_dirty = true;
     }
-    fn selected(&self) -> Option<(i32, i32)> {
+    fn selected(&self) -> Option<(u32, u32)> {
         self.selected
     }
-    fn get_code_grid_offset(&self, coord: Vec2i) -> Option<(i32, i32)> {
+    fn set_grid_atom(&mut self, coord: (u32, u32), atom: TheAtom) {
+        self.code_grid.code.insert(coord, atom);
+        self.code_is_dirty = true;
+    }
+    fn get_code_grid_offset(&self, coord: Vec2i) -> Option<(u32, u32)> {
         let centered_offset_x =
             if (self.zoom * self.buffer.dim().width as f32) < self.dim.width as f32 {
                 (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32) / 2.0
@@ -402,7 +440,7 @@ impl TheCodeViewTrait for TheCodeView {
             if grid_x * self.grid_size < self.buffer.dim().width
                 && grid_y * self.grid_size < self.buffer.dim().height
             {
-                return Some((grid_x, grid_y));
+                return Some((grid_x as u32, grid_y as u32));
             }
         }
         None

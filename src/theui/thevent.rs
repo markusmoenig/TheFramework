@@ -26,6 +26,7 @@ pub enum TheEvent {
 
     TileSelectionChanged(TheId),
     TileEditorClicked(TheId, TheValue),
+    CodeEditorSelectionChanged(TheId, Option<(u32, u32)>),
 
     // These events define layout states.
     SetStackIndex(TheId, usize),

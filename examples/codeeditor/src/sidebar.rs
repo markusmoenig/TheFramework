@@ -2,16 +2,20 @@ use crate::prelude::*;
 use std::sync::mpsc::Receiver;
 
 pub struct Sidebar {
+    editor_selection: Option<(u32, u32)>,
+    code_list_selection: Option<TheId>,
+
     state_receiver: Option<Receiver<TheEvent>>,
-    stack_layout_id: TheId,
 }
 
 #[allow(clippy::new_without_default)]
 impl Sidebar {
     pub fn new() -> Self {
         Self {
+            editor_selection: None,
+            code_list_selection: None,
+
             state_receiver: None,
-            stack_layout_id: TheId::empty(),
         }
     }
 
@@ -38,7 +42,8 @@ impl Sidebar {
         list_canvas.set_layout(code_layout);
         list_canvas.set_top(list_header);
 
-        let mut apply_button = TheTraybarButton::new(TheId::named("Apply"));
+        let mut apply_button = TheTraybarButton::new(TheId::named("Apply Code"));
+        apply_button.set_disabled(true);
         apply_button.set_text("Apply Code".to_string());
 
         let mut toolbar_hlayout = TheHLayout::new(TheId::empty());
@@ -80,34 +85,58 @@ impl Sidebar {
     }
 
     #[allow(clippy::single_match)]
-    pub fn update_ui(&mut self, _ui: &mut TheUI, ctx: &mut TheContext) -> bool {
+    pub fn update_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
 
         if let Some(receiver) = &mut self.state_receiver {
             while let Ok(event) = receiver.try_recv() {
                 match event {
-                    TheEvent::StateChanged(id, _state) => {
+                    TheEvent::CodeEditorSelectionChanged(_id, selection) => {
+                        ui.set_widget_disabled_state(
+                            "Apply Code",
+                            ctx,
+                            selection.is_none() || self.code_list_selection.is_none(),
+                        );
+                        self.editor_selection = selection;
+                    }
+                    TheEvent::StateChanged(id, state) => {
                         //println!("app Widget State changed {:?}: {:?}", id, state);
 
-                        if id.name == "Open" {
-                            ctx.ui.open_file_requester(
-                                TheId::named("MyID"),
-                                "Open".into(),
-                                TheFileExtension::new("PNG".into(), vec!["png".to_string()]),
+                        if id.name == "Apply Code" {
+                            let mut atom: Option<TheAtom> = None;
+
+                            if let Some(code_list_selection) = &self.code_list_selection {
+                                if let Some(widget) = ui.get_widget_id(code_list_selection.uuid) {
+                                    if let Some(name) = widget.value().to_string() {
+                                        match name.as_str() {
+                                            "Value" => {
+                                                atom = Some(ui.create_code_atom("Integer"));
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                }
+                            }
+
+                            if let Some(atom) = atom {
+                                if let Some(selection) = &self.editor_selection {
+                                    if let Some(layout) = ui.get_code_layout("Code Editor") {
+                                        if let Some(code_view) =
+                                            layout.code_view_mut().as_code_view()
+                                        {
+                                            code_view.set_grid_atom(*selection, atom);
+                                        }
+                                    }
+                                }
+                            }
+                        } else if id.name == "Code List Item" && state == TheWidgetState::Selected {
+                            self.code_list_selection = Some(id.clone());
+                            ui.set_widget_disabled_state(
+                                "Apply Code",
+                                ctx,
+                                self.editor_selection.is_none()
+                                    || self.code_list_selection.is_none(),
                             );
-                            ctx.ui
-                                .set_widget_state("Open".to_string(), TheWidgetState::None);
-                            ctx.ui.clear_hover();
-                        } else if id.name == "Cube" {
-                            ctx.ui
-                                .set_widget_state("Sphere".to_string(), TheWidgetState::None);
-                            ctx.ui
-                                .send(TheEvent::SetStackIndex(self.stack_layout_id.clone(), 0));
-                        } else if id.name == "Sphere" {
-                            ctx.ui
-                                .set_widget_state("Cube".to_string(), TheWidgetState::None);
-                            ctx.ui
-                                .send(TheEvent::SetStackIndex(self.stack_layout_id.clone(), 1));
                         }
 
                         redraw = true;
