@@ -413,6 +413,8 @@ impl TheUI {
 
         let mut item = TheListItem::new(TheId::named("Code List Item"));
         item.set_text("Value".to_string());
+        item.set_associated_layout(code_layout.id().clone());
+        item.set_state(TheWidgetState::Selected);
         code_layout.add_item(item, ctx);
 
         code_layout
@@ -420,13 +422,9 @@ impl TheUI {
 
     #[cfg(feature = "code")]
     pub fn create_code_atom(&self, name: &str) -> TheAtom {
-        match name  {
-            "Integer" => {
-                TheAtom::Value(TheValue::Int(10))
-            }
-            _ => {
-                TheAtom::Stop
-            }
+        match name {
+            "Integer" => TheAtom::Value(TheValue::Int(10)),
+            _ => TheAtom::Stop,
         }
     }
 }

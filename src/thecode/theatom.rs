@@ -51,6 +51,32 @@ impl TheAtom {
             TheAtom::Multiply() => TheAtomKind::Star,
         }
     }
+
+    /// Generates a text layout to edit the properties of the atom
+    pub fn to_text_layout(&self) -> TheTextLayout {
+        let mut text_layout = TheTextLayout::new(TheId::empty());
+        match self {
+            TheAtom::Value(value) => {
+                let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Integer Edit"));
+                name_edit.set_text(value.describe());
+                text_layout.add_pair("Integer Value".to_string(), Box::new(name_edit));
+            }
+            _ => {}
+        };
+        text_layout
+    }
+    /// Generates a text layout to edit the properties of the atom
+    pub fn process_value_change(&mut self, name: String, value: TheValue) {
+        match self {
+            TheAtom::Value(_) => {
+                //println!("{} {:?}", name, value);
+                if name == "Atom Integer Edit" {
+                    *self = TheAtom::Value(value.clone());
+                }
+            }
+            _ => {}
+        };
+    }
 }
 
 #[allow(dead_code)]

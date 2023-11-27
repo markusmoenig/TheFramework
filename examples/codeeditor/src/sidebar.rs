@@ -1,11 +1,8 @@
 use crate::prelude::*;
-use std::sync::mpsc::Receiver;
 
 pub struct Sidebar {
-    editor_selection: Option<(u32, u32)>,
+    pub editor_selection: Option<(u32, u32)>,
     code_list_selection: Option<TheId>,
-
-    state_receiver: Option<Receiver<TheEvent>>,
 }
 
 #[allow(clippy::new_without_default)]
@@ -14,8 +11,6 @@ impl Sidebar {
         Self {
             editor_selection: None,
             code_list_selection: None,
-
-            state_receiver: None,
         }
     }
 
@@ -56,11 +51,6 @@ impl Sidebar {
         toolbar_canvas.set_layout(toolbar_hlayout);
         list_canvas.set_bottom(toolbar_canvas);
 
-        let mut text_layout: TheTextLayout = TheTextLayout::new(TheId::empty());
-        text_layout.limiter_mut().set_max_width(width);
-        let name_edit = TheTextLineEdit::new(TheId::named("Region Name Edit"));
-        text_layout.add_pair("Name".to_string(), Box::new(name_edit));
-
         //
 
         let mut settings = TheCanvas::new();
@@ -71,7 +61,7 @@ impl Sidebar {
         settings_header.set_widget(switchbar);
 
         settings.set_top(settings_header);
-        settings.set_layout(text_layout);
+        settings.set_layout(TheTextLayout::new(TheId::empty()));
 
         let mut canvas: TheCanvas = TheCanvas::new();
 
@@ -81,73 +71,86 @@ impl Sidebar {
 
         ui.canvas.set_right(canvas);
 
-        self.state_receiver = Some(ui.add_state_listener("Sidebar".into()));
     }
 
-    #[allow(clippy::single_match)]
-    pub fn update_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
+    pub fn handle_event(&mut self, event: &TheEvent, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
 
-        if let Some(receiver) = &mut self.state_receiver {
-            while let Ok(event) = receiver.try_recv() {
-                match event {
-                    TheEvent::CodeEditorSelectionChanged(_id, selection) => {
-                        ui.set_widget_disabled_state(
-                            "Apply Code",
-                            ctx,
-                            selection.is_none() || self.code_list_selection.is_none(),
-                        );
-                        self.editor_selection = selection;
-                    }
-                    TheEvent::StateChanged(id, state) => {
-                        //println!("app Widget State changed {:?}: {:?}", id, state);
+        match event {
+            TheEvent::CodeEditorSelectionChanged(_id, selection) => {
+                ui.set_widget_disabled_state(
+                    "Apply Code",
+                    ctx,
+                    selection.is_none() || self.code_list_selection.is_none(),
+                );
+                self.editor_selection = *selection;
 
-                        if id.name == "Apply Code" {
-                            let mut atom: Option<TheAtom> = None;
+                // Generate the Atom UI
+                let mut text_layout = TheTextLayout::new(TheId::empty());
+                if let Some(selection) = selection {
+                    if let Some(layout) = ui.get_code_layout("Code Editor") {
+                        if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                            let grid = code_view.code_grid();
 
-                            if let Some(code_list_selection) = &self.code_list_selection {
-                                if let Some(widget) = ui.get_widget_id(code_list_selection.uuid) {
-                                    if let Some(name) = widget.value().to_string() {
-                                        match name.as_str() {
-                                            "Value" => {
-                                                atom = Some(ui.create_code_atom("Integer"));
-                                            }
-                                            _ => {}
-                                        }
-                                    }
-                                }
+                            if let Some(atom) = grid.code.get(selection) {
+                                text_layout = atom.to_text_layout();
                             }
-
-                            if let Some(atom) = atom {
-                                if let Some(selection) = &self.editor_selection {
-                                    if let Some(layout) = ui.get_code_layout("Code Editor") {
-                                        if let Some(code_view) =
-                                            layout.code_view_mut().as_code_view()
-                                        {
-                                            code_view.set_grid_atom(*selection, atom);
-                                        }
-                                    }
-                                }
-                            }
-                        } else if id.name == "Code List Item" && state == TheWidgetState::Selected {
-                            self.code_list_selection = Some(id.clone());
-                            ui.set_widget_disabled_state(
-                                "Apply Code",
-                                ctx,
-                                self.editor_selection.is_none()
-                                    || self.code_list_selection.is_none(),
-                            );
                         }
-
-                        redraw = true;
                     }
-                    TheEvent::FileRequesterResult(id, paths) => {
-                        println!("FileRequester Result {:?} {:?}", id, paths);
-                    }
-                    _ => {}
                 }
+
+                ui.canvas.right.as_mut().unwrap().center.as_mut().unwrap().set_layout(text_layout);
+                ctx.ui.relayout = true;
             }
+            TheEvent::StateChanged(id, state) => {
+                //println!("app Widget State changed {:?}: {:?}", id, state);
+
+                if id.name == "Apply Code" {
+                    let mut atom: Option<TheAtom> = None;
+
+                    if let Some(code_list_selection) = &self.code_list_selection {
+                        if let Some(widget) = ui.get_widget_id(code_list_selection.uuid) {
+                            if let Some(name) = widget.value().to_string() {
+                                match name.as_str() {
+                                    "Value" => {
+                                        atom = Some(ui.create_code_atom("Integer"));
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        }
+                    }
+
+                    if let Some(atom) = atom {
+                        if let Some(selection) = &self.editor_selection {
+                            if let Some(layout) = ui.get_code_layout("Code Editor") {
+                                if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                                    code_view.set_grid_atom(*selection, atom);
+                                    ctx.ui.send(TheEvent::CodeEditorSelectionChanged(
+                                        id.clone(),
+                                        Some(*selection),
+                                    ));
+                                }
+                            }
+                        }
+                    }
+                } else if id.name == "Code List Item" && *state == TheWidgetState::Selected {
+                    self.code_list_selection = Some(id.clone());
+                    ui.set_widget_disabled_state(
+                        "Apply Code",
+                        ctx,
+                        self.editor_selection.is_none() || self.code_list_selection.is_none(),
+                    );
+                }
+
+                redraw = true;
+            }
+            TheEvent::FileRequesterResult(id, paths) => {
+                println!("FileRequester Result {:?} {:?}", id, paths);
+            }
+            _ => {}
         }
+
         redraw
     }
 }

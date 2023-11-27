@@ -1,9 +1,12 @@
 use crate::{browser::Browser, prelude::*};
 use theframework::prelude::*;
+use std::sync::mpsc::Receiver;
 
 pub struct CodeEditor {
     sidebar: Sidebar,
     browser: Browser,
+
+    event_receiver: Option<Receiver<TheEvent>>,
 }
 
 impl TheTrait for CodeEditor {
@@ -11,30 +14,11 @@ impl TheTrait for CodeEditor {
     where
         Self: Sized,
     {
-        let mut code_ctx = TheCodeGrid::new();
-
-        code_ctx
-            .code
-            .insert((0, 0), TheAtom::Value(TheValue::Int(2)));
-        code_ctx.code.insert((1, 0), TheAtom::Add());
-        code_ctx
-            .code
-            .insert((2, 0), TheAtom::Value(TheValue::Int(5)));
-        code_ctx.code.insert((3, 0), TheAtom::Multiply());
-        code_ctx
-            .code
-            .insert((4, 0), TheAtom::Value(TheValue::Int(5)));
-
-        let mut compiler = TheCompiler::new();
-        let rc = compiler.compile(code_ctx);
-
-        if let Ok(mut pipe) = rc {
-            pipe.execute();
-        }
-
         Self {
             sidebar: Sidebar::new(),
             browser: Browser::new(),
+
+            event_receiver: None,
         }
     }
 
@@ -84,12 +68,89 @@ impl TheTrait for CodeEditor {
 
         ui.canvas.set_top(top_canvas);
 
-        let code_layout = TheCodeLayout::new(TheId::named("Code Editor"));
+        let mut center = TheCanvas::new();
 
-        ui.canvas.set_layout(code_layout);
+        let mut toolbar_canvas = TheCanvas::new();
+
+        let mut compile_button = TheTraybarButton::new(TheId::named("Compile"));
+        //compile_button.set_disabled(true);
+        compile_button.set_text("Compile".to_string());
+
+        let mut toolbar_hlayout = TheHLayout::new(TheId::empty());
+        toolbar_hlayout.set_background_color(None);
+        toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
+        toolbar_hlayout.add_widget(Box::new(compile_button));
+        toolbar_hlayout.limiter_mut().set_max_height(27);
+        toolbar_canvas.set_layout(toolbar_hlayout);
+        toolbar_canvas.set_widget(TheTraybar::new(TheId::empty()));
+
+        let code_layout = TheCodeLayout::new(TheId::named("Code Editor"));
+        center.set_layout(code_layout);
+        center.set_bottom(toolbar_canvas);
+
+        ui.canvas.set_center(center);
+
+        self.event_receiver = Some(ui.add_state_listener("Main Receiver".into()));
     }
 
+    #[allow(clippy::single_match)]
     fn update_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
-        self.sidebar.update_ui(ui, ctx)
+        let mut redraw = false;
+
+        if let Some(receiver) = &mut self.event_receiver {
+            while let Ok(event) = receiver.try_recv() {
+                redraw = self.sidebar.handle_event(&event, ui, ctx);
+                match event {
+                    TheEvent::ValueChanged(id, value) => {
+                        if id.name.starts_with("Atom") {
+                            // Set an edited value to the code grid
+                            if let Some(layout) = ui.get_code_layout("Code Editor") {
+                                if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                                    if let Some(selection) = self.sidebar.editor_selection {
+                                        code_view.set_atom_value(selection, id.name, value);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    TheEvent::StateChanged(id, _state) => {
+                        //println!("app Widget State changed {:?}: {:?}", id, state);
+
+                        if id.name == "Compile" {
+                            if let Some(layout) = ui.get_code_layout("Code Editor") {
+                                if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                                    let grid = code_view.code_grid();
+
+                                    /*
+                                    code_ctx
+                                        .code
+                                        .insert((0, 0), TheAtom::Value(TheValue::Int(2)));
+                                    code_ctx.code.insert((1, 0), TheAtom::Add());
+                                    code_ctx
+                                        .code
+                                        .insert((2, 0), TheAtom::Value(TheValue::Int(5)));
+                                    code_ctx.code.insert((3, 0), TheAtom::Multiply());
+                                    code_ctx
+                                        .code
+                                        .insert((4, 0), TheAtom::Value(TheValue::Int(5)));
+                                    */
+
+                                    let mut compiler = TheCompiler::new();
+                                    let rc = compiler.compile(grid);
+
+                                    if let Ok(mut pipe) = rc {
+                                        pipe.execute();
+                                    }
+
+                                    //println!("Size of MyEnum: {} bytes", std::mem::size_of::<TheAtom>());
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        redraw
     }
 }
