@@ -5,6 +5,7 @@ pub mod thecheckbutton;
 pub mod thecodeview;
 pub mod thecolorbutton;
 pub mod thedropdownmenu;
+pub mod thegroupbutton;
 pub mod thehdivider;
 pub mod thehorizontalscrollbar;
 pub mod theiconview;
@@ -57,6 +58,8 @@ pub mod prelude {
     pub use crate::theui::thewidget::theverticalscrollbar::{
         TheVerticalScrollbar, TheVerticalScrollbarTrait,
     };
+
+    pub use crate::theui::thewidget::thegroupbutton::{TheGroupButton, TheGroupButtonTrait};
 
     pub use crate::theui::thewidget::thecheckbutton::TheCheckButton;
     pub use crate::theui::thewidget::thehdivider::TheHDivider;
@@ -222,7 +225,13 @@ pub trait TheWidget {
         None
     }
 
+    /// Attempts to cast to TheGroupButtonTrait. Only valid for TheGroupButton.
+    fn as_group_button(&mut self) -> Option<&mut dyn TheGroupButtonTrait> {
+        None
+    }
+
     /// Attempts to cast to TheCodeViewTrait. Only valid for TheCodeView.
+    #[cfg(feature = "code")]
     fn as_code_view(&mut self) -> Option<&mut dyn TheCodeViewTrait> {
         None
     }

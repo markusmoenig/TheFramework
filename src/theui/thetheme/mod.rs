@@ -105,4 +105,11 @@ pub enum TheThemeColors {
 
     DividerStart,
     DividerEnd,
+
+    GroupButtonNormalBorder,
+    GroupButtonNormalBackground,
+    GroupButtonHoverBorder,
+    GroupButtonHoverBackground,
+    GroupButtonSelectedBorder,
+    GroupButtonSelectedBackground,
 }

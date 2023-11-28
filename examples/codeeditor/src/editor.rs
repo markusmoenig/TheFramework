@@ -1,6 +1,6 @@
 use crate::{browser::Browser, prelude::*};
-use theframework::prelude::*;
 use std::sync::mpsc::Receiver;
+use theframework::prelude::*;
 
 pub struct CodeEditor {
     sidebar: Sidebar,

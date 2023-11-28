@@ -12,6 +12,7 @@ pub mod thetextlayout;
 pub mod thevlayout;
 
 pub mod prelude {
+    #[cfg(feature = "code")]
     pub use crate::theui::thelayout::thecodelayout::{TheCodeLayout, TheCodeLayoutTrait};
     pub use crate::theui::thelayout::thehlayout::{TheHLayout, TheHLayoutTrait};
     pub use crate::theui::thelayout::thelistlayout::{TheListLayout, TheListLayoutTrait};
@@ -119,6 +120,7 @@ pub trait TheLayout {
     }
 
     /// Attempts to cast to TheCodeLayoutTrait. Only valid for TheCodeLayout.
+    #[cfg(feature = "code")]
     fn as_code_layout(&mut self) -> Option<&mut dyn TheCodeLayoutTrait> {
         None
     }

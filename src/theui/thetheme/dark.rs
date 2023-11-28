@@ -92,6 +92,13 @@ impl TheTheme for TheDarkTheme {
         colors.insert(DividerStart, [102, 102, 102, 255]);
         colors.insert(DividerEnd, [148, 148, 148, 255]);
 
+        colors.insert(GroupButtonNormalBorder, [108, 108, 108, 255]);
+        colors.insert(GroupButtonNormalBackground, [123, 123, 123, 255]);
+        colors.insert(GroupButtonHoverBorder, [179, 179, 179, 255]);
+        colors.insert(GroupButtonHoverBackground, [157, 157, 157, 255]);
+        colors.insert(GroupButtonSelectedBorder, [204, 204, 204, 255]);
+        colors.insert(GroupButtonSelectedBackground, [149, 149, 149, 255]);
+
         Self {
             temp_color: BLACK,
             colors,

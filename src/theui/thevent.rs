@@ -24,6 +24,10 @@ pub enum TheEvent {
     GainedHover(TheId),
     LostHover(TheId),
 
+    // Tabbar, Groupbutton
+    IndexChanged(TheId, usize),
+
+    // Tile / Code Editor
     TileSelectionChanged(TheId),
     TileEditorClicked(TheId, TheValue),
     CodeEditorSelectionChanged(TheId, Option<(u32, u32)>),

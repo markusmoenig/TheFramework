@@ -70,7 +70,6 @@ impl Sidebar {
         canvas.set_top(list_canvas);
 
         ui.canvas.set_right(canvas);
-
     }
 
     pub fn handle_event(&mut self, event: &TheEvent, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
@@ -99,7 +98,14 @@ impl Sidebar {
                     }
                 }
 
-                ui.canvas.right.as_mut().unwrap().center.as_mut().unwrap().set_layout(text_layout);
+                ui.canvas
+                    .right
+                    .as_mut()
+                    .unwrap()
+                    .center
+                    .as_mut()
+                    .unwrap()
+                    .set_layout(text_layout);
                 ctx.ui.relayout = true;
             }
             TheEvent::StateChanged(id, state) => {

@@ -1,5 +1,8 @@
 use crate::prelude::*;
 
+// Some code taken from https://github.com/ceronman/loxido/blob/master/src/compiler.rs
+// Licensed under the MIT license of Manuel Cerón.
+
 #[derive(PartialOrd, PartialEq, Copy, Clone)]
 enum ThePrecedence {
     None,
