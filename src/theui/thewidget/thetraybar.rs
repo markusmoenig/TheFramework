@@ -97,4 +97,8 @@ impl TheWidget for TheTraybar {
 
         self.is_dirty = false;
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }

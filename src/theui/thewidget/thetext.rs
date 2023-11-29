@@ -106,6 +106,10 @@ impl TheWidget for TheText {
 
         self.is_dirty = false;
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }
 
 /// TheText specific functions.

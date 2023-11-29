@@ -174,7 +174,6 @@ impl TheWidget for TheGroupButton {
         let mut x = 0;
 
         for (index, text) in self.texts.iter().enumerate() {
-
             let border;
             let bg;
 
@@ -238,7 +237,7 @@ impl TheWidget for TheGroupButton {
                     &bg,
                 );
             } else {
-                ctx.draw.rect_outline (
+                ctx.draw.rect_outline(
                     buffer.pixels_mut(),
                     &(ut.0 + x, ut.1, self.item_width, 20),
                     stride,
@@ -273,36 +272,15 @@ impl TheWidget for TheGroupButton {
             }
         }
 
-        /*
-        ctx.draw.rect_outline_border(
-            buffer.pixels_mut(),
-            &self.dim.to_buffer_shrunk_utuple(&shrinker),
-            stride,
-            &self.color,
-            1,
-        );
-
-        if self.state == TheWidgetState::Selected {
-            shrinker.shrink(1);
-            ctx.draw.rect(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                &self.color,
-            );
-            ctx.draw.rect(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                &self.color,
-            );
-        }*/
-
         self.is_dirty = false;
     }
 
     fn as_group_button(&mut self) -> Option<&mut dyn TheGroupButtonTrait> {
         Some(self)
+    }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
     }
 }
 

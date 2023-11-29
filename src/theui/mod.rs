@@ -385,6 +385,14 @@ impl TheUI {
         None
     }
 
+    /// Gets a given TheSharedLayout by name
+    pub fn get_shared_layout(&mut self, name: &str) -> Option<&mut dyn TheSharedLayoutTrait> {
+        if let Some(layout) = self.canvas.get_layout(Some(&name.to_string()), None) {
+            return layout.as_shared_layout();
+        }
+        None
+    }
+
     /// Gets a given TheRGBALayout by name
     #[cfg(feature = "code")]
     pub fn get_code_layout(&mut self, name: &str) -> Option<&mut dyn TheCodeLayoutTrait> {

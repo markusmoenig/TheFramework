@@ -1,9 +1,19 @@
 use crate::prelude::*;
 
+/// The layout mode.
+#[derive(PartialEq, Clone, Debug)]
+pub enum TheHLayoutMode {
+    /// Lays out the content based on their limiter settings (the default).
+    ContentBased,
+    /// Distributes the content evenly based on the available space.
+    SizeBased,
+}
+
 pub struct TheHLayout {
     id: TheId,
     limiter: TheSizeLimiter,
 
+    mode: TheHLayoutMode,
     dim: TheDim,
 
     widgets: Vec<Box<dyn TheWidget>>,
@@ -22,6 +32,7 @@ impl TheLayout for TheHLayout {
         Self {
             id,
             limiter: TheSizeLimiter::new(),
+            mode: TheHLayoutMode::ContentBased,
 
             dim: TheDim::zero(),
 
@@ -55,8 +66,7 @@ impl TheLayout for TheHLayout {
     }
 
     fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
-        let widgets = self.widgets();
-        widgets.iter_mut().find(|w| w.dim().contains(coord))
+        self.widgets.iter_mut().find(|w| w.dim().contains(coord))
     }
 
     fn get_widget(
@@ -64,7 +74,7 @@ impl TheLayout for TheHLayout {
         name: Option<&String>,
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheWidget>> {
-        self.widgets.iter_mut().find(|w| w.id().matches(name, uuid))
+        self.widgets.iter_mut().find(|w: &&mut Box<dyn TheWidget>| w.id().matches(name, uuid))
     }
 
     fn dim(&self) -> &TheDim {
@@ -76,33 +86,59 @@ impl TheLayout for TheHLayout {
     }
 
     fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {
-        if self.dim != dim {
+        if self.dim != dim || ctx.ui.relayout {
             self.dim = dim;
 
-            let mut x = self.margin.x;
+            if !self.widgets.is_empty() {
+                let mut x: i32 = self.margin.x;
+                if self.mode == TheHLayoutMode::ContentBased {
+                    for w in &mut self.widgets {
+                        w.calculate_size(ctx);
+                        let width = w.limiter().get_width(dim.width);
+                        let height = w.limiter().get_height(dim.height);
 
-            for w in &mut self.widgets {
-                w.calculate_size(ctx);
-                let width = w.limiter().get_width(dim.width);
-                let height = w.limiter().get_height(dim.height);
+                        // Limit to visible area
+                        if x + width > dim.width {
+                            break;
+                        }
 
-                // Limit to visible area
-                if x + width > dim.width {
-                    break;
-                }
+                        let mut y = self.margin.y;
+                        if self.dim.height > self.margin.y + self.margin.w {
+                            let off =
+                                (self.dim.height - self.margin.y - self.margin.w - height) / 2;
+                            if y + off + height < self.dim.height {
+                                y += off;
+                            }
+                        }
 
-                let mut y = self.margin.y;
-                if self.dim.height > self.margin.y + self.margin.w {
-                    let off = (self.dim.height - self.margin.y - self.margin.w - height) / 2;
-                    if y + off + height < self.dim.height {
-                        y += off;
+                        w.set_dim(TheDim::new(dim.x + x, dim.y + y, width, height));
+                        w.dim_mut()
+                            .set_buffer_offset(self.dim.buffer_x + x, self.dim.buffer_y + y);
+                        x += width + self.padding;
+                    }
+                } else if self.mode == TheHLayoutMode::SizeBased {
+                    let count = self.widgets.len() as i32;
+                    let total_width =
+                        dim.width - self.margin.x - self.margin.z - (count - 1) * self.padding;
+                    let width = total_width / count;
+                    let height = dim.height - self.margin.y - self.margin.w;
+
+                    for w in &mut self.widgets {
+                        w.calculate_size(ctx);
+
+                        // Limit to visible area
+                        if x + width > dim.width {
+                            break;
+                        }
+
+                        let y = self.margin.y;
+
+                        w.set_dim(TheDim::new(dim.x + x, dim.y + y, width, height));
+                        w.dim_mut()
+                            .set_buffer_offset(self.dim.buffer_x + x, self.dim.buffer_y + y);
+                        x += width + self.padding;
                     }
                 }
-
-                w.set_dim(TheDim::new(dim.x + x, dim.y + y, width, height));
-                w.dim_mut()
-                    .set_buffer_offset(self.dim.buffer_x + x, self.dim.buffer_y + y);
-                x += width + self.padding;
             }
         }
     }
@@ -142,10 +178,15 @@ impl TheLayout for TheHLayout {
 pub trait TheHLayoutTrait {
     /// Add a widget to the layout.
     fn add_widget(&mut self, widget: Box<dyn TheWidget>);
+    /// Set the layout mode.
+    fn set_mode(&mut self, mode: TheHLayoutMode);
 }
 
 impl TheHLayoutTrait for TheHLayout {
     fn add_widget(&mut self, widget: Box<dyn TheWidget>) {
         self.widgets.push(widget);
+    }
+    fn set_mode(&mut self, mode: TheHLayoutMode) {
+        self.mode = mode;
     }
 }

@@ -255,6 +255,10 @@ impl TheWidget for TheListItem {
     fn as_list_item(&mut self) -> Option<&mut dyn TheListItemTrait> {
         Some(self)
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }
 
 pub trait TheListItemTrait {

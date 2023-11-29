@@ -48,4 +48,8 @@ impl TheWidget for TheSpacer {
     fn limiter_mut(&mut self) -> &mut TheSizeLimiter {
         &mut self.limiter
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }

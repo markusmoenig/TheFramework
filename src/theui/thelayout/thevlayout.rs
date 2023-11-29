@@ -76,7 +76,7 @@ impl TheLayout for TheVLayout {
     }
 
     fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {
-        if self.dim != dim {
+        if self.dim != dim || ctx.ui.relayout {
             self.dim = dim;
 
             let x = self.margin.x;

@@ -81,4 +81,8 @@ impl TheWidget for TheHDivider {
             style.theme().color(DividerEnd),
         );
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }

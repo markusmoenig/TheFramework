@@ -100,6 +100,10 @@ impl TheWidget for TheIconView {
     fn as_icon_view(&mut self) -> Option<&mut dyn TheIconViewTrait> {
         Some(self)
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }
 
 pub trait TheIconViewTrait {

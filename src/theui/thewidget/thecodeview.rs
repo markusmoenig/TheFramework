@@ -322,6 +322,10 @@ impl TheWidget for TheCodeView {
     fn as_code_view(&mut self) -> Option<&mut dyn TheCodeViewTrait> {
         Some(self)
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }
 
 pub trait TheCodeViewTrait {

@@ -232,6 +232,10 @@ impl TheWidget for TheTabbar {
     fn as_tabbar(&mut self) -> Option<&mut dyn TheTabbarTrait> {
         Some(self)
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }
 
 pub trait TheTabbarTrait {

@@ -292,6 +292,10 @@ impl TheWidget for TheDropdownMenu {
     fn as_drop_down_menu(&mut self) -> Option<&mut dyn TheDropdownMenuTrait> {
         Some(self)
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }
 
 pub trait TheDropdownMenuTrait {

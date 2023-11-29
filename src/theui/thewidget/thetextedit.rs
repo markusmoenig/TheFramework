@@ -367,6 +367,10 @@ impl TheWidget for TheTextEdit {
 
         self.is_dirty = false;
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }
 
 pub trait TheTextEditTrait: TheWidget {

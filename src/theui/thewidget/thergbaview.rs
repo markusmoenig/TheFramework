@@ -350,6 +350,10 @@ impl TheWidget for TheRGBAView {
     fn as_rgba_view(&mut self) -> Option<&mut dyn TheRGBAViewTrait> {
         Some(self)
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }
 
 pub trait TheRGBAViewTrait {

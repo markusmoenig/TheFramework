@@ -98,4 +98,8 @@ impl TheWidget for TheStatusbar {
 
         self.is_dirty = false;
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }

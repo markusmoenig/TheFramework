@@ -249,6 +249,10 @@ impl TheWidget for TheHorizontalScrollbar {
     fn as_horizontal_scrollbar(&mut self) -> Option<&mut dyn TheHorizontalScrollbarTrait> {
         Some(self)
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }
 
 pub trait TheHorizontalScrollbarTrait {

@@ -113,4 +113,8 @@ impl TheWidget for TheSectionbar {
         //     );
         // }
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }

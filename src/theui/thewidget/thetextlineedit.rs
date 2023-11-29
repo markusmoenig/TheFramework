@@ -326,6 +326,10 @@ impl TheWidget for TheTextLineEdit {
     fn as_text_line_edit(&mut self) -> Option<&mut dyn TheTextLineEditTrait> {
         Some(self)
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }
 
 pub trait TheTextLineEditTrait: TheWidget {

@@ -31,6 +31,8 @@ pub mod thetraybar;
 pub mod thetraybarbutton;
 pub mod theverticalscrollbar;
 
+use std::any::Any;
+
 pub mod prelude {
     pub use crate::theui::thewidget::thecolorbutton::TheColorButton;
 
@@ -235,4 +237,6 @@ pub trait TheWidget {
     fn as_code_view(&mut self) -> Option<&mut dyn TheCodeViewTrait> {
         None
     }
+
+    fn as_any(&mut self) -> &mut dyn Any;
 }

@@ -92,4 +92,8 @@ impl TheWidget for TheMenubarSeparator {
             style.theme().color(MenubarButtonSeparator2),
         );
     }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }
