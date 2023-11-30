@@ -60,11 +60,9 @@ impl TheWidget for TheGroupButton {
                     self.state = TheWidgetState::Selected;
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
                 }
-                if let Some(coord) = coord.to_vec2i() {
-                    let index = coord.x as usize / (self.item_width + 1);
-                    ctx.ui.send(TheEvent::IndexChanged(self.id.clone(), index));
-                    self.selected_index = Some(index);
-                }
+                let index = coord.x as usize / (self.item_width + 1);
+                ctx.ui.send(TheEvent::IndexChanged(self.id.clone(), index));
+                self.selected_index = Some(index);
                 self.is_dirty = true;
                 redraw = true;
             }
@@ -74,13 +72,11 @@ impl TheWidget for TheGroupButton {
                     ctx.ui.set_hover(self.id());
                     redraw = true;
                 }
-                if let Some(coord) = coord.to_vec2i() {
-                    let index = coord.x as usize / (self.item_width + 1);
-                    if Some(index) != self.hover_index && Some(index) != self.selected_index {
-                        self.hover_index = Some(index);
-                        redraw = true;
-                        self.is_dirty = true;
-                    }
+                let index = coord.x as usize / (self.item_width + 1);
+                if Some(index) != self.hover_index && Some(index) != self.selected_index {
+                    self.hover_index = Some(index);
+                    redraw = true;
+                    self.is_dirty = true;
                 }
             }
             TheEvent::LostHover(_id) => {

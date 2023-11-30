@@ -10,6 +10,7 @@ pub mod theuicontext;
 pub mod thevalue;
 pub mod thevent;
 pub mod thewidget;
+pub mod thecontextmenu;
 
 use ::serde::de::{self, Deserializer};
 use ::serde::ser::{self, Serializer};
@@ -85,6 +86,8 @@ pub mod prelude {
     pub use crate::theui::thelayout::prelude::*;
     pub use crate::theui::thewidget::prelude::*;
     pub use crate::theui::thewidget::TheWidget;
+
+    pub use crate::theui::thecontextmenu::*;
 }
 
 pub struct TheUI {
@@ -241,11 +244,23 @@ impl TheUI {
         self.is_dirty
     }
 
+    pub fn context(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
+        let mut redraw = false;
+        let coord = vec2i(x as i32, y as i32);
+        if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
+            let event = TheEvent::Context(widget.dim().to_local(coord));
+            redraw = widget.on_event(&event, ctx);
+
+            self.process_events(ctx);
+        }
+        redraw
+    }
+
     pub fn touch_down(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
         if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
-            let event = TheEvent::MouseDown(TheValue::Coordinate(widget.dim().to_local(coord)));
+            let event = TheEvent::MouseDown(widget.dim().to_local(coord));
             redraw = widget.on_event(&event, ctx);
 
             self.process_events(ctx);
@@ -260,12 +275,12 @@ impl TheUI {
         if let Some(id) = &ctx.ui.focus {
             if let Some(widget) = self.canvas.get_widget(Some(&id.name), Some(&id.uuid)) {
                 let event =
-                    TheEvent::MouseDragged(TheValue::Coordinate(widget.dim().to_local(coord)));
+                    TheEvent::MouseDragged(widget.dim().to_local(coord));
                 redraw = widget.on_event(&event, ctx);
                 self.process_events(ctx);
             }
         } else if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
-            let event = TheEvent::MouseDragged(TheValue::Coordinate(widget.dim().to_local(coord)));
+            let event = TheEvent::MouseDragged(widget.dim().to_local(coord));
             redraw = widget.on_event(&event, ctx);
             self.process_events(ctx);
         }
@@ -278,12 +293,12 @@ impl TheUI {
 
         if let Some(id) = &ctx.ui.focus {
             if let Some(widget) = self.canvas.get_widget(Some(&id.name), Some(&id.uuid)) {
-                let event = TheEvent::MouseUp(TheValue::Coordinate(widget.dim().to_local(coord)));
+                let event = TheEvent::MouseUp(widget.dim().to_local(coord));
                 redraw = widget.on_event(&event, ctx);
                 self.process_events(ctx);
             }
         } else if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
-            let event = TheEvent::MouseUp(TheValue::Coordinate(widget.dim().to_local(coord)));
+            let event = TheEvent::MouseUp(widget.dim().to_local(coord));
             redraw = widget.on_event(&event, ctx);
             self.process_events(ctx);
         }
@@ -295,7 +310,7 @@ impl TheUI {
         let coord = vec2i(x as i32, y as i32);
         if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
             // println!("Hover {:?}", widget.id());
-            let event = TheEvent::Hover(TheValue::Coordinate(widget.dim().to_local(coord)));
+            let event = TheEvent::Hover(widget.dim().to_local(coord));
             redraw = widget.on_event(&event, ctx);
 
             // If the new hover widget does not support a hover state, make sure to unhover the current widget if any

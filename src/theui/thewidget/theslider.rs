@@ -115,44 +115,40 @@ impl TheWidget for TheSlider {
                     ctx.ui.set_overlay(self.id());
                 }
 
-                if let Some(coord) = coord.to_vec2i() {
-                    if let Some(range_f32) = self.range.to_range_f32() {
-                        let d = abs(range_f32.end() - range_f32.start())
-                            * (coord.x as f32 / (self.dim.width - self.text_width) as f32)
-                                .clamp(0.0, 1.0);
-                        let v = *range_f32.start() + d;
-                        self.original = self.value.clone();
-                        self.value = TheValue::Float(v);
-                    } else if let Some(range_i32) = self.range.to_range_i32() {
-                        let range_diff = range_i32.end() - range_i32.start();
-                        let d = (coord.x * range_diff) / (self.dim.width - self.text_width);
-                        let v =
-                            (*range_i32.start() + d).clamp(*range_i32.start(), *range_i32.end());
-                        self.original = self.value.clone();
-                        self.value = TheValue::Int(v);
-                    }
-                    redraw = true;
+                if let Some(range_f32) = self.range.to_range_f32() {
+                    let d = abs(range_f32.end() - range_f32.start())
+                        * (coord.x as f32 / (self.dim.width - self.text_width) as f32)
+                            .clamp(0.0, 1.0);
+                    let v = *range_f32.start() + d;
+                    self.original = self.value.clone();
+                    self.value = TheValue::Float(v);
+                } else if let Some(range_i32) = self.range.to_range_i32() {
+                    let range_diff = range_i32.end() - range_i32.start();
+                    let d = (coord.x * range_diff) / (self.dim.width - self.text_width);
+                    let v =
+                        (*range_i32.start() + d).clamp(*range_i32.start(), *range_i32.end());
+                    self.original = self.value.clone();
+                    self.value = TheValue::Int(v);
                 }
+                redraw = true;
             }
             TheEvent::MouseDragged(coord) => {
-                if let Some(coord) = coord.to_vec2i() {
-                    if let Some(range_f32) = self.range.to_range_f32() {
-                        let d = abs(range_f32.end() - range_f32.start())
-                            * (coord.x as f32 / (self.dim.width - self.text_width) as f32)
-                                .clamp(0.0, 1.0);
-                        let v = *range_f32.start() + d;
-                        self.original = self.value.clone();
-                        self.value = TheValue::Float(v);
-                    } else if let Some(range_i32) = self.range.to_range_i32() {
-                        let range_diff = range_i32.end() - range_i32.start();
-                        let d = (coord.x * range_diff) / (self.dim.width - self.text_width);
-                        let v =
-                            (*range_i32.start() + d).clamp(*range_i32.start(), *range_i32.end());
-                        self.original = self.value.clone();
-                        self.value = TheValue::Int(v);
-                    }
-                    redraw = true;
+                if let Some(range_f32) = self.range.to_range_f32() {
+                    let d = abs(range_f32.end() - range_f32.start())
+                        * (coord.x as f32 / (self.dim.width - self.text_width) as f32)
+                            .clamp(0.0, 1.0);
+                    let v = *range_f32.start() + d;
+                    self.original = self.value.clone();
+                    self.value = TheValue::Float(v);
+                } else if let Some(range_i32) = self.range.to_range_i32() {
+                    let range_diff = range_i32.end() - range_i32.start();
+                    let d = (coord.x * range_diff) / (self.dim.width - self.text_width);
+                    let v =
+                        (*range_i32.start() + d).clamp(*range_i32.start(), *range_i32.end());
+                    self.original = self.value.clone();
+                    self.value = TheValue::Int(v);
                 }
+                redraw = true;
             }
             TheEvent::MouseUp(_coord) => {
                 self.is_dirty = true;

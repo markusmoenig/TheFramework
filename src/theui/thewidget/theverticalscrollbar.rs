@@ -55,19 +55,17 @@ impl TheWidget for TheVerticalScrollbar {
                     self.dim.width,
                     self.scrollbar_thumb_height(),
                 );
-                if let Some(coord) = coord.to_vec2i() {
-                    if dim.contains(coord) {
-                        self.is_dirty = true;
-                        if self.state != TheWidgetState::Clicked {
-                            self.state = TheWidgetState::Clicked;
-                            ctx.ui.send_widget_state_changed(self.id(), self.state);
-                            ctx.ui.set_focus(self.id());
-                            self.mouse_down_coord = coord;
-                        }
-                    } else {
-                        self.is_dirty = true;
-                        self.scroll_from_track_click(coord.y);
+                if dim.contains(*coord) {
+                    self.is_dirty = true;
+                    if self.state != TheWidgetState::Clicked {
+                        self.state = TheWidgetState::Clicked;
+                        ctx.ui.send_widget_state_changed(self.id(), self.state);
+                        ctx.ui.set_focus(self.id());
+                        self.mouse_down_coord = *coord;
                     }
+                } else {
+                    self.is_dirty = true;
+                    self.scroll_from_track_click(coord.y);
                 }
                 redraw = true;
             }
@@ -75,11 +73,9 @@ impl TheWidget for TheVerticalScrollbar {
                 if self.state == TheWidgetState::Clicked {
                     self.is_dirty = true;
                     redraw = true;
-                    if let Some(coord) = coord.to_vec2i() {
-                        let d = coord - self.mouse_down_coord;
-                        self.adjust_scroll_from_thumb_delta(d.y);
-                        self.mouse_down_coord = coord;
-                    }
+                    let d = coord - self.mouse_down_coord;
+                    self.adjust_scroll_from_thumb_delta(d.y);
+                    self.mouse_down_coord = *coord;
                 }
             }
             TheEvent::MouseUp(_coord) => {
@@ -98,18 +94,16 @@ impl TheWidget for TheVerticalScrollbar {
                         self.dim.width,
                         self.scrollbar_thumb_height(),
                     );
-                    if let Some(coord) = coord.to_vec2i() {
-                        if dim.contains(coord) {
-                            if !self.id().equals(&ctx.ui.hover) {
-                                self.is_dirty = true;
-                                ctx.ui.set_hover(self.id());
-                                redraw = true;
-                            }
-                        } else {
+                    if dim.contains(*coord) {
+                        if !self.id().equals(&ctx.ui.hover) {
                             self.is_dirty = true;
-                            ctx.ui.clear_hover();
+                            ctx.ui.set_hover(self.id());
                             redraw = true;
                         }
+                    } else {
+                        self.is_dirty = true;
+                        ctx.ui.clear_hover();
+                        redraw = true;
                     }
                 }
             }

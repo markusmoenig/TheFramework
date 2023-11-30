@@ -88,58 +88,56 @@ impl TheWidget for TheRGBAView {
 
                 if self.mode != TheRGBAViewMode::Display {
                     if let Some(grid) = self.grid {
-                        if let Some(coord) = coord.to_vec2i() {
-                            let centered_offset_x = if (self.zoom * self.buffer.dim().width as f32)
-                                < self.dim.width as f32
-                            {
-                                (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32)
-                                    / 2.0
-                            } else {
-                                0.0
-                            };
-                            let centered_offset_y = if (self.zoom * self.buffer.dim().height as f32)
-                                < self.dim.height as f32
-                            {
-                                (self.dim.height as f32
-                                    - self.zoom * self.buffer.dim().height as f32)
-                                    / 2.0
-                            } else {
-                                0.0
-                            };
+                        let centered_offset_x = if (self.zoom * self.buffer.dim().width as f32)
+                            < self.dim.width as f32
+                        {
+                            (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32)
+                                / 2.0
+                        } else {
+                            0.0
+                        };
+                        let centered_offset_y = if (self.zoom * self.buffer.dim().height as f32)
+                            < self.dim.height as f32
+                        {
+                            (self.dim.height as f32
+                                - self.zoom * self.buffer.dim().height as f32)
+                                / 2.0
+                        } else {
+                            0.0
+                        };
 
-                            let source_x = ((coord.x as f32 - centered_offset_x) / self.zoom
-                                + self.scroll_offset.x as f32)
-                                .round() as i32;
-                            let source_y = ((coord.y as f32 - centered_offset_y) / self.zoom
-                                + self.scroll_offset.y as f32)
-                                .round() as i32;
+                        let source_x = ((coord.x as f32 - centered_offset_x) / self.zoom
+                            + self.scroll_offset.x as f32)
+                            .round() as i32;
+                        let source_y = ((coord.y as f32 - centered_offset_y) / self.zoom
+                            + self.scroll_offset.y as f32)
+                            .round() as i32;
 
-                            if source_x >= 0
-                                && source_x < self.buffer.dim().width
-                                && source_y >= 0
-                                && source_y < self.buffer.dim().height
+                        if source_x >= 0
+                            && source_x < self.buffer.dim().width
+                            && source_y >= 0
+                            && source_y < self.buffer.dim().height
+                        {
+                            let grid_x = source_x / grid;
+                            let grid_y = source_y / grid;
+
+                            if grid_x * grid < self.buffer.dim().width
+                                && grid_y * grid < self.buffer.dim().height
                             {
-                                let grid_x = source_x / grid;
-                                let grid_y = source_y / grid;
-
-                                if grid_x * grid < self.buffer.dim().width
-                                    && grid_y * grid < self.buffer.dim().height
-                                {
-                                    //println!("{} {}", grid_x, grid_y);
-                                    if self.mode == TheRGBAViewMode::TileSelection {
-                                        if self.selected.contains(&(grid_x, grid_y)) {
-                                            self.selected.remove(&(grid_x, grid_y));
-                                        } else {
-                                            self.selected.insert((grid_x, grid_y));
-                                        }
-                                        ctx.ui
-                                            .send(TheEvent::TileSelectionChanged(self.id.clone()));
-                                    } else if self.mode == TheRGBAViewMode::TileEditor {
-                                        ctx.ui.send(TheEvent::TileEditorClicked(
-                                            self.id.clone(),
-                                            TheValue::Coordinate(vec2i(grid_x, grid_y)),
-                                        ));
+                                //println!("{} {}", grid_x, grid_y);
+                                if self.mode == TheRGBAViewMode::TileSelection {
+                                    if self.selected.contains(&(grid_x, grid_y)) {
+                                        self.selected.remove(&(grid_x, grid_y));
+                                    } else {
+                                        self.selected.insert((grid_x, grid_y));
                                     }
+                                    ctx.ui
+                                        .send(TheEvent::TileSelectionChanged(self.id.clone()));
+                                } else if self.mode == TheRGBAViewMode::TileEditor {
+                                    ctx.ui.send(TheEvent::TileEditorClicked(
+                                        self.id.clone(),
+                                        TheValue::Coordinate(vec2i(grid_x, grid_y)),
+                                    ));
                                 }
                             }
                         }

@@ -26,6 +26,10 @@ pub struct TheUIContext {
     pub keyboard_focus: Option<TheId>,
     pub hover: Option<TheId>,
     pub overlay: Option<TheId>,
+    pub context_menu: Option<TheContextMenu>,
+    pub dialog: Option<TheCanvas>,
+
+    dialog_text: String,
 
     pub state_events_sender: Option<Sender<TheEvent>>,
 
@@ -91,6 +95,10 @@ impl TheUIContext {
             keyboard_focus: None,
             hover: None,
             overlay: None,
+            context_menu: None,
+            dialog: None,
+
+            dialog_text: "".to_string(),
 
             font,
             code_font,
@@ -247,4 +255,16 @@ impl TheUIContext {
             }
         }
     }
+
+    /// Opens a dialog which will have the canvas as context and the given text as title.
+    pub fn show_dialog(&mut self, text: &str, canvas: TheCanvas) {
+        self.dialog_text = text.to_string();
+        self.dialog = Some(canvas);
+    }
+
+    /// Clears / closes the dialog.
+    pub fn clear_dialog(&mut self) {
+        self.dialog = None;
+    }
+
 }

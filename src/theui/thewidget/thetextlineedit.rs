@@ -105,27 +105,25 @@ impl TheWidget for TheTextLineEdit {
                 self.original = self.text.clone();
 
                 self.position = 0;
-                if let Some(coord) = coord.to_vec2i() {
-                    let x = coord.x - 7;
-                    let mut offset = 0;
-                    let mut found = false;
-                    if !self.text.is_empty() && x >= 0 {
-                        for i in 1..self.text.len() {
-                            let txt = &self.text[0..i];
-                            if let Some(font) = &ctx.ui.font {
-                                let size = ctx.draw.get_text_size(font, self.font_size, txt);
-                                if size.0 as i32 >= x {
-                                    offset = i;
-                                    found = true;
-                                    break;
-                                }
+                let x = coord.x - 7;
+                let mut offset = 0;
+                let mut found = false;
+                if !self.text.is_empty() && x >= 0 {
+                    for i in 1..self.text.len() {
+                        let txt = &self.text[0..i];
+                        if let Some(font) = &ctx.ui.font {
+                            let size = ctx.draw.get_text_size(font, self.font_size, txt);
+                            if size.0 as i32 >= x {
+                                offset = i;
+                                found = true;
+                                break;
                             }
                         }
-                        if found {
-                            self.position = offset;
-                        } else {
-                            self.position = self.text.len();
-                        }
+                    }
+                    if found {
+                        self.position = offset;
+                    } else {
+                        self.position = self.text.len();
                     }
                 }
             }
@@ -134,27 +132,25 @@ impl TheWidget for TheTextLineEdit {
                 redraw = true;
 
                 self.position = 0;
-                if let Some(coord) = coord.to_vec2i() {
-                    let x = coord.x - 7;
-                    let mut offset = 0;
-                    let mut found = false;
-                    if !self.text.is_empty() && x >= 0 {
-                        for i in 1..self.text.len() {
-                            let txt = &self.text[0..i];
-                            if let Some(font) = &ctx.ui.font {
-                                let size = ctx.draw.get_text_size(font, self.font_size, txt);
-                                if size.0 as i32 >= x {
-                                    offset = i;
-                                    found = true;
-                                    break;
-                                }
+                let x = coord.x - 7;
+                let mut offset = 0;
+                let mut found = false;
+                if !self.text.is_empty() && x >= 0 {
+                    for i in 1..self.text.len() {
+                        let txt = &self.text[0..i];
+                        if let Some(font) = &ctx.ui.font {
+                            let size = ctx.draw.get_text_size(font, self.font_size, txt);
+                            if size.0 as i32 >= x {
+                                offset = i;
+                                found = true;
+                                break;
                             }
                         }
-                        if found {
-                            self.position = offset;
-                        } else {
-                            self.position = self.text.len();
-                        }
+                    }
+                    if found {
+                        self.position = offset;
+                    } else {
+                        self.position = self.text.len();
                     }
                 }
             }

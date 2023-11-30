@@ -4,10 +4,11 @@ use crate::prelude::*;
 #[derive(Clone, Debug)]
 pub enum TheEvent {
     // These events are passed to the on_event function of the widgets and cover user interaction.
-    MouseDown(TheValue),
-    Hover(TheValue),
-    MouseDragged(TheValue),
-    MouseUp(TheValue),
+    Context(Vec2i),
+    MouseDown(Vec2i),
+    Hover(Vec2i),
+    MouseDragged(Vec2i),
+    MouseUp(Vec2i),
 
     KeyDown(TheValue),
     KeyCodeDown(TheValue),
@@ -31,6 +32,9 @@ pub enum TheEvent {
     TileSelectionChanged(TheId),
     TileEditorClicked(TheId, TheValue),
     CodeEditorSelectionChanged(TheId, Option<(u32, u32)>),
+
+    // Show the given context menu at the given coordinates
+    ShowContextMenu(TheId, Vec2i),
 
     // These events define layout states.
     SetStackIndex(TheId, usize),

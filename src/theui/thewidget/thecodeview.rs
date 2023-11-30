@@ -96,14 +96,12 @@ impl TheWidget for TheCodeView {
                     redraw = true;
                 }
 
-                if let Some(coord) = coord.to_vec2i() {
-                    self.selected = self.get_code_grid_offset(coord);
-                    self.code_is_dirty = true;
-                    ctx.ui.send(TheEvent::CodeEditorSelectionChanged(
-                        self.id().clone(),
-                        self.selected,
-                    ));
-                }
+                self.selected = self.get_code_grid_offset(*coord);
+                self.code_is_dirty = true;
+                ctx.ui.send(TheEvent::CodeEditorSelectionChanged(
+                    self.id().clone(),
+                    self.selected,
+                ));
 
                 redraw = true;
             }

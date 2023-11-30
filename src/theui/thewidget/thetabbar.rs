@@ -60,19 +60,17 @@ impl TheWidget for TheTabbar {
                     self.original = self.selected;
                     redraw = true;
                 }
-                if let Some(coord) = coord.to_vec2i() {
-                    let index = coord.x / 142;
-                    if index >= 0 && index < self.tabs.len() as i32 {
-                        if Some(index) != self.selected_index {
-                            self.selected_index = Some(index);
-                            redraw = true;
-                            self.is_dirty = true;
-                        }
-                    } else if self.selected_index.is_some() {
-                        self.selected_index = None;
+                let index = coord.x / 142;
+                if index >= 0 && index < self.tabs.len() as i32 {
+                    if Some(index) != self.selected_index {
+                        self.selected_index = Some(index);
                         redraw = true;
                         self.is_dirty = true;
                     }
+                } else if self.selected_index.is_some() {
+                    self.selected_index = None;
+                    redraw = true;
+                    self.is_dirty = true;
                 }
             }
             TheEvent::Hover(coord) => {
@@ -81,20 +79,19 @@ impl TheWidget for TheTabbar {
                     redraw = true;
                     self.is_dirty = true;
                 }
-                if let Some(coord) = coord.to_vec2i() {
-                    let index = coord.x / 142;
-                    if index >= 0 && index < self.tabs.len() as i32 {
-                        if Some(index) != self.hover_index {
-                            self.hover_index = Some(index);
-                            redraw = true;
-                            self.is_dirty = true;
-                        }
-                    } else if self.hover_index.is_some() {
-                        self.hover_index = None;
+                let index = coord.x / 142;
+                if index >= 0 && index < self.tabs.len() as i32 {
+                    if Some(index) != self.hover_index {
+                        self.hover_index = Some(index);
                         redraw = true;
                         self.is_dirty = true;
                     }
+                } else if self.hover_index.is_some() {
+                    self.hover_index = None;
+                    redraw = true;
+                    self.is_dirty = true;
                 }
+
             }
             TheEvent::LostHover(_id) => {
                 self.hover_index = None;

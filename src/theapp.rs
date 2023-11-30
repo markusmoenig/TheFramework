@@ -293,18 +293,36 @@ impl TheApp {
                 }
 
                 if input.mouse_pressed(0) {
-                    let coords = input.mouse().unwrap();
-                    let pixel_pos: (usize, usize) = pixels
-                        .window_pos_to_pixel(coords)
-                        .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+                    if let Some(coords) = input.mouse() {
+                        let pixel_pos: (usize, usize) = pixels
+                            .window_pos_to_pixel(coords)
+                            .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
-                    #[cfg(feature = "ui")]
-                    if ui.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
-                        window.request_redraw();
+                        #[cfg(feature = "ui")]
+                        if ui.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                            window.request_redraw();
+                        }
+
+                        if app.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                            window.request_redraw();
+                        }
                     }
+                }
 
-                    if app.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
-                        window.request_redraw();
+                if input.mouse_pressed(1) {
+                    if let Some(coords) = input.mouse() {
+                        let pixel_pos: (usize, usize) = pixels
+                            .window_pos_to_pixel(coords)
+                            .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+
+                        #[cfg(feature = "ui")]
+                        if ui.context(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                            window.request_redraw();
+                        }
+
+                        // if app.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                        //     window.request_redraw();
+                        // }
                     }
                 }
 

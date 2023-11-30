@@ -59,13 +59,11 @@ impl TheWidget for TheDropdownMenu {
             }
             TheEvent::MouseDragged(coord) => {
                 if !self.options.is_empty() {
-                    if let Some(coord) = coord.to_vec2i() {
-                        let y: i32 = coord.y - 20;
-                        if y >= 0 {
-                            let index = y / 20;
-                            if index < self.options.len() as i32 && index != self.selected {
-                                self.selected = index;
-                            }
+                    let y: i32 = coord.y - 20;
+                    if y >= 0 {
+                        let index = y / 20;
+                        if index < self.options.len() as i32 && index != self.selected {
+                            self.selected = index;
                         }
                     }
                     self.is_dirty = true;
