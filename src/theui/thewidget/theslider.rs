@@ -125,8 +125,7 @@ impl TheWidget for TheSlider {
                 } else if let Some(range_i32) = self.range.to_range_i32() {
                     let range_diff = range_i32.end() - range_i32.start();
                     let d = (coord.x * range_diff) / (self.dim.width - self.text_width);
-                    let v =
-                        (*range_i32.start() + d).clamp(*range_i32.start(), *range_i32.end());
+                    let v = (*range_i32.start() + d).clamp(*range_i32.start(), *range_i32.end());
                     self.original = self.value.clone();
                     self.value = TheValue::Int(v);
                 }
@@ -143,8 +142,7 @@ impl TheWidget for TheSlider {
                 } else if let Some(range_i32) = self.range.to_range_i32() {
                     let range_diff = range_i32.end() - range_i32.start();
                     let d = (coord.x * range_diff) / (self.dim.width - self.text_width);
-                    let v =
-                        (*range_i32.start() + d).clamp(*range_i32.start(), *range_i32.end());
+                    let v = (*range_i32.start() + d).clamp(*range_i32.start(), *range_i32.end());
                     self.original = self.value.clone();
                     self.value = TheValue::Int(v);
                 }

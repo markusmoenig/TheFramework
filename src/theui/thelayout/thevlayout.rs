@@ -79,9 +79,7 @@ impl TheLayout for TheVLayout {
         if self.dim != dim || ctx.ui.relayout {
             self.dim = dim;
 
-            let x = self.margin.x;
             let mut y = self.margin.y;
-
             for w in &mut self.widgets {
                 w.calculate_size(ctx);
                 let width = w.limiter().get_width(dim.width);
@@ -90,6 +88,14 @@ impl TheLayout for TheVLayout {
                 // Limit to visible area
                 if y + height > dim.height {
                     break;
+                }
+
+                let mut x = self.margin.x;
+                if self.dim.width > self.margin.x + self.margin.z {
+                    let off = (self.dim.width - self.margin.x - self.margin.z - width) / 2;
+                    if x + off + width < self.dim.width {
+                        x += off;
+                    }
                 }
 
                 w.set_dim(TheDim::new(dim.x + x, dim.y + y, width, height));

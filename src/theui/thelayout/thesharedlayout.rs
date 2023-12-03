@@ -139,12 +139,14 @@ impl TheLayout for TheSharedLayout {
             } else if self.mode == TheSharedLayoutMode::Right {
                 self.canvas[1].set_dim(dim, ctx);
             } else {
-                self.canvas[0].set_dim(
-                    TheDim::new(dim.x, dim.y, dim.width / 2, dim.height),
-                    ctx,
-                );
+                self.canvas[0].set_dim(TheDim::new(dim.x, dim.y, dim.width / 2, dim.height), ctx);
                 self.canvas[1].set_dim(
-                    TheDim::new(dim.x + dim.width / 2 + 1, dim.y, dim.width / 2 - 1, dim.height),
+                    TheDim::new(
+                        dim.x + dim.width / 2 + 1,
+                        dim.y,
+                        dim.width / 2 - 1,
+                        dim.height,
+                    ),
                     ctx,
                 );
             }

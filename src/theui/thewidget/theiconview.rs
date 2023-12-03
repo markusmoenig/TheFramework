@@ -3,10 +3,17 @@ use crate::prelude::*;
 pub struct TheIconView {
     id: TheId,
     limiter: TheSizeLimiter,
+    state: TheWidgetState,
 
     is_dirty: bool,
     tile: TheRGBATile,
     index: usize,
+
+    text: Option<String>,
+    text_size: f32,
+    text_color: RGBA,
+
+    border_color: Option<RGBA>,
 
     dim: TheDim,
 }
@@ -22,10 +29,17 @@ impl TheWidget for TheIconView {
         Self {
             id,
             limiter,
+            state: TheWidgetState::None,
 
             is_dirty: true,
             tile: TheRGBATile::default(),
             index: 0,
+
+            text: None,
+            text_size: 12.0,
+            text_color: WHITE,
+
+            border_color: None,
 
             dim: TheDim::zero(),
         }
@@ -33,6 +47,30 @@ impl TheWidget for TheIconView {
 
     fn id(&self) -> &TheId {
         &self.id
+    }
+
+    #[allow(clippy::single_match)]
+    fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
+        let mut redraw = false;
+        // println!("event ({}): {:?}", self.widget_id.name, event);
+        match event {
+            TheEvent::MouseDown(_coord) => {
+                if self.state != TheWidgetState::Clicked {
+                    self.state = TheWidgetState::Clicked;
+                    ctx.ui.send_widget_state_changed(self.id(), self.state);
+                }
+                self.is_dirty = true;
+                redraw = true;
+            }
+            TheEvent::MouseUp(_coord) => {
+                self.state = TheWidgetState::None;
+                ctx.ui.send_widget_state_changed(self.id(), self.state);
+                self.is_dirty = true;
+                redraw = true;
+            }
+            _ => {}
+        }
+        redraw
     }
 
     fn dim(&self) -> &TheDim {
@@ -94,6 +132,27 @@ impl TheWidget for TheIconView {
             );
         }
 
+        if let Some(text) = &self.text {
+            if let Some(font) = &ctx.ui.font {
+                ctx.draw.text_rect_blend(
+                    buffer.pixels_mut(),
+                    &utuple,
+                    stride,
+                    font,
+                    self.text_size,
+                    text,
+                    &self.text_color,
+                    TheHorizontalAlign::Center,
+                    TheVerticalAlign::Center,
+                );
+            }
+        }
+
+        if let Some(color) = self.border_color {
+            ctx.draw
+                .rect_outline_border(buffer.pixels_mut(), &utuple, stride, &color, 1);
+        }
+
         self.is_dirty = false;
     }
 
@@ -109,6 +168,12 @@ impl TheWidget for TheIconView {
 pub trait TheIconViewTrait {
     fn set_rgba_tile(&mut self, tile: TheRGBATile);
     fn step(&mut self);
+    fn set_border_color(&mut self, color: Option<RGBA>);
+    fn set_text_color(&mut self, color: RGBA);
+    /// Set the text to display.
+    fn set_text(&mut self, text: Option<String>);
+    /// Set the text size.
+    fn set_text_size(&mut self, text_size: f32);
 }
 
 impl TheIconViewTrait for TheIconView {
@@ -125,5 +190,21 @@ impl TheIconViewTrait for TheIconView {
             }
             self.is_dirty = true;
         }
+    }
+    fn set_border_color(&mut self, color: Option<RGBA>) {
+        self.border_color = color;
+        self.is_dirty = true;
+    }
+    fn set_text_color(&mut self, color: RGBA) {
+        self.text_color = color;
+        self.is_dirty = true;
+    }
+    fn set_text(&mut self, text: Option<String>) {
+        self.text = text;
+        self.is_dirty = true;
+    }
+    fn set_text_size(&mut self, text_size: f32) {
+        self.text_size = text_size;
+        self.is_dirty = true;
     }
 }

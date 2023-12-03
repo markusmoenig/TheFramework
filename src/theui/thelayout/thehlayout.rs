@@ -74,7 +74,9 @@ impl TheLayout for TheHLayout {
         name: Option<&String>,
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheWidget>> {
-        self.widgets.iter_mut().find(|w: &&mut Box<dyn TheWidget>| w.id().matches(name, uuid))
+        self.widgets
+            .iter_mut()
+            .find(|w: &&mut Box<dyn TheWidget>| w.id().matches(name, uuid))
     }
 
     fn dim(&self) -> &TheDim {

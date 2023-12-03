@@ -5,12 +5,12 @@ pub mod thecodelayout;
 pub mod thehlayout;
 pub mod thelistlayout;
 pub mod thergbalayout;
+pub mod thesharedlayout;
 pub mod thesnapperlayout;
 pub mod thestacklayout;
 pub mod thetablayout;
 pub mod thetextlayout;
 pub mod thevlayout;
-pub mod thesharedlayout;
 
 pub mod prelude {
     #[cfg(feature = "code")]
@@ -18,12 +18,14 @@ pub mod prelude {
     pub use crate::theui::thelayout::thehlayout::{TheHLayout, TheHLayoutMode, TheHLayoutTrait};
     pub use crate::theui::thelayout::thelistlayout::{TheListLayout, TheListLayoutTrait};
     pub use crate::theui::thelayout::thergbalayout::{TheRGBALayout, TheRGBALayoutTrait};
+    pub use crate::theui::thelayout::thesharedlayout::{
+        TheSharedLayout, TheSharedLayoutMode, TheSharedLayoutTrait,
+    };
     pub use crate::theui::thelayout::thesnapperlayout::{TheSnapperLayout, TheSnapperLayoutTrait};
     pub use crate::theui::thelayout::thestacklayout::{TheStackLayout, TheStackLayoutTrait};
     pub use crate::theui::thelayout::thetablayout::{TheTabLayout, TheTabLayoutTrait};
     pub use crate::theui::thelayout::thetextlayout::{TheTextLayout, TheTextLayoutTrait};
     pub use crate::theui::thelayout::thevlayout::{TheVLayout, TheVLayoutTrait};
-    pub use crate::theui::thelayout::thesharedlayout::{TheSharedLayout, TheSharedLayoutTrait, TheSharedLayoutMode};
 
     pub use crate::theui::thelayout::TheLayout;
 }

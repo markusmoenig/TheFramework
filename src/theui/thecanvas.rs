@@ -12,7 +12,7 @@ pub struct TheCanvas {
     pub root: bool,
     pub top_is_expanding: bool,
 
-    buffer: TheRGBABuffer,
+    pub buffer: TheRGBABuffer,
 
     pub left: Option<Box<TheCanvas>>,
     pub top: Option<Box<TheCanvas>>,

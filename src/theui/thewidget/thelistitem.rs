@@ -52,7 +52,8 @@ impl TheWidget for TheListItem {
         // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
             TheEvent::Context(coord) => {
-                ctx.ui.send(TheEvent::ShowContextMenu(self.id().clone(), *coord));
+                ctx.ui
+                    .send(TheEvent::ShowContextMenu(self.id().clone(), *coord));
             }
             TheEvent::MouseDown(_coord) => {
                 if self.state != TheWidgetState::Selected {

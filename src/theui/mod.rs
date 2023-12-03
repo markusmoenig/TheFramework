@@ -1,4 +1,5 @@
 pub mod thecanvas;
+pub mod thecontextmenu;
 pub mod thedim;
 pub mod theid;
 pub mod thelayout;
@@ -10,7 +11,6 @@ pub mod theuicontext;
 pub mod thevalue;
 pub mod thevent;
 pub mod thewidget;
-pub mod thecontextmenu;
 
 use ::serde::de::{self, Deserializer};
 use ::serde::ser::{self, Serializer};
@@ -93,6 +93,9 @@ pub mod prelude {
 pub struct TheUI {
     pub canvas: TheCanvas,
 
+    pub dialog_text: String,
+    pub dialog: Option<TheCanvas>,
+
     pub style: Box<dyn TheStyle>,
 
     state_events_receiver: Option<Receiver<TheEvent>>,
@@ -118,6 +121,9 @@ impl TheUI {
 
             state_events_receiver: None,
             app_state_events: FxHashMap::default(),
+
+            dialog_text: "".to_string(),
+            dialog: None,
 
             is_dirty: false,
         }
@@ -146,6 +152,9 @@ impl TheUI {
             ctx.ui.relayout = false;
         }
         self.canvas.draw(&mut self.style, ctx);
+        if self.dialog.is_some() {
+            self.draw_dialog(ctx);
+        }
         self.canvas.draw_overlay(&mut self.style, ctx);
         ctx.ui.redraw_all = false;
 
@@ -247,7 +256,7 @@ impl TheUI {
     pub fn context(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
-        if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
+        if let Some(widget) = self.get_widget_at_coord(coord) {
             let event = TheEvent::Context(widget.dim().to_local(coord));
             redraw = widget.on_event(&event, ctx);
 
@@ -259,7 +268,7 @@ impl TheUI {
     pub fn touch_down(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
-        if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
+        if let Some(widget) = self.get_widget_at_coord(coord) {
             let event = TheEvent::MouseDown(widget.dim().to_local(coord));
             redraw = widget.on_event(&event, ctx);
 
@@ -273,9 +282,8 @@ impl TheUI {
         let coord = vec2i(x as i32, y as i32);
 
         if let Some(id) = &ctx.ui.focus {
-            if let Some(widget) = self.canvas.get_widget(Some(&id.name), Some(&id.uuid)) {
-                let event =
-                    TheEvent::MouseDragged(widget.dim().to_local(coord));
+            if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
+                let event = TheEvent::MouseDragged(widget.dim().to_local(coord));
                 redraw = widget.on_event(&event, ctx);
                 self.process_events(ctx);
             }
@@ -292,7 +300,7 @@ impl TheUI {
         let coord = vec2i(x as i32, y as i32);
 
         if let Some(id) = &ctx.ui.focus {
-            if let Some(widget) = self.canvas.get_widget(Some(&id.name), Some(&id.uuid)) {
+            if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
                 let event = TheEvent::MouseUp(widget.dim().to_local(coord));
                 redraw = widget.on_event(&event, ctx);
                 self.process_events(ctx);
@@ -308,7 +316,7 @@ impl TheUI {
     pub fn hover(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
-        if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
+        if let Some(widget) = self.get_widget_at_coord(coord) {
             // println!("Hover {:?}", widget.id());
             let event = TheEvent::Hover(widget.dim().to_local(coord));
             redraw = widget.on_event(&event, ctx);
@@ -340,7 +348,7 @@ impl TheUI {
     ) -> bool {
         let mut redraw = false;
         if let Some(id) = &ctx.ui.focus {
-            if let Some(widget) = self.canvas.get_widget(Some(&id.name), Some(&id.uuid)) {
+            if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
                 let event = if let Some(c) = char {
                     TheEvent::KeyDown(TheValue::Char(c))
                 } else {
@@ -351,6 +359,30 @@ impl TheUI {
             }
         }
         redraw
+    }
+
+    /// Returns the absolute widget at the given position.
+    pub fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+        if let Some(dialog) = &mut self.dialog {
+            if let Some(widget) = dialog.get_widget_at_coord(coord) {
+                return Some(widget);
+            }
+        } else if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
+            return Some(widget);
+        }
+        None
+    }
+
+    pub fn get_widget_abs(
+        &mut self,
+        name: Option<&String>,
+        uuid: Option<&Uuid>,
+    ) -> Option<&mut Box<dyn TheWidget>> {
+        if let Some(dialog) = &mut self.dialog {
+            dialog.get_widget(name, None)
+        } else {
+            self.canvas.get_widget(name, None)
+        }
     }
 
     /// Gets a given widget by name
@@ -367,6 +399,22 @@ impl TheUI {
     pub fn get_text_line_edit(&mut self, name: &str) -> Option<&mut dyn TheTextLineEditTrait> {
         if let Some(text_line_edit) = self.canvas.get_widget(Some(&name.to_string()), None) {
             return text_line_edit.as_text_line_edit();
+        }
+        None
+    }
+
+    /// Gets a given icon view by name
+    pub fn get_icon_view(&mut self, name: &str) -> Option<&mut dyn TheIconViewTrait> {
+        if let Some(text_line_edit) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            return text_line_edit.as_icon_view();
+        }
+        None
+    }
+
+    /// Gets a given text by name
+    pub fn get_text(&mut self, name: &str) -> Option<&mut dyn TheTextTrait> {
+        if let Some(text) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            return text.as_text();
         }
         None
     }
@@ -448,6 +496,62 @@ impl TheUI {
         match name {
             "Integer" => TheAtom::Value(TheValue::Int(10)),
             _ => TheAtom::Stop,
+        }
+    }
+
+    #[cfg(feature = "ui")]
+    /// Opens a dialog which will have the canvas as context and the given text as title.
+    pub fn show_dialog(&mut self, text: &str, mut canvas: TheCanvas, ctx: &mut TheContext) {
+        self.dialog_text = text.to_string();
+
+        let width = canvas.limiter.get_max_width();
+        let height = canvas.limiter.get_max_height();
+
+        let off_x = (ctx.width as i32 - width) / 2;
+        let off_y = (ctx.height as i32 - height) / 2;
+
+        println!("{} {}", width, height);
+
+        let mut dim = TheDim::new(off_x, off_y, width, height);
+        dim.buffer_x = off_x;
+        dim.buffer_y = off_y;
+
+        canvas.set_dim(dim, ctx);
+
+        ctx.ui.clear_focus();
+        ctx.ui.clear_hover();
+
+        self.dialog = Some(canvas);
+    }
+
+    #[cfg(feature = "ui")]
+    /// Clears / closes the dialog.
+    pub fn clear_dialog(&mut self) {
+        self.dialog = None;
+    }
+
+    #[cfg(feature = "ui")]
+    /// Draws the current dialog.
+    pub fn draw_dialog(&mut self, ctx: &mut TheContext) {
+        if let Some(dialog_canvas) = &mut self.dialog {
+            dialog_canvas.draw(&mut self.style, ctx);
+
+            let width = dialog_canvas.limiter.get_max_width();
+            let height = dialog_canvas.limiter.get_max_height();
+
+            let off_x = (ctx.width as i32 - width) / 2;
+            let off_y = (ctx.height as i32 - height) / 2;
+
+            ctx.draw.rect(
+                self.canvas.buffer.pixels_mut(),
+                &(off_x as usize, off_y as usize, 400, 400),
+                ctx.width,
+                &BLACK,
+            );
+
+            self.canvas
+                .buffer
+                .copy_into(off_x, off_y, &dialog_canvas.buffer);
         }
     }
 }

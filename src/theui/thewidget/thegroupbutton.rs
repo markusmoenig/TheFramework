@@ -34,8 +34,8 @@ impl TheWidget for TheGroupButton {
             texts: vec![],
             icons: vec![],
 
-            hover_index: Some(0),
-            selected_index: None,
+            hover_index: None,
+            selected_index: Some(0),
 
             item_width: 60,
 
@@ -282,11 +282,15 @@ impl TheWidget for TheGroupButton {
 
 pub trait TheGroupButtonTrait {
     fn add_text(&mut self, text: String);
+    fn set_item_width(&mut self, width: usize);
 }
 
 impl TheGroupButtonTrait for TheGroupButton {
     fn add_text(&mut self, text: String) {
         self.texts.push(text);
         self.icons.push(None);
+    }
+    fn set_item_width(&mut self, width: usize) {
+        self.item_width = width;
     }
 }

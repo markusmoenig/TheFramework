@@ -8,6 +8,7 @@ pub struct TheText {
     dim: TheDim,
     text: String,
     text_size: f32,
+    text_color: RGBA,
 
     is_dirty: bool,
 }
@@ -27,6 +28,7 @@ impl TheWidget for TheText {
             dim: TheDim::zero(),
             text: "".to_string(),
             text_size: 13.0,
+            text_color: WHITE,
 
             is_dirty: false,
         }
@@ -69,9 +71,14 @@ impl TheWidget for TheText {
 
     fn calculate_size(&mut self, ctx: &mut TheContext) {
         if let Some(font) = &ctx.ui.font {
-            let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
-            self.limiter_mut()
-                .set_max_size(vec2i(size.0 as i32 + 1, size.1 as i32));
+            if !self.text.is_empty() {
+                let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
+                self.limiter_mut()
+                    .set_max_size(vec2i(size.0 as i32 + 1, size.1 as i32));
+            } else {
+                self.limiter_mut()
+                    .set_max_size(vec2i(20, 20));
+            }
         }
     }
 
@@ -98,13 +105,17 @@ impl TheWidget for TheText {
                 font,
                 self.text_size,
                 &self.text,
-                &WHITE,
+                &self.text_color,
                 TheHorizontalAlign::Left,
                 TheVerticalAlign::Center,
             );
         }
 
         self.is_dirty = false;
+    }
+
+    fn as_text(&mut self) -> Option<&mut dyn TheTextTrait> {
+        Some(self)
     }
 
     fn as_any(&mut self) -> &mut dyn std::any::Any {
@@ -118,13 +129,21 @@ pub trait TheTextTrait {
     fn set_text(&mut self, text: String);
     /// Set the text size.
     fn set_text_size(&mut self, text_size: f32);
+    /// Sets the text color.
+    fn set_text_color(&mut self, color: RGBA);
 }
 
 impl TheTextTrait for TheText {
     fn set_text(&mut self, text: String) {
         self.text = text;
+        self.is_dirty = true;
     }
     fn set_text_size(&mut self, text_size: f32) {
         self.text_size = text_size;
+        self.is_dirty = true;
+    }
+    fn set_text_color(&mut self, color: RGBA) {
+        self.text_color = color;
+        self.is_dirty = true;
     }
 }

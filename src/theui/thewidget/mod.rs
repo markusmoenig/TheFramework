@@ -212,6 +212,11 @@ pub trait TheWidget {
         None
     }
 
+    /// Attempts to cast to TheTextTrait. Only valid for TheText.
+    fn as_text(&mut self) -> Option<&mut dyn TheTextTrait> {
+        None
+    }
+
     /// Attempts to cast to TheTabbarTrait. Only valid for TheTabbar.
     fn as_tabbar(&mut self) -> Option<&mut dyn TheTabbarTrait> {
         None

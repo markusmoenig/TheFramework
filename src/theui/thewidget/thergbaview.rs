@@ -23,6 +23,8 @@ pub struct TheRGBAView {
     grid_color: RGBA,
     selected: FxHashSet<(i32, i32)>,
     selection_color: RGBA,
+    hover_color: Option<RGBA>,
+    hover: Option<(i32, i32)>,
 
     mode: TheRGBAViewMode,
 
@@ -55,6 +57,8 @@ impl TheWidget for TheRGBAView {
             grid_color: [200, 200, 200, 255],
             selected: FxHashSet::default(),
             selection_color: [255, 255, 255, 180],
+            hover_color: None,
+            hover: None,
 
             mode: TheRGBAViewMode::Display,
 
@@ -72,6 +76,7 @@ impl TheWidget for TheRGBAView {
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         //println!("event ({}): {:?}", self.id.name, event);
+
         match event {
             TheEvent::MouseDown(coord) => {
                 if self.state != TheWidgetState::Selected {
@@ -99,8 +104,7 @@ impl TheWidget for TheRGBAView {
                         let centered_offset_y = if (self.zoom * self.buffer.dim().height as f32)
                             < self.dim.height as f32
                         {
-                            (self.dim.height as f32
-                                - self.zoom * self.buffer.dim().height as f32)
+                            (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32)
                                 / 2.0
                         } else {
                             0.0
@@ -131,12 +135,11 @@ impl TheWidget for TheRGBAView {
                                     } else {
                                         self.selected.insert((grid_x, grid_y));
                                     }
-                                    ctx.ui
-                                        .send(TheEvent::TileSelectionChanged(self.id.clone()));
+                                    ctx.ui.send(TheEvent::TileSelectionChanged(self.id.clone()));
                                 } else if self.mode == TheRGBAViewMode::TileEditor {
                                     ctx.ui.send(TheEvent::TileEditorClicked(
                                         self.id.clone(),
-                                        TheValue::Coordinate(vec2i(grid_x, grid_y)),
+                                        vec2i(grid_x, grid_y),
                                     ));
                                 }
                             }
@@ -145,10 +148,65 @@ impl TheWidget for TheRGBAView {
                     redraw = true;
                 }
             }
-            TheEvent::Hover(_coord) => {
-                if self.state != TheWidgetState::Selected && !self.id().equals(&ctx.ui.hover) {
+            TheEvent::LostHover(_id) => {
+                if self.hover.is_some() {
+                    self.hover = None;
+                    redraw = true;
+                }
+            }
+            TheEvent::Hover(coord) => {
+                if !self.id().equals(&ctx.ui.hover) {
                     self.is_dirty = true;
                     ctx.ui.set_hover(self.id());
+                    redraw = true;
+                }
+
+                if self.mode == TheRGBAViewMode::TileEditor && self.hover_color.is_some() {
+                    if let Some(grid) = self.grid {
+                        let centered_offset_x = if (self.zoom * self.buffer.dim().width as f32)
+                            < self.dim.width as f32
+                        {
+                            (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32)
+                                / 2.0
+                        } else {
+                            0.0
+                        };
+                        let centered_offset_y = if (self.zoom * self.buffer.dim().height as f32)
+                            < self.dim.height as f32
+                        {
+                            (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32)
+                                / 2.0
+                        } else {
+                            0.0
+                        };
+
+                        let source_x = ((coord.x as f32 - centered_offset_x) / self.zoom
+                            + self.scroll_offset.x as f32)
+                            .round() as i32;
+                        let source_y = ((coord.y as f32 - centered_offset_y) / self.zoom
+                            + self.scroll_offset.y as f32)
+                            .round() as i32;
+
+                        if source_x >= 0
+                            && source_x < self.buffer.dim().width
+                            && source_y >= 0
+                            && source_y < self.buffer.dim().height
+                        {
+                            let grid_x = source_x / grid;
+                            let grid_y = source_y / grid;
+
+                            if grid_x * grid < self.buffer.dim().width
+                                && grid_y * grid < self.buffer.dim().height
+                                && Some((grid_x, grid_y)) != self.hover
+                            {
+                                self.hover = Some((grid_x, grid_y));
+                                ctx.ui.send(TheEvent::TileEditorHoverChanged(
+                                    self.id.clone(),
+                                    vec2i(grid_x, grid_y),
+                                ));
+                            }
+                        }
+                    }
                     redraw = true;
                 }
             }
@@ -269,11 +327,13 @@ impl TheWidget for TheRGBAView {
                     + self.dim.buffer_x) as usize
                     * 4;
 
-                if let Some(grid) = self.grid {
-                    if src_x as i32 % grid == 0 || src_y as i32 % grid == 0 {
-                        target.pixels_mut()[target_index..target_index + 4]
-                            .copy_from_slice(&self.grid_color);
-                        continue;
+                if self.mode == TheRGBAViewMode::TileSelection {
+                    if let Some(grid) = self.grid {
+                        if src_x as i32 % grid == 0 || src_y as i32 % grid == 0 {
+                            target.pixels_mut()[target_index..target_index + 4]
+                                .copy_from_slice(&self.grid_color);
+                            continue;
+                        }
                     }
                 }
 
@@ -300,6 +360,23 @@ impl TheWidget for TheRGBAView {
                             );
                             target.pixels_mut()[target_index..target_index + 4].copy_from_slice(&m);
                             copy = false;
+                        } else if let Some(hover_color) = self.hover_color {
+                             if self.hover == Some((src_x / grid, src_y / grid)) {
+                                let s = self.buffer.pixels();
+                                let c = &[
+                                    s[src_index],
+                                    s[src_index + 1],
+                                    s[src_index + 2],
+                                    s[src_index + 3],
+                                ];
+                                let m = mix_color(
+                                    c,
+                                    &hover_color,
+                                    hover_color[3] as f32 / 255.0,
+                                );
+                                target.pixels_mut()[target_index..target_index + 4].copy_from_slice(&m);
+                                copy = false;
+                            }
                         }
                     }
 
@@ -365,6 +442,7 @@ pub trait TheRGBAViewTrait {
     fn set_grid(&mut self, grid: Option<i32>);
     fn set_grid_color(&mut self, color: RGBA);
     fn set_selection_color(&mut self, color: RGBA);
+    fn set_hover_color(&mut self, color: Option<RGBA>);
 
     fn set_associated_layout(&mut self, id: TheId);
 
@@ -411,6 +489,10 @@ impl TheRGBAViewTrait for TheRGBAView {
     }
     fn set_selection_color(&mut self, color: RGBA) {
         self.selection_color = color;
+        self.is_dirty = true;
+    }
+    fn set_hover_color(&mut self, color: Option<RGBA>) {
+        self.hover_color = color;
         self.is_dirty = true;
     }
     fn selection(&self) -> FxHashSet<(i32, i32)> {

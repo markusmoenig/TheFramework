@@ -91,7 +91,6 @@ impl TheWidget for TheTabbar {
                     redraw = true;
                     self.is_dirty = true;
                 }
-
             }
             TheEvent::LostHover(_id) => {
                 self.hover_index = None;

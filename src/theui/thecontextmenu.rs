@@ -5,7 +5,7 @@ use crate::prelude::*;
 pub struct TheContextMenuItem {
     pub name: String,
     pub event: Option<TheEvent>,
-    pub layout: Option<Box< dyn TheLayout>>,
+    pub layout: Option<Box<dyn TheLayout>>,
 }
 
 impl TheContextMenuItem {
@@ -40,9 +40,7 @@ impl Default for TheContextMenu {
 
 impl TheContextMenu {
     pub fn new() -> Self {
-        Self {
-            items: vec![],
-        }
+        Self { items: vec![] }
     }
 
     /// Add an item,
