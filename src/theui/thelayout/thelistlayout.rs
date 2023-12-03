@@ -255,6 +255,8 @@ pub trait TheListLayoutTrait {
     fn selected(&self) -> Option<TheId>;
     /// Set the height of the items
     fn set_item_size(&mut self, item_size: i32);
+    /// Selects the first item (and sends events)
+    fn select_first_item(&mut self, ctx: &mut TheContext);
 }
 
 impl TheListLayoutTrait for TheListLayout {
@@ -269,6 +271,14 @@ impl TheListLayoutTrait for TheListLayout {
             if !w.id().equals(&Some(item.clone())) {
                 w.set_state(TheWidgetState::None);
             }
+        }
+    }
+
+    fn select_first_item(&mut self, ctx: &mut TheContext) {
+        self.deselect_all();
+        if !self.widgets.is_empty() {
+            self.widgets[0].set_state(TheWidgetState::Selected);
+            ctx.ui.send_widget_state_changed(self.widgets[0].id(), TheWidgetState::Selected);
         }
     }
 

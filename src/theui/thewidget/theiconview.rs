@@ -3,7 +3,6 @@ use crate::prelude::*;
 pub struct TheIconView {
     id: TheId,
     limiter: TheSizeLimiter,
-    state: TheWidgetState,
 
     is_dirty: bool,
     tile: TheRGBATile,
@@ -29,7 +28,6 @@ impl TheWidget for TheIconView {
         Self {
             id,
             limiter,
-            state: TheWidgetState::None,
 
             is_dirty: true,
             tile: TheRGBATile::default(),
@@ -55,16 +53,7 @@ impl TheWidget for TheIconView {
         // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
             TheEvent::MouseDown(_coord) => {
-                if self.state != TheWidgetState::Clicked {
-                    self.state = TheWidgetState::Clicked;
-                    ctx.ui.send_widget_state_changed(self.id(), self.state);
-                }
-                self.is_dirty = true;
-                redraw = true;
-            }
-            TheEvent::MouseUp(_coord) => {
-                self.state = TheWidgetState::None;
-                ctx.ui.send_widget_state_changed(self.id(), self.state);
+                ctx.ui.send_widget_state_changed(self.id(), TheWidgetState::Clicked);
                 self.is_dirty = true;
                 redraw = true;
             }

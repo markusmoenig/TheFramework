@@ -106,6 +106,12 @@ impl TheLayout for TheVLayout {
         }
     }
 
+    fn relayout(&mut self, ctx: &mut TheContext) {
+        let dim = self.dim;
+        self.dim = TheDim::zero();
+        self.set_dim(dim, ctx);
+    }
+
     fn limiter(&self) -> &TheSizeLimiter {
         &self.limiter
     }

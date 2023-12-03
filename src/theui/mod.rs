@@ -432,12 +432,19 @@ impl TheUI {
         self.canvas.get_layout(Some(&name.to_string()), None)
     }
 
-    /// Gets a given TheRGBALayout by name
+    /// Gets a given TheListLayout by name
     pub fn get_list_layout(&mut self, name: &str) -> Option<&mut dyn TheListLayoutTrait> {
         if let Some(text_line_edit) = self.canvas.get_layout(Some(&name.to_string()), None) {
             return text_line_edit.as_list_layout();
         }
         None
+    }
+
+    /// Selects the first item of a list layout.
+    pub fn select_first_list_item(&mut self, name: &str, ctx: &mut TheContext){
+        if let Some(layout) = self.get_list_layout(name) {
+            layout.select_first_item(ctx);
+        }
     }
 
     /// Gets a given TheRGBALayout by name
