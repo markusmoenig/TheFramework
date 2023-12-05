@@ -168,6 +168,24 @@ impl TheRGBABuffer {
             .map(|region| self.extract_region(region))
             .collect()
     }
+
+    /// Returns the pixel at the given UV coordinate.
+    pub fn at_f(&self, uv: Vec2f) -> Option<[u8; 4]> {
+        let x = (uv.x * self.dim.width as f32).round() as i32;
+        let y = (uv.y * self.dim.height as f32).round() as i32;
+
+        if x >= 0 && x < self.dim.width && y >= 0 && y < self.dim.height {
+            let pixel_index = (y * self.dim.width + x) as usize * 4;
+            Some([
+                self.buffer[pixel_index],
+                self.buffer[pixel_index + 1],
+                self.buffer[pixel_index + 2],
+                self.buffer[pixel_index + 3],
+            ])
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]
