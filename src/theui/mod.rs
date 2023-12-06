@@ -102,6 +102,8 @@ pub struct TheUI {
 
     app_state_events: FxHashMap<String, Sender<TheEvent>>,
 
+    statusbar_name: Option<String>,
+
     pub is_dirty: bool,
 }
 
@@ -125,6 +127,8 @@ impl TheUI {
             dialog_text: "".to_string(),
             dialog: None,
 
+            statusbar_name: None,
+
             is_dirty: false,
         }
     }
@@ -141,6 +145,10 @@ impl TheUI {
         let (tx, rx) = mpsc::channel();
         self.app_state_events.insert(name, tx);
         rx
+    }
+
+    pub fn set_statusbar_name(&mut self, name: String) {
+        self.statusbar_name = Some(name);
     }
 
     pub fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {
@@ -213,12 +221,41 @@ impl TheUI {
                     }
                     TheEvent::GainedHover(id) => {
                         //println!("Gained hover {:?}", id);
+                        if let Some(statusbar_name) = &self.statusbar_name {
+                            let mut status_text : Option<String> = None;
+                            if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
+                                status_text = widget.status_text();
+                            }
+
+                            if let Some(widget) = self.canvas.get_widget(Some(statusbar_name), None) {
+                                if let Some(widget) = widget.as_statusbar() {
+                                    if let Some(status_text) = status_text {
+                                        widget.set_text(status_text);
+                                    } else {
+                                        widget.set_text("".to_string());
+                                    }
+                                }
+                            }
+                        }
                     }
                     TheEvent::LostHover(id) => {
                         //println!("Lost hover {:?}", id);
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
                             widget.on_event(&TheEvent::LostHover(widget.id().clone()), ctx);
                             widget.set_needs_redraw(true);
+                        }
+                        if let Some(statusbar_name) = &self.statusbar_name {
+                            let mut status_text : Option<String> = None;
+
+                            if let Some(widget) = self.canvas.get_widget(Some(statusbar_name), None) {
+                                if let Some(widget) = widget.as_statusbar() {
+                                    if let Some(status_text) = status_text {
+                                        widget.set_text(status_text);
+                                    } else {
+                                        widget.set_text("".to_string());
+                                    }
+                                }
+                            }
                         }
                     }
                     TheEvent::ValueChanged(id, value) => {
@@ -415,6 +452,14 @@ impl TheUI {
     pub fn get_text(&mut self, name: &str) -> Option<&mut dyn TheTextTrait> {
         if let Some(text) = self.canvas.get_widget(Some(&name.to_string()), None) {
             return text.as_text();
+        }
+        None
+    }
+
+    /// Gets a given statusbar by name
+    pub fn get_statusbar(&mut self, name: &str) -> Option<&mut dyn TheStatusbarTrait> {
+        if let Some(text) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            return text.as_statusbar();
         }
         None
     }

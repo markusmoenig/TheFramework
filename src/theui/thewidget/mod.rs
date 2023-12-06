@@ -70,7 +70,7 @@ pub mod prelude {
         TheRGBAView, TheRGBAViewMode, TheRGBAViewTrait,
     };
     pub use crate::theui::thewidget::thespacer::TheSpacer;
-    pub use crate::theui::thewidget::thestatusbar::TheStatusbar;
+    pub use crate::theui::thewidget::thestatusbar::{TheStatusbar, TheStatusbarTrait};
     pub use crate::theui::thewidget::thetabbar::{TheTabbar, TheTabbarTrait};
     pub use crate::theui::thewidget::thetextedit::{TheTextEdit, TheTextEditTrait};
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
@@ -138,6 +138,13 @@ pub trait TheWidget {
 
     /// Set the widget value.
     fn set_value(&mut self, value: TheValue) {}
+
+
+    /// Retrieves the status text for the widget.
+    fn status_text(&self) -> Option<String>{ None }
+
+    /// Sets the status text for the widget.
+    fn set_status_text(&mut self, text: &str) {}
 
     /// Draw the widget in the given style
     fn draw(
@@ -234,6 +241,11 @@ pub trait TheWidget {
 
     /// Attempts to cast to TheGroupButtonTrait. Only valid for TheGroupButton.
     fn as_group_button(&mut self) -> Option<&mut dyn TheGroupButtonTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheStatusbarTrait. Only valid for TheStatusbar.
+    fn as_statusbar(&mut self) -> Option<&mut dyn TheStatusbarTrait> {
         None
     }
 

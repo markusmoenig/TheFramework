@@ -8,6 +8,8 @@ pub struct TheMenubarButton {
     icon_name: String,
     icon_offset: Vec2i,
 
+    status: Option<String>,
+
     dim: TheDim,
     is_dirty: bool,
 }
@@ -27,6 +29,8 @@ impl TheWidget for TheMenubarButton {
 
             icon_name: "".to_string(),
             icon_offset: vec2i(0, 0),
+
+            status: None,
 
             dim: TheDim::zero(),
             is_dirty: false,
@@ -84,6 +88,15 @@ impl TheWidget for TheMenubarButton {
             self.dim = dim;
             self.is_dirty = true;
         }
+    }
+
+    fn status_text(&self) -> Option<String>{
+        self.status.clone()
+     }
+
+    /// Sets the status text for the widget.
+    fn set_status_text(&mut self, text: &str) {
+        self.status = Some(text.to_string());
     }
 
     fn limiter(&self) -> &TheSizeLimiter {

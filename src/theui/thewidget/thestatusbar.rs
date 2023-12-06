@@ -4,6 +4,7 @@ pub struct TheStatusbar {
     id: TheId,
 
     limiter: TheSizeLimiter,
+    text: String,
 
     dim: TheDim,
     is_dirty: bool,
@@ -20,6 +21,7 @@ impl TheWidget for TheStatusbar {
         Self {
             id,
             limiter,
+            text: "".to_string(),
 
             dim: TheDim::zero(),
             is_dirty: false,
@@ -89,17 +91,45 @@ impl TheWidget for TheStatusbar {
             }
         }
 
-        // ctx.draw.rect(
-        //     buffer.pixels_mut(),
-        //     &(utuple.0, utuple.1, 1, utuple.3),
-        //     stride,
-        //     style.theme().color(StatusbarEnd),
-        // );
+        let mut shrinker = TheDimShrinker::zero();
+        shrinker.shrink_by(20, 1, 0, 0);
+
+        if let Some(font) = &ctx.ui.font {
+            ctx.draw.text_rect_blend(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                stride,
+                font,
+                13.0,
+                &self.text,
+                &WHITE,
+                TheHorizontalAlign::Left,
+                TheVerticalAlign::Center,
+            );
+        }
+
 
         self.is_dirty = false;
     }
 
     fn as_any(&mut self) -> &mut dyn std::any::Any {
         self
+    }
+
+    fn as_statusbar(&mut self) -> Option<&mut dyn TheStatusbarTrait> {
+        Some(self)
+    }
+}
+
+pub trait TheStatusbarTrait {
+    fn set_text(&mut self, text: String);
+}
+
+impl TheStatusbarTrait for TheStatusbar {
+    fn set_text(&mut self, text: String) {
+        if self.text != text {
+            self.text = text;
+            self.is_dirty = true;
+        }
     }
 }
