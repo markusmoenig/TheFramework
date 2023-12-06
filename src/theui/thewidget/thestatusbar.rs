@@ -100,7 +100,7 @@ impl TheWidget for TheStatusbar {
                 &self.dim.to_buffer_shrunk_utuple(&shrinker),
                 stride,
                 font,
-                13.0,
+                13.5,
                 &self.text,
                 &WHITE,
                 TheHorizontalAlign::Left,

@@ -54,7 +54,7 @@ impl TheWidget for TheCodeView {
             buffer: TheRGBABuffer::empty(),
 
             code_grid: TheCodeGrid::new(),
-            grid_size: 80,
+            grid_size: 60,
 
             scroll_offset: vec2i(0, 0),
             zoom: 1.0,
@@ -200,10 +200,24 @@ impl TheWidget for TheCodeView {
                         #[allow(clippy::single_match)]
                         match atom {
                             TheAtom::Value(v) => {
-                                main_text = Some("Value".to_string());
+                                if let Some(int) = v.to_i32() {
+                                    main_text = Some(int.to_string());
+                                }
+                            }
+                            TheAtom::Add() => {
+                                main_text = Some("+".to_string());
                             }
                             _ => {}
                         }
+
+                        let back_color = if main_text.is_none() {
+                            &BLACK
+                        } else {
+                            &[60, 60, 60, 255]
+                        };
+
+                        ctx.draw
+                            .rect(self.buffer.pixels_mut(), &rect, stride, back_color);
 
                         if let Some(font) = &ctx.ui.font {
                             if let Some(main_text) = main_text {
@@ -232,7 +246,7 @@ impl TheWidget for TheCodeView {
 
         // ---
 
-        pub fn mix_color(a: &[u8; 4], b: &[u8; 4], v: f32) -> [u8; 4] {
+        pub fn _mix_color(a: &[u8; 4], b: &[u8; 4], v: f32) -> [u8; 4] {
             [
                 (((1.0 - v) * (a[0] as f32 / 255.0) + b[0] as f32 / 255.0 * v) * 255.0) as u8,
                 (((1.0 - v) * (a[1] as f32 / 255.0) + b[1] as f32 / 255.0 * v) * 255.0) as u8,

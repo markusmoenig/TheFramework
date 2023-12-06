@@ -59,34 +59,36 @@ impl TheParseRule {
     }
 }
 
-struct TheParser {
-    current: TheAtom,
-    previous: TheAtom,
-
-    had_error: bool,
-    panic_mode: bool,
-    error_message: String,
-    error_line: usize,
+pub struct TheCompilerContext {
+    // This stack is only used for verification during compilation.
+    pub stack: Vec<TheValue>,
+    pub error_msg: Option<String>,
 }
 
-impl TheParser {
+impl Default for TheCompilerContext {
+    fn default() -> Self {
+        TheCompilerContext::new()
+    }
+}
+
+impl TheCompilerContext {
     pub fn new() -> Self {
         Self {
-            current: TheAtom::Stop,
-            previous: TheAtom::Stop,
-            had_error: false,
-            panic_mode: false,
-            error_message: "".to_string(),
-            error_line: 0,
+            stack: vec![],
+            error_msg: None
         }
     }
 }
 
 pub struct TheCompiler {
-    parser: TheParser,
     rules: FxHashMap<TheAtomKind, TheParseRule>,
-    code: Vec<TheAtom>,
+    grid: TheCodeGrid,
     pipe: TheExePipeline,
+
+    ctx: TheCompilerContext,
+
+    current: TheAtom,
+    previous: TheAtom,
 }
 
 impl Default for TheCompiler {
@@ -112,52 +114,47 @@ impl TheCompiler {
         rule(Eof, None, None, P::None);
 
         Self {
-            parser: TheParser::new(),
             rules,
-            code: vec![],
+            grid: TheCodeGrid::default(),
             pipe: TheExePipeline::new(),
+
+            ctx: TheCompilerContext::default(),
+
+            current: TheAtom::Stop,
+            previous: TheAtom::Stop,
         }
     }
 
-    pub fn compile(&mut self, ctx: TheCodeGrid) -> Result<TheExePipeline, String> {
+    pub fn compile(&mut self, grid: TheCodeGrid) -> Result<TheExePipeline, String> {
         self.pipe = TheExePipeline::new();
 
-        let mut code = vec![];
+        self.current = TheAtom::Stop;
+        self.previous = TheAtom::Stop;
 
-        let mut x = 0;
-        let mut y = 0;
+        self.ctx = TheCompilerContext::default();
 
-        loop {
-            if let Some(atom) = ctx.code.get(&(x, y)) {
-                //let node = atom.to_node();
-                code.push(atom.clone());
-
-                x += 1;
-            } else if x == 0 {
-                break;
-            } else {
-                x = 0;
-                y += 1;
-            }
-        }
-
-        self.code = code;
+        self.grid = grid;
 
         self.advance();
 
-        while !self.matches(TheAtomKind::Eof) {
+        while !self.matches(TheAtomKind::Eof) && self.ctx.error_msg.is_none() {
             self.parse_precedence(ThePrecedence::Assignment);
         }
 
-        Ok(self.pipe.clone())
+         if let Some(error) = &self.ctx.error_msg {
+            println!("Error: {}", error);
+            Err(error.clone())
+        } else {
+            Ok(self.pipe.clone())
+        }
     }
 
     fn number(&mut self, _can_assign: bool) {
-        self.pipe.add(self.parser.previous.to_node());
+        self.pipe.add(self.previous.to_node(&mut self.ctx));
     }
 
     fn binary(&mut self, _can_assign: bool) {
-        let operator_type = self.parser.previous.to_kind();
+        let operator_type = self.previous.to_kind();
 
         let rule = self.get_rule(operator_type);
         self.parse_precedence(rule.precedence.next_higher());
@@ -170,10 +167,10 @@ impl TheCompiler {
             // TokenType::Less => self.emit_instruction(Instruction::Less),
             // TokenType::LessEqual => self.emit_instructions(Instruction::Greater, Instruction::Not),
             TheAtomKind::Plus => {
-                self.pipe.add(TheAtom::Add().to_node());
+                self.pipe.add(TheAtom::Add().to_node(&mut self.ctx));
             }
             TheAtomKind::Star => {
-                self.pipe.add(TheAtom::Multiply().to_node());
+                self.pipe.add(TheAtom::Multiply().to_node(&mut self.ctx));
             }
             // TokenType::Minus => self.emit_instruction(Instruction::Subtract),
             // TokenType::Star => self.emit_instruction(Instruction::Multiply),
@@ -189,7 +186,7 @@ impl TheCompiler {
     fn parse_precedence(&mut self, precedence: ThePrecedence) {
         self.advance();
 
-        let prefix_rule = self.get_rule(self.parser.previous.to_kind()).prefix;
+        let prefix_rule = self.get_rule(self.previous.to_kind()).prefix;
         let can_assign = precedence <= ThePrecedence::Assignment;
 
         if let Some(prefix_rule) = prefix_rule {
@@ -199,9 +196,9 @@ impl TheCompiler {
             return;
         }
 
-        while precedence <= self.get_rule(self.parser.current.to_kind()).precedence {
+        while precedence <= self.get_rule(self.current.to_kind()).precedence {
             self.advance();
-            let infix_rule = self.get_rule(self.parser.previous.to_kind()).infix;
+            let infix_rule = self.get_rule(self.previous.to_kind()).infix;
 
             if let Some(infix_rule) = infix_rule {
                 infix_rule(self, can_assign);
@@ -215,8 +212,12 @@ impl TheCompiler {
 
     /// Advance one token
     fn advance(&mut self) {
-        self.parser.previous = self.parser.current.clone();
+        self.previous = self.current.clone();
 
+        self.current = self.grid.get_next();
+        println!("{:?} : {:?}", self.grid.current_pos, self.current);
+
+        /*
         loop {
             self.parser.current = if self.code.is_empty() {
                 TheAtom::Stop
@@ -228,7 +229,7 @@ impl TheCompiler {
                 break;
             }
             //self.error_at_current(self.parser.current.lexeme.clone().as_str());
-        }
+        }*/
     }
 
     fn matches(&mut self, kind: TheAtomKind) -> bool {
@@ -241,9 +242,10 @@ impl TheCompiler {
     }
 
     fn check(&self, kind: TheAtomKind) -> bool {
-        self.parser.current.to_kind() == kind
+        self.current.to_kind() == kind
     }
 
+    /*
     /// Error at the current token
     fn error_at_current(&mut self, message: &str) {
         self.error_at(self.parser.current.clone(), message)
@@ -264,5 +266,5 @@ impl TheCompiler {
         self.parser.error_message = message.to_owned();
         //self.parser.error_line = self.parser.previous.line;
         self.parser.had_error = true;
-    }
+    }*/
 }

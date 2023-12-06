@@ -9,7 +9,7 @@ pub enum TheAtom {
 }
 
 impl TheAtom {
-    pub fn to_node(&self) -> TheExeNode {
+    pub fn to_node(&self, ctx: &mut TheCompilerContext) -> TheExeNode {
         match self {
             TheAtom::Stop => {
                 let call: TheExeNodeCall = |_stack: &mut Vec<TheValue>, _values: &Vec<TheValue>| {};
@@ -20,6 +20,8 @@ impl TheAtom {
                     stack.push(values[0].clone());
                 };
 
+                ctx.stack.push(value.clone());
+
                 TheExeNode::new(call, vec![value.clone()])
             }
             TheAtom::Add() => {
@@ -28,6 +30,10 @@ impl TheAtom {
                     let b = stack.pop().unwrap().to_i32().unwrap();
                     stack.push(TheValue::Int(a + b));
                 };
+
+                if ctx.stack.len() != 2 {
+                    ctx.error_msg = Some(format!("Invalid stack for Add ({})", ctx.stack.len()));
+                }
 
                 TheExeNode::new(call, vec![])
             }
@@ -52,6 +58,7 @@ impl TheAtom {
         }
     }
 
+    #[cfg(feature = "ui")]
     /// Generates a text layout to edit the properties of the atom
     pub fn to_text_layout(&self) -> TheTextLayout {
         let mut text_layout = TheTextLayout::new(TheId::empty());
@@ -65,6 +72,8 @@ impl TheAtom {
         };
         text_layout
     }
+
+    #[cfg(feature = "ui")]
     /// Generates a text layout to edit the properties of the atom
     pub fn process_value_change(&mut self, name: String, value: TheValue) {
         match self {

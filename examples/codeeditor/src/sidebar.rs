@@ -117,12 +117,7 @@ impl Sidebar {
                     if let Some(code_list_selection) = &self.code_list_selection {
                         if let Some(widget) = ui.get_widget_id(code_list_selection.uuid) {
                             if let Some(name) = widget.value().to_string() {
-                                match name.as_str() {
-                                    "Value" => {
-                                        atom = Some(ui.create_code_atom("Integer"));
-                                    }
-                                    _ => {}
-                                }
+                                atom = Some(ui.create_code_atom(name.as_str()));
                             }
                         }
                     }

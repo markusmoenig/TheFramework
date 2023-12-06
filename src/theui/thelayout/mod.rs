@@ -32,7 +32,7 @@ pub mod prelude {
 
 /// TheLayout trait defines an abstract layout interface for widgets.
 #[allow(unused)]
-pub trait TheLayout {
+pub trait TheLayout : Send {
     fn new(id: TheId) -> Self
     where
         Self: Sized;

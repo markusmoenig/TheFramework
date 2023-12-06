@@ -93,7 +93,7 @@ pub enum TheWidgetState {
 
 /// TheWidget trait defines the asbtract functionality of a widget.
 #[allow(unused)]
-pub trait TheWidget {
+pub trait TheWidget : Send {
     fn new(id: TheId) -> Self
     where
         Self: Sized;
