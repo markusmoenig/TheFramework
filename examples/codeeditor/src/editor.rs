@@ -105,28 +105,15 @@ impl TheTrait for CodeEditor {
                                 if let Some(code_view) = layout.code_view_mut().as_code_view() {
                                     let grid = code_view.code_grid();
 
-                                    /*
-                                    code_ctx
-                                        .code
-                                        .insert((0, 0), TheAtom::Value(TheValue::Int(2)));
-                                    code_ctx.code.insert((1, 0), TheAtom::Add());
-                                    code_ctx
-                                        .code
-                                        .insert((2, 0), TheAtom::Value(TheValue::Int(5)));
-                                    code_ctx.code.insert((3, 0), TheAtom::Multiply());
-                                    code_ctx
-                                        .code
-                                        .insert((4, 0), TheAtom::Value(TheValue::Int(5)));
-                                    */
-
                                     let mut compiler = TheCompiler::new();
                                     let rc = compiler.compile(grid);
 
                                     if let Ok(mut pipe) = rc {
-                                        pipe.execute();
+                                        let env = TheExeEnvironment::default();
+                                        pipe.execute(&env);
                                     }
 
-                                    //println!("Size of MyEnum: {} bytes", std::mem::size_of::<TheAtom>());
+                                    println!("Size of MyEnum: {} bytes", std::mem::size_of::<TheAtom>());
                                 }
                             }
                         }

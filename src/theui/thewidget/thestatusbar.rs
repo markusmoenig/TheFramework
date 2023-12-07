@@ -108,7 +108,6 @@ impl TheWidget for TheStatusbar {
             );
         }
 
-
         self.is_dirty = false;
     }
 

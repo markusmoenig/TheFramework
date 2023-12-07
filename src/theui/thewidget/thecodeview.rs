@@ -52,7 +52,7 @@ impl TheWidget for TheCodeView {
             buffer: TheRGBABuffer::empty(),
 
             code_grid: TheCodeGrid::new(),
-            grid_size: 60,
+            grid_size: 70,
 
             scroll_offset: vec2i(0, 0),
             zoom: 1.0,
@@ -158,7 +158,7 @@ impl TheWidget for TheCodeView {
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
-        _style: &mut Box<dyn TheStyle>,
+        style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
         if !self.dim().is_valid() || !self.buffer.dim().is_valid() {
@@ -173,19 +173,28 @@ impl TheWidget for TheCodeView {
             let grid_x = 10;
             let grid_y = 10;
 
+            let background = *style.theme().color(CodeGridBackground);
+            let normal = *style.theme().color(CodeGridNormal);
+            let selected = *style.theme().color(CodeGridSelected);
+            let text_color = *style.theme().color(CodeGridText);
+
+            let utuple = self.buffer.dim().to_buffer_utuple();
+            ctx.draw
+                .rect(self.buffer.pixels_mut(), &utuple, stride, &background);
+
             for y in 0..grid_y {
                 for x in 0..grid_x {
                     let color = if Some((x, y)) == self.selected {
-                        &WHITE
+                        selected
                     } else {
-                        &[30, 30, 30, 255]
+                        normal
                     };
 
                     let rect = (
-                        (x * self.grid_size as u32) as usize,
-                        (y * self.grid_size as u32) as usize,
-                        self.grid_size as usize,
-                        self.grid_size as usize,
+                        (x * self.grid_size as u32) as usize + 2,
+                        (y * self.grid_size as u32) as usize + 2,
+                        self.grid_size as usize - 4,
+                        self.grid_size as usize - 4,
                     );
 
                     if let Some(atom) = self.code_grid.code.get(&(x, y)) {
@@ -193,8 +202,23 @@ impl TheWidget for TheCodeView {
 
                         //let back_color = [60, 60, 60, 255];
 
-                        ctx.draw
-                            .rect(self.buffer.pixels_mut(), &rect, stride, &[60, 60, 60, 255]);
+                        //ctx.draw
+                        //    .rect(self.buffer.pixels_mut(), &rect, stride, &[60, 60, 60, 255]);
+
+                        ctx.draw.rect_outline_border(
+                            self.buffer.pixels_mut(),
+                            &rect,
+                            stride,
+                            &color,
+                            1,
+                        );
+
+                        ctx.draw.rect(
+                            self.buffer.pixels_mut(),
+                            &(rect.0 + 1, rect.1 + 1, rect.2 - 2, rect.3 - 2),
+                            stride,
+                            &color,
+                        );
 
                         if let Some(font) = &ctx.ui.font {
                             ctx.draw.text_rect_blend(
@@ -202,20 +226,41 @@ impl TheWidget for TheCodeView {
                                 &rect,
                                 stride,
                                 font,
-                                14.0,
+                                13.0,
                                 &text,
-                                &WHITE, //style.theme().color(ListItemText),
+                                &text_color,
                                 TheHorizontalAlign::Center,
                                 TheVerticalAlign::Center,
                             );
+
+                            match atom {
+                                TheAtom::Variable(_) => {
+                                    if x == 0 {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &(rect.0, rect.1, rect.2 - 10, rect.3 - 2),
+                                            stride,
+                                            font,
+                                            13.0,
+                                            &"=",
+                                            &text_color,
+                                            TheHorizontalAlign::Right,
+                                            TheVerticalAlign::Bottom,
+                                        );
+                                    }
+                                }
+                                _ => {}
+                            }
                         }
                     } else {
-                        ctx.draw
-                            .rect(self.buffer.pixels_mut(), &rect, stride, &BLACK);
+                        ctx.draw.rect_outline_border(
+                            self.buffer.pixels_mut(),
+                            &rect,
+                            stride,
+                            &color,
+                            0,
+                        );
                     }
-
-                    ctx.draw
-                        .rect_outline_border(self.buffer.pixels_mut(), &rect, stride, color, 1);
                 }
             }
 
@@ -258,7 +303,7 @@ impl TheWidget for TheCodeView {
 
         // Calculate the offset to center the image
         let offset_x = if scaled_width < target_width {
-            (target_width - scaled_width) / 2.0
+            0.0 //(target_width - scaled_width) / 2.0
         } else {
             -self.scroll_offset.x as f32
         };
@@ -413,12 +458,12 @@ impl TheCodeViewTrait for TheCodeView {
         self.is_dirty = true;
     }
     fn get_code_grid_offset(&self, coord: Vec2i) -> Option<(u32, u32)> {
-        let centered_offset_x =
-            if (self.zoom * self.buffer.dim().width as f32) < self.dim.width as f32 {
-                (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32) / 2.0
-            } else {
-                0.0
-            };
+        let centered_offset_x = 0.0;
+        // if (self.zoom * self.buffer.dim().width as f32) < self.dim.width as f32 {
+        //     (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32) / 2.0
+        // } else {
+        //     0.0
+        // };
         let centered_offset_y =
             if (self.zoom * self.buffer.dim().height as f32) < self.dim.height as f32 {
                 (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32) / 2.0

@@ -93,7 +93,7 @@ pub enum TheWidgetState {
 
 /// TheWidget trait defines the asbtract functionality of a widget.
 #[allow(unused)]
-pub trait TheWidget : Send {
+pub trait TheWidget: Send {
     fn new(id: TheId) -> Self
     where
         Self: Sized;
@@ -139,9 +139,10 @@ pub trait TheWidget : Send {
     /// Set the widget value.
     fn set_value(&mut self, value: TheValue) {}
 
-
     /// Retrieves the status text for the widget.
-    fn status_text(&self) -> Option<String>{ None }
+    fn status_text(&self) -> Option<String> {
+        None
+    }
 
     /// Sets the status text for the widget.
     fn set_status_text(&mut self, text: &str) {}

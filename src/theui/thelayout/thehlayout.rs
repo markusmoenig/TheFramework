@@ -187,7 +187,7 @@ impl TheLayout for TheHLayout {
 }
 
 /// TheHLayout specific functions.
-pub trait TheHLayoutTrait : TheLayout {
+pub trait TheHLayoutTrait: TheLayout {
     /// Add a widget to the layout.
     fn add_widget(&mut self, widget: Box<dyn TheWidget>);
     /// Set the layout mode.

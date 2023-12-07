@@ -18,7 +18,7 @@ impl TheCodeGrid {
         Self {
             code: FxHashMap::default(),
             current_pos: None,
-            max_pos: None
+            max_pos: None,
         }
     }
 
@@ -78,8 +78,7 @@ impl TheCodeGrid {
     }
 
     /// Reset the grid iterator.
-    pub fn reset(&mut self)  {
+    pub fn reset(&mut self) {
         self.current_pos = None;
     }
-
 }

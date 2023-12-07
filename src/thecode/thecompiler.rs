@@ -68,10 +68,7 @@ pub struct TheCompilerError {
 
 impl TheCompilerError {
     pub fn new(location: (u32, u32), message: String) -> Self {
-        Self {
-            location,
-            message
-        }
+        Self { location, message }
     }
 }
 
@@ -94,7 +91,7 @@ impl TheCompilerContext {
         Self {
             stack: vec![],
             location: (0, 0),
-            error: None
+            error: None,
         }
     }
 }
@@ -160,7 +157,7 @@ impl TheCompiler {
             self.parse_precedence(ThePrecedence::Assignment);
         }
 
-         if let Some(error) = &self.ctx.error {
+        if let Some(error) = &self.ctx.error {
             println!("Error: {:?}", error);
             Err(error.clone())
         } else {

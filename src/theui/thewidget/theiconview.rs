@@ -53,7 +53,8 @@ impl TheWidget for TheIconView {
         // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
             TheEvent::MouseDown(_coord) => {
-                ctx.ui.send_widget_state_changed(self.id(), TheWidgetState::Clicked);
+                ctx.ui
+                    .send_widget_state_changed(self.id(), TheWidgetState::Clicked);
                 self.is_dirty = true;
                 redraw = true;
             }

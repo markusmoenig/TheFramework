@@ -112,4 +112,9 @@ pub enum TheThemeColors {
     GroupButtonHoverBackground,
     GroupButtonSelectedBorder,
     GroupButtonSelectedBackground,
+
+    CodeGridBackground,
+    CodeGridNormal,
+    CodeGridSelected,
+    CodeGridText,
 }

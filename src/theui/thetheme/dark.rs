@@ -99,6 +99,11 @@ impl TheTheme for TheDarkTheme {
         colors.insert(GroupButtonSelectedBorder, [204, 204, 204, 255]);
         colors.insert(GroupButtonSelectedBackground, [149, 149, 149, 255]);
 
+        colors.insert(CodeGridBackground, [82, 82, 82, 255]);
+        colors.insert(CodeGridNormal, [174, 174, 174, 255]);
+        colors.insert(CodeGridSelected, [187, 122, 208, 255]);
+        colors.insert(CodeGridText, [85, 81, 85, 255]);
+
         Self {
             temp_color: BLACK,
             colors,

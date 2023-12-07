@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 pub struct TheCodeEditor {
     code_list_selection: Option<TheId>,
-    grid_selection: Option<(u32, u32)>
+    grid_selection: Option<(u32, u32)>,
 }
 
 impl Default for TheCodeEditor {
@@ -78,7 +78,6 @@ impl TheCodeEditor {
                 */
             }
             TheEvent::StateChanged(id, _state) => {
-
                 if id.name == "Code List Item" {
                     self.code_list_selection = Some(id.clone());
 
@@ -110,7 +109,13 @@ impl TheCodeEditor {
                 redraw = true;
             }
             TheEvent::ValueChanged(id, value) => {
-                if id.name == "Atom Integer Edit" {
+                if id.name == "Atom Variable" {
+                    if let Some(name) = value.to_string() {
+                        if !name.is_empty() {
+                            self.set_selected_atom(ui, TheAtom::Variable(name));
+                        }
+                    }
+                } else if id.name == "Atom Integer" {
                     if let Some(v) = value.to_i32() {
                         self.set_selected_atom(ui, TheAtom::Value(TheValue::Int(v)));
                     }
@@ -123,6 +128,7 @@ impl TheCodeEditor {
         redraw
     }
 
+    /// Sets the UI of the currently selected atom into the top toolbar.
     pub fn set_grid_selection_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
         if let Some(atom) = self.get_selected_atom(ui) {
             if let Some(layout) = ui.get_hlayout("Code Top Toolbar") {
@@ -167,6 +173,7 @@ impl TheCodeEditor {
     /// Create an atom for the given name.
     pub fn create_atom(&self, name: &str) -> TheAtom {
         match name {
+            "Variable" => TheAtom::Variable("Name".to_string()),
             "Integer" => TheAtom::Value(TheValue::Int(1)),
             "Add" => TheAtom::Add(),
             "Multiply" => TheAtom::Multiply(),
@@ -186,6 +193,11 @@ impl TheCodeEditor {
         code_layout.limiter_mut().set_max_width(150);
 
         let mut item = TheListItem::new(TheId::named("Code List Item"));
+        item.set_text("Variable".to_string());
+        item.set_associated_layout(code_layout.id().clone());
+        code_layout.add_item(item, ctx);
+
+        let mut item = TheListItem::new(TheId::named("Code List Item"));
         item.set_text("Integer".to_string());
         item.set_associated_layout(code_layout.id().clone());
         code_layout.add_item(item, ctx);
@@ -202,6 +214,8 @@ impl TheCodeEditor {
 
         code_layout.select_first_item(ctx);
         list_canvas.set_layout(code_layout);
+
+        // ---
 
         let mut list_toolbar_canvas = TheCanvas::new();
         let mut toolbar_hlayout = TheHLayout::new(TheId::empty());
@@ -250,5 +264,4 @@ impl TheCodeEditor {
 
         canvas
     }
-
 }

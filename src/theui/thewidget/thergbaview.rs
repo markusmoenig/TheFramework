@@ -361,7 +361,7 @@ impl TheWidget for TheRGBAView {
                             target.pixels_mut()[target_index..target_index + 4].copy_from_slice(&m);
                             copy = false;
                         } else if let Some(hover_color) = self.hover_color {
-                             if self.hover == Some((src_x / grid, src_y / grid)) {
+                            if self.hover == Some((src_x / grid, src_y / grid)) {
                                 let s = self.buffer.pixels();
                                 let c = &[
                                     s[src_index],
@@ -369,12 +369,9 @@ impl TheWidget for TheRGBAView {
                                     s[src_index + 2],
                                     s[src_index + 3],
                                 ];
-                                let m = mix_color(
-                                    c,
-                                    &hover_color,
-                                    hover_color[3] as f32 / 255.0,
-                                );
-                                target.pixels_mut()[target_index..target_index + 4].copy_from_slice(&m);
+                                let m = mix_color(c, &hover_color, hover_color[3] as f32 / 255.0);
+                                target.pixels_mut()[target_index..target_index + 4]
+                                    .copy_from_slice(&m);
                                 copy = false;
                             }
                         }

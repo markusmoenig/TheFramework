@@ -76,8 +76,7 @@ impl TheWidget for TheText {
                 self.limiter_mut()
                     .set_max_size(vec2i(size.0 as i32 + 1, size.1 as i32 - 1));
             } else {
-                self.limiter_mut()
-                    .set_max_size(vec2i(20, 20));
+                self.limiter_mut().set_max_size(vec2i(20, 20));
             }
         }
     }

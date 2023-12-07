@@ -90,9 +90,9 @@ impl TheWidget for TheMenubarButton {
         }
     }
 
-    fn status_text(&self) -> Option<String>{
+    fn status_text(&self) -> Option<String> {
         self.status.clone()
-     }
+    }
 
     /// Sets the status text for the widget.
     fn set_status_text(&mut self, text: &str) {

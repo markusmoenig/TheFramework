@@ -278,7 +278,8 @@ impl TheListLayoutTrait for TheListLayout {
         self.deselect_all();
         if !self.widgets.is_empty() {
             self.widgets[0].set_state(TheWidgetState::Selected);
-            ctx.ui.send_widget_state_changed(self.widgets[0].id(), TheWidgetState::Selected);
+            ctx.ui
+                .send_widget_state_changed(self.widgets[0].id(), TheWidgetState::Selected);
         }
     }
 

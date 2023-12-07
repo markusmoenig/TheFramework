@@ -222,12 +222,13 @@ impl TheUI {
                     TheEvent::GainedHover(id) => {
                         //println!("Gained hover {:?}", id);
                         if let Some(statusbar_name) = &self.statusbar_name {
-                            let mut status_text : Option<String> = None;
+                            let mut status_text: Option<String> = None;
                             if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
                                 status_text = widget.status_text();
                             }
 
-                            if let Some(widget) = self.canvas.get_widget(Some(statusbar_name), None) {
+                            if let Some(widget) = self.canvas.get_widget(Some(statusbar_name), None)
+                            {
                                 if let Some(widget) = widget.as_statusbar() {
                                     if let Some(status_text) = status_text {
                                         widget.set_text(status_text);
@@ -245,9 +246,10 @@ impl TheUI {
                             widget.set_needs_redraw(true);
                         }
                         if let Some(statusbar_name) = &self.statusbar_name {
-                            let mut status_text : Option<String> = None;
+                            let mut status_text: Option<String> = None;
 
-                            if let Some(widget) = self.canvas.get_widget(Some(statusbar_name), None) {
+                            if let Some(widget) = self.canvas.get_widget(Some(statusbar_name), None)
+                            {
                                 if let Some(widget) = widget.as_statusbar() {
                                     if let Some(status_text) = status_text {
                                         widget.set_text(status_text);
@@ -486,7 +488,7 @@ impl TheUI {
     }
 
     /// Selects the first item of a list layout.
-    pub fn select_first_list_item(&mut self, name: &str, ctx: &mut TheContext){
+    pub fn select_first_list_item(&mut self, name: &str, ctx: &mut TheContext) {
         if let Some(layout) = self.get_list_layout(name) {
             layout.select_first_item(ctx);
         }
