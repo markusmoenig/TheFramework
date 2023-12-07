@@ -59,10 +59,28 @@ impl TheParseRule {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct TheCompilerError {
+    // This stack is only used for verification during compilation.
+    pub location: (u32, u32),
+    pub message: String,
+}
+
+impl TheCompilerError {
+    pub fn new(location: (u32, u32), message: String) -> Self {
+        Self {
+            location,
+            message
+        }
+    }
+}
+
 pub struct TheCompilerContext {
     // This stack is only used for verification during compilation.
     pub stack: Vec<TheValue>,
-    pub error_msg: Option<String>,
+    pub location: (u32, u32),
+
+    pub error: Option<TheCompilerError>,
 }
 
 impl Default for TheCompilerContext {
@@ -75,7 +93,8 @@ impl TheCompilerContext {
     pub fn new() -> Self {
         Self {
             stack: vec![],
-            error_msg: None
+            location: (0, 0),
+            error: None
         }
     }
 }
@@ -125,7 +144,7 @@ impl TheCompiler {
         }
     }
 
-    pub fn compile(&mut self, grid: TheCodeGrid) -> Result<TheExePipeline, String> {
+    pub fn compile(&mut self, grid: TheCodeGrid) -> Result<TheExePipeline, TheCompilerError> {
         self.pipe = TheExePipeline::new();
 
         self.current = TheAtom::Stop;
@@ -137,12 +156,12 @@ impl TheCompiler {
 
         self.advance();
 
-        while !self.matches(TheAtomKind::Eof) && self.ctx.error_msg.is_none() {
+        while !self.matches(TheAtomKind::Eof) && self.ctx.error.is_none() {
             self.parse_precedence(ThePrecedence::Assignment);
         }
 
-         if let Some(error) = &self.ctx.error_msg {
-            println!("Error: {}", error);
+         if let Some(error) = &self.ctx.error {
+            println!("Error: {:?}", error);
             Err(error.clone())
         } else {
             Ok(self.pipe.clone())
@@ -213,6 +232,10 @@ impl TheCompiler {
     /// Advance one token
     fn advance(&mut self) {
         self.previous = self.current.clone();
+
+        if let Some(location) = self.grid.current_pos {
+            self.ctx.location = location;
+        }
 
         self.current = self.grid.get_next();
         println!("{:?} : {:?}", self.grid.current_pos, self.current);

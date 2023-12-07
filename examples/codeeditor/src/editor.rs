@@ -6,6 +6,8 @@ pub struct CodeEditor {
     sidebar: Sidebar,
     browser: Browser,
 
+    editor: TheCodeEditor,
+
     event_receiver: Option<Receiver<TheEvent>>,
 }
 
@@ -17,6 +19,8 @@ impl TheTrait for CodeEditor {
         Self {
             sidebar: Sidebar::new(),
             browser: Browser::new(),
+
+            editor: TheCodeEditor::default(),
 
             event_receiver: None,
         }
@@ -58,7 +62,7 @@ impl TheTrait for CodeEditor {
         top_canvas.set_layout(hlayout);
 
         // Right
-        self.sidebar.init_ui(ui, ctx);
+        //self.sidebar.init_ui(ui, ctx);
 
         // Bottom
 
@@ -68,27 +72,7 @@ impl TheTrait for CodeEditor {
 
         ui.canvas.set_top(top_canvas);
 
-        let mut center = TheCanvas::new();
-
-        let mut toolbar_canvas = TheCanvas::new();
-
-        let mut compile_button = TheTraybarButton::new(TheId::named("Compile"));
-        //compile_button.set_disabled(true);
-        compile_button.set_text("Compile".to_string());
-
-        let mut toolbar_hlayout = TheHLayout::new(TheId::empty());
-        toolbar_hlayout.set_background_color(None);
-        toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
-        toolbar_hlayout.add_widget(Box::new(compile_button));
-        toolbar_hlayout.limiter_mut().set_max_height(27);
-        toolbar_canvas.set_layout(toolbar_hlayout);
-        toolbar_canvas.set_widget(TheTraybar::new(TheId::empty()));
-
-        let code_layout = TheCodeLayout::new(TheId::named("Code Editor"));
-        center.set_layout(code_layout);
-        center.set_bottom(toolbar_canvas);
-
-        ui.canvas.set_center(center);
+        ui.canvas.set_center(self.editor.build_canvas(ctx));
 
         self.event_receiver = Some(ui.add_state_listener("Main Receiver".into()));
     }
@@ -99,7 +83,7 @@ impl TheTrait for CodeEditor {
 
         if let Some(receiver) = &mut self.event_receiver {
             while let Ok(event) = receiver.try_recv() {
-                redraw = self.sidebar.handle_event(&event, ui, ctx);
+                redraw = self.editor.handle_event(&event, ui, ctx);
                 match event {
                     TheEvent::ValueChanged(id, value) => {
                         if id.name.starts_with("Atom") {

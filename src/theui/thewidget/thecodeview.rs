@@ -27,8 +27,6 @@ pub struct TheCodeView {
     selected: Option<(u32, u32)>,
     selection_color: RGBA,
 
-    mode: TheRGBAViewMode,
-
     dim: TheDim,
     code_is_dirty: bool,
     is_dirty: bool,
@@ -64,8 +62,6 @@ impl TheWidget for TheCodeView {
             selected: None,
             selection_color: [255, 255, 255, 180],
 
-            mode: TheRGBAViewMode::Display,
-
             dim: TheDim::zero(),
             code_is_dirty: true,
             is_dirty: true,
@@ -84,17 +80,7 @@ impl TheWidget for TheCodeView {
         //println!("event ({}): {:?}", self.id.name, event);
         match event {
             TheEvent::MouseDown(coord) => {
-                if self.state != TheWidgetState::Selected {
-                    self.is_dirty = true;
-                    self.state = TheWidgetState::Selected;
-                    ctx.ui.send_widget_state_changed(self.id(), self.state);
-                    // ctx.ui.send(TheEvent::NewListItemSelected(
-                    //     self.id().clone(),
-                    //     self.layout_id.clone(),
-                    // ));
-                    ctx.ui.set_focus(self.id());
-                    redraw = true;
-                }
+                ctx.ui.set_focus(self.id());
 
                 self.selected = self.get_code_grid_offset(*coord);
                 self.code_is_dirty = true;
@@ -110,6 +96,14 @@ impl TheWidget for TheCodeView {
                     self.is_dirty = true;
                     ctx.ui.set_hover(self.id());
                     redraw = true;
+                }
+            }
+            TheEvent::KeyCodeDown(code) => {
+                if let Some(code) = code.to_key_code() {
+                    if code == TheKeyCode::Return {
+                        ctx.ui.send(TheEvent::CodeEditorApply(self.id.clone()));
+                        redraw = true;
+                    }
                 }
             }
             _ => {}
@@ -164,7 +158,7 @@ impl TheWidget for TheCodeView {
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
-        style: &mut Box<dyn TheStyle>,
+        _style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
         if !self.dim().is_valid() || !self.buffer.dim().is_valid() {
@@ -181,7 +175,7 @@ impl TheWidget for TheCodeView {
 
             for y in 0..grid_y {
                 for x in 0..grid_x {
-                    let mut color = if Some((x, y)) == self.selected {
+                    let color = if Some((x, y)) == self.selected {
                         &WHITE
                     } else {
                         &[30, 30, 30, 255]
@@ -195,45 +189,29 @@ impl TheWidget for TheCodeView {
                     );
 
                     if let Some(atom) = self.code_grid.code.get(&(x, y)) {
-                        let mut main_text: Option<String> = None;
+                        let text = atom.describe();
 
-                        #[allow(clippy::single_match)]
-                        match atom {
-                            TheAtom::Value(v) => {
-                                if let Some(int) = v.to_i32() {
-                                    main_text = Some(int.to_string());
-                                }
-                            }
-                            TheAtom::Add() => {
-                                main_text = Some("+".to_string());
-                            }
-                            _ => {}
-                        }
-
-                        let back_color = if main_text.is_none() {
-                            &BLACK
-                        } else {
-                            &[60, 60, 60, 255]
-                        };
+                        //let back_color = [60, 60, 60, 255];
 
                         ctx.draw
-                            .rect(self.buffer.pixels_mut(), &rect, stride, back_color);
+                            .rect(self.buffer.pixels_mut(), &rect, stride, &[60, 60, 60, 255]);
 
                         if let Some(font) = &ctx.ui.font {
-                            if let Some(main_text) = main_text {
-                                ctx.draw.text_rect_blend(
-                                    self.buffer.pixels_mut(),
-                                    &rect,
-                                    stride,
-                                    font,
-                                    14.0,
-                                    &main_text,
-                                    &WHITE, //style.theme().color(ListItemText),
-                                    TheHorizontalAlign::Center,
-                                    TheVerticalAlign::Center,
-                                );
-                            }
+                            ctx.draw.text_rect_blend(
+                                self.buffer.pixels_mut(),
+                                &rect,
+                                stride,
+                                font,
+                                14.0,
+                                &text,
+                                &WHITE, //style.theme().color(ListItemText),
+                                TheHorizontalAlign::Center,
+                                TheVerticalAlign::Center,
+                            );
                         }
+                    } else {
+                        ctx.draw
+                            .rect(self.buffer.pixels_mut(), &rect, stride, &BLACK);
                     }
 
                     ctx.draw
@@ -426,11 +404,13 @@ impl TheCodeViewTrait for TheCodeView {
         if let Some(atom) = self.code_grid.code.get_mut(&coord) {
             atom.process_value_change(name, value);
             self.code_is_dirty = true;
+            self.is_dirty = true;
         }
     }
     fn set_grid_atom(&mut self, coord: (u32, u32), atom: TheAtom) {
         self.code_grid.code.insert(coord, atom);
         self.code_is_dirty = true;
+        self.is_dirty = true;
     }
     fn get_code_grid_offset(&self, coord: Vec2i) -> Option<(u32, u32)> {
         let centered_offset_x =

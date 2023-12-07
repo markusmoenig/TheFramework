@@ -180,14 +180,20 @@ impl TheLayout for TheHLayout {
             w.draw(buffer, style, ctx);
         }
     }
+
+    fn as_hlayout(&mut self) -> Option<&mut dyn TheHLayoutTrait> {
+        Some(self)
+    }
 }
 
 /// TheHLayout specific functions.
-pub trait TheHLayoutTrait {
+pub trait TheHLayoutTrait : TheLayout {
     /// Add a widget to the layout.
     fn add_widget(&mut self, widget: Box<dyn TheWidget>);
     /// Set the layout mode.
     fn set_mode(&mut self, mode: TheHLayoutMode);
+    /// Clear the layout.
+    fn clear(&mut self);
 }
 
 impl TheHLayoutTrait for TheHLayout {
@@ -196,5 +202,8 @@ impl TheHLayoutTrait for TheHLayout {
     }
     fn set_mode(&mut self, mode: TheHLayoutMode) {
         self.mode = mode;
+    }
+    fn clear(&mut self) {
+        self.widgets = vec![];
     }
 }

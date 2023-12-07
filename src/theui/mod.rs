@@ -508,6 +508,14 @@ impl TheUI {
         None
     }
 
+    /// Gets a given TheSharedLayout by name
+    pub fn get_hlayout(&mut self, name: &str) -> Option<&mut dyn TheHLayoutTrait> {
+        if let Some(layout) = self.canvas.get_layout(Some(&name.to_string()), None) {
+            return layout.as_hlayout();
+        }
+        None
+    }
+
     /// Gets a given TheRGBALayout by name
     #[cfg(feature = "code")]
     pub fn get_code_layout(&mut self, name: &str) -> Option<&mut dyn TheCodeLayoutTrait> {
@@ -527,33 +535,6 @@ impl TheUI {
             if disabled && widget.id().equals(&ctx.ui.focus) {
                 ctx.ui.clear_focus();
             }
-        }
-    }
-
-    #[cfg(feature = "code")]
-    pub fn create_code_list(&self, ctx: &mut TheContext) -> TheListLayout {
-        let mut code_layout = TheListLayout::new(TheId::named("Code List"));
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Integer".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Add".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        code_layout.select_first_item(ctx);
-        code_layout
-    }
-
-    #[cfg(feature = "code")]
-    pub fn create_code_atom(&self, name: &str) -> TheAtom {
-        match name {
-            "Integer" => TheAtom::Value(TheValue::Int(1)),
-            "Add" => TheAtom::Add(),
-            _ => TheAtom::Stop,
         }
     }
 

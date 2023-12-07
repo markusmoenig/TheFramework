@@ -28,6 +28,7 @@ impl TheValue {
     pub fn to_i32(&self) -> Option<i32> {
         match self {
             Int(v) => Some(*v),
+            Text(t) => t.parse::<i32>().ok(),
             _ => None,
         }
     }

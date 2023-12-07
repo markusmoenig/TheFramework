@@ -74,7 +74,7 @@ impl TheWidget for TheText {
             if !self.text.is_empty() {
                 let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
                 self.limiter_mut()
-                    .set_max_size(vec2i(size.0 as i32 + 1, size.1 as i32));
+                    .set_max_size(vec2i(size.0 as i32 + 1, size.1 as i32 - 1));
             } else {
                 self.limiter_mut()
                     .set_max_size(vec2i(20, 20));

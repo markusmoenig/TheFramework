@@ -128,6 +128,11 @@ pub trait TheLayout : Send {
         None
     }
 
+    /// Attempts to cast to TheHLayoutTrait. Only valid for TheHLayout.
+    fn as_hlayout(&mut self) -> Option<&mut dyn TheHLayoutTrait> {
+        None
+    }
+
     /// Attempts to cast to TheCodeLayoutTrait. Only valid for TheCodeLayout.
     #[cfg(feature = "code")]
     fn as_code_layout(&mut self) -> Option<&mut dyn TheCodeLayoutTrait> {

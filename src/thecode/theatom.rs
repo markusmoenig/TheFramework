@@ -32,7 +32,7 @@ impl TheAtom {
                 };
 
                 if ctx.stack.len() != 2 {
-                    ctx.error_msg = Some(format!("Invalid stack for Add ({})", ctx.stack.len()));
+                    ctx.error = Some(TheCompilerError::new(ctx.location, format!("Invalid stack for Add ({})", ctx.stack.len())));
                 }
 
                 TheExeNode::new(call, vec![])
@@ -58,19 +58,30 @@ impl TheAtom {
         }
     }
 
+    pub fn describe(&self) -> String {
+        match self {
+            TheAtom::Stop => "Stop".to_string(),
+            TheAtom::Value(value) => value.describe(),
+            TheAtom::Add() => "+".to_string(),
+            TheAtom::Multiply() => "*".to_string(),
+        }
+    }
+
     #[cfg(feature = "ui")]
     /// Generates a text layout to edit the properties of the atom
-    pub fn to_text_layout(&self) -> TheTextLayout {
-        let mut text_layout = TheTextLayout::new(TheId::empty());
+    pub fn to_layout(&self, layout: &mut dyn TheHLayoutTrait) {
         match self {
             TheAtom::Value(value) => {
+                let mut text = TheText::new(TheId::empty());
+                text.set_text("Integer:".to_string());
                 let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Integer Edit"));
                 name_edit.set_text(value.describe());
-                text_layout.add_pair("Integer Value".to_string(), Box::new(name_edit));
+                name_edit.set_needs_redraw(true);
+                layout.add_widget(Box::new(text));
+                layout.add_widget(Box::new(name_edit));
             }
             _ => {}
         };
-        text_layout
     }
 
     #[cfg(feature = "ui")]

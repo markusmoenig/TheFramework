@@ -25,6 +25,7 @@ impl Sidebar {
 
         // List
 
+        /*
         let mut list_header = TheCanvas::new();
         let mut switchbar = TheSwitchbar::new(TheId::empty());
         switchbar.set_text("Available Codes List".to_string());
@@ -50,6 +51,7 @@ impl Sidebar {
         toolbar_canvas.set_widget(TheTraybar::new(TheId::empty()));
         toolbar_canvas.set_layout(toolbar_hlayout);
         list_canvas.set_bottom(toolbar_canvas);
+        */
 
         //
 
@@ -67,7 +69,7 @@ impl Sidebar {
 
         settings.limiter_mut().set_max_width(width);
         canvas.set_center(settings);
-        canvas.set_top(list_canvas);
+        //canvas.set_top(list_canvas);
 
         ui.canvas.set_right(canvas);
     }
@@ -84,6 +86,7 @@ impl Sidebar {
                 );
                 self.editor_selection = *selection;
 
+                /*
                 // Generate the Atom UI
                 let mut text_layout = TheTextLayout::new(TheId::empty());
                 if let Some(selection) = selection {
@@ -98,6 +101,7 @@ impl Sidebar {
                     }
                 }
 
+
                 ui.canvas
                     .right
                     .as_mut()
@@ -107,10 +111,12 @@ impl Sidebar {
                     .unwrap()
                     .set_layout(text_layout);
                 ctx.ui.relayout = true;
+                */
             }
             TheEvent::StateChanged(id, state) => {
                 //println!("app Widget State changed {:?}: {:?}", id, state);
 
+                /*
                 if id.name == "Apply Code" {
                     let mut atom: Option<TheAtom> = None;
 
@@ -142,7 +148,7 @@ impl Sidebar {
                         ctx,
                         self.editor_selection.is_none() || self.code_list_selection.is_none(),
                     );
-                }
+                }*/
 
                 redraw = true;
             }

@@ -23,6 +23,7 @@ impl TheWidget for TheTextLineEdit {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
+        limiter.set_max_width(150);
         limiter.set_max_height(20);
 
         Self {
