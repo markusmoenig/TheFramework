@@ -43,6 +43,7 @@ impl TheCodeEditor {
             TheEvent::CodeEditorSelectionChanged(_id, selection) => {
                 self.grid_selection = *selection;
                 self.set_grid_selection_ui(ui, ctx);
+                self.set_grid_status_message(ui, ctx);
                 redraw = true;
                 /*
                 ui.set_widget_disabled_state(
@@ -112,7 +113,7 @@ impl TheCodeEditor {
                 if id.name == "Atom Variable" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
-                            self.set_selected_atom(ui, TheAtom::Variable(name));
+                            self.set_selected_atom(ui, TheAtom::LocalSet(name));
                         }
                     }
                 } else if id.name == "Atom Integer" {
@@ -170,14 +171,37 @@ impl TheCodeEditor {
         }
     }
 
+    /// Set grid status message
+    pub fn set_grid_status_message(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
+        let mut message : Option<TheCodeGridMessage> = None;
+        if let Some(grid_selection) = self.grid_selection {
+            if let Some(layout) = ui.get_code_layout("Code Editor") {
+                if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                   message = code_view.code_grid().message(grid_selection);
+                }
+            }
+        }
+
+        if let Some(text) = ui.get_text("Code Grid Status") {
+            if let Some(message) = message {
+                text.set_text(message.message);
+            } else {
+                text.set_text("".to_string());
+            }
+            ctx.ui.relayout = true;
+        }
+    }
+
+
     /// Create an atom for the given name.
     pub fn create_atom(&self, name: &str) -> TheAtom {
         match name {
-            "Variable" => TheAtom::Variable("Name".to_string()),
+            "Local Get" => TheAtom::LocalGet("Name".to_string()),
+            "Local Set" => TheAtom::LocalSet("Name".to_string()),
             "Integer" => TheAtom::Value(TheValue::Int(1)),
             "Add" => TheAtom::Add(),
             "Multiply" => TheAtom::Multiply(),
-            _ => TheAtom::Stop,
+            _ => TheAtom::End,
         }
     }
 
@@ -193,7 +217,12 @@ impl TheCodeEditor {
         code_layout.limiter_mut().set_max_width(150);
 
         let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Variable".to_string());
+        item.set_text("Local Get".to_string());
+        item.set_associated_layout(code_layout.id().clone());
+        code_layout.add_item(item, ctx);
+
+        let mut item = TheListItem::new(TheId::named("Code List Item"));
+        item.set_text("Local Set".to_string());
         item.set_associated_layout(code_layout.id().clone());
         code_layout.add_item(item, ctx);
 
@@ -244,10 +273,18 @@ impl TheCodeEditor {
         //compile_button.set_disabled(true);
         compile_button.set_text("Compile".to_string());
 
+        let mut text = TheText::new(TheId::named("Code Grid Status"));
+        text.set_text("".to_string());
+
+        let spacer = TheHDivider::new(TheId::empty());
+        //spacer.limiter_mut().set_max_width(0);
+
         let mut toolbar_hlayout = TheHLayout::new(TheId::empty());
         toolbar_hlayout.set_background_color(None);
         toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
         toolbar_hlayout.add_widget(Box::new(compile_button));
+        toolbar_hlayout.add_widget(Box::new(spacer));
+        toolbar_hlayout.add_widget(Box::new(text));
         toolbar_hlayout.limiter_mut().set_max_height(27);
 
         bottom_toolbar_canvas.set_layout(toolbar_hlayout);

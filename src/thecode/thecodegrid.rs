@@ -1,8 +1,30 @@
 use crate::prelude::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum TheCodeGridMessageType {
+    Error,
+    Value
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct TheCodeGridMessage {
+    pub message_type: TheCodeGridMessageType,
+    pub message: String,
+}
+
+impl TheCodeGridMessage {
+    pub fn new(message_type: TheCodeGridMessageType, message: String) -> Self {
+        Self {
+            message_type,
+            message
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct TheCodeGrid {
     pub code: FxHashMap<(u32, u32), TheAtom>,
+    pub messages: FxHashMap<(u32, u32), TheCodeGridMessage>,
     pub current_pos: Option<(u32, u32)>,
     pub max_pos: Option<(u32, u32)>,
 }
@@ -17,6 +39,7 @@ impl TheCodeGrid {
     pub fn new() -> Self {
         Self {
             code: FxHashMap::default(),
+            messages: FxHashMap::default(),
             current_pos: None,
             max_pos: None,
         }
@@ -39,12 +62,12 @@ impl TheCodeGrid {
     }
 
     /// Returns the next TheAtom in the grid.
-    pub fn get_next(&mut self) -> TheAtom {
+    pub fn get_next(&mut self, peek: bool) -> TheAtom {
         if let Some(max_pos) = self.max_xy() {
             if let Some((mut x, mut y)) = self.current_pos {
                 // Check if we're at or beyond the maximum position
                 if x == max_pos.0 && y == max_pos.1 {
-                    return TheAtom::Stop; // Reached the end of the grid
+                    return TheAtom::End; // Reached the end of the grid
                 }
 
                 // Attempt to find the next non-empty position
@@ -57,28 +80,51 @@ impl TheCodeGrid {
                     }
 
                     if let Some(atom) = self.code.get(&(x, y)) {
-                        self.current_pos = Some((x, y)); // Update current_pos
+                        if !peek {
+                            self.current_pos = Some((x, y));
+                        }
                         return atom.clone(); // Found a non-empty position
                     }
 
                     if x == max_pos.0 && y == max_pos.1 {
-                        return TheAtom::Stop; // Reached the end of the grid
+                        return TheAtom::End; // Reached the end of the grid
                     }
                 }
             } else {
                 // Start from the first position if current_pos is None
                 if let Some(atom) = self.code.get(&(0, 0)) {
-                    self.current_pos = Some((0, 0)); // Update current_pos
+                    if !peek {
+                        self.current_pos = Some((0, 0));
+                    }
                     return atom.clone();
                 }
             }
         }
 
-        TheAtom::Stop
+        TheAtom::End
     }
 
     /// Reset the grid iterator.
-    pub fn reset(&mut self) {
+    pub fn reset_iterator(&mut self) {
         self.current_pos = None;
+    }
+
+    /// Clears the messages for the grid.
+    pub fn clear_messages(&mut self) {
+        self.messages = FxHashMap::default();
+    }
+
+    /// Adds a message to the grid.
+    pub fn add_message(&mut self, location: (u32, u32), message: TheCodeGridMessage) {
+        self.messages.insert(location, message);
+    }
+
+    /// Returns the message for the given location (if any).
+    pub fn message(&self, location: (u32, u32)) -> Option<TheCodeGridMessage> {
+        let mut message : Option<TheCodeGridMessage> = None;
+        if let Some(m) = self.messages.get(&location) {
+            message = Some(m.clone());
+        }
+        message
     }
 }

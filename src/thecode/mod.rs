@@ -10,7 +10,7 @@ pub mod theexecution;
 pub mod prelude {
     pub use crate::thecode::theatom::{TheAtom, TheAtomKind};
     pub use crate::thecode::thecodeeditor::TheCodeEditor;
-    pub use crate::thecode::thecodegrid::TheCodeGrid;
+    pub use crate::thecode::thecodegrid::{TheCodeGrid, TheCodeGridMessage, TheCodeGridMessageType};
     pub use crate::thecode::thecodeobject::TheCodeObject;
     pub use crate::thecode::thecompiler::{TheCompiler, TheCompilerContext, TheCompilerError};
     pub use crate::thecode::theexecution::{TheExeNode, TheExeNodeCall, TheExePipeline, TheExeEnvironment};

@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-pub type TheExeNodeCall = fn(stack: &mut Vec<TheValue>, values: &Vec<TheValue>, env: &TheExeEnvironment);
+pub type TheExeNodeCall = fn(stack: &mut Vec<TheValue>, values: &Vec<TheValue>, env: &mut TheExeEnvironment);
 
 #[derive(Clone)]
 pub struct TheExeNode {
@@ -34,13 +34,15 @@ impl TheExePipeline {
         self.nodes.push(node);
     }
 
-    pub fn execute(&mut self, env: &TheExeEnvironment) {
+    pub fn execute(&mut self, env: &mut TheExeEnvironment) {
         let mut stack: Vec<TheValue> = Vec::with_capacity(10);
 
         for n in &self.nodes {
             (n.call)(&mut stack, &n.values, env);
             println!("{:?}", stack);
         }
+
+        println!("{:?}", env.local);
     }
 }
 
@@ -55,7 +57,10 @@ pub struct TheExeEnvironment {
     /// The function used to set an object value.
     pub set_var: Option<TheSetVarCall>,
     /// The function calls to native Rust functions for this environment.
-    pub functions: FxHashMap<String, TheFnCall>
+    pub functions: FxHashMap<String, TheFnCall>,
+
+    /// The local variables
+    pub local: Vec<TheCodeObject>,
 }
 
 impl Default for TheExeEnvironment {
@@ -69,12 +74,23 @@ impl TheExeEnvironment {
         Self {
             get_var: None,
             set_var: None,
-            functions: FxHashMap::default()
+            functions: FxHashMap::default(),
+            local: vec![TheCodeObject::default()]
         }
     }
 
     /// Insert a function into the environment.
-    fn insert(&mut self, name: String, function: TheFnCall) {
+    pub fn insert(&mut self, name: String, function: TheFnCall) {
         self.functions.insert(name, function);
+    }
+
+    /// Returns the given local variable by reversing the local stack.
+    pub fn get_local(&self, name: &String) -> Option<&TheValue> {
+        for local in self.local.iter().rev() {
+            if let Some(var) = local.get(name) {
+                return Some(var);
+            }
+        }
+        None
     }
 }

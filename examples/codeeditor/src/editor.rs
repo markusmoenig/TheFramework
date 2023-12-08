@@ -103,17 +103,21 @@ impl TheTrait for CodeEditor {
                         if id.name == "Compile" {
                             if let Some(layout) = ui.get_code_layout("Code Editor") {
                                 if let Some(code_view) = layout.code_view_mut().as_code_view() {
-                                    let grid = code_view.code_grid();
+                                    let grid = code_view.code_grid_mut();
 
                                     let mut compiler = TheCompiler::new();
                                     let rc = compiler.compile(grid);
 
                                     if let Ok(mut pipe) = rc {
-                                        let env = TheExeEnvironment::default();
-                                        pipe.execute(&env);
+                                        let mut env = TheExeEnvironment::default();
+                                        pipe.execute(&mut env);
+                                        code_view.set_exe_env(Some(env));
+                                    } else {
+                                        code_view.set_exe_env(None);
                                     }
 
-                                    println!("Size of MyEnum: {} bytes", std::mem::size_of::<TheAtom>());
+                                    self.editor.set_grid_status_message(ui, ctx);
+                                    //println!("Size of MyEnum: {} bytes", std::mem::size_of::<TheAtom>());
                                 }
                             }
                         }

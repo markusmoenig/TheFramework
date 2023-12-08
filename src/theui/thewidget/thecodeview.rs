@@ -17,15 +17,14 @@ pub struct TheCodeView {
     code_grid: TheCodeGrid,
     grid_size: i32,
 
+    exe_env: Option<TheExeEnvironment>,
+
     buffer: TheRGBABuffer,
 
     scroll_offset: Vec2i,
     zoom: f32,
 
-    grid: Option<i32>,
-    grid_color: RGBA,
     selected: Option<(u32, u32)>,
-    selection_color: RGBA,
 
     dim: TheDim,
     code_is_dirty: bool,
@@ -54,13 +53,12 @@ impl TheWidget for TheCodeView {
             code_grid: TheCodeGrid::new(),
             grid_size: 70,
 
+            exe_env: None,
+
             scroll_offset: vec2i(0, 0),
             zoom: 1.0,
 
-            grid: None,
-            grid_color: [200, 200, 200, 255],
             selected: None,
-            selection_color: [255, 255, 255, 180],
 
             dim: TheDim::zero(),
             code_is_dirty: true,
@@ -168,15 +166,16 @@ impl TheWidget for TheCodeView {
         // --- Draw the code grid into the buffer
 
         let stride: usize = self.buffer.stride();
+        let background = *style.theme().color(CodeGridBackground);
 
         if self.code_is_dirty {
             let grid_x = 10;
             let grid_y = 10;
 
-            let background = *style.theme().color(CodeGridBackground);
-            let normal = *style.theme().color(CodeGridNormal);
+            let normal: [u8; 4] = *style.theme().color(CodeGridNormal);
             let selected = *style.theme().color(CodeGridSelected);
             let text_color = *style.theme().color(CodeGridText);
+            let error = *style.theme().color(Error);
 
             let utuple = self.buffer.dim().to_buffer_utuple();
             ctx.draw
@@ -184,11 +183,18 @@ impl TheWidget for TheCodeView {
 
             for y in 0..grid_y {
                 for x in 0..grid_x {
-                    let color = if Some((x, y)) == self.selected {
+
+                    let mut color = if Some((x, y)) == self.selected {
                         selected
                     } else {
                         normal
                     };
+
+                    if let Some(message) = self.code_grid.messages.get(&(x, y)) {
+                        if message.message_type == TheCodeGridMessageType::Error {
+                            color = error;
+                        }
+                    }
 
                     let rect = (
                         (x * self.grid_size as u32) as usize + 2,
@@ -199,11 +205,6 @@ impl TheWidget for TheCodeView {
 
                     if let Some(atom) = self.code_grid.code.get(&(x, y)) {
                         let text = atom.describe();
-
-                        //let back_color = [60, 60, 60, 255];
-
-                        //ctx.draw
-                        //    .rect(self.buffer.pixels_mut(), &rect, stride, &[60, 60, 60, 255]);
 
                         ctx.draw.rect_outline_border(
                             self.buffer.pixels_mut(),
@@ -234,19 +235,56 @@ impl TheWidget for TheCodeView {
                             );
 
                             match atom {
-                                TheAtom::Variable(_) => {
-                                    if x == 0 {
-                                        ctx.draw.text_rect_blend(
-                                            self.buffer.pixels_mut(),
-                                            &(rect.0, rect.1, rect.2 - 10, rect.3 - 2),
-                                            stride,
-                                            font,
-                                            13.0,
-                                            &"=",
-                                            &text_color,
-                                            TheHorizontalAlign::Right,
-                                            TheVerticalAlign::Bottom,
-                                        );
+                                TheAtom::LocalGet(_) => {
+                                    ctx.draw.text_rect_blend(
+                                        self.buffer.pixels_mut(),
+                                        &(rect.0 + 2, rect.1 + 2, rect.2 - 10, rect.3),
+                                        stride,
+                                        font,
+                                        13.0,
+                                        "Local",
+                                        &text_color,
+                                        TheHorizontalAlign::Left,
+                                        TheVerticalAlign::Top,
+                                    );
+                                }
+                                TheAtom::LocalSet(name) => {
+                                    ctx.draw.text_rect_blend(
+                                        self.buffer.pixels_mut(),
+                                        &(rect.0 + 3, rect.1 + 2, rect.2 - 10, rect.3),
+                                        stride,
+                                        font,
+                                        13.0,
+                                        "Local",
+                                        &text_color,
+                                        TheHorizontalAlign::Left,
+                                        TheVerticalAlign::Top,
+                                    );
+                                    ctx.draw.text_rect_blend(
+                                        self.buffer.pixels_mut(),
+                                        &(rect.0, rect.1, rect.2 - 10, rect.3 - 2),
+                                        stride,
+                                        font,
+                                        14.0,
+                                        "=",
+                                        &text_color,
+                                        TheHorizontalAlign::Right,
+                                        TheVerticalAlign::Bottom,
+                                    );
+                                    if let Some(env) = &self.exe_env {
+                                        if let Some(v) = env.get_local(name) {
+                                            ctx.draw.text_rect_blend(
+                                                self.buffer.pixels_mut(),
+                                                &(rect.0 + 3, rect.1 - 2, rect.2 - 25, rect.3 - 3),
+                                                stride,
+                                                font,
+                                                13.0,
+                                                &v.describe(),
+                                                &text_color,
+                                                TheHorizontalAlign::Center,
+                                                TheVerticalAlign::Bottom,
+                                            );
+                                        }
                                     }
                                 }
                                 _ => {}
@@ -327,14 +365,6 @@ impl TheWidget for TheCodeView {
                     + self.dim.buffer_x) as usize
                     * 4;
 
-                if let Some(grid) = self.grid {
-                    if src_x as i32 % grid == 0 || src_y as i32 % grid == 0 {
-                        target.pixels_mut()[target_index..target_index + 4]
-                            .copy_from_slice(&self.grid_color);
-                        continue;
-                    }
-                }
-
                 if src_x >= 0.0 && src_x < src_width && src_y >= 0.0 && src_y < src_height {
                     // Perform nearest neighbor interpolation
                     let src_x = src_x as i32;
@@ -346,7 +376,8 @@ impl TheWidget for TheCodeView {
                         .copy_from_slice(&self.buffer.pixels()[src_index..src_index + 4]);
                 } else {
                     // Set the pixel to black if it's out of the source bounds
-                    target.pixels_mut()[target_index..target_index + 4].fill(0);
+                    target.pixels_mut()[target_index..target_index + 4]
+                        .copy_from_slice(&background);
                 }
             }
         }
@@ -368,15 +399,14 @@ pub trait TheCodeViewTrait {
 
     fn buffer(&self) -> &TheRGBABuffer;
     fn buffer_mut(&mut self) -> &mut TheRGBABuffer;
-    fn code_grid(&self) -> TheCodeGrid;
+    fn code_grid(&self) -> &TheCodeGrid;
+    fn code_grid_mut(&mut self) -> &mut TheCodeGrid;
     fn set_code_grid(&mut self, code_grid: TheCodeGrid);
+    fn set_exe_env(&mut self, exe_env: Option<TheExeEnvironment>);
     fn set_background(&mut self, color: RGBA);
     fn zoom(&self) -> f32;
     fn set_zoom(&mut self, zoom: f32);
     fn set_scroll_offset(&mut self, offset: Vec2i);
-    fn set_grid(&mut self, grid: Option<i32>);
-    fn set_grid_color(&mut self, color: RGBA);
-    fn set_selection_color(&mut self, color: RGBA);
 
     fn set_associated_layout(&mut self, id: TheId);
 
@@ -409,11 +439,21 @@ impl TheCodeViewTrait for TheCodeView {
     fn buffer_mut(&mut self) -> &mut TheRGBABuffer {
         &mut self.buffer
     }
-    fn code_grid(&self) -> TheCodeGrid {
-        self.code_grid.clone()
+    fn code_grid(&self) -> &TheCodeGrid {
+        &self.code_grid
+    }
+    fn code_grid_mut(&mut self) -> &mut TheCodeGrid {
+        self.is_dirty = true;
+        self.code_is_dirty = true;
+        &mut self.code_grid
     }
     fn set_code_grid(&mut self, code_grid: TheCodeGrid) {
         self.code_grid = code_grid;
+        self.code_is_dirty = true;
+        self.is_dirty = true;
+    }
+    fn set_exe_env(&mut self, exe_env: Option<TheExeEnvironment>) {
+        self.exe_env = exe_env;
         self.code_is_dirty = true;
         self.is_dirty = true;
     }
@@ -431,16 +471,6 @@ impl TheCodeViewTrait for TheCodeView {
     }
     fn set_associated_layout(&mut self, layout_id: TheId) {
         self.layout_id = layout_id;
-    }
-    fn set_grid(&mut self, grid: Option<i32>) {
-        self.grid = grid;
-    }
-    fn set_grid_color(&mut self, color: RGBA) {
-        self.grid_color = color;
-    }
-    fn set_selection_color(&mut self, color: RGBA) {
-        self.selection_color = color;
-        self.is_dirty = true;
     }
     fn selected(&self) -> Option<(u32, u32)> {
         self.selected

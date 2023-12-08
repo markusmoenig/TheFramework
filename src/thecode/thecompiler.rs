@@ -72,9 +72,11 @@ impl TheCompilerError {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct TheCompilerContext {
     // This stack is only used for verification during compilation.
     pub stack: Vec<TheValue>,
+    pub local: Vec<TheCodeObject>,
     pub location: (u32, u32),
 
     pub error: Option<TheCompilerError>,
@@ -90,7 +92,9 @@ impl TheCompilerContext {
     pub fn new() -> Self {
         Self {
             stack: vec![],
+            local: vec![TheCodeObject::default()],
             location: (0, 0),
+
             error: None,
         }
     }
@@ -136,33 +140,53 @@ impl TheCompiler {
 
             ctx: TheCompilerContext::default(),
 
-            current: TheAtom::Stop,
-            previous: TheAtom::Stop,
+            current: TheAtom::End,
+            previous: TheAtom::End,
         }
     }
 
-    pub fn compile(&mut self, grid: TheCodeGrid) -> Result<TheExePipeline, TheCompilerError> {
+    pub fn compile(&mut self, grid: &mut TheCodeGrid) -> Result<TheExePipeline, TheCompilerError> {
         self.pipe = TheExePipeline::new();
 
-        self.current = TheAtom::Stop;
-        self.previous = TheAtom::Stop;
+        self.current = TheAtom::End;
+        self.previous = TheAtom::End;
 
         self.ctx = TheCompilerContext::default();
 
-        self.grid = grid;
+        grid.clear_messages();
+        self.grid = grid.clone();
 
         self.advance();
 
         while !self.matches(TheAtomKind::Eof) && self.ctx.error.is_none() {
-            self.parse_precedence(ThePrecedence::Assignment);
+            self.declaration();
         }
 
         if let Some(error) = &self.ctx.error {
             println!("Error: {:?}", error);
+            grid.add_message(error.location, TheCodeGridMessage { message_type: TheCodeGridMessageType::Error, message: error.message.clone() });
             Err(error.clone())
         } else {
             Ok(self.pipe.clone())
         }
+    }
+
+    fn declaration(&mut self) {
+        if self.current.can_assign() {
+            // Local or Object variable
+            self.advance();
+            let var = self.previous.clone();
+            self.var_declaration();
+            self.pipe.add(var.to_node(&mut self.ctx));
+        }
+    }
+
+    fn var_declaration(&mut self) {
+        self.expression();
+    }
+
+    fn expression(&mut self) {
+        self.parse_precedence(ThePrecedence::Assignment);
     }
 
     fn number(&mut self, _can_assign: bool) {
@@ -234,7 +258,7 @@ impl TheCompiler {
             self.ctx.location = location;
         }
 
-        self.current = self.grid.get_next();
+        self.current = self.grid.get_next(false);
         println!("{:?} : {:?}", self.grid.current_pos, self.current);
 
         /*

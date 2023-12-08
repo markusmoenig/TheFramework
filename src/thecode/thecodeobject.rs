@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TheCodeObject {
     pub values: FxHashMap<String, TheValue>,
 }
@@ -19,8 +19,8 @@ impl TheCodeObject {
     }
 
     /// Get a value in the object.
-    pub fn get(&mut self, name: String) -> Option<&TheValue> {
-        self.values.get(&name)
+    pub fn get(&self, name: &String) -> Option<&TheValue> {
+        self.values.get(name)
     }
 
     /// Set a value in the object.
