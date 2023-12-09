@@ -11,54 +11,70 @@ pub enum TheAtom {
 }
 
 impl TheAtom {
-
     pub fn can_assign(&self) -> bool {
         matches!(self, TheAtom::LocalSet(_name))
     }
 
-    pub fn to_node(&self, ctx: &mut TheCompilerContext) -> TheExeNode {
+    pub fn to_node(&self, ctx: &mut TheCompilerContext) -> TheCodeNode {
         match self {
             TheAtom::End => {
-                let call: TheExeNodeCall = |_stack: &mut Vec<TheValue>, _values: &Vec<TheValue>, _env: &mut TheExeEnvironment| {};
-                TheExeNode::new(call, vec![])
+                let call: TheCodeNodeCall =
+                    |_stack: &mut Vec<TheValue>,
+                     _values: &Vec<TheValue>,
+                     _sandbox: &mut TheCodeSandbox| {};
+                TheCodeNode::new(call, vec![])
             }
             TheAtom::LocalGet(name) => {
-                let call: TheExeNodeCall = |_stack: &mut Vec<TheValue>, _values: &Vec<TheValue>, _env: &mut TheExeEnvironment| {};
-                TheExeNode::new(call, vec![])
+                let call: TheCodeNodeCall =
+                    |_stack: &mut Vec<TheValue>,
+                     _values: &Vec<TheValue>,
+                     _env: &mut TheCodeSandbox| {};
+                TheCodeNode::new(call, vec![])
             }
             TheAtom::LocalSet(name) => {
-                let call: TheExeNodeCall = |stack: &mut Vec<TheValue>, values: &Vec<TheValue>, env: &mut TheExeEnvironment| {
-                    if let Some(local) = env.local.last_mut() {
-                        local.set(values[0].to_string().unwrap(), stack.pop().unwrap())
-                    }
-                };
+                let call: TheCodeNodeCall =
+                    |stack: &mut Vec<TheValue>,
+                     values: &Vec<TheValue>,
+                     env: &mut TheCodeSandbox| {
+                        if let Some(function) = env.call_stack.last_mut() {
+                            if let Some(local) = function.local.last_mut() {
+                                local.set(values[0].to_string().unwrap(), stack.pop().unwrap())
+                            }
+                        }
+                    };
 
                 if ctx.stack.is_empty() {
                     ctx.error = Some(TheCompilerError::new(
                         ctx.location,
-                        "Nothing to assign to local variable.".to_string()
+                        "Nothing to assign to local variable.".to_string(),
                     ));
                 } else if let Some(local) = ctx.local.last_mut() {
                     local.set(name.clone(), ctx.stack.pop().unwrap());
                 }
 
-                TheExeNode::new(call, vec![TheValue::Text(name.clone())])
+                TheCodeNode::new(call, vec![TheValue::Text(name.clone())])
             }
             TheAtom::Value(value) => {
-                let call: TheExeNodeCall = |stack: &mut Vec<TheValue>, values: &Vec<TheValue>, _env: &mut TheExeEnvironment| {
-                    stack.push(values[0].clone());
-                };
+                let call: TheCodeNodeCall =
+                    |stack: &mut Vec<TheValue>,
+                     values: &Vec<TheValue>,
+                     _env: &mut TheCodeSandbox| {
+                        stack.push(values[0].clone());
+                    };
 
                 ctx.stack.push(value.clone());
 
-                TheExeNode::new(call, vec![value.clone()])
+                TheCodeNode::new(call, vec![value.clone()])
             }
             TheAtom::Add() => {
-                let call: TheExeNodeCall = |stack: &mut Vec<TheValue>, _values: &Vec<TheValue>, _env: &mut TheExeEnvironment| {
-                    let a = stack.pop().unwrap().to_i32().unwrap();
-                    let b = stack.pop().unwrap().to_i32().unwrap();
-                    stack.push(TheValue::Int(a + b));
-                };
+                let call: TheCodeNodeCall =
+                    |stack: &mut Vec<TheValue>,
+                     _values: &Vec<TheValue>,
+                     _env: &mut TheCodeSandbox| {
+                        let a = stack.pop().unwrap().to_i32().unwrap();
+                        let b = stack.pop().unwrap().to_i32().unwrap();
+                        stack.push(TheValue::Int(a + b));
+                    };
 
                 if ctx.stack.len() < 2 {
                     ctx.error = Some(TheCompilerError::new(
@@ -67,14 +83,17 @@ impl TheAtom {
                     ));
                 }
 
-                TheExeNode::new(call, vec![])
+                TheCodeNode::new(call, vec![])
             }
             TheAtom::Multiply() => {
-                let call: TheExeNodeCall = |stack: &mut Vec<TheValue>, _values: &Vec<TheValue>, _env: &mut TheExeEnvironment| {
-                    let a = stack.pop().unwrap().to_i32().unwrap();
-                    let b = stack.pop().unwrap().to_i32().unwrap();
-                    stack.push(TheValue::Int(a * b));
-                };
+                let call: TheCodeNodeCall =
+                    |stack: &mut Vec<TheValue>,
+                     _values: &Vec<TheValue>,
+                     _env: &mut TheCodeSandbox| {
+                        let a = stack.pop().unwrap().to_i32().unwrap();
+                        let b = stack.pop().unwrap().to_i32().unwrap();
+                        stack.push(TheValue::Int(a * b));
+                    };
 
                 if ctx.stack.len() < 2 {
                     ctx.error = Some(TheCompilerError::new(
@@ -83,7 +102,7 @@ impl TheAtom {
                     ));
                 }
 
-                TheExeNode::new(call, vec![])
+                TheCodeNode::new(call, vec![])
             }
         }
     }

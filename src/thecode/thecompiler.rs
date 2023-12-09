@@ -79,6 +79,10 @@ pub struct TheCompilerContext {
     pub local: Vec<TheCodeObject>,
     pub location: (u32, u32),
 
+    pub module: TheCodeModule,
+    pub functions: Vec<TheCodeFunction>,
+    pub curr_function_index: usize,
+
     pub error: Option<TheCompilerError>,
 }
 
@@ -95,15 +99,29 @@ impl TheCompilerContext {
             local: vec![TheCodeObject::default()],
             location: (0, 0),
 
+            module: TheCodeModule::default(),
+            functions: vec![TheCodeFunction::default()],
+            curr_function_index: 0,
+
             error: None,
         }
+    }
+
+    /// Returns the current function.
+    pub fn get_current_function(&mut self) -> &mut TheCodeFunction {
+        &mut self.functions[self.curr_function_index]
+    }
+
+    /// Add a function.
+    pub fn add_function(&mut self, function: TheCodeFunction) {
+        self.functions.push(function);
+        self.curr_function_index += 1;
     }
 }
 
 pub struct TheCompiler {
     rules: FxHashMap<TheAtomKind, TheParseRule>,
     grid: TheCodeGrid,
-    pipe: TheExePipeline,
 
     ctx: TheCompilerContext,
 
@@ -136,7 +154,6 @@ impl TheCompiler {
         Self {
             rules,
             grid: TheCodeGrid::default(),
-            pipe: TheExePipeline::new(),
 
             ctx: TheCompilerContext::default(),
 
@@ -145,9 +162,7 @@ impl TheCompiler {
         }
     }
 
-    pub fn compile(&mut self, grid: &mut TheCodeGrid) -> Result<TheExePipeline, TheCompilerError> {
-        self.pipe = TheExePipeline::new();
-
+    pub fn compile(&mut self, grid: &mut TheCodeGrid) -> Result<TheCodeModule, TheCompilerError> {
         self.current = TheAtom::End;
         self.previous = TheAtom::End;
 
@@ -164,10 +179,23 @@ impl TheCompiler {
 
         if let Some(error) = &self.ctx.error {
             println!("Error: {:?}", error);
-            grid.add_message(error.location, TheCodeGridMessage { message_type: TheCodeGridMessageType::Error, message: error.message.clone() });
+            grid.add_message(
+                error.location,
+                TheCodeGridMessage {
+                    message_type: TheCodeGridMessageType::Error,
+                    message: error.message.clone(),
+                },
+            );
             Err(error.clone())
         } else {
-            Ok(self.pipe.clone())
+
+            if !self.ctx.get_current_function().is_empty() {
+                let f = self.ctx.get_current_function().clone();
+                self.ctx.module.insert_function(f.name.clone(), f);
+            }
+
+            println!("End:{:?}", self.ctx.functions);
+            Ok(self.ctx.module.clone())
         }
     }
 
@@ -177,7 +205,8 @@ impl TheCompiler {
             self.advance();
             let var = self.previous.clone();
             self.var_declaration();
-            self.pipe.add(var.to_node(&mut self.ctx));
+            let node = var.to_node(&mut self.ctx);
+            self.ctx.get_current_function().add_node(node);
         }
     }
 
@@ -190,7 +219,8 @@ impl TheCompiler {
     }
 
     fn number(&mut self, _can_assign: bool) {
-        self.pipe.add(self.previous.to_node(&mut self.ctx));
+        let node = self.previous.to_node(&mut self.ctx);
+        self.ctx.get_current_function().add_node(node);
     }
 
     fn binary(&mut self, _can_assign: bool) {
@@ -207,10 +237,12 @@ impl TheCompiler {
             // TokenType::Less => self.emit_instruction(Instruction::Less),
             // TokenType::LessEqual => self.emit_instructions(Instruction::Greater, Instruction::Not),
             TheAtomKind::Plus => {
-                self.pipe.add(TheAtom::Add().to_node(&mut self.ctx));
+                let node = TheAtom::Add().to_node(&mut self.ctx);
+                self.ctx.get_current_function().add_node(node);
             }
             TheAtomKind::Star => {
-                self.pipe.add(TheAtom::Multiply().to_node(&mut self.ctx));
+                let node = TheAtom::Multiply().to_node(&mut self.ctx);
+                self.ctx.get_current_function().add_node(node);
             }
             // TokenType::Minus => self.emit_instruction(Instruction::Subtract),
             // TokenType::Star => self.emit_instruction(Instruction::Multiply),

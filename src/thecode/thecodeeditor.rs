@@ -173,11 +173,11 @@ impl TheCodeEditor {
 
     /// Set grid status message
     pub fn set_grid_status_message(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
-        let mut message : Option<TheCodeGridMessage> = None;
+        let mut message: Option<TheCodeGridMessage> = None;
         if let Some(grid_selection) = self.grid_selection {
             if let Some(layout) = ui.get_code_layout("Code Editor") {
                 if let Some(code_view) = layout.code_view_mut().as_code_view() {
-                   message = code_view.code_grid().message(grid_selection);
+                    message = code_view.code_grid().message(grid_selection);
                 }
             }
         }
@@ -191,7 +191,6 @@ impl TheCodeEditor {
             ctx.ui.relayout = true;
         }
     }
-
 
     /// Create an atom for the given name.
     pub fn create_atom(&self, name: &str) -> TheAtom {

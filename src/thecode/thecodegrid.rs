@@ -3,7 +3,7 @@ use crate::prelude::*;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum TheCodeGridMessageType {
     Error,
-    Value
+    Value,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -16,7 +16,7 @@ impl TheCodeGridMessage {
     pub fn new(message_type: TheCodeGridMessageType, message: String) -> Self {
         Self {
             message_type,
-            message
+            message,
         }
     }
 }
@@ -121,7 +121,7 @@ impl TheCodeGrid {
 
     /// Returns the message for the given location (if any).
     pub fn message(&self, location: (u32, u32)) -> Option<TheCodeGridMessage> {
-        let mut message : Option<TheCodeGridMessage> = None;
+        let mut message: Option<TheCodeGridMessage> = None;
         if let Some(m) = self.messages.get(&location) {
             message = Some(m.clone());
         }

@@ -17,7 +17,7 @@ pub struct TheCodeView {
     code_grid: TheCodeGrid,
     grid_size: i32,
 
-    exe_env: Option<TheExeEnvironment>,
+    sandbox: Option<TheCodeSandbox>,
 
     buffer: TheRGBABuffer,
 
@@ -53,7 +53,7 @@ impl TheWidget for TheCodeView {
             code_grid: TheCodeGrid::new(),
             grid_size: 70,
 
-            exe_env: None,
+            sandbox: None,
 
             scroll_offset: vec2i(0, 0),
             zoom: 1.0,
@@ -183,7 +183,6 @@ impl TheWidget for TheCodeView {
 
             for y in 0..grid_y {
                 for x in 0..grid_x {
-
                     let mut color = if Some((x, y)) == self.selected {
                         selected
                     } else {
@@ -254,7 +253,7 @@ impl TheWidget for TheCodeView {
                                         &(rect.0 + 3, rect.1 + 2, rect.2 - 10, rect.3),
                                         stride,
                                         font,
-                                        13.0,
+                                        12.0,
                                         "Local",
                                         &text_color,
                                         TheHorizontalAlign::Left,
@@ -262,7 +261,7 @@ impl TheWidget for TheCodeView {
                                     );
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
-                                        &(rect.0, rect.1, rect.2 - 10, rect.3 - 2),
+                                        &(rect.0, rect.1, rect.2 - 5, rect.3 - 2),
                                         stride,
                                         font,
                                         14.0,
@@ -271,11 +270,11 @@ impl TheWidget for TheCodeView {
                                         TheHorizontalAlign::Right,
                                         TheVerticalAlign::Bottom,
                                     );
-                                    if let Some(env) = &self.exe_env {
+                                    if let Some(env) = &self.sandbox {
                                         if let Some(v) = env.get_local(name) {
                                             ctx.draw.text_rect_blend(
                                                 self.buffer.pixels_mut(),
-                                                &(rect.0 + 3, rect.1 - 2, rect.2 - 25, rect.3 - 3),
+                                                &(rect.0 + 3, rect.1 - 2, rect.2 - 20, rect.3 - 3),
                                                 stride,
                                                 font,
                                                 13.0,
@@ -402,7 +401,7 @@ pub trait TheCodeViewTrait {
     fn code_grid(&self) -> &TheCodeGrid;
     fn code_grid_mut(&mut self) -> &mut TheCodeGrid;
     fn set_code_grid(&mut self, code_grid: TheCodeGrid);
-    fn set_exe_env(&mut self, exe_env: Option<TheExeEnvironment>);
+    fn set_sandbox(&mut self, sandbox: Option<TheCodeSandbox>);
     fn set_background(&mut self, color: RGBA);
     fn zoom(&self) -> f32;
     fn set_zoom(&mut self, zoom: f32);
@@ -452,8 +451,8 @@ impl TheCodeViewTrait for TheCodeView {
         self.code_is_dirty = true;
         self.is_dirty = true;
     }
-    fn set_exe_env(&mut self, exe_env: Option<TheExeEnvironment>) {
-        self.exe_env = exe_env;
+    fn set_sandbox(&mut self, exe_env: Option<TheCodeSandbox>) {
+        self.sandbox = exe_env;
         self.code_is_dirty = true;
         self.is_dirty = true;
     }

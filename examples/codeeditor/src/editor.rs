@@ -108,12 +108,13 @@ impl TheTrait for CodeEditor {
                                     let mut compiler = TheCompiler::new();
                                     let rc = compiler.compile(grid);
 
-                                    if let Ok(mut pipe) = rc {
-                                        let mut env = TheExeEnvironment::default();
-                                        pipe.execute(&mut env);
-                                        code_view.set_exe_env(Some(env));
+                                    if let Ok(mut module) = rc {
+                                        println!("Module: {:?}", module);
+                                        let mut sandbox = TheCodeSandbox::new();
+                                        module.execute(&mut sandbox);
+                                        code_view.set_sandbox(Some(sandbox));
                                     } else {
-                                        code_view.set_exe_env(None);
+                                        code_view.set_sandbox(None);
                                     }
 
                                     self.editor.set_grid_status_message(ui, ctx);
