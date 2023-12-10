@@ -25,6 +25,7 @@ futures = { version = "0.3", optional = true }
 serde = { version = "1.0", features = ["derive"], optional = false}
 serde_json = { version = "1.0", optional = false }
 flate2 = { version = "1.0", optional = true }
+vectorize = "0.2.0"
 
 [dependencies.uuid]
 version = "1.1.2"

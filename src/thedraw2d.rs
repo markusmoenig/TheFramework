@@ -2,6 +2,7 @@ use fontdue::layout::{
     CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle, VerticalAlign,
 };
 use fontdue::Font;
+use maths_rs::prelude::*;
 
 #[derive(PartialEq)]
 pub enum TheHorizontalAlign {
@@ -361,6 +362,107 @@ impl TheDraw2D {
                 let d = f32::min(f32::max(q.0, q.1), 0.0)
                     + self.length((f32::max(q.0, 0.0), f32::max(q.1, 0.0)))
                     - r.0;
+
+                if d < 1.0 {
+                    let t = self.fill_mask(d);
+
+                    let background = &[frame[i], frame[i + 1], frame[i + 2], 255];
+                    let mut mixed_color =
+                        self.mix_color(background, color, t * (color[3] as f32 / 255.0));
+
+                    let b = self.border_mask(d, border_size);
+                    mixed_color = self.mix_color(&mixed_color, border_color, b);
+
+                    frame[i..i + 4].copy_from_slice(&mixed_color);
+                }
+            }
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    /// Draws a hexagon with a border
+    pub fn hexagon_with_border(
+        &self,
+        frame: &mut [u8],
+        rect: &(usize, usize, usize, usize),
+        stride: usize,
+        color: &[u8; 4],
+        border_color: &[u8; 4],
+        border_size: f32,
+    ) {
+        let hb = border_size / 2.0;
+        let center = (
+            (rect.0 as f32 + rect.2 as f32 / 2.0 - hb).round(),
+            (rect.1 as f32 + rect.3 as f32 / 2.0 - hb).round(),
+        );
+        for y in rect.1..rect.1 + rect.3 {
+            for x in rect.0..rect.0 + rect.2 {
+                let i = x * 4 + y * stride * 4;
+
+                let mut p= vec2f(abs(x as f32 - center.0), abs(y as f32 - center.1));
+                let r = rect.2 as f32 / 2.33;
+
+                let k = vec3f(-0.866_025_4,0.5,0.577_350_26);
+                p -= 2.0 * min(dot(k.xy(), p), 0.0) * k.xy();
+                p -= vec2f(clamp(p.x, -k.z *r, k.z * r), r);
+                let d = length(p) * signum(p.y);
+
+                if d < 1.0 {
+                    let t = self.fill_mask(d);
+
+                    let background = &[frame[i], frame[i + 1], frame[i + 2], 255];
+                    let mut mixed_color =
+                        self.mix_color(background, color, t * (color[3] as f32 / 255.0));
+
+                    let b = self.border_mask(d, border_size);
+                    mixed_color = self.mix_color(&mixed_color, border_color, b);
+
+                    frame[i..i + 4].copy_from_slice(&mixed_color);
+                }
+            }
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    /// Draws a rhombus rect with a border
+    pub fn rhombus_with_border(
+        &self,
+        frame: &mut [u8],
+        rect: &(usize, usize, usize, usize),
+        stride: usize,
+        color: &[u8; 4],
+        border_color: &[u8; 4],
+        border_size: f32,
+    ) {
+        let hb = border_size / 2.0;
+        let center = (
+            (rect.0 as f32 + rect.2 as f32 / 2.0 - hb).round(),
+            (rect.1 as f32 + rect.3 as f32 / 2.0 - hb).round(),
+        );
+
+        fn ndot(a: Vec2f, b: Vec2f) -> f32 { a.x*b.x - a.y*b.y }
+
+        for y in rect.1..rect.1 + rect.3 {
+            for x in rect.0..rect.0 + rect.2 {
+                let i = x * 4 + y * stride * 4;
+
+                /*
+                float ndot(vec2 a, vec2 b ) { return a.x*b.x - a.y*b.y; }
+                float sdRhombus( in vec2 p, in vec2 b )
+                {
+                    p = abs(p);
+                    float h = clamp( ndot(b-2.0*p,b)/dot(b,b), -1.0, 1.0 );
+                    float d = length( p-0.5*b*vec2(1.0-h,1.0+h) );
+                    return d * sign( p.x*b.y + p.y*b.x - b.x*b.y );
+                }*/
+
+                let p= vec2f(abs(x as f32 - center.0), abs(y as f32 - center.1));
+                let b = vec2f(rect.2 as f32 / 2.0, rect.3 as f32 / 2.0);
+
+
+                let h = clamp(ndot(b - 2.0 * p, b) / dot(b, b), -1.0, 1.0);
+                let mut d = length( p-0.5*b*vec2f(1.0-h,1.0+h) );
+                d *= signum( p.x*b.y + p.y*b.x - b.x*b.y );
 
                 if d < 1.0 {
                     let t = self.fill_mask(d);

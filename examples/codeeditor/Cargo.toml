@@ -6,6 +6,8 @@ edition = "2021"
 [dependencies]
 theframework = { path = "../..", features = ["ui", "code"] }
 lazy_static = "1.4.0"
+serde = { version = "1.0", features = ["derive"], optional = false}
+serde_json = { version = "1.0", optional = false }
 
 # [lib]
 # name = "rustapi"

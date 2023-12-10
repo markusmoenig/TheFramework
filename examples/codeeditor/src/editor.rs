@@ -1,4 +1,4 @@
-use crate::{browser::Browser, prelude::*};
+use crate::{browser::Browser, prelude::*, project::Project};
 use std::sync::mpsc::Receiver;
 use theframework::prelude::*;
 
@@ -6,6 +6,7 @@ pub struct CodeEditor {
     sidebar: Sidebar,
     browser: Browser,
 
+    project: Project,
     editor: TheCodeEditor,
 
     event_receiver: Option<Receiver<TheEvent>>,
@@ -20,6 +21,7 @@ impl TheTrait for CodeEditor {
             sidebar: Sidebar::new(),
             browser: Browser::new(),
 
+            project: Project::new(),
             editor: TheCodeEditor::default(),
 
             event_receiver: None,
@@ -97,13 +99,63 @@ impl TheTrait for CodeEditor {
                             }
                         }
                     }
+                    TheEvent::FileRequesterResult(id, paths) => {
+                        if id.name == "Open" {
+                            for p in paths {
+                                let contents = std::fs::read_to_string(p).unwrap_or("".to_string());
+                                self.project =
+                                    serde_json::from_str(&contents).unwrap_or(Project::new());
+                                //self.sidebar.load_from_project(ui, ctx, &self.project);
+                                //self.tileeditor.load_from_project(ui, ctx, &self.project);
+                                self.editor.set_codegrid(self.project.codegrid.clone(), ui);
+                                redraw = true;
+                            }
+                        } else if id.name == "Save" {
+                            self.project.codegrid = self.editor.get_codegrid(ui);
+
+                            for p in paths {
+                                let json = serde_json::to_string(&self.project); //.unwrap();
+                                                                                 //println!("{:?}", json.err());
+                                if let Ok(json) = json {
+                                    println!("{:?}", p);
+                                    std::fs::write(p, json).expect("Unable to write file");
+                                }
+                            }
+                        }
+                    }
                     TheEvent::StateChanged(id, _state) => {
                         //println!("app Widget State changed {:?}: {:?}", id, state);
 
-                        if id.name == "Compile" {
+                        if id.name == "Open" {
+                            ctx.ui.open_file_requester(
+                                TheId::named_with_id(id.name.as_str(), Uuid::new_v4()),
+                                "Open".into(),
+                                TheFileExtension::new(
+                                    "CodeGrid".into(),
+                                    vec!["codegrid".to_string()],
+                                ),
+                            );
+                            ctx.ui
+                                .set_widget_state("Open".to_string(), TheWidgetState::None);
+                            ctx.ui.clear_hover();
+                            redraw = true;
+                        } else if id.name == "Save" {
+                            ctx.ui.save_file_requester(
+                                TheId::named_with_id(id.name.as_str(), Uuid::new_v4()),
+                                "Save".into(),
+                                TheFileExtension::new(
+                                    "CodeGrid".into(),
+                                    vec!["codegrid".to_string()],
+                                ),
+                            );
+                            ctx.ui
+                                .set_widget_state("Save".to_string(), TheWidgetState::None);
+                            ctx.ui.clear_hover();
+                            redraw = true;
+                        } else if id.name == "Compile" {
                             if let Some(layout) = ui.get_code_layout("Code Editor") {
                                 if let Some(code_view) = layout.code_view_mut().as_code_view() {
-                                    let grid = code_view.code_grid_mut();
+                                    let grid = code_view.codegrid_mut();
 
                                     let mut compiler = TheCompiler::new();
                                     let rc = compiler.compile(grid);

@@ -27,6 +27,16 @@ impl TheCodeFunction {
         }
     }
 
+    pub fn named(name: String) -> Self {
+        Self {
+            name,
+            local: vec![TheCodeObject::default()],
+            nodes: vec![],
+            public: false,
+            arguments: vec![],
+        }
+    }
+
     /// Add a node.
     pub fn add_node(&mut self, node: TheCodeNode) {
         self.nodes.push(node);

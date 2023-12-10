@@ -14,6 +14,7 @@ pub struct TheSlider {
     is_dirty: bool,
 
     range: TheValue,
+    continuous: bool,
 }
 
 impl TheWidget for TheSlider {
@@ -39,6 +40,7 @@ impl TheWidget for TheSlider {
             is_dirty: false,
 
             range: TheValue::RangeF32(0.0..=1.0),
+            continuous: false,
         }
     }
 
@@ -146,6 +148,11 @@ impl TheWidget for TheSlider {
                     self.original = self.value.clone();
                     self.value = TheValue::Int(v);
                 }
+                if self.continuous {
+                    ctx.ui
+                        .send_widget_value_changed(self.id(), self.value.clone());
+                }
+                self.is_dirty = true;
                 redraw = true;
             }
             TheEvent::MouseUp(_coord) => {
@@ -320,10 +327,17 @@ impl TheWidget for TheSlider {
 
 pub trait TheSliderTrait: TheWidget {
     fn set_range(&mut self, range: TheValue);
+    fn set_continuous(&mut self, continuous: bool);
 }
 
 impl TheSliderTrait for TheSlider {
     fn set_range(&mut self, range: TheValue) {
-        if range != self.range {}
+        if range != self.range {
+            self.range = range;
+            self.is_dirty = true;
+        }
+    }
+    fn set_continuous(&mut self, continuous: bool) {
+        self.continuous = continuous;
     }
 }

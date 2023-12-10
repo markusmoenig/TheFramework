@@ -14,7 +14,7 @@ pub struct TheCodeView {
     state: TheWidgetState,
     background: RGBA,
 
-    code_grid: TheCodeGrid,
+    codegrid: TheCodeGrid,
     grid_size: i32,
 
     sandbox: Option<TheCodeSandbox>,
@@ -25,6 +25,7 @@ pub struct TheCodeView {
     zoom: f32,
 
     selected: Option<(u32, u32)>,
+    hover: Option<(u32, u32)>,
 
     dim: TheDim,
     code_is_dirty: bool,
@@ -50,7 +51,7 @@ impl TheWidget for TheCodeView {
 
             buffer: TheRGBABuffer::empty(),
 
-            code_grid: TheCodeGrid::new(),
+            codegrid: TheCodeGrid::new(),
             grid_size: 70,
 
             sandbox: None,
@@ -59,6 +60,7 @@ impl TheWidget for TheCodeView {
             zoom: 1.0,
 
             selected: None,
+            hover: None,
 
             dim: TheDim::zero(),
             code_is_dirty: true,
@@ -89,10 +91,17 @@ impl TheWidget for TheCodeView {
 
                 redraw = true;
             }
-            TheEvent::Hover(_coord) => {
-                if self.state != TheWidgetState::Selected && !self.id().equals(&ctx.ui.hover) {
+            TheEvent::Hover(coord) => {
+                if !self.id().equals(&ctx.ui.hover) {
                     self.is_dirty = true;
                     ctx.ui.set_hover(self.id());
+                    redraw = true;
+                }
+
+                let hover = self.get_code_grid_offset(*coord);
+                if hover != self.hover {
+                    self.code_is_dirty = true;
+                    self.hover = hover;
                     redraw = true;
                 }
             }
@@ -163,6 +172,40 @@ impl TheWidget for TheCodeView {
             return;
         }
 
+        /*
+        let stride: usize = self.buffer.stride();
+        let background: [u8; 4] = *style.theme().color(CodeGridBackground);
+        let line: [u8; 4] = *style.theme().color(CodeGridLine);
+
+        let offset_x = 0 as f32;//-self.scroll_offset.x as f32;
+        let offset_y = -self.scroll_offset.y as f32;
+
+        let target = buffer;
+        let grid = self.grid_size;
+
+        for target_y in 0..self.dim.height {
+            for target_x in 0..self.dim.width {
+                // Calculate the corresponding source coordinates with the offset
+                let src_x = (target_x as f32 - offset_x) / self.zoom;
+                let src_y = (target_y as f32 - offset_y) / self.zoom;
+
+                // Calculate the index for the destination pixel
+                let target_index = ((self.dim.buffer_y + target_y) * target.dim().width
+                    + target_x
+                    + self.dim.buffer_x) as usize
+                    * 4;
+
+                let mut color = background;
+
+                if src_x as i32 % grid == 0 || src_y as i32 % grid == 0 {
+                    color = line;
+                }
+
+                target.pixels_mut()[target_index..target_index + 4]
+                    .copy_from_slice(&color);
+            }
+        }*/
+
         // --- Draw the code grid into the buffer
 
         let stride: usize = self.buffer.stride();
@@ -173,131 +216,278 @@ impl TheWidget for TheCodeView {
             let grid_y = 10;
 
             let normal: [u8; 4] = *style.theme().color(CodeGridNormal);
+            let dark: [u8; 4] = *style.theme().color(CodeGridDark);
             let selected = *style.theme().color(CodeGridSelected);
             let text_color = *style.theme().color(CodeGridText);
             let error = *style.theme().color(Error);
+            let mut hover = *style.theme().color(CodeGridHover);
+            hover[3] = 80;
 
             let utuple = self.buffer.dim().to_buffer_utuple();
             ctx.draw
                 .rect(self.buffer.pixels_mut(), &utuple, stride, &background);
 
+            let border_color = dark;
+            let font_size = 12.0_f32 * self.zoom;
+
+            let grid_size = ceil(self.grid_size as f32 * self.zoom) as i32;
+            let rounding = 10.0 * self.zoom;
+            let border_size = 1.5 * self.zoom;
+
+            let zoom = self.zoom;
+            fn zoom_const(v: usize, zoom: f32) -> usize {
+                (v as f32 * zoom) as usize
+            }
+
             for y in 0..grid_y {
                 for x in 0..grid_x {
+
+                    let rect = (
+                        (x * grid_size as u32) as usize,
+                        (y * grid_size as u32) as usize,
+                        grid_size as usize,
+                        grid_size as usize,
+                    );
+
+                    if Some((x, y)) == self.hover {
+                        ctx.draw.blend_rect(
+                            self.buffer.pixels_mut(),
+                            &rect,
+                            stride,
+                            &hover,
+                        );
+                    }
+
+                    let crect = (
+                        rect.0 + 2,
+                        rect.1 + 2,
+                        rect.2 - 4,
+                        rect.3 - 4,
+                    );
+
                     let mut color = if Some((x, y)) == self.selected {
                         selected
                     } else {
                         normal
                     };
 
-                    if let Some(message) = self.code_grid.messages.get(&(x, y)) {
+                    if let Some(message) = self.codegrid.messages.get(&(x, y)) {
                         if message.message_type == TheCodeGridMessageType::Error {
                             color = error;
                         }
                     }
 
-                    let rect = (
-                        (x * self.grid_size as u32) as usize + 2,
-                        (y * self.grid_size as u32) as usize + 2,
-                        self.grid_size as usize - 4,
-                        self.grid_size as usize - 4,
-                    );
+                    if let Some(atom) = self.codegrid.code.get(&(x, y)) {
+                        match atom {
 
-                    if let Some(atom) = self.code_grid.code.get(&(x, y)) {
-                        let text = atom.describe();
+                            TheAtom::FuncDef(name) => {
+                                ctx.draw.rounded_rect_with_border(
+                                    self.buffer.pixels_mut(),
+                                    &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
+                                    stride,
+                                    &color,
+                                    &(0.0, 0.0, 0.0, rounding),
+                                    &border_color,
+                                    border_size,
+                                );
 
-                        ctx.draw.rect_outline_border(
-                            self.buffer.pixels_mut(),
-                            &rect,
-                            stride,
-                            &color,
-                            1,
-                        );
-
-                        ctx.draw.rect(
-                            self.buffer.pixels_mut(),
-                            &(rect.0 + 1, rect.1 + 1, rect.2 - 2, rect.3 - 2),
-                            stride,
-                            &color,
-                        );
-
-                        if let Some(font) = &ctx.ui.font {
-                            ctx.draw.text_rect_blend(
-                                self.buffer.pixels_mut(),
-                                &rect,
-                                stride,
-                                font,
-                                13.0,
-                                &text,
-                                &text_color,
-                                TheHorizontalAlign::Center,
-                                TheVerticalAlign::Center,
-                            );
-
-                            match atom {
-                                TheAtom::LocalGet(_) => {
+                                if let Some(font) = &ctx.ui.font {
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
-                                        &(rect.0 + 2, rect.1 + 2, rect.2 - 10, rect.3),
+                                        &crect,
                                         stride,
                                         font,
-                                        13.0,
-                                        "Local",
+                                        font_size,
+                                        name,
                                         &text_color,
-                                        TheHorizontalAlign::Left,
-                                        TheVerticalAlign::Top,
+                                        TheHorizontalAlign::Center,
+                                        TheVerticalAlign::Center,
                                     );
                                 }
-                                TheAtom::LocalSet(name) => {
+                            }
+                            TheAtom::LocalGet(name) => {
+                                ctx.draw.rounded_rect_with_border(
+                                    self.buffer.pixels_mut(),
+                                    &(crect.0, crect.1 + (crect.3 - crect.3 / 2) / 2, crect.2, crect.3 - crect.3 / 2),
+                                    stride,
+                                    &border_color,
+                                    &(rounding, rounding, 0.0, 0.0),
+                                    &dark,
+                                    border_size,
+                                );
+
+                                if let Some(font) = &ctx.ui.font {
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
-                                        &(rect.0 + 3, rect.1 + 2, rect.2 - 10, rect.3),
+                                        &crect,
                                         stride,
                                         font,
-                                        12.0,
-                                        "Local",
+                                        font_size,
+                                        name,
                                         &text_color,
-                                        TheHorizontalAlign::Left,
-                                        TheVerticalAlign::Top,
+                                        TheHorizontalAlign::Center,
+                                        TheVerticalAlign::Center,
                                     );
+                                }
+                            }
+                            TheAtom::LocalSet(name) => {
+
+                                ctx.draw.rounded_rect_with_border(
+                                    self.buffer.pixels_mut(),
+                                    &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
+                                    stride,
+                                    &color,
+                                    &(0.0, 0.0, rounding, rounding),
+                                    &border_color,
+                                    border_size,
+                                );
+
+                                if let Some(font) = &ctx.ui.font {
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
-                                        &(rect.0, rect.1, rect.2 - 5, rect.3 - 2),
+                                        &crect,
                                         stride,
                                         font,
-                                        14.0,
-                                        "=",
+                                        font_size,
+                                        name,
                                         &text_color,
-                                        TheHorizontalAlign::Right,
-                                        TheVerticalAlign::Bottom,
+                                        TheHorizontalAlign::Center,
+                                        TheVerticalAlign::Center,
                                     );
                                     if let Some(env) = &self.sandbox {
                                         if let Some(v) = env.get_local(name) {
                                             ctx.draw.text_rect_blend(
                                                 self.buffer.pixels_mut(),
-                                                &(rect.0 + 3, rect.1 - 2, rect.2 - 20, rect.3 - 3),
+                                                &(crect.0, crect.1, crect.2, crect.3 - zoom_const(6,zoom)),
                                                 stride,
                                                 font,
-                                                13.0,
+                                                font_size,
                                                 &v.describe(),
-                                                &text_color,
+                                                &hover,
                                                 TheHorizontalAlign::Center,
                                                 TheVerticalAlign::Bottom,
                                             );
                                         }
                                     }
                                 }
-                                _ => {}
+
+                                ctx.draw.rect(
+                                    self.buffer.pixels_mut(),
+                                    &(crect.0 + crect.2 - zoom_const(3,zoom), crect.1 + crect.3 / 2 - zoom_const(1,zoom), zoom_const(8,zoom), zoom_const(2,zoom)),
+                                    stride,
+                                    &dark,
+                                );
                             }
+                            TheAtom::Return => {
+
+                                ctx.draw.rounded_rect_with_border(
+                                    self.buffer.pixels_mut(),
+                                    &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
+                                    stride,
+                                    &color,
+                                    &(0.0, 0.0, rounding, 0.0),
+                                    &border_color,
+                                    border_size,
+                                );
+
+                                if let Some(font) = &ctx.ui.font {
+                                    ctx.draw.text_rect_blend(
+                                        self.buffer.pixels_mut(),
+                                        &crect,
+                                        stride,
+                                        font,
+                                        font_size,
+                                        "Return",
+                                        &text_color,
+                                        TheHorizontalAlign::Center,
+                                        TheVerticalAlign::Center,
+                                    );
+                                }
+                            }
+                            TheAtom::Value(value) => {
+
+                                ctx.draw.hexagon_with_border(
+                                    self.buffer.pixels_mut(),
+                                    &rect,
+                                    stride,
+                                    &color,
+                                    &border_color,
+                                    border_size,
+                                );
+
+                                if let Some(font) = &ctx.ui.font {
+                                    ctx.draw.text_rect_blend(
+                                        self.buffer.pixels_mut(),
+                                        &crect,
+                                        stride,
+                                        font,
+                                        font_size,
+                                        &value.describe(),
+                                        &text_color,
+                                        TheHorizontalAlign::Center,
+                                        TheVerticalAlign::Center,
+                                    );
+                                }
+                            }
+                            TheAtom::Add => {
+                                ctx.draw.rhombus_with_border(
+                                    self.buffer.pixels_mut(),
+                                    &rect,
+                                    stride,
+                                    &color,
+                                    &border_color,
+                                    border_size,
+                                );
+
+                                if let Some(font) = &ctx.ui.font {
+                                    ctx.draw.text_rect_blend(
+                                        self.buffer.pixels_mut(),
+                                        &crect,
+                                        stride,
+                                        font,
+                                        font_size,
+                                        "+",
+                                        &text_color,
+                                        TheHorizontalAlign::Center,
+                                        TheVerticalAlign::Center,
+                                    );
+                                }
+                            }
+                            TheAtom::Multiply => {
+                                ctx.draw.rhombus_with_border(
+                                    self.buffer.pixels_mut(),
+                                    &rect,
+                                    stride,
+                                    &color,
+                                    &border_color,
+                                    border_size,
+                                );
+
+                                if let Some(font) = &ctx.ui.font {
+                                    ctx.draw.text_rect_blend(
+                                        self.buffer.pixels_mut(),
+                                        &crect,
+                                        stride,
+                                        font,
+                                        font_size,
+                                        "*",
+                                        &text_color,
+                                        TheHorizontalAlign::Center,
+                                        TheVerticalAlign::Center,
+                                    );
+                                }
+                            }
+                            _ => {}
                         }
-                    } else {
-                        ctx.draw.rect_outline_border(
-                            self.buffer.pixels_mut(),
-                            &rect,
-                            stride,
-                            &color,
-                            0,
-                        );
-                    }
+                    }// else {
+                    //     ctx.draw.rect_outline_border(
+                    //         self.buffer.pixels_mut(),
+                    //         &rect,
+                    //         stride,
+                    //         &color,
+                    //         0,
+                    //     );
+                    // }
                 }
             }
 
@@ -334,9 +524,11 @@ impl TheWidget for TheCodeView {
         let target_width = self.dim().width as f32;
         let target_height = self.dim().height as f32;
 
+        let zoom = 1.0;
+
         // Calculate the scaled dimensions of the source image
-        let scaled_width = src_width * self.zoom;
-        let scaled_height = src_height * self.zoom;
+        let scaled_width = src_width * zoom;
+        let scaled_height = src_height * zoom;
 
         // Calculate the offset to center the image
         let offset_x = if scaled_width < target_width {
@@ -346,7 +538,7 @@ impl TheWidget for TheCodeView {
         };
 
         let offset_y = if scaled_height < target_height {
-            (target_height - scaled_height) / 2.0
+            0.0//(target_height - scaled_height) / 2.0
         } else {
             -self.scroll_offset.y as f32
         };
@@ -355,8 +547,8 @@ impl TheWidget for TheCodeView {
         for target_y in 0..self.dim.height {
             for target_x in 0..self.dim.width {
                 // Calculate the corresponding source coordinates with the offset
-                let src_x = (target_x as f32 - offset_x) / self.zoom;
-                let src_y = (target_y as f32 - offset_y) / self.zoom;
+                let src_x = (target_x as f32 - offset_x) / zoom;
+                let src_y = (target_y as f32 - offset_y) / zoom;
 
                 // Calculate the index for the destination pixel
                 let target_index = ((self.dim.buffer_y + target_y) * target.dim().width
@@ -398,9 +590,9 @@ pub trait TheCodeViewTrait {
 
     fn buffer(&self) -> &TheRGBABuffer;
     fn buffer_mut(&mut self) -> &mut TheRGBABuffer;
-    fn code_grid(&self) -> &TheCodeGrid;
-    fn code_grid_mut(&mut self) -> &mut TheCodeGrid;
-    fn set_code_grid(&mut self, code_grid: TheCodeGrid);
+    fn codegrid(&self) -> &TheCodeGrid;
+    fn codegrid_mut(&mut self) -> &mut TheCodeGrid;
+    fn set_codegrid(&mut self, code_grid: TheCodeGrid);
     fn set_sandbox(&mut self, sandbox: Option<TheCodeSandbox>);
     fn set_background(&mut self, color: RGBA);
     fn zoom(&self) -> f32;
@@ -421,13 +613,15 @@ impl TheCodeViewTrait for TheCodeView {
         let grid_x = 10;
         let grid_y = 10;
 
+        let grid_size = ceil(self.grid_size as f32 * self.zoom) as i32;
+
         let d = self.buffer().dim();
-        if d.width != grid_x * self.grid_size || d.height != grid_y * self.grid_size {
+        if d.width != grid_x * grid_size || d.height != grid_y * grid_size {
             let b = TheRGBABuffer::new(TheDim::new(
                 0,
                 0,
-                grid_x * self.grid_size,
-                grid_y * self.grid_size,
+                grid_x * grid_size,
+                grid_y * grid_size
             ));
             self.buffer = b;
         }
@@ -438,16 +632,16 @@ impl TheCodeViewTrait for TheCodeView {
     fn buffer_mut(&mut self) -> &mut TheRGBABuffer {
         &mut self.buffer
     }
-    fn code_grid(&self) -> &TheCodeGrid {
-        &self.code_grid
+    fn codegrid(&self) -> &TheCodeGrid {
+        &self.codegrid
     }
-    fn code_grid_mut(&mut self) -> &mut TheCodeGrid {
+    fn codegrid_mut(&mut self) -> &mut TheCodeGrid {
         self.is_dirty = true;
         self.code_is_dirty = true;
-        &mut self.code_grid
+        &mut self.codegrid
     }
-    fn set_code_grid(&mut self, code_grid: TheCodeGrid) {
-        self.code_grid = code_grid;
+    fn set_codegrid(&mut self, code_grid: TheCodeGrid) {
+        self.codegrid = code_grid;
         self.code_is_dirty = true;
         self.is_dirty = true;
     }
@@ -464,6 +658,9 @@ impl TheCodeViewTrait for TheCodeView {
     }
     fn set_zoom(&mut self, zoom: f32) {
         self.zoom = zoom;
+        self.is_dirty = true;
+        self.code_is_dirty = true;
+        self.hover = None;
     }
     fn set_scroll_offset(&mut self, offset: Vec2i) {
         self.scroll_offset = offset;
@@ -475,14 +672,14 @@ impl TheCodeViewTrait for TheCodeView {
         self.selected
     }
     fn set_atom_value(&mut self, coord: (u32, u32), name: String, value: TheValue) {
-        if let Some(atom) = self.code_grid.code.get_mut(&coord) {
+        if let Some(atom) = self.codegrid.code.get_mut(&coord) {
             atom.process_value_change(name, value);
             self.code_is_dirty = true;
             self.is_dirty = true;
         }
     }
     fn set_grid_atom(&mut self, coord: (u32, u32), atom: TheAtom) {
-        self.code_grid.code.insert(coord, atom);
+        self.codegrid.code.insert(coord, atom);
         self.code_is_dirty = true;
         self.is_dirty = true;
     }
@@ -493,17 +690,19 @@ impl TheCodeViewTrait for TheCodeView {
         // } else {
         //     0.0
         // };
-        let centered_offset_y =
-            if (self.zoom * self.buffer.dim().height as f32) < self.dim.height as f32 {
-                (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32) / 2.0
-            } else {
-                0.0
-            };
+        let centered_offset_y = 0.0;
+            // if (self.zoom * self.buffer.dim().height as f32) < self.dim.height as f32 {
+            //     (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32) / 2.0
+            // } else {
+            //     0.0
+            // };
 
-        let source_x = ((coord.x as f32 - centered_offset_x) / self.zoom
+        let grid_size = ceil(self.grid_size as f32 * self.zoom) as i32;
+
+        let source_x = ((coord.x as f32 - centered_offset_x) / 1.0//self.zoom
             + self.scroll_offset.x as f32)
             .round() as i32;
-        let source_y = ((coord.y as f32 - centered_offset_y) / self.zoom
+        let source_y = ((coord.y as f32 - centered_offset_y) / 1.0//self.zoom
             + self.scroll_offset.y as f32)
             .round() as i32;
 
@@ -512,11 +711,11 @@ impl TheCodeViewTrait for TheCodeView {
             && source_y >= 0
             && source_y < self.buffer.dim().height
         {
-            let grid_x = source_x / self.grid_size;
-            let grid_y = source_y / self.grid_size;
+            let grid_x = source_x / grid_size;
+            let grid_y = source_y / grid_size;
 
-            if grid_x * self.grid_size < self.buffer.dim().width
-                && grid_y * self.grid_size < self.buffer.dim().height
+            if grid_x * grid_size < self.buffer.dim().width
+                && grid_y * grid_size < self.buffer.dim().height
             {
                 return Some((grid_x as u32, grid_y as u32));
             }

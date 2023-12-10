@@ -23,7 +23,9 @@ impl TheCodeGridMessage {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct TheCodeGrid {
+    #[serde(with = "vectorize")]
     pub code: FxHashMap<(u32, u32), TheAtom>,
+    #[serde(skip)]
     pub messages: FxHashMap<(u32, u32), TheCodeGridMessage>,
     pub current_pos: Option<(u32, u32)>,
     pub max_pos: Option<(u32, u32)>,
@@ -67,11 +69,11 @@ impl TheCodeGrid {
             if let Some((mut x, mut y)) = self.current_pos {
                 // Check if we're at or beyond the maximum position
                 if x == max_pos.0 && y == max_pos.1 {
-                    return TheAtom::End; // Reached the end of the grid
+                    return TheAtom::EndOfCode; // Reached the end of the grid
                 }
 
                 // Attempt to find the next non-empty position
-                loop {
+                //loop {
                     if x == max_pos.0 {
                         x = 0;
                         y += 1;
@@ -83,13 +85,18 @@ impl TheCodeGrid {
                         if !peek {
                             self.current_pos = Some((x, y));
                         }
-                        return atom.clone(); // Found a non-empty position
+                        return atom.clone();
                     }
 
                     if x == max_pos.0 && y == max_pos.1 {
-                        return TheAtom::End; // Reached the end of the grid
+                        return TheAtom::EndOfCode; // Reached the end of the grid
                     }
-                }
+
+                    if !peek {
+                        self.current_pos = Some((x, y));
+                    }
+                    return TheAtom::EndOfExpression;
+                //}
             } else {
                 // Start from the first position if current_pos is None
                 if let Some(atom) = self.code.get(&(0, 0)) {
@@ -101,7 +108,34 @@ impl TheCodeGrid {
             }
         }
 
-        TheAtom::End
+        TheAtom::EndOfCode
+    }
+
+    /// Checks if the next non-empty TheAtom is on a following line compared to the current position.
+    pub fn is_next_on_new_line(&self) -> bool {
+        if let Some(current_pos) = self.current_pos {
+            let mut next_pos = current_pos;
+
+            // Advance to the next position
+            loop {
+                if next_pos.0 == self.max_xy().unwrap().0 {
+                    next_pos.0 = 0;
+                    next_pos.1 += 1;
+                } else {
+                    next_pos.0 += 1;
+                }
+
+                // Break if we find a non-empty atom or reach the end of the grid
+                if self.code.contains_key(&next_pos) || next_pos == self.max_xy().unwrap() {
+                    break;
+                }
+            }
+
+            // Compare the y coordinate of the current position with the next non-empty position
+            return next_pos.1 > current_pos.1;
+        }
+
+        false
     }
 
     /// Reset the grid iterator.

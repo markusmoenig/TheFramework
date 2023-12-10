@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TheCodeObject {
     pub values: FxHashMap<String, TheValue>,
 }

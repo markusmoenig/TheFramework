@@ -110,13 +110,28 @@ impl TheCodeEditor {
                 redraw = true;
             }
             TheEvent::ValueChanged(id, value) => {
-                if id.name == "Atom Variable" {
+                if id.name == "Code Zoom" {
+                    if let Some(v) = value.to_f32() {
+                        if let Some(layout) = ui.get_code_layout("Code Editor") {
+                            if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                                code_view.set_zoom(v);
+                                ctx.ui.relayout = true;
+                            }
+                        }
+                    }
+                } else if id.name == "Atom Func Def" {
+                    if let Some(name) = value.to_string() {
+                        if !name.is_empty() {
+                            self.set_selected_atom(ui, TheAtom::FuncDef(name));
+                        }
+                    }
+                } else if id.name == "Atom Local Set" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.set_selected_atom(ui, TheAtom::LocalSet(name));
                         }
                     }
-                } else if id.name == "Atom Integer" {
+                }  else if id.name == "Atom Integer" {
                     if let Some(v) = value.to_i32() {
                         self.set_selected_atom(ui, TheAtom::Value(TheValue::Int(v)));
                     }
@@ -127,6 +142,25 @@ impl TheCodeEditor {
         }
 
         redraw
+    }
+
+    /// Gets the codegrid from the editor
+    pub fn get_codegrid(&mut self, ui: &mut TheUI) -> TheCodeGrid {
+        if let Some(layout) = ui.get_code_layout("Code Editor") {
+            if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                return code_view.codegrid().clone();
+            }
+        }
+        TheCodeGrid::new()
+    }
+
+    /// Sets the codegrid to the editor
+    pub fn set_codegrid(&mut self, codegrid: TheCodeGrid, ui: &mut TheUI) {
+        if let Some(layout) = ui.get_code_layout("Code Editor") {
+            if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                code_view.set_codegrid(codegrid);
+            }
+        }
     }
 
     /// Sets the UI of the currently selected atom into the top toolbar.
@@ -149,7 +183,7 @@ impl TheCodeEditor {
         if let Some(grid_selection) = self.grid_selection {
             if let Some(layout) = ui.get_code_layout("Code Editor") {
                 if let Some(code_view) = layout.code_view_mut().as_code_view() {
-                    let grid = code_view.code_grid();
+                    let grid = code_view.codegrid();
 
                     if let Some(atom) = grid.code.get(&grid_selection) {
                         return Some(atom.clone());
@@ -177,7 +211,7 @@ impl TheCodeEditor {
         if let Some(grid_selection) = self.grid_selection {
             if let Some(layout) = ui.get_code_layout("Code Editor") {
                 if let Some(code_view) = layout.code_view_mut().as_code_view() {
-                    message = code_view.code_grid().message(grid_selection);
+                    message = code_view.codegrid().message(grid_selection);
                 }
             }
         }
@@ -195,12 +229,15 @@ impl TheCodeEditor {
     /// Create an atom for the given name.
     pub fn create_atom(&self, name: &str) -> TheAtom {
         match name {
+            "Func Def" => TheAtom::FuncDef("Name".to_string()),
+            "Func Call" => TheAtom::FuncCall("Name".to_string()),
+            "Return" => TheAtom::Return,
             "Local Get" => TheAtom::LocalGet("Name".to_string()),
             "Local Set" => TheAtom::LocalSet("Name".to_string()),
             "Integer" => TheAtom::Value(TheValue::Int(1)),
-            "Add" => TheAtom::Add(),
-            "Multiply" => TheAtom::Multiply(),
-            _ => TheAtom::End,
+            "Add" => TheAtom::Add,
+            "Multiply" => TheAtom::Multiply,
+            _ => TheAtom::EndOfCode,
         }
     }
 
@@ -214,6 +251,21 @@ impl TheCodeEditor {
 
         let mut code_layout = TheListLayout::new(TheId::named("Code List"));
         code_layout.limiter_mut().set_max_width(150);
+
+        let mut item = TheListItem::new(TheId::named("Code List Item"));
+        item.set_text("Func Def".to_string());
+        item.set_associated_layout(code_layout.id().clone());
+        code_layout.add_item(item, ctx);
+
+        let mut item = TheListItem::new(TheId::named("Code List Item"));
+        item.set_text("Func Call".to_string());
+        item.set_associated_layout(code_layout.id().clone());
+        code_layout.add_item(item, ctx);
+
+        let mut item = TheListItem::new(TheId::named("Code List Item"));
+        item.set_text("Return".to_string());
+        item.set_associated_layout(code_layout.id().clone());
+        code_layout.add_item(item, ctx);
 
         let mut item = TheListItem::new(TheId::named("Code List Item"));
         item.set_text("Local Get".to_string());
@@ -255,9 +307,6 @@ impl TheCodeEditor {
 
         // Top Toolbar
         let mut top_toolbar_canvas = TheCanvas::new();
-        let mut compile_button = TheTraybarButton::new(TheId::named("Compile"));
-        //compile_button.set_disabled(true);
-        compile_button.set_text("Compile".to_string());
         let mut toolbar_hlayout = TheHLayout::new(TheId::named("Code Top Toolbar"));
         toolbar_hlayout.set_background_color(None);
         toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
@@ -269,21 +318,32 @@ impl TheCodeEditor {
         let mut bottom_toolbar_canvas = TheCanvas::new();
 
         let mut compile_button = TheTraybarButton::new(TheId::named("Compile"));
-        //compile_button.set_disabled(true);
         compile_button.set_text("Compile".to_string());
 
-        let mut text = TheText::new(TheId::named("Code Grid Status"));
-        text.set_text("".to_string());
+        let mut text = TheText::new(TheId::empty());
+        text.set_text("Zoom".to_string());
 
-        let spacer = TheHDivider::new(TheId::empty());
-        //spacer.limiter_mut().set_max_width(0);
+        let mut zoom = TheSlider::new(TheId::named("Code Zoom"));
+        zoom.set_value(TheValue::Float(1.0));
+        zoom.set_range(TheValue::RangeF32(0.3..=3.0));
+        zoom.set_continuous(true);
+        zoom.limiter_mut().set_max_width(120);
+
+        let mut status_text = TheText::new(TheId::named("Code Grid Status"));
+        status_text.set_text("".to_string());
+
+        let divider1 = TheHDivider::new(TheId::empty());
+        let divider2 = TheHDivider::new(TheId::empty());
 
         let mut toolbar_hlayout = TheHLayout::new(TheId::empty());
         toolbar_hlayout.set_background_color(None);
         toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
         toolbar_hlayout.add_widget(Box::new(compile_button));
-        toolbar_hlayout.add_widget(Box::new(spacer));
+        toolbar_hlayout.add_widget(Box::new(divider1));
         toolbar_hlayout.add_widget(Box::new(text));
+        toolbar_hlayout.add_widget(Box::new(zoom));
+        toolbar_hlayout.add_widget(Box::new(divider2));
+        toolbar_hlayout.add_widget(Box::new(status_text));
         toolbar_hlayout.limiter_mut().set_max_height(27);
 
         bottom_toolbar_canvas.set_layout(toolbar_hlayout);

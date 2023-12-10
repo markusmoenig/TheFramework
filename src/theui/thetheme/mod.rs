@@ -117,6 +117,8 @@ pub enum TheThemeColors {
 
     CodeGridBackground,
     CodeGridNormal,
+    CodeGridDark,
     CodeGridSelected,
+    CodeGridHover,
     CodeGridText,
 }

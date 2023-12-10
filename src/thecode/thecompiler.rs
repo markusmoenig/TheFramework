@@ -117,6 +117,14 @@ impl TheCompilerContext {
         self.functions.push(function);
         self.curr_function_index += 1;
     }
+
+    /// Removes the last function from the stack and returns it.
+    pub fn remove_function(&mut self) -> Option<TheCodeFunction> {
+        if self.curr_function_index > 0 {
+            self.curr_function_index -= 1
+        }
+        self.functions.pop()
+    }
 }
 
 pub struct TheCompiler {
@@ -150,6 +158,9 @@ impl TheCompiler {
         rule(Plus, None, Some(TheCompiler::binary), P::Term);
         rule(Star, None, Some(TheCompiler::binary), P::Factor);
         rule(Eof, None, None, P::None);
+        rule(Return, None, None, P::None);
+        rule(Semicolon, None, None, P::None);
+        rule(Identifier, Some(TheCompiler::variable), None, P::None);
 
         Self {
             rules,
@@ -157,14 +168,14 @@ impl TheCompiler {
 
             ctx: TheCompilerContext::default(),
 
-            current: TheAtom::End,
-            previous: TheAtom::End,
+            current: TheAtom::EndOfCode,
+            previous: TheAtom::EndOfCode,
         }
     }
 
     pub fn compile(&mut self, grid: &mut TheCodeGrid) -> Result<TheCodeModule, TheCompilerError> {
-        self.current = TheAtom::End;
-        self.previous = TheAtom::End;
+        self.current = TheAtom::EndOfCode;
+        self.previous = TheAtom::EndOfCode;
 
         self.ctx = TheCompilerContext::default();
 
@@ -188,7 +199,6 @@ impl TheCompiler {
             );
             Err(error.clone())
         } else {
-
             if !self.ctx.get_current_function().is_empty() {
                 let f = self.ctx.get_current_function().clone();
                 self.ctx.module.insert_function(f.name.clone(), f);
@@ -200,13 +210,22 @@ impl TheCompiler {
     }
 
     fn declaration(&mut self) {
-        if self.current.can_assign() {
-            // Local or Object variable
-            self.advance();
-            let var = self.previous.clone();
-            self.var_declaration();
-            let node = var.to_node(&mut self.ctx);
-            self.ctx.get_current_function().add_node(node);
+        match self.current.clone() {
+            TheAtom::FuncDef(name) => {
+                self.advance();
+                let func = TheCodeFunction::named(name);
+                self.ctx.add_function(func);
+            }
+            TheAtom::LocalSet(name) => {
+                self.advance();
+                let var = self.previous.clone();
+                self.var_declaration();
+                let node = var.to_node(&mut self.ctx);
+                self.ctx.get_current_function().add_node(node);
+            }
+            _ => {
+                self.statement();
+            }
         }
     }
 
@@ -214,8 +233,35 @@ impl TheCompiler {
         self.expression();
     }
 
+    fn statement(&mut self) {
+        match self.current.clone() {
+            TheAtom::Return => {
+                //println!("rr {:?}", self.ctx.functions);
+                if let Some(f) = self.ctx.remove_function() {
+                    self.ctx.module.insert_function(f.name.clone(), f);
+                } else {
+                    self.error("Unexpected 'Return' code.")
+                }
+                self.advance();
+            }
+            TheAtom::EndOfExpression => {
+                self.advance();
+            }
+            _ => {
+                self.ctx.error = Some(TheCompilerError::new(
+                    self.ctx.location,
+                    "Unexpected code.".to_string(),
+                ));
+            }
+        }
+    }
+
     fn expression(&mut self) {
         self.parse_precedence(ThePrecedence::Assignment);
+    }
+
+    fn variable(&mut self, _can_assing: bool) {
+
     }
 
     fn number(&mut self, _can_assign: bool) {
@@ -237,11 +283,11 @@ impl TheCompiler {
             // TokenType::Less => self.emit_instruction(Instruction::Less),
             // TokenType::LessEqual => self.emit_instructions(Instruction::Greater, Instruction::Not),
             TheAtomKind::Plus => {
-                let node = TheAtom::Add().to_node(&mut self.ctx);
+                let node = TheAtom::Add.to_node(&mut self.ctx);
                 self.ctx.get_current_function().add_node(node);
             }
             TheAtomKind::Star => {
-                let node = TheAtom::Multiply().to_node(&mut self.ctx);
+                let node = TheAtom::Multiply.to_node(&mut self.ctx);
                 self.ctx.get_current_function().add_node(node);
             }
             // TokenType::Minus => self.emit_instruction(Instruction::Subtract),
@@ -252,6 +298,7 @@ impl TheCompiler {
     }
 
     fn get_rule(&self, kind: TheAtomKind) -> TheParseRule {
+        println!("get_rule {:?}", kind);
         self.rules.get(&kind).cloned().unwrap()
     }
 
@@ -321,6 +368,13 @@ impl TheCompiler {
         self.current.to_kind() == kind
     }
 
+    /// Create an error
+    fn error(&mut self, message: &str) {
+        self.ctx.error = Some(TheCompilerError::new(
+            self.ctx.location,
+            message.to_string(),
+        ));
+    }
     /*
     /// Error at the current token
     fn error_at_current(&mut self, message: &str) {

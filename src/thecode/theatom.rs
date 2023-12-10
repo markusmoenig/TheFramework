@@ -3,11 +3,15 @@ use crate::prelude::*;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum TheAtom {
     Value(TheValue),
-    Add(),
-    Multiply(),
+    Add,
+    Multiply,
     LocalGet(String),
     LocalSet(String),
-    End,
+    FuncDef(String),
+    FuncCall(String),
+    Return,
+    EndOfExpression,
+    EndOfCode,
 }
 
 impl TheAtom {
@@ -17,26 +21,41 @@ impl TheAtom {
 
     pub fn to_node(&self, ctx: &mut TheCompilerContext) -> TheCodeNode {
         match self {
-            TheAtom::End => {
+            TheAtom::FuncDef(name) => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
                      _values: &Vec<TheValue>,
                      _sandbox: &mut TheCodeSandbox| {};
                 TheCodeNode::new(call, vec![])
             }
+            TheAtom::Return => {
+                let call: TheCodeNodeCall =
+                    |_stack: &mut Vec<TheValue>,
+                     _values: &Vec<TheValue>,
+                     _sandbox: &mut TheCodeSandbox| {};
+                TheCodeNode::new(call, vec![])
+            }
+            TheAtom::FuncCall(name) => {
+                let call: TheCodeNodeCall =
+                    |_stack: &mut Vec<TheValue>,
+                     _values: &Vec<TheValue>,
+                     _sandbox: &mut TheCodeSandbox| {};
+                TheCodeNode::new(call, vec![])
+            }
+
             TheAtom::LocalGet(name) => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
                      _values: &Vec<TheValue>,
-                     _env: &mut TheCodeSandbox| {};
+                     _sandbox: &mut TheCodeSandbox| {};
                 TheCodeNode::new(call, vec![])
             }
             TheAtom::LocalSet(name) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
                      values: &Vec<TheValue>,
-                     env: &mut TheCodeSandbox| {
-                        if let Some(function) = env.call_stack.last_mut() {
+                     sandbox: &mut TheCodeSandbox| {
+                        if let Some(function) = sandbox.call_stack.last_mut() {
                             if let Some(local) = function.local.last_mut() {
                                 local.set(values[0].to_string().unwrap(), stack.pop().unwrap())
                             }
@@ -58,7 +77,7 @@ impl TheAtom {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
                      values: &Vec<TheValue>,
-                     _env: &mut TheCodeSandbox| {
+                     _sandbox: &mut TheCodeSandbox| {
                         stack.push(values[0].clone());
                     };
 
@@ -66,11 +85,11 @@ impl TheAtom {
 
                 TheCodeNode::new(call, vec![value.clone()])
             }
-            TheAtom::Add() => {
+            TheAtom::Add => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
                      _values: &Vec<TheValue>,
-                     _env: &mut TheCodeSandbox| {
+                     _sandbox: &mut TheCodeSandbox| {
                         let a = stack.pop().unwrap().to_i32().unwrap();
                         let b = stack.pop().unwrap().to_i32().unwrap();
                         stack.push(TheValue::Int(a + b));
@@ -85,11 +104,11 @@ impl TheAtom {
 
                 TheCodeNode::new(call, vec![])
             }
-            TheAtom::Multiply() => {
+            TheAtom::Multiply => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
                      _values: &Vec<TheValue>,
-                     _env: &mut TheCodeSandbox| {
+                     _sandbox: &mut TheCodeSandbox| {
                         let a = stack.pop().unwrap().to_i32().unwrap();
                         let b = stack.pop().unwrap().to_i32().unwrap();
                         stack.push(TheValue::Int(a * b));
@@ -101,7 +120,13 @@ impl TheAtom {
                         format!("Invalid stack for Multiply ({})", ctx.stack.len()),
                     ));
                 }
-
+                TheCodeNode::new(call, vec![])
+            }
+            TheAtom::EndOfCode | TheAtom::EndOfExpression => {
+                let call: TheCodeNodeCall =
+                    |_stack: &mut Vec<TheValue>,
+                     _values: &Vec<TheValue>,
+                     _sandbox: &mut TheCodeSandbox| {};
                 TheCodeNode::new(call, vec![])
             }
         }
@@ -109,23 +134,31 @@ impl TheAtom {
 
     pub fn to_kind(&self) -> TheAtomKind {
         match self {
-            TheAtom::End => TheAtomKind::Eof,
+            TheAtom::FuncDef(_name) => TheAtomKind::Fn,
+            TheAtom::FuncCall(_name) => TheAtomKind::Fn,
+            TheAtom::Return => TheAtomKind::Return,
             TheAtom::LocalGet(_name) => TheAtomKind::Identifier,
             TheAtom::LocalSet(_name) => TheAtomKind::Identifier,
             TheAtom::Value(_value) => TheAtomKind::Number,
-            TheAtom::Add() => TheAtomKind::Plus,
-            TheAtom::Multiply() => TheAtomKind::Star,
+            TheAtom::Add => TheAtomKind::Plus,
+            TheAtom::Multiply => TheAtomKind::Star,
+            TheAtom::EndOfExpression => TheAtomKind::Semicolon,
+            TheAtom::EndOfCode => TheAtomKind::Eof,
         }
     }
 
     pub fn describe(&self) -> String {
         match self {
-            TheAtom::End => "Stop".to_string(),
+            TheAtom::FuncDef(name) => name.clone(),
+            TheAtom::FuncCall(name) => name.clone(),
+            TheAtom::Return => "Return".to_string(),
             TheAtom::LocalGet(name) => name.clone(), //"name".to_string(),
             TheAtom::LocalSet(name) => name.clone(), //"name".to_string(),
             TheAtom::Value(value) => value.describe(),
-            TheAtom::Add() => "+".to_string(),
-            TheAtom::Multiply() => "*".to_string(),
+            TheAtom::Add => "+".to_string(),
+            TheAtom::Multiply => "*".to_string(),
+            TheAtom::EndOfExpression => ";".to_string(),
+            TheAtom::EndOfCode => "Stop".to_string(),
         }
     }
 
@@ -133,6 +166,24 @@ impl TheAtom {
     /// Generates a text layout to edit the properties of the atom
     pub fn to_layout(&self, layout: &mut dyn TheHLayoutTrait) {
         match self {
+            TheAtom::FuncDef(name) => {
+                let mut text = TheText::new(TheId::empty());
+                text.set_text("Function Name:".to_string());
+                let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Func Def"));
+                name_edit.set_text(name.clone());
+                name_edit.set_needs_redraw(true);
+                layout.add_widget(Box::new(text));
+                layout.add_widget(Box::new(name_edit));
+            }
+            TheAtom::FuncCall(name) => {
+                let mut text = TheText::new(TheId::empty());
+                text.set_text("Function Name:".to_string());
+                let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Func Call"));
+                name_edit.set_text(name.clone());
+                name_edit.set_needs_redraw(true);
+                layout.add_widget(Box::new(text));
+                layout.add_widget(Box::new(name_edit));
+            }
             TheAtom::LocalGet(name) => {
                 let mut text = TheText::new(TheId::empty());
                 text.set_text("Variable Name:".to_string());
