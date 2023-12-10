@@ -74,28 +74,28 @@ impl TheCodeGrid {
 
                 // Attempt to find the next non-empty position
                 //loop {
-                    if x == max_pos.0 {
-                        x = 0;
-                        y += 1;
-                    } else {
-                        x += 1;
-                    }
+                if x == max_pos.0 {
+                    x = 0;
+                    y += 1;
+                } else {
+                    x += 1;
+                }
 
-                    if let Some(atom) = self.code.get(&(x, y)) {
-                        if !peek {
-                            self.current_pos = Some((x, y));
-                        }
-                        return atom.clone();
-                    }
-
-                    if x == max_pos.0 && y == max_pos.1 {
-                        return TheAtom::EndOfCode; // Reached the end of the grid
-                    }
-
+                if let Some(atom) = self.code.get(&(x, y)) {
                     if !peek {
                         self.current_pos = Some((x, y));
                     }
-                    return TheAtom::EndOfExpression;
+                    return atom.clone();
+                }
+
+                if x == max_pos.0 && y == max_pos.1 {
+                    return TheAtom::EndOfCode; // Reached the end of the grid
+                }
+
+                if !peek {
+                    self.current_pos = Some((x, y));
+                }
+                return TheAtom::EndOfExpression;
                 //}
             } else {
                 // Start from the first position if current_pos is None

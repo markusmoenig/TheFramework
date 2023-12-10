@@ -209,6 +209,13 @@ impl TheUI {
                         }
                         self.is_dirty = true;
                     }
+                    TheEvent::ScrollBy(id, delta) => {
+                        //println!("Set State {:?}: {:?}", name, state);
+                        if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
+                            widget.on_event(&TheEvent::ScrollBy(id.clone(), delta), ctx);
+                        }
+                        self.is_dirty = true;
+                    }
                     TheEvent::GainedFocus(id) => {
                         //println!("Gained focus {:?}", id);
                     }
@@ -375,6 +382,17 @@ impl TheUI {
             redraw = true;
             ctx.ui.hover = None;
             self.process_events(ctx);
+        }
+        redraw
+    }
+
+    pub fn mouse_wheel(&mut self, delta: (i32, i32), ctx: &mut TheContext) -> bool {
+        let mut redraw = false;
+        if let Some(id) = &ctx.ui.hover {
+            if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
+                redraw = widget.on_event(&TheEvent::MouseWheel(vec2i(delta.0, delta.1)), ctx);
+                self.process_events(ctx);
+            }
         }
         redraw
     }

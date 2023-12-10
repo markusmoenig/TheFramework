@@ -258,6 +258,11 @@ impl TheApp {
                         }
                         winit::event::MouseScrollDelta::PixelDelta(p) => {
                             //println!("mouse wheel Pixel Delta: ({},{})", p.x, p.y);
+                            #[cfg(feature = "ui")]
+                            if ui.mouse_wheel((p.x as i32, p.y as i32), &mut ctx) {
+                                window.request_redraw();
+                            }
+
                             if app.mouse_wheel((p.x as isize, p.y as isize), &mut ctx) {
                                 window.request_redraw();
                                 //mouse_wheel_ongoing = true;

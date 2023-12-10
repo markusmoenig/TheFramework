@@ -260,9 +260,7 @@ impl TheCompiler {
         self.parse_precedence(ThePrecedence::Assignment);
     }
 
-    fn variable(&mut self, _can_assing: bool) {
-
-    }
+    fn variable(&mut self, _can_assing: bool) {}
 
     fn number(&mut self, _can_assign: bool) {
         let node = self.previous.to_node(&mut self.ctx);

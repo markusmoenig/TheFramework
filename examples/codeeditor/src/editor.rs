@@ -4,8 +4,7 @@ use theframework::prelude::*;
 
 pub struct CodeEditor {
     sidebar: Sidebar,
-    browser: Browser,
-
+    // browser: Browser,
     project: Project,
     editor: TheCodeEditor,
 
@@ -19,8 +18,7 @@ impl TheTrait for CodeEditor {
     {
         Self {
             sidebar: Sidebar::new(),
-            browser: Browser::new(),
-
+            // browser: Browser::new(),
             project: Project::new(),
             editor: TheCodeEditor::default(),
 
@@ -68,13 +66,19 @@ impl TheTrait for CodeEditor {
 
         // Bottom
 
-        self.browser.init_ui(ui, ctx);
+        //self.browser.init_ui(ui, ctx);
+
+        let mut status_canvas = TheCanvas::new();
+        let mut statusbar = TheStatusbar::new(TheId::named("Statusbar"));
+        statusbar.set_text("Welcome to TheFramework!".to_string());
+        status_canvas.set_widget(statusbar);
 
         //
 
         ui.canvas.set_top(top_canvas);
-
+        ui.canvas.set_bottom(status_canvas);
         ui.canvas.set_center(self.editor.build_canvas(ctx));
+        ui.set_statusbar_name("Statusbar".to_string());
 
         self.event_receiver = Some(ui.add_state_listener("Main Receiver".into()));
     }

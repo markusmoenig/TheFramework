@@ -106,6 +106,9 @@ impl TheWidget for TheHorizontalScrollbar {
                     }
                 }
             }
+            TheEvent::ScrollBy(_id, delta) => {
+                self.adjust_scroll_from_thumb_delta(delta.x);
+            }
             _ => {}
         }
         redraw

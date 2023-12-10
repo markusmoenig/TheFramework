@@ -26,6 +26,9 @@ pub struct TheRGBAView {
     hover_color: Option<RGBA>,
     hover: Option<(i32, i32)>,
 
+    hscrollbar: TheId,
+    vscrollbar: TheId,
+
     mode: TheRGBAViewMode,
 
     dim: TheDim,
@@ -59,6 +62,9 @@ impl TheWidget for TheRGBAView {
             selection_color: [255, 255, 255, 180],
             hover_color: None,
             hover: None,
+
+            hscrollbar: TheId::empty(),
+            vscrollbar: TheId::empty(),
 
             mode: TheRGBAViewMode::Display,
 
@@ -209,6 +215,11 @@ impl TheWidget for TheRGBAView {
                     }
                     redraw = true;
                 }
+            }
+            TheEvent::MouseWheel(delta) => {
+                let d = vec2i((delta.x as f32 * -0.4) as i32,(delta.y as f32 * -0.4) as i32);;
+                ctx.ui.send(TheEvent::ScrollBy(self.hscrollbar.clone(), d));
+                ctx.ui.send(TheEvent::ScrollBy(self.vscrollbar.clone(), d));
             }
             _ => {}
         }
@@ -440,6 +451,7 @@ pub trait TheRGBAViewTrait {
     fn set_grid_color(&mut self, color: RGBA);
     fn set_selection_color(&mut self, color: RGBA);
     fn set_hover_color(&mut self, color: Option<RGBA>);
+    fn set_scrollbar_ids(&mut self, hscrollbar: TheId, vscrollbar: TheId);
 
     fn set_associated_layout(&mut self, id: TheId);
 
@@ -465,6 +477,10 @@ impl TheRGBAViewTrait for TheRGBAView {
     }
     fn set_background(&mut self, color: RGBA) {
         self.background = color;
+    }
+    fn set_scrollbar_ids(&mut self, hscrollbar: TheId, vscrollbar: TheId) {
+        self.hscrollbar = hscrollbar;
+        self.vscrollbar = vscrollbar;
     }
     fn zoom(&self) -> f32 {
         self.zoom

@@ -27,6 +27,9 @@ pub struct TheCodeView {
     selected: Option<(u32, u32)>,
     hover: Option<(u32, u32)>,
 
+    hscrollbar: TheId,
+    vscrollbar: TheId,
+
     dim: TheDim,
     code_is_dirty: bool,
     is_dirty: bool,
@@ -61,6 +64,9 @@ impl TheWidget for TheCodeView {
 
             selected: None,
             hover: None,
+
+            hscrollbar: TheId::empty(),
+            vscrollbar: TheId::empty(),
 
             dim: TheDim::zero(),
             code_is_dirty: true,
@@ -112,6 +118,11 @@ impl TheWidget for TheCodeView {
                         redraw = true;
                     }
                 }
+            }
+            TheEvent::MouseWheel(delta) => {
+                let d = vec2i((delta.x as f32 * -0.4) as i32,(delta.y as f32 * -0.4) as i32);;
+                ctx.ui.send(TheEvent::ScrollBy(self.hscrollbar.clone(), d));
+                ctx.ui.send(TheEvent::ScrollBy(self.vscrollbar.clone(), d));
             }
             _ => {}
         }
@@ -241,7 +252,6 @@ impl TheWidget for TheCodeView {
 
             for y in 0..grid_y {
                 for x in 0..grid_x {
-
                     let rect = (
                         (x * grid_size as u32) as usize,
                         (y * grid_size as u32) as usize,
@@ -250,20 +260,11 @@ impl TheWidget for TheCodeView {
                     );
 
                     if Some((x, y)) == self.hover {
-                        ctx.draw.blend_rect(
-                            self.buffer.pixels_mut(),
-                            &rect,
-                            stride,
-                            &hover,
-                        );
+                        ctx.draw
+                            .blend_rect(self.buffer.pixels_mut(), &rect, stride, &hover);
                     }
 
-                    let crect = (
-                        rect.0 + 2,
-                        rect.1 + 2,
-                        rect.2 - 4,
-                        rect.3 - 4,
-                    );
+                    let crect = (rect.0 + 2, rect.1 + 2, rect.2 - 4, rect.3 - 4);
 
                     let mut color = if Some((x, y)) == self.selected {
                         selected
@@ -279,7 +280,6 @@ impl TheWidget for TheCodeView {
 
                     if let Some(atom) = self.codegrid.code.get(&(x, y)) {
                         match atom {
-
                             TheAtom::FuncDef(name) => {
                                 ctx.draw.rounded_rect_with_border(
                                     self.buffer.pixels_mut(),
@@ -308,7 +308,12 @@ impl TheWidget for TheCodeView {
                             TheAtom::LocalGet(name) => {
                                 ctx.draw.rounded_rect_with_border(
                                     self.buffer.pixels_mut(),
-                                    &(crect.0, crect.1 + (crect.3 - crect.3 / 2) / 2, crect.2, crect.3 - crect.3 / 2),
+                                    &(
+                                        crect.0,
+                                        crect.1 + (crect.3 - crect.3 / 2) / 2,
+                                        crect.2,
+                                        crect.3 - crect.3 / 2,
+                                    ),
                                     stride,
                                     &border_color,
                                     &(rounding, rounding, 0.0, 0.0),
@@ -331,7 +336,6 @@ impl TheWidget for TheCodeView {
                                 }
                             }
                             TheAtom::LocalSet(name) => {
-
                                 ctx.draw.rounded_rect_with_border(
                                     self.buffer.pixels_mut(),
                                     &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
@@ -358,7 +362,12 @@ impl TheWidget for TheCodeView {
                                         if let Some(v) = env.get_local(name) {
                                             ctx.draw.text_rect_blend(
                                                 self.buffer.pixels_mut(),
-                                                &(crect.0, crect.1, crect.2, crect.3 - zoom_const(6,zoom)),
+                                                &(
+                                                    crect.0,
+                                                    crect.1,
+                                                    crect.2,
+                                                    crect.3 - zoom_const(6, zoom),
+                                                ),
                                                 stride,
                                                 font,
                                                 font_size,
@@ -373,13 +382,17 @@ impl TheWidget for TheCodeView {
 
                                 ctx.draw.rect(
                                     self.buffer.pixels_mut(),
-                                    &(crect.0 + crect.2 - zoom_const(3,zoom), crect.1 + crect.3 / 2 - zoom_const(1,zoom), zoom_const(8,zoom), zoom_const(2,zoom)),
+                                    &(
+                                        crect.0 + crect.2 - zoom_const(3, zoom),
+                                        crect.1 + crect.3 / 2 - zoom_const(1, zoom),
+                                        zoom_const(8, zoom),
+                                        zoom_const(2, zoom),
+                                    ),
                                     stride,
                                     &dark,
                                 );
                             }
                             TheAtom::Return => {
-
                                 ctx.draw.rounded_rect_with_border(
                                     self.buffer.pixels_mut(),
                                     &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
@@ -405,7 +418,6 @@ impl TheWidget for TheCodeView {
                                 }
                             }
                             TheAtom::Value(value) => {
-
                                 ctx.draw.hexagon_with_border(
                                     self.buffer.pixels_mut(),
                                     &rect,
@@ -479,15 +491,15 @@ impl TheWidget for TheCodeView {
                             }
                             _ => {}
                         }
-                    }// else {
-                    //     ctx.draw.rect_outline_border(
-                    //         self.buffer.pixels_mut(),
-                    //         &rect,
-                    //         stride,
-                    //         &color,
-                    //         0,
-                    //     );
-                    // }
+                    } // else {
+                      //     ctx.draw.rect_outline_border(
+                      //         self.buffer.pixels_mut(),
+                      //         &rect,
+                      //         stride,
+                      //         &color,
+                      //         0,
+                      //     );
+                      // }
                 }
             }
 
@@ -538,7 +550,7 @@ impl TheWidget for TheCodeView {
         };
 
         let offset_y = if scaled_height < target_height {
-            0.0//(target_height - scaled_height) / 2.0
+            0.0 //(target_height - scaled_height) / 2.0
         } else {
             -self.scroll_offset.y as f32
         };
@@ -598,6 +610,7 @@ pub trait TheCodeViewTrait {
     fn zoom(&self) -> f32;
     fn set_zoom(&mut self, zoom: f32);
     fn set_scroll_offset(&mut self, offset: Vec2i);
+    fn set_scrollbar_ids(&mut self, hscrollbar: TheId, vscrollbar: TheId);
 
     fn set_associated_layout(&mut self, id: TheId);
 
@@ -617,12 +630,7 @@ impl TheCodeViewTrait for TheCodeView {
 
         let d = self.buffer().dim();
         if d.width != grid_x * grid_size || d.height != grid_y * grid_size {
-            let b = TheRGBABuffer::new(TheDim::new(
-                0,
-                0,
-                grid_x * grid_size,
-                grid_y * grid_size
-            ));
+            let b = TheRGBABuffer::new(TheDim::new(0, 0, grid_x * grid_size, grid_y * grid_size));
             self.buffer = b;
         }
     }
@@ -652,6 +660,10 @@ impl TheCodeViewTrait for TheCodeView {
     }
     fn set_background(&mut self, color: RGBA) {
         self.background = color;
+    }
+    fn set_scrollbar_ids(&mut self, hscrollbar: TheId, vscrollbar: TheId) {
+        self.hscrollbar = hscrollbar;
+        self.vscrollbar = vscrollbar;
     }
     fn zoom(&self) -> f32 {
         self.zoom
@@ -691,11 +703,11 @@ impl TheCodeViewTrait for TheCodeView {
         //     0.0
         // };
         let centered_offset_y = 0.0;
-            // if (self.zoom * self.buffer.dim().height as f32) < self.dim.height as f32 {
-            //     (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32) / 2.0
-            // } else {
-            //     0.0
-            // };
+        // if (self.zoom * self.buffer.dim().height as f32) < self.dim.height as f32 {
+        //     (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32) / 2.0
+        // } else {
+        //     0.0
+        // };
 
         let grid_size = ceil(self.grid_size as f32 * self.zoom) as i32;
 

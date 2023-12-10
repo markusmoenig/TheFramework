@@ -27,7 +27,17 @@ impl TheLayout for TheRGBALayout {
         Self: Sized,
     {
         let name = id.name.clone();
-        let rgba_view = TheRGBAView::new(TheId::named((name.clone() + " View").as_str()));
+        let mut rgba_view = TheRGBAView::new(TheId::named((name.clone() + " View").as_str()));
+
+        let vertical_scrollbar = Box::new(TheVerticalScrollbar::new(TheId::named(
+            (name.clone() + " Vertical Scrollbar").as_str(),
+        )));
+
+        let horizontal_scrollbar = Box::new(TheHorizontalScrollbar::new(TheId::named(
+            (name + " Horizontal Scrollbar").as_str(),
+        )));
+
+        rgba_view.set_scrollbar_ids(horizontal_scrollbar.id().clone(), vertical_scrollbar.id().clone());
 
         Self {
             id,
@@ -39,14 +49,10 @@ impl TheLayout for TheRGBALayout {
 
             rgba_view: Box::new(rgba_view),
 
-            vertical_scrollbar: Box::new(TheVerticalScrollbar::new(TheId::named(
-                (name.clone() + " Vertical Scrollbar").as_str(),
-            ))),
+            vertical_scrollbar,
             vertical_scrollbar_visible: false,
 
-            horizontal_scrollbar: Box::new(TheHorizontalScrollbar::new(TheId::named(
-                (name + " Horizontal Scrollbar").as_str(),
-            ))),
+            horizontal_scrollbar,
             horizontal_scrollbar_visible: false,
 
             margin: vec4i(0, 0, 0, 0),

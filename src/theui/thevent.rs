@@ -9,6 +9,7 @@ pub enum TheEvent {
     Hover(Vec2i),
     MouseDragged(Vec2i),
     MouseUp(Vec2i),
+    MouseWheel(Vec2i),
 
     KeyDown(TheValue),
     KeyCodeDown(TheValue),
@@ -19,6 +20,7 @@ pub enum TheEvent {
 
     ValueChanged(TheId, TheValue),
     SetValue(Uuid, TheValue),
+    ScrollBy(TheId, Vec2i),
 
     GainedFocus(TheId),
     LostFocus(TheId),

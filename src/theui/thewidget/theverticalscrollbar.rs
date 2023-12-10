@@ -107,6 +107,9 @@ impl TheWidget for TheVerticalScrollbar {
                     }
                 }
             }
+            TheEvent::ScrollBy(_id, delta) => {
+                self.adjust_scroll_from_thumb_delta(delta.y);
+            }
             _ => {}
         }
         redraw

@@ -399,12 +399,12 @@ impl TheDraw2D {
             for x in rect.0..rect.0 + rect.2 {
                 let i = x * 4 + y * stride * 4;
 
-                let mut p= vec2f(abs(x as f32 - center.0), abs(y as f32 - center.1));
+                let mut p = vec2f(abs(x as f32 - center.0), abs(y as f32 - center.1));
                 let r = rect.2 as f32 / 2.33;
 
-                let k = vec3f(-0.866_025_4,0.5,0.577_350_26);
+                let k = vec3f(-0.866_025_4, 0.5, 0.577_350_26);
                 p -= 2.0 * min(dot(k.xy(), p), 0.0) * k.xy();
-                p -= vec2f(clamp(p.x, -k.z *r, k.z * r), r);
+                p -= vec2f(clamp(p.x, -k.z * r, k.z * r), r);
                 let d = length(p) * signum(p.y);
 
                 if d < 1.0 {
@@ -440,7 +440,9 @@ impl TheDraw2D {
             (rect.1 as f32 + rect.3 as f32 / 2.0 - hb).round(),
         );
 
-        fn ndot(a: Vec2f, b: Vec2f) -> f32 { a.x*b.x - a.y*b.y }
+        fn ndot(a: Vec2f, b: Vec2f) -> f32 {
+            a.x * b.x - a.y * b.y
+        }
 
         for y in rect.1..rect.1 + rect.3 {
             for x in rect.0..rect.0 + rect.2 {
@@ -456,13 +458,12 @@ impl TheDraw2D {
                     return d * sign( p.x*b.y + p.y*b.x - b.x*b.y );
                 }*/
 
-                let p= vec2f(abs(x as f32 - center.0), abs(y as f32 - center.1));
+                let p = vec2f(abs(x as f32 - center.0), abs(y as f32 - center.1));
                 let b = vec2f(rect.2 as f32 / 2.0, rect.3 as f32 / 2.0);
 
-
                 let h = clamp(ndot(b - 2.0 * p, b) / dot(b, b), -1.0, 1.0);
-                let mut d = length( p-0.5*b*vec2f(1.0-h,1.0+h) );
-                d *= signum( p.x*b.y + p.y*b.x - b.x*b.y );
+                let mut d = length(p - 0.5 * b * vec2f(1.0 - h, 1.0 + h));
+                d *= signum(p.x * b.y + p.y * b.x - b.x * b.y);
 
                 if d < 1.0 {
                     let t = self.fill_mask(d);

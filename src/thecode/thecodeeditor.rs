@@ -131,7 +131,7 @@ impl TheCodeEditor {
                             self.set_selected_atom(ui, TheAtom::LocalSet(name));
                         }
                     }
-                }  else if id.name == "Atom Integer" {
+                } else if id.name == "Atom Integer" {
                     if let Some(v) = value.to_i32() {
                         self.set_selected_atom(ui, TheAtom::Value(TheValue::Int(v)));
                     }
