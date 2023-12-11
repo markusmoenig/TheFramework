@@ -215,7 +215,7 @@ impl TheCompiler {
                 let func = TheCodeFunction::named(name);
                 self.ctx.add_function(func);
             }
-            TheCodeAtom::LocalSet(name) => {
+            TheCodeAtom::LocalSet(_name) => {
                 self.advance();
                 let var = self.previous.clone();
                 self.var_declaration();
@@ -259,7 +259,10 @@ impl TheCompiler {
         self.parse_precedence(ThePrecedence::Assignment);
     }
 
-    fn variable(&mut self, _can_assing: bool) {}
+    fn variable(&mut self, _can_assing: bool) {
+        let node = self.previous.to_node(&mut self.ctx);
+        self.ctx.get_current_function().add_node(node);
+    }
 
     fn number(&mut self, _can_assign: bool) {
         let node = self.previous.to_node(&mut self.ctx);

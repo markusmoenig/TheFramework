@@ -364,16 +364,11 @@ impl TheWidget for TheCodeView {
                             TheCodeAtom::LocalGet(name) => {
                                 ctx.draw.rounded_rect_with_border(
                                     self.buffer.pixels_mut(),
-                                    &(
-                                        crect.0,
-                                        crect.1 + (crect.3 - crect.3 / 2) / 2,
-                                        crect.2,
-                                        crect.3 - crect.3 / 2,
-                                    ),
+                                    &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
                                     stride,
-                                    &border_color,
+                                    &color,
                                     &(rounding, rounding, 0.0, 0.0),
-                                    &dark,
+                                    &border_color,
                                     border_size,
                                 );
 

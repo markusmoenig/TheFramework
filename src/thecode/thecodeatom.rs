@@ -50,13 +50,32 @@ impl TheCodeAtom {
                      _sandbox: &mut TheCodeSandbox| {};
                 TheCodeNode::new(call, vec![])
             }
-
             TheCodeAtom::LocalGet(name) => {
                 let call: TheCodeNodeCall =
-                    |_stack: &mut Vec<TheValue>,
-                     _values: &Vec<TheValue>,
-                     _sandbox: &mut TheCodeSandbox| {};
-                TheCodeNode::new(call, vec![])
+                    |stack: &mut Vec<TheValue>,
+                     values: &Vec<TheValue>,
+                     sandbox: &mut TheCodeSandbox| {
+                        if let Some(function) = sandbox.call_stack.last_mut() {
+                            if let Some(local) = function.get_local(&values[0].to_string().unwrap()) {
+                                stack.push(local.clone());
+                            }
+                        }
+                    };
+
+                let mut error = true;
+                if let Some(local) = ctx.local.last_mut() {
+                    if let Some(local) = local.get(&name.clone()) {
+                        ctx.stack.push(local.clone());
+                        error = false;
+                    }
+                }
+                if error {
+                    ctx.error = Some(TheCompilerError::new(
+                        ctx.location,
+                        format!("Unknown local variable {}.", name),
+                    ));
+                }
+                TheCodeNode::new(call, vec![TheValue::Text(name.clone())])
             }
             TheCodeAtom::LocalSet(name) => {
                 let call: TheCodeNodeCall =
@@ -65,7 +84,7 @@ impl TheCodeAtom {
                      sandbox: &mut TheCodeSandbox| {
                         if let Some(function) = sandbox.call_stack.last_mut() {
                             if let Some(local) = function.local.last_mut() {
-                                local.set(values[0].to_string().unwrap(), stack.pop().unwrap())
+                                local.set(values[0].to_string().unwrap(), stack.pop().unwrap());
                             }
                         }
                     };

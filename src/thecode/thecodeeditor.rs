@@ -129,6 +129,12 @@ impl TheCodeEditor {
                             self.set_selected_atom(ui, TheCodeAtom::FuncDef(name));
                         }
                     }
+                } else if id.name == "Atom Local Get" {
+                    if let Some(name) = value.to_string() {
+                        if !name.is_empty() {
+                            self.set_selected_atom(ui, TheCodeAtom::LocalGet(name));
+                        }
+                    }
                 } else if id.name == "Atom Local Set" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
