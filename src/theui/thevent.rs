@@ -14,9 +14,14 @@ pub enum TheEvent {
     KeyDown(TheValue),
     KeyCodeDown(TheValue),
 
+    DropPreview(Vec2i, TheDrop),
+    Drop(Vec2i, TheDrop),
+
     // These events define widget states.
     StateChanged(TheId, TheWidgetState),
     SetState(String, TheWidgetState),
+
+    DragStarted(TheId),
 
     ValueChanged(TheId, TheValue),
     SetValue(Uuid, TheValue),
@@ -37,6 +42,7 @@ pub enum TheEvent {
 
     CodeEditorSelectionChanged(TheId, Option<(u32, u32)>),
     CodeEditorApply(TheId),
+    CodeEditorDelete(TheId),
 
     // Show the given context menu at the given coordinates
     ShowContextMenu(TheId, Vec2i),

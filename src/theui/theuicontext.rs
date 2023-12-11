@@ -33,6 +33,10 @@ pub struct TheUIContext {
     pub redraw_all: bool,
     pub relayout: bool,
 
+    pub undo_stack: TheUndoStack,
+
+    pub drop: Option<TheDrop>,
+
     pub file_requester_receiver: Option<(TheId, Receiver<Vec<PathBuf>>)>,
 }
 
@@ -103,6 +107,10 @@ impl TheUIContext {
             redraw_all: false,
             relayout: false,
 
+            undo_stack: TheUndoStack::default(),
+
+            drop: None,
+
             file_requester_receiver: None,
         }
     }
@@ -161,6 +169,21 @@ impl TheUIContext {
     pub fn clear_overlay(&mut self) {
         self.overlay = None;
         self.redraw_all = true;
+    }
+
+    /// Sets the drop to the given value.
+    pub fn set_drop(&mut self, drop: TheDrop) {
+        self.drop = Some(drop);
+    }
+
+    /// Clears the drop state.
+    pub fn clear_drop(&mut self) {
+        self.drop = None;
+    }
+
+    /// Checks if there is currently a drop operation.
+    pub fn has_drop(&self) -> bool {
+        self.drop.is_some()
     }
 
     /// Indicates that the state of the given widget changed

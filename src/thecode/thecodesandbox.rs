@@ -4,7 +4,7 @@ pub type TheGetVarCall = fn(object_name: String, var_name: String) -> Option<The
 pub type TheSetVarCall = fn(object_name: String, var_name: String, value: TheValue);
 pub type TheFnCall = fn(args: Vec<TheValue>) -> Option<TheValue>;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TheCodeSandbox {
     /// The function used to retrieve an object value.
     #[serde(skip)]
@@ -36,7 +36,7 @@ impl TheCodeSandbox {
             set_var: None,
             objects: FxHashMap::default(),
             functions: FxHashMap::default(),
-            call_stack: vec![TheCodeFunction::default()],
+            call_stack: vec![],
         }
     }
 

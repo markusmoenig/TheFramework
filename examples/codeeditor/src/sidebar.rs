@@ -118,7 +118,7 @@ impl Sidebar {
 
                 /*
                 if id.name == "Apply Code" {
-                    let mut atom: Option<TheAtom> = None;
+                    let mut atom: Option<TheCodeAtom> = None;
 
                     if let Some(code_list_selection) = &self.code_list_selection {
                         if let Some(widget) = ui.get_widget_id(code_list_selection.uuid) {

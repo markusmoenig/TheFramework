@@ -1,6 +1,7 @@
 pub mod thecanvas;
 pub mod thecontextmenu;
 pub mod thedim;
+pub mod thedrop;
 pub mod theid;
 pub mod thelayout;
 pub mod thergbabuffer;
@@ -8,6 +9,7 @@ pub mod thesizelimiter;
 pub mod thestyle;
 pub mod thetheme;
 pub mod theuicontext;
+pub mod theundo;
 pub mod thevalue;
 pub mod thevent;
 pub mod thewidget;
@@ -88,6 +90,8 @@ pub mod prelude {
     pub use crate::theui::thewidget::TheWidget;
 
     pub use crate::theui::thecontextmenu::*;
+    pub use crate::theui::thedrop::*;
+    pub use crate::theui::theundo::*;
 }
 
 pub struct TheUI {
@@ -164,6 +168,11 @@ impl TheUI {
             self.draw_dialog(ctx);
         }
         self.canvas.draw_overlay(&mut self.style, ctx);
+        if let Some(drop) = &ctx.ui.drop {
+            if let Some(position) = &drop.position {
+                self.canvas.buffer.copy_into(position.x, position.y, &drop.image)
+            }
+        }
         ctx.ui.redraw_all = false;
 
         pixels.copy_from_slice(self.canvas.buffer().pixels());
@@ -338,6 +347,17 @@ impl TheUI {
             redraw = widget.on_event(&event, ctx);
             self.process_events(ctx);
         }
+
+        if let Some(drop) = &mut ctx.ui.drop {
+            drop.set_position(coord);
+            if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
+                let event = TheEvent::DropPreview(widget.dim().to_local(coord), drop.clone());
+                redraw = widget.on_event(&event, ctx);
+                self.process_events(ctx);
+            }
+            redraw = true;
+        }
+
         redraw
     }
 
@@ -356,6 +376,17 @@ impl TheUI {
             redraw = widget.on_event(&event, ctx);
             self.process_events(ctx);
         }
+
+        if let Some(drop) = &ctx.ui.drop {
+            if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
+                let event = TheEvent::Drop(widget.dim().to_local(coord), drop.clone());
+                redraw = widget.on_event(&event, ctx);
+                self.process_events(ctx);
+            }
+            redraw = true;
+        }
+
+        ctx.ui.clear_drop();
         redraw
     }
 

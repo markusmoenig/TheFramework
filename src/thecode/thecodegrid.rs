@@ -24,7 +24,7 @@ impl TheCodeGridMessage {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct TheCodeGrid {
     #[serde(with = "vectorize")]
-    pub code: FxHashMap<(u32, u32), TheAtom>,
+    pub code: FxHashMap<(u32, u32), TheCodeAtom>,
     #[serde(skip)]
     pub messages: FxHashMap<(u32, u32), TheCodeGridMessage>,
     pub current_pos: Option<(u32, u32)>,
@@ -63,13 +63,13 @@ impl TheCodeGrid {
         }
     }
 
-    /// Returns the next TheAtom in the grid.
-    pub fn get_next(&mut self, peek: bool) -> TheAtom {
+    /// Returns the next TheCodeAtom in the grid.
+    pub fn get_next(&mut self, peek: bool) -> TheCodeAtom {
         if let Some(max_pos) = self.max_xy() {
             if let Some((mut x, mut y)) = self.current_pos {
                 // Check if we're at or beyond the maximum position
                 if x == max_pos.0 && y == max_pos.1 {
-                    return TheAtom::EndOfCode; // Reached the end of the grid
+                    return TheCodeAtom::EndOfCode; // Reached the end of the grid
                 }
 
                 // Attempt to find the next non-empty position
@@ -89,13 +89,13 @@ impl TheCodeGrid {
                 }
 
                 if x == max_pos.0 && y == max_pos.1 {
-                    return TheAtom::EndOfCode; // Reached the end of the grid
+                    return TheCodeAtom::EndOfCode; // Reached the end of the grid
                 }
 
                 if !peek {
                     self.current_pos = Some((x, y));
                 }
-                return TheAtom::EndOfExpression;
+                return TheCodeAtom::EndOfExpression;
                 //}
             } else {
                 // Start from the first position if current_pos is None
@@ -108,10 +108,10 @@ impl TheCodeGrid {
             }
         }
 
-        TheAtom::EndOfCode
+        TheCodeAtom::EndOfCode
     }
 
-    /// Checks if the next non-empty TheAtom is on a following line compared to the current position.
+    /// Checks if the next non-empty TheCodeAtom is on a following line compared to the current position.
     pub fn is_next_on_new_line(&self) -> bool {
         if let Some(current_pos) = self.current_pos {
             let mut next_pos = current_pos;
@@ -160,5 +160,15 @@ impl TheCodeGrid {
             message = Some(m.clone());
         }
         message
+    }
+
+    /// Create a grid from json.
+    pub fn from_json(json: &str) -> Self {
+        serde_json::from_str(json).unwrap_or(TheCodeGrid::new())
+    }
+
+    /// Convert the grid to json.
+    pub fn to_json(&self) -> String {
+        serde_json::to_string(&self).unwrap_or_default()
     }
 }

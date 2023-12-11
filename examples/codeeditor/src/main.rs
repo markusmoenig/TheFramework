@@ -11,6 +11,7 @@ pub mod prelude {
     pub use crate::sidebar::*;
     pub use theframework::prelude::*;
 
+    pub use crate::project::Project;
     pub use ::serde::{Deserialize, Serialize};
 }
 

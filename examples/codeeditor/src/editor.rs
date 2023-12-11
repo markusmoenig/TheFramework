@@ -1,4 +1,4 @@
-use crate::{browser::Browser, prelude::*, project::Project};
+use crate::prelude::*;
 use std::sync::mpsc::Receiver;
 use theframework::prelude::*;
 
@@ -165,7 +165,6 @@ impl TheTrait for CodeEditor {
                                     let rc = compiler.compile(grid);
 
                                     if let Ok(mut module) = rc {
-                                        println!("Module: {:?}", module);
                                         let mut sandbox = TheCodeSandbox::new();
                                         module.execute(&mut sandbox);
                                         code_view.set_sandbox(Some(sandbox));
@@ -174,8 +173,24 @@ impl TheTrait for CodeEditor {
                                     }
 
                                     self.editor.set_grid_status_message(ui, ctx);
-                                    //println!("Size of MyEnum: {} bytes", std::mem::size_of::<TheAtom>());
+                                    //println!("Size of MyEnum: {} bytes", std::mem::size_of::<TheCodeAtom>());
                                 }
+                            }
+                        } else {
+                            let mut data: Option<(String, String)> = None;
+                            if id.name == "Undo" && ctx.ui.undo_stack.has_undo() {
+                                data = Some(ctx.ui.undo_stack.undo());
+                            } else if id.name == "Redo" && ctx.ui.undo_stack.has_redo() {
+                                data = Some(ctx.ui.undo_stack.redo());
+                            }
+
+                            if let Some((undo_type, json)) = data {
+                                if undo_type.as_str() == "Code Editor" {
+                                    self.editor.set_codegrid_json(json, ui);
+                                    self.editor.set_grid_selection_ui(ui, ctx);
+                                    self.editor.set_grid_status_message(ui, ctx);
+                                }
+                                redraw = true;
                             }
                         }
                     }

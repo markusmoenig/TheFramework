@@ -28,6 +28,7 @@ pub struct TheRGBAView {
 
     hscrollbar: TheId,
     vscrollbar: TheId,
+    wheel_scale: f32,
 
     mode: TheRGBAViewMode,
 
@@ -65,6 +66,7 @@ impl TheWidget for TheRGBAView {
 
             hscrollbar: TheId::empty(),
             vscrollbar: TheId::empty(),
+            wheel_scale: -0.4,
 
             mode: TheRGBAViewMode::Display,
 
@@ -217,7 +219,10 @@ impl TheWidget for TheRGBAView {
                 }
             }
             TheEvent::MouseWheel(delta) => {
-                let d = vec2i((delta.x as f32 * -0.4) as i32,(delta.y as f32 * -0.4) as i32);;
+                let d = vec2i(
+                    (delta.x as f32 * self.wheel_scale) as i32,
+                    (delta.y as f32 * self.wheel_scale) as i32,
+                );
                 ctx.ui.send(TheEvent::ScrollBy(self.hscrollbar.clone(), d));
                 ctx.ui.send(TheEvent::ScrollBy(self.vscrollbar.clone(), d));
             }
@@ -450,6 +455,7 @@ pub trait TheRGBAViewTrait {
     fn set_grid(&mut self, grid: Option<i32>);
     fn set_grid_color(&mut self, color: RGBA);
     fn set_selection_color(&mut self, color: RGBA);
+    fn set_wheel_scale(&mut self, wheel_scale: f32);
     fn set_hover_color(&mut self, color: Option<RGBA>);
     fn set_scrollbar_ids(&mut self, hscrollbar: TheId, vscrollbar: TheId);
 
@@ -503,6 +509,9 @@ impl TheRGBAViewTrait for TheRGBAView {
     fn set_selection_color(&mut self, color: RGBA) {
         self.selection_color = color;
         self.is_dirty = true;
+    }
+    fn set_wheel_scale(&mut self, wheel_scale: f32) {
+        self.wheel_scale = wheel_scale;
     }
     fn set_hover_color(&mut self, color: Option<RGBA>) {
         self.hover_color = color;

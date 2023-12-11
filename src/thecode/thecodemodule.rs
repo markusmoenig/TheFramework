@@ -26,7 +26,14 @@ impl TheCodeModule {
     /// Execute the module by calling the main function.
     pub fn execute(&mut self, sandbox: &mut TheCodeSandbox) {
         if let Some(main) = self.functions.get_mut(&"main".to_string()) {
+            let clone = main.clone();
+            sandbox.call_stack.push(clone);
+
             main.execute(sandbox);
+
+            println!("sandbox: {:?}", sandbox);
+
+            sandbox.call_stack.pop();
         }
     }
 }

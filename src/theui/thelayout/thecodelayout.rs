@@ -37,7 +37,10 @@ impl TheLayout for TheCodeLayout {
             (name + " Horizontal Scrollbar").as_str(),
         )));
 
-        code_view.set_scrollbar_ids(horizontal_scrollbar.id().clone(), vertical_scrollbar.id().clone());
+        code_view.set_scrollbar_ids(
+            horizontal_scrollbar.id().clone(),
+            vertical_scrollbar.id().clone(),
+        );
 
         Self {
             id,

@@ -12,6 +12,8 @@ pub struct TheListItem {
     dim: TheDim,
     is_dirty: bool,
 
+    mouse_down_pos: Vec2i,
+
     icon: Option<TheRGBABuffer>,
 
     layout_id: TheId,
@@ -36,6 +38,8 @@ impl TheWidget for TheListItem {
 
             dim: TheDim::zero(),
             is_dirty: true,
+
+            mouse_down_pos: Vec2i::zero(),
 
             icon: None,
 
@@ -66,6 +70,11 @@ impl TheWidget for TheListItem {
                     ));
                     ctx.ui.set_focus(self.id());
                     redraw = true;
+                }
+            }
+            TheEvent::MouseDragged(coord) => {
+                if ctx.ui.drop.is_none() && distance(Vec2f::from(self.mouse_down_pos), Vec2f::from(*coord)) >= 5.0 {
+                    ctx.ui.send(TheEvent::DragStarted(self.id().clone()));
                 }
             }
             TheEvent::Hover(_coord) => {

@@ -4,6 +4,9 @@ use crate::prelude::*;
 pub struct Project {
     pub name: String,
     pub codegrid: TheCodeGrid,
+
+    #[serde(skip)]
+    pub undo_stack: TheUndoStack,
 }
 
 impl Default for Project {
@@ -17,6 +20,7 @@ impl Project {
         Self {
             name: "Untitled".to_string(),
             codegrid: TheCodeGrid::default(),
+            undo_stack: TheUndoStack::default(),
         }
     }
 }

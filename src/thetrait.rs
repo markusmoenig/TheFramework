@@ -8,6 +8,10 @@ pub trait TheTrait {
 
     fn init(&mut self, ctx: &mut TheContext) {}
 
+    fn window_title(&mut self) -> String {
+        "TheFramework based App".to_string()
+    }
+
     #[cfg(feature = "ui")]
     fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {}
 

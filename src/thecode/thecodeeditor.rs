@@ -3,6 +3,8 @@ use crate::prelude::*;
 pub struct TheCodeEditor {
     code_list_selection: Option<TheId>,
     grid_selection: Option<(u32, u32)>,
+
+    undo: Option<TheUndo>,
 }
 
 impl Default for TheCodeEditor {
@@ -16,6 +18,8 @@ impl TheCodeEditor {
         Self {
             code_list_selection: None,
             grid_selection: None,
+
+            undo: None,
         }
     }
 
@@ -23,8 +27,9 @@ impl TheCodeEditor {
         let mut redraw = false;
 
         match event {
+            /*
             TheEvent::CodeEditorApply(_id) => {
-                let mut atom: Option<TheAtom> = None;
+                let mut atom: Option<TheCodeAtom> = None;
 
                 if let Some(code_list_selection) = &self.code_list_selection {
                     if let Some(widget) = ui.get_widget_id(code_list_selection.uuid) {
@@ -39,51 +44,50 @@ impl TheCodeEditor {
                     self.set_grid_selection_ui(ui, ctx);
                     redraw = true;
                 }
-            }
-            TheEvent::CodeEditorSelectionChanged(_id, selection) => {
-                self.grid_selection = *selection;
-                self.set_grid_selection_ui(ui, ctx);
-                self.set_grid_status_message(ui, ctx);
-                redraw = true;
-                /*
-                ui.set_widget_disabled_state(
-                    "Apply Code",
-                    ctx,
-                    selection.is_none() || self.code_list_selection.is_none(),
-                );
-                self.editor_selection = *selection;
-
-                // Generate the Atom UI
-                let mut text_layout = TheTextLayout::new(TheId::empty());
-                if let Some(selection) = selection {
-                    if let Some(layout) = ui.get_code_layout("Code Editor") {
-                        if let Some(code_view) = layout.code_view_mut().as_code_view() {
-                            let grid = code_view.code_grid();
-
-                            if let Some(atom) = grid.code.get(selection) {
-                                text_layout = atom.to_text_layout();
+            }*/
+            TheEvent::DragStarted(id) => {
+                if id.name == "Code List Item" {
+                    if let Some(code_list_selection) = &self.code_list_selection {
+                        if let Some(widget) = ui.get_widget_id(code_list_selection.uuid) {
+                            if let Some(name) = widget.value().to_string() {
+                                if let Some(atom) = Some(self.create_atom(name.as_str())) {
+                                    let mut drop = TheDrop::new("Code Editor Atom");
+                                    drop.set_data(atom.to_json());
+                                    drop.set_title(name);
+                                    ui.style.create_drop_image(&mut drop, ctx);
+                                    ctx.ui.set_drop(drop);
+                                }
                             }
                         }
                     }
                 }
+            }
+            TheEvent::CodeEditorDelete(_id) => {
+                if let Some(selection) = self.grid_selection {
+                    if let Some(layout) = ui.get_code_layout("Code Editor") {
+                        if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                            code_view.codegrid_mut().code.remove_entry(&selection);
+                        }
+                    }
+                }
 
-                ui.canvas
-                    .right
-                    .as_mut()
-                    .unwrap()
-                    .center
-                    .as_mut()
-                    .unwrap()
-                    .set_layout(text_layout);
-                ctx.ui.relayout = true;
-                */
+                self.set_grid_selection_ui(ui, ctx);
+                self.set_grid_status_message(ui, ctx);
+                redraw = true;
+            }
+            TheEvent::CodeEditorSelectionChanged(_id, selection) => {
+                self.grid_selection = *selection;
+
+                self.set_grid_selection_ui(ui, ctx);
+                self.set_grid_status_message(ui, ctx);
+                redraw = true;
             }
             TheEvent::StateChanged(id, _state) => {
                 if id.name == "Code List Item" {
                     self.code_list_selection = Some(id.clone());
 
                     /*
-                    let mut atom: Option<TheAtom> = None;
+                    let mut atom: Option<TheCodeAtom> = None;
 
                     if let Some(widget) = ui.get_widget_id(id.uuid) {
                         if let Some(name) = widget.value().to_string() {
@@ -122,18 +126,20 @@ impl TheCodeEditor {
                 } else if id.name == "Atom Func Def" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
-                            self.set_selected_atom(ui, TheAtom::FuncDef(name));
+                            self.set_selected_atom(ui, TheCodeAtom::FuncDef(name));
                         }
                     }
                 } else if id.name == "Atom Local Set" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
-                            self.set_selected_atom(ui, TheAtom::LocalSet(name));
+                            self.set_selected_atom(ui, TheCodeAtom::LocalSet(name));
                         }
                     }
                 } else if id.name == "Atom Integer" {
                     if let Some(v) = value.to_i32() {
-                        self.set_selected_atom(ui, TheAtom::Value(TheValue::Int(v)));
+                        self.start_undo(ui);
+                        self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Int(v)));
+                        self.finish_undo(ui, ctx);
                     }
                 }
                 redraw = true;
@@ -179,7 +185,7 @@ impl TheCodeEditor {
     }
 
     /// Returns a clone of the currently selected atom (if any).
-    pub fn get_selected_atom(&mut self, ui: &mut TheUI) -> Option<TheAtom> {
+    pub fn get_selected_atom(&mut self, ui: &mut TheUI) -> Option<TheCodeAtom> {
         if let Some(grid_selection) = self.grid_selection {
             if let Some(layout) = ui.get_code_layout("Code Editor") {
                 if let Some(code_view) = layout.code_view_mut().as_code_view() {
@@ -195,7 +201,7 @@ impl TheCodeEditor {
     }
 
     /// Set the atom at the current position.
-    pub fn set_selected_atom(&mut self, ui: &mut TheUI, atom: TheAtom) {
+    pub fn set_selected_atom(&mut self, ui: &mut TheUI, atom: TheCodeAtom) {
         if let Some(grid_selection) = self.grid_selection {
             if let Some(layout) = ui.get_code_layout("Code Editor") {
                 if let Some(code_view) = layout.code_view_mut().as_code_view() {
@@ -226,18 +232,56 @@ impl TheCodeEditor {
         }
     }
 
+    /// Start undo by setting the undo data.
+    pub fn start_undo(&mut self, ui: &mut TheUI) {
+        let mut undo = TheUndo::new("Code Editor");
+        undo.set_undo_data(self.get_codegrid_json(ui));
+        self.undo = Some(undo);
+    }
+
+    /// Finish undo by adding the redo data and add to undo stack.
+    pub fn finish_undo(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
+        if self.undo.is_none() {
+            return;
+        }
+
+        let mut undo = self.undo.take().unwrap();
+        undo.set_redo_data(self.get_codegrid_json(ui));
+
+        ctx.ui.undo_stack.add(undo);
+    }
+
+    /// Get the codegrid as json
+    pub fn get_codegrid_json(&mut self, ui: &mut TheUI) -> String {
+        if let Some(layout) = ui.get_code_layout("Code Editor") {
+            if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                return code_view.codegrid().to_json();
+            }
+        }
+        "".to_string()
+    }
+
+    /// Set the codegrid from json
+    pub fn set_codegrid_json(&mut self, json: String, ui: &mut TheUI) {
+        if let Some(layout) = ui.get_code_layout("Code Editor") {
+            if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                code_view.set_codegrid(TheCodeGrid::from_json(json.as_str()));
+            }
+        }
+    }
+
     /// Create an atom for the given name.
-    pub fn create_atom(&self, name: &str) -> TheAtom {
+    pub fn create_atom(&self, name: &str) -> TheCodeAtom {
         match name {
-            "Func Def" => TheAtom::FuncDef("Name".to_string()),
-            "Func Call" => TheAtom::FuncCall("Name".to_string()),
-            "Return" => TheAtom::Return,
-            "Local Get" => TheAtom::LocalGet("Name".to_string()),
-            "Local Set" => TheAtom::LocalSet("Name".to_string()),
-            "Integer" => TheAtom::Value(TheValue::Int(1)),
-            "Add" => TheAtom::Add,
-            "Multiply" => TheAtom::Multiply,
-            _ => TheAtom::EndOfCode,
+            "Func Def" => TheCodeAtom::FuncDef("Name".to_string()),
+            "Func Call" => TheCodeAtom::FuncCall("Name".to_string()),
+            "Return" => TheCodeAtom::Return,
+            "Local Get" => TheCodeAtom::LocalGet("Name".to_string()),
+            "Local Set" => TheCodeAtom::LocalSet("Name".to_string()),
+            "Integer" => TheCodeAtom::Value(TheValue::Int(1)),
+            "Add" => TheCodeAtom::Add,
+            "Multiply" => TheCodeAtom::Multiply,
+            _ => TheCodeAtom::EndOfCode,
         }
     }
 

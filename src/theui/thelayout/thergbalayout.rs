@@ -37,7 +37,10 @@ impl TheLayout for TheRGBALayout {
             (name + " Horizontal Scrollbar").as_str(),
         )));
 
-        rgba_view.set_scrollbar_ids(horizontal_scrollbar.id().clone(), vertical_scrollbar.id().clone());
+        rgba_view.set_scrollbar_ids(
+            horizontal_scrollbar.id().clone(),
+            vertical_scrollbar.id().clone(),
+        );
 
         Self {
             id,

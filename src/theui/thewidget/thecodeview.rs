@@ -26,6 +26,9 @@ pub struct TheCodeView {
 
     selected: Option<(u32, u32)>,
     hover: Option<(u32, u32)>,
+    drop: Option<(u32, u32)>,
+
+    mouse_down_pos: Vec2i,
 
     hscrollbar: TheId,
     vscrollbar: TheId,
@@ -55,7 +58,7 @@ impl TheWidget for TheCodeView {
             buffer: TheRGBABuffer::empty(),
 
             codegrid: TheCodeGrid::new(),
-            grid_size: 70,
+            grid_size: 60,
 
             sandbox: None,
 
@@ -64,6 +67,9 @@ impl TheWidget for TheCodeView {
 
             selected: None,
             hover: None,
+            drop: None,
+
+            mouse_down_pos: Vec2i::zero(),
 
             hscrollbar: TheId::empty(),
             vscrollbar: TheId::empty(),
@@ -95,7 +101,46 @@ impl TheWidget for TheCodeView {
                     self.selected,
                 ));
 
+                self.mouse_down_pos = *coord;
                 redraw = true;
+            }
+            TheEvent::MouseDragged(coord) => {
+                if let Some(selected) = &self.selected {
+                    if ctx.ui.drop.is_none() && distance(Vec2f::from(self.mouse_down_pos), Vec2f::from(*coord)) >= 5.0 {
+                        if let Some(atom) = self.codegrid.code.get(selected) {
+                            let mut drop = TheDrop::new("Code Editor Atom");
+                            drop.set_data(atom.to_json());
+                            ctx.ui.drop = Some(drop);
+                        }
+                    }
+                }
+            }
+            TheEvent::DropPreview(coord, drop) => {
+                if drop.drop_type == "Code Editor Atom" {
+                    let c = self.get_code_grid_offset(*coord);
+                    if c != self.drop {
+                        self.drop = c;
+                        redraw = true;
+                        self.code_is_dirty = true;
+                    }
+                }
+            }
+            TheEvent::Drop(coord, drop) => {
+                if drop.drop_type == "Code Editor Atom" {
+                    if let Some(c) = self.get_code_grid_offset(*coord) {
+                        let atom = TheCodeAtom::from_json(&drop.data);
+                        self.codegrid.code.insert(c, atom);
+                        redraw = true;
+                        self.code_is_dirty = true;
+                    }
+                }
+            }
+            TheEvent::MouseUp(_coord) => {
+                if self.drop.is_some() {
+                    self.drop = None;
+                    redraw = true;
+                    self.code_is_dirty = true;
+                }
             }
             TheEvent::Hover(coord) => {
                 if !self.id().equals(&ctx.ui.hover) {
@@ -116,11 +161,17 @@ impl TheWidget for TheCodeView {
                     if code == TheKeyCode::Return {
                         ctx.ui.send(TheEvent::CodeEditorApply(self.id.clone()));
                         redraw = true;
+                    } else if code == TheKeyCode::Delete {
+                        ctx.ui.send(TheEvent::CodeEditorDelete(self.id.clone()));
+                        redraw = true;
                     }
                 }
             }
             TheEvent::MouseWheel(delta) => {
-                let d = vec2i((delta.x as f32 * -0.4) as i32,(delta.y as f32 * -0.4) as i32);;
+                let d = vec2i(
+                    (delta.x as f32 * -0.4) as i32,
+                    (delta.y as f32 * -0.4) as i32,
+                );
                 ctx.ui.send(TheEvent::ScrollBy(self.hscrollbar.clone(), d));
                 ctx.ui.send(TheEvent::ScrollBy(self.vscrollbar.clone(), d));
             }
@@ -278,9 +329,14 @@ impl TheWidget for TheCodeView {
                         }
                     }
 
+                    if Some((x, y)) == self.drop {
+                        ctx.draw
+                            .rect_outline(self.buffer.pixels_mut(), &rect, stride, &selected);
+                    }
+
                     if let Some(atom) = self.codegrid.code.get(&(x, y)) {
                         match atom {
-                            TheAtom::FuncDef(name) => {
+                            TheCodeAtom::FuncDef(name) => {
                                 ctx.draw.rounded_rect_with_border(
                                     self.buffer.pixels_mut(),
                                     &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
@@ -305,7 +361,7 @@ impl TheWidget for TheCodeView {
                                     );
                                 }
                             }
-                            TheAtom::LocalGet(name) => {
+                            TheCodeAtom::LocalGet(name) => {
                                 ctx.draw.rounded_rect_with_border(
                                     self.buffer.pixels_mut(),
                                     &(
@@ -335,7 +391,7 @@ impl TheWidget for TheCodeView {
                                     );
                                 }
                             }
-                            TheAtom::LocalSet(name) => {
+                            TheCodeAtom::LocalSet(name) => {
                                 ctx.draw.rounded_rect_with_border(
                                     self.buffer.pixels_mut(),
                                     &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
@@ -392,7 +448,7 @@ impl TheWidget for TheCodeView {
                                     &dark,
                                 );
                             }
-                            TheAtom::Return => {
+                            TheCodeAtom::Return => {
                                 ctx.draw.rounded_rect_with_border(
                                     self.buffer.pixels_mut(),
                                     &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
@@ -417,7 +473,7 @@ impl TheWidget for TheCodeView {
                                     );
                                 }
                             }
-                            TheAtom::Value(value) => {
+                            TheCodeAtom::Value(value) => {
                                 ctx.draw.hexagon_with_border(
                                     self.buffer.pixels_mut(),
                                     &rect,
@@ -441,7 +497,7 @@ impl TheWidget for TheCodeView {
                                     );
                                 }
                             }
-                            TheAtom::Add => {
+                            TheCodeAtom::Add => {
                                 ctx.draw.rhombus_with_border(
                                     self.buffer.pixels_mut(),
                                     &rect,
@@ -465,7 +521,7 @@ impl TheWidget for TheCodeView {
                                     );
                                 }
                             }
-                            TheAtom::Multiply => {
+                            TheCodeAtom::Multiply => {
                                 ctx.draw.rhombus_with_border(
                                     self.buffer.pixels_mut(),
                                     &rect,
@@ -597,27 +653,74 @@ impl TheWidget for TheCodeView {
     }
 }
 
+/// `TheCodeViewTrait` trait defines a set of functionalities specifically for `TheCodeView` widget.
 pub trait TheCodeViewTrait {
+    /// Adjusts the buffer size to match the size of the code grid. This ensures
+    /// that the buffer is correctly sized to fit the grid layout.
     fn adjust_buffer_to_grid(&mut self);
 
+    /// Provides a reference to the RGBA buffer used by the code view.
+    /// This buffer is where the code view's visual representation is drawn.
     fn buffer(&self) -> &TheRGBABuffer;
+
+    /// Provides a mutable reference to the RGBA buffer.
+    /// This allows for modifications to the buffer, such as drawing or clearing operations.
     fn buffer_mut(&mut self) -> &mut TheRGBABuffer;
+
+    /// Returns a reference to the `TheCodeGrid`, which holds the logical structure
+    /// of the code grid, such as the arrangement and types of code elements.
     fn codegrid(&self) -> &TheCodeGrid;
+
+    /// Returns a mutable reference to the `TheCodeGrid`.
+    /// This is used for updating or modifying the code grid's structure.
     fn codegrid_mut(&mut self) -> &mut TheCodeGrid;
+
+    /// Sets the code grid to a new `TheCodeGrid`.
+    /// This function is used when the entire grid needs to be replaced or reset.
     fn set_codegrid(&mut self, code_grid: TheCodeGrid);
+
+    /// Sets the sandbox environment for the code view.
+    /// The sandbox can be used for executing or testing code snippets within the grid.
     fn set_sandbox(&mut self, sandbox: Option<TheCodeSandbox>);
+
+    /// Sets the background color of the code view.
+    /// This affects the visual appearance of the widget's background.
     fn set_background(&mut self, color: RGBA);
+
+    /// Gets the current zoom level of the code view.
+    /// This determines how much the content is scaled visually.
     fn zoom(&self) -> f32;
+
+    /// Sets the zoom level for the code view.
+    /// This affects the scale at which the content is displayed.
     fn set_zoom(&mut self, zoom: f32);
+
+    /// Sets the scroll offset for the code view.
+    /// This affects the portion of the content that is visible in the view.
     fn set_scroll_offset(&mut self, offset: Vec2i);
+
+    /// Sets the IDs of the horizontal and vertical scrollbars.
+    /// These IDs are used to interact with the scrollbars in the UI.
     fn set_scrollbar_ids(&mut self, hscrollbar: TheId, vscrollbar: TheId);
 
+    /// Associates a layout ID with the code view.
+    /// This can be used to link the code view with a specific layout in the UI.
     fn set_associated_layout(&mut self, id: TheId);
 
+    /// Returns the currently selected coordinates in the grid, if any.
+    /// This is useful for operations that depend on the user's selection.
     fn selected(&self) -> Option<(u32, u32)>;
 
+    /// Sets the value of an atom in the code grid.
+    /// This is used for updating the content or behavior of a specific grid element.
     fn set_atom_value(&mut self, coord: (u32, u32), name: String, value: TheValue);
-    fn set_grid_atom(&mut self, coord: (u32, u32), atom: TheAtom);
+
+    /// Sets a specific `TheCodeAtom` at given grid coordinates.
+    /// This allows for modifying the type or properties of a grid element.
+    fn set_grid_atom(&mut self, coord: (u32, u32), atom: TheCodeAtom);
+
+    /// Calculates and returns the grid coordinates corresponding to a given screen position.
+    /// This is used for translating screen interactions into grid operations.
     fn get_code_grid_offset(&self, coord: Vec2i) -> Option<(u32, u32)>;
 }
 
@@ -690,7 +793,7 @@ impl TheCodeViewTrait for TheCodeView {
             self.is_dirty = true;
         }
     }
-    fn set_grid_atom(&mut self, coord: (u32, u32), atom: TheAtom) {
+    fn set_grid_atom(&mut self, coord: (u32, u32), atom: TheCodeAtom) {
         self.codegrid.code.insert(coord, atom);
         self.code_is_dirty = true;
         self.is_dirty = true;

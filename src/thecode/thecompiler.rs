@@ -128,13 +128,13 @@ impl TheCompilerContext {
 }
 
 pub struct TheCompiler {
-    rules: FxHashMap<TheAtomKind, TheParseRule>,
+    rules: FxHashMap<TheCodeAtomKind, TheParseRule>,
     grid: TheCodeGrid,
 
     ctx: TheCompilerContext,
 
-    current: TheAtom,
-    previous: TheAtom,
+    current: TheCodeAtom,
+    previous: TheCodeAtom,
 }
 
 impl Default for TheCompiler {
@@ -151,7 +151,7 @@ impl TheCompiler {
             rules.insert(kind, TheParseRule::new(prefix, infix, precedence));
         };
 
-        use TheAtomKind::*;
+        use TheCodeAtomKind::*;
         use ThePrecedence as P;
 
         rule(Number, Some(TheCompiler::number), None, P::None);
@@ -168,14 +168,14 @@ impl TheCompiler {
 
             ctx: TheCompilerContext::default(),
 
-            current: TheAtom::EndOfCode,
-            previous: TheAtom::EndOfCode,
+            current: TheCodeAtom::EndOfCode,
+            previous: TheCodeAtom::EndOfCode,
         }
     }
 
     pub fn compile(&mut self, grid: &mut TheCodeGrid) -> Result<TheCodeModule, TheCompilerError> {
-        self.current = TheAtom::EndOfCode;
-        self.previous = TheAtom::EndOfCode;
+        self.current = TheCodeAtom::EndOfCode;
+        self.previous = TheCodeAtom::EndOfCode;
 
         self.ctx = TheCompilerContext::default();
 
@@ -184,7 +184,7 @@ impl TheCompiler {
 
         self.advance();
 
-        while !self.matches(TheAtomKind::Eof) && self.ctx.error.is_none() {
+        while !self.matches(TheCodeAtomKind::Eof) && self.ctx.error.is_none() {
             self.declaration();
         }
 
@@ -204,19 +204,18 @@ impl TheCompiler {
                 self.ctx.module.insert_function(f.name.clone(), f);
             }
 
-            println!("End:{:?}", self.ctx.functions);
             Ok(self.ctx.module.clone())
         }
     }
 
     fn declaration(&mut self) {
         match self.current.clone() {
-            TheAtom::FuncDef(name) => {
+            TheCodeAtom::FuncDef(name) => {
                 self.advance();
                 let func = TheCodeFunction::named(name);
                 self.ctx.add_function(func);
             }
-            TheAtom::LocalSet(name) => {
+            TheCodeAtom::LocalSet(name) => {
                 self.advance();
                 let var = self.previous.clone();
                 self.var_declaration();
@@ -235,7 +234,7 @@ impl TheCompiler {
 
     fn statement(&mut self) {
         match self.current.clone() {
-            TheAtom::Return => {
+            TheCodeAtom::Return => {
                 //println!("rr {:?}", self.ctx.functions);
                 if let Some(f) = self.ctx.remove_function() {
                     self.ctx.module.insert_function(f.name.clone(), f);
@@ -244,7 +243,7 @@ impl TheCompiler {
                 }
                 self.advance();
             }
-            TheAtom::EndOfExpression => {
+            TheCodeAtom::EndOfExpression => {
                 self.advance();
             }
             _ => {
@@ -280,12 +279,12 @@ impl TheCompiler {
             // TokenType::GreaterEqual => self.emit_instructions(Instruction::Less, Instruction::Not),
             // TokenType::Less => self.emit_instruction(Instruction::Less),
             // TokenType::LessEqual => self.emit_instructions(Instruction::Greater, Instruction::Not),
-            TheAtomKind::Plus => {
-                let node = TheAtom::Add.to_node(&mut self.ctx);
+            TheCodeAtomKind::Plus => {
+                let node = TheCodeAtom::Add.to_node(&mut self.ctx);
                 self.ctx.get_current_function().add_node(node);
             }
-            TheAtomKind::Star => {
-                let node = TheAtom::Multiply.to_node(&mut self.ctx);
+            TheCodeAtomKind::Star => {
+                let node = TheCodeAtom::Multiply.to_node(&mut self.ctx);
                 self.ctx.get_current_function().add_node(node);
             }
             // TokenType::Minus => self.emit_instruction(Instruction::Subtract),
@@ -295,7 +294,7 @@ impl TheCompiler {
         }
     }
 
-    fn get_rule(&self, kind: TheAtomKind) -> TheParseRule {
+    fn get_rule(&self, kind: TheCodeAtomKind) -> TheParseRule {
         println!("get_rule {:?}", kind);
         self.rules.get(&kind).cloned().unwrap()
     }
@@ -322,7 +321,7 @@ impl TheCompiler {
             }
         }
 
-        if can_assign && self.matches(TheAtomKind::Equal) {
+        if can_assign && self.matches(TheCodeAtomKind::Equal) {
             //self.error("Invalid assignment target.");
         }
     }
@@ -341,19 +340,19 @@ impl TheCompiler {
         /*
         loop {
             self.parser.current = if self.code.is_empty() {
-                TheAtom::Stop
+                TheCodeAtom::Stop
             } else {
                 self.code.remove(0)
             };
 
-            if self.parser.current.to_kind() != TheAtomKind::Error {
+            if self.parser.current.to_kind() != TheCodeAtomKind::Error {
                 break;
             }
             //self.error_at_current(self.parser.current.lexeme.clone().as_str());
         }*/
     }
 
-    fn matches(&mut self, kind: TheAtomKind) -> bool {
+    fn matches(&mut self, kind: TheCodeAtomKind) -> bool {
         if !self.check(kind) {
             false
         } else {
@@ -362,7 +361,7 @@ impl TheCompiler {
         }
     }
 
-    fn check(&self, kind: TheAtomKind) -> bool {
+    fn check(&self, kind: TheCodeAtomKind) -> bool {
         self.current.to_kind() == kind
     }
 
@@ -385,7 +384,7 @@ impl TheCompiler {
     }
 
     /// Error at the given token
-    fn error_at(&mut self, _token: TheAtom, message: &str) {
+    fn error_at(&mut self, _token: TheCodeAtom, message: &str) {
         println!("error {}", message);
         if self.parser.panic_mode {
             return;

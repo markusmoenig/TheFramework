@@ -65,7 +65,5 @@ impl TheCodeFunction {
             (n.call)(&mut stack, &n.values, sandbox);
             println!("{:?}", stack);
         }
-
-        //println!("{:?}", env.functions);
     }
 }
