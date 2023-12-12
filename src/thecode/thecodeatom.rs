@@ -1,5 +1,7 @@
 use crate::prelude::*;
 
+use super::thecodenode::TheCodeNodeData;
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum TheCodeAtom {
     Value(TheValue),
@@ -29,34 +31,62 @@ impl TheCodeAtom {
 
     pub fn to_node(&self, ctx: &mut TheCompilerContext) -> TheCodeNode {
         match self {
-            TheCodeAtom::FuncDef(name) => {
+            TheCodeAtom::FuncDef(_name) => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
-                     _values: &Vec<TheValue>,
+                     data: &TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {};
-                TheCodeNode::new(call, vec![])
+                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
             TheCodeAtom::Return => {
+                // This is only called if the function has a return value.
                 let call: TheCodeNodeCall =
-                    |_stack: &mut Vec<TheValue>,
-                     _values: &Vec<TheValue>,
-                     _sandbox: &mut TheCodeSandbox| {};
-                TheCodeNode::new(call, vec![])
+                    |stack: &mut Vec<TheValue>,
+                     _data: &TheCodeNodeData,
+                     sandbox: &mut TheCodeSandbox| {
+                        println!("inside return {:?}", stack);
+                        sandbox.func_rc = stack.pop();
+                    };
+                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
             TheCodeAtom::FuncCall(name) => {
                 let call: TheCodeNodeCall =
-                    |_stack: &mut Vec<TheValue>,
-                     _values: &Vec<TheValue>,
-                     _sandbox: &mut TheCodeSandbox| {};
-                TheCodeNode::new(call, vec![])
+                    |stack: &mut Vec<TheValue>,
+                     data: &TheCodeNodeData,
+                     sandbox: &mut TheCodeSandbox| {
+                        if let Some(id) = sandbox.module_stack.last() {
+                            if let Some(mut function) = sandbox
+                                .get_function_cloned(*id, &data.values[0].to_string().unwrap())
+                            {
+                                let clone = function.clone();
+                                sandbox.call_stack.push(clone);
+                                function.execute(sandbox);
+                                println!("clone: {:?}", sandbox.call_stack.last());
+                                println!("func_rc {:?}", sandbox.func_rc.clone());
+                                if let Some(rc_value) = &sandbox.func_rc {
+                                    stack.push(rc_value.clone());
+                                }
+                                sandbox.call_stack.pop();
+                            }
+                        }
+                    };
+                TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location_values(
+                        ctx.current_location,
+                        vec![TheValue::Text(name.clone())],
+                    ),
+                )
             }
             TheCodeAtom::LocalGet(name) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
-                     values: &Vec<TheValue>,
+                     data: &TheCodeNodeData,
                      sandbox: &mut TheCodeSandbox| {
                         if let Some(function) = sandbox.call_stack.last_mut() {
-                            if let Some(local) = function.get_local(&values[0].to_string().unwrap()) {
+                            if let Some(local) =
+                                function.get_local(&data.values[0].to_string().unwrap())
+                            {
                                 stack.push(local.clone());
                             }
                         }
@@ -71,51 +101,77 @@ impl TheCodeAtom {
                 }
                 if error {
                     ctx.error = Some(TheCompilerError::new(
-                        ctx.location,
+                        ctx.current_location,
                         format!("Unknown local variable {}.", name),
                     ));
                 }
-                TheCodeNode::new(call, vec![TheValue::Text(name.clone())])
+                TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location_values(
+                        ctx.current_location,
+                        vec![TheValue::Text(name.clone())],
+                    ),
+                )
             }
             TheCodeAtom::LocalSet(name) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
-                     values: &Vec<TheValue>,
+                     data: &TheCodeNodeData,
                      sandbox: &mut TheCodeSandbox| {
+
+                        let mut debug_value: Option<TheValue> = None;
+
                         if let Some(function) = sandbox.call_stack.last_mut() {
                             if let Some(local) = function.local.last_mut() {
-                                local.set(values[0].to_string().unwrap(), stack.pop().unwrap());
+                                let v = stack.pop().unwrap();
+                                if sandbox.debug_mode {
+                                    debug_value = Some(v.clone());
+                                }
+                                local.set(data.values[0].to_string().unwrap(), v);
                             }
+                        }
+
+                        if let Some(debug_value) = debug_value {
+                            sandbox.set_debug_value(data.location, debug_value);
                         }
                     };
 
                 if ctx.stack.is_empty() {
                     ctx.error = Some(TheCompilerError::new(
-                        ctx.location,
+                        ctx.current_location,
                         "Nothing to assign to local variable.".to_string(),
                     ));
                 } else if let Some(local) = ctx.local.last_mut() {
                     local.set(name.clone(), ctx.stack.pop().unwrap());
                 }
 
-                TheCodeNode::new(call, vec![TheValue::Text(name.clone())])
+                TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location_values(
+                        ctx.node_location,
+                        vec![TheValue::Text(name.clone())],
+                    ),
+                )
             }
             TheCodeAtom::Value(value) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
-                     values: &Vec<TheValue>,
+                     data: &TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {
-                        stack.push(values[0].clone());
+                        stack.push(data.values[0].clone());
                     };
 
                 ctx.stack.push(value.clone());
 
-                TheCodeNode::new(call, vec![value.clone()])
+                TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location_values(ctx.current_location, vec![value.clone()]),
+                )
             }
             TheCodeAtom::Add => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
-                     _values: &Vec<TheValue>,
+                     _data: &TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {
                         let a = stack.pop().unwrap().to_i32().unwrap();
                         let b = stack.pop().unwrap().to_i32().unwrap();
@@ -124,17 +180,17 @@ impl TheCodeAtom {
 
                 if ctx.stack.len() < 2 {
                     ctx.error = Some(TheCompilerError::new(
-                        ctx.location,
+                        ctx.current_location,
                         format!("Invalid stack for Add ({})", ctx.stack.len()),
                     ));
                 }
 
-                TheCodeNode::new(call, vec![])
+                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
             TheCodeAtom::Multiply => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
-                     _values: &Vec<TheValue>,
+                     _data: &TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {
                         let a = stack.pop().unwrap().to_i32().unwrap();
                         let b = stack.pop().unwrap().to_i32().unwrap();
@@ -143,18 +199,18 @@ impl TheCodeAtom {
 
                 if ctx.stack.len() < 2 {
                     ctx.error = Some(TheCompilerError::new(
-                        ctx.location,
+                        ctx.current_location,
                         format!("Invalid stack for Multiply ({})", ctx.stack.len()),
                     ));
                 }
-                TheCodeNode::new(call, vec![])
+                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
             TheCodeAtom::EndOfCode | TheCodeAtom::EndOfExpression => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
-                     _values: &Vec<TheValue>,
+                     _data: &TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {};
-                TheCodeNode::new(call, vec![])
+                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
         }
     }
@@ -162,7 +218,7 @@ impl TheCodeAtom {
     pub fn to_kind(&self) -> TheCodeAtomKind {
         match self {
             TheCodeAtom::FuncDef(_name) => TheCodeAtomKind::Fn,
-            TheCodeAtom::FuncCall(_name) => TheCodeAtomKind::Fn,
+            TheCodeAtom::FuncCall(_name) => TheCodeAtomKind::Identifier,
             TheCodeAtom::Return => TheCodeAtomKind::Return,
             TheCodeAtom::LocalGet(_name) => TheCodeAtomKind::Identifier,
             TheCodeAtom::LocalSet(_name) => TheCodeAtomKind::Identifier,

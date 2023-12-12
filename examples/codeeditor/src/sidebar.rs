@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct Sidebar {
-    pub editor_selection: Option<(u32, u32)>,
+    pub editor_selection: Option<(u16, u16)>,
     code_list_selection: Option<TheId>,
 }
 

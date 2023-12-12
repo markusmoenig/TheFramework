@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, thecode::thecodesandbox::TheDebugModule};
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum TheRGBAViewMode {
@@ -17,16 +17,16 @@ pub struct TheCodeView {
     codegrid: TheCodeGrid,
     grid_size: i32,
 
-    sandbox: Option<TheCodeSandbox>,
+    debug_module: TheDebugModule,
 
     buffer: TheRGBABuffer,
 
     scroll_offset: Vec2i,
     zoom: f32,
 
-    selected: Option<(u32, u32)>,
-    hover: Option<(u32, u32)>,
-    drop: Option<(u32, u32)>,
+    selected: Option<(u16, u16)>,
+    hover: Option<(u16, u16)>,
+    drop: Option<(u16, u16)>,
 
     mouse_down_pos: Vec2i,
 
@@ -60,7 +60,7 @@ impl TheWidget for TheCodeView {
             codegrid: TheCodeGrid::new(),
             grid_size: 60,
 
-            sandbox: None,
+            debug_module: TheDebugModule::new(),
 
             scroll_offset: vec2i(0, 0),
             zoom: 1.0,
@@ -106,9 +106,11 @@ impl TheWidget for TheCodeView {
             }
             TheEvent::MouseDragged(coord) => {
                 if let Some(selected) = &self.selected {
-                    if ctx.ui.drop.is_none() && distance(Vec2f::from(self.mouse_down_pos), Vec2f::from(*coord)) >= 5.0 {
+                    if ctx.ui.drop.is_none()
+                        && distance(Vec2f::from(self.mouse_down_pos), Vec2f::from(*coord)) >= 5.0
+                    {
                         if let Some(atom) = self.codegrid.code.get(selected) {
-                            let mut drop = TheDrop::new("Code Editor Atom");
+                            let mut drop = TheDrop::new(TheId::named("Code Editor Atom"));
                             drop.set_data(atom.to_json());
                             ctx.ui.drop = Some(drop);
                         }
@@ -116,8 +118,9 @@ impl TheWidget for TheCodeView {
                 }
             }
             TheEvent::DropPreview(coord, drop) => {
-                if drop.drop_type == "Code Editor Atom" {
+                if drop.id.name == "Code Editor Atom" {
                     let c = self.get_code_grid_offset(*coord);
+                    self.selected = self.get_code_grid_offset(*coord);
                     if c != self.drop {
                         self.drop = c;
                         redraw = true;
@@ -126,7 +129,8 @@ impl TheWidget for TheCodeView {
                 }
             }
             TheEvent::Drop(coord, drop) => {
-                if drop.drop_type == "Code Editor Atom" {
+                if drop.id.name == "Code Editor Atom" {
+                    self.selected = self.get_code_grid_offset(*coord);
                     if let Some(c) = self.get_code_grid_offset(*coord) {
                         let atom = TheCodeAtom::from_json(&drop.data);
                         self.codegrid.code.insert(c, atom);
@@ -159,11 +163,30 @@ impl TheWidget for TheCodeView {
             TheEvent::KeyCodeDown(code) => {
                 if let Some(code) = code.to_key_code() {
                     if code == TheKeyCode::Return {
-                        ctx.ui.send(TheEvent::CodeEditorApply(self.id.clone()));
-                        redraw = true;
+                        if let Some(selected) = &mut self.selected {
+                            self.codegrid.move_one_line_down(*selected);
+                            selected.1 += 1;
+                            self.code_is_dirty = true;
+                            redraw = true;
+                        }
                     } else if code == TheKeyCode::Delete {
-                        ctx.ui.send(TheEvent::CodeEditorDelete(self.id.clone()));
-                        redraw = true;
+                        if let Some(selected) = self.selected {
+                            self.selected = Some(self.codegrid.delete(selected));
+                            // if self.codegrid.code.contains_key(&pos) {
+                            //     self.selected = Some(pos);
+                            // } else {
+                            //     self.selected = None;
+                            // }
+                            self.code_is_dirty = true;
+                            redraw = true;
+                        }
+                    } else if code == TheKeyCode::Space {
+                        if let Some(selected) = &mut self.selected {
+                            self.codegrid.insert_space(*selected);
+                            selected.0 += 1;
+                            self.code_is_dirty = true;
+                            redraw = true;
+                        }
                     }
                 }
             }
@@ -304,8 +327,8 @@ impl TheWidget for TheCodeView {
             for y in 0..grid_y {
                 for x in 0..grid_x {
                     let rect = (
-                        (x * grid_size as u32) as usize,
-                        (y * grid_size as u32) as usize,
+                        (x * grid_size as u16) as usize,
+                        (y * grid_size as u16) as usize,
                         grid_size as usize,
                         grid_size as usize,
                     );
@@ -327,11 +350,6 @@ impl TheWidget for TheCodeView {
                         if message.message_type == TheCodeGridMessageType::Error {
                             color = error;
                         }
-                    }
-
-                    if Some((x, y)) == self.drop {
-                        ctx.draw
-                            .rect_outline(self.buffer.pixels_mut(), &rect, stride, &selected);
                     }
 
                     if let Some(atom) = self.codegrid.code.get(&(x, y)) {
@@ -360,14 +378,43 @@ impl TheWidget for TheCodeView {
                                         TheVerticalAlign::Center,
                                     );
                                 }
+
+                                ctx.draw.rect(
+                                    self.buffer.pixels_mut(),
+                                    &(
+                                        crect.0 + crect.2 - zoom_const(3, zoom),
+                                        crect.1 + crect.3 / 2 - zoom_const(1, zoom),
+                                        zoom_const(8, zoom),
+                                        zoom_const(2, zoom),
+                                    ),
+                                    stride,
+                                    &dark,
+                                );
+
+                                ctx.draw.rect(
+                                    self.buffer.pixels_mut(),
+                                    &(
+                                        crect.0 + crect.2 / 2 - zoom_const(1, zoom),
+                                        crect.1 + crect.3 - zoom_const(2, zoom),
+                                        zoom_const(2, zoom),
+                                        zoom_const(8, zoom),
+                                    ),
+                                    stride,
+                                    &dark,
+                                );
                             }
-                            TheCodeAtom::LocalGet(name) => {
+                            TheCodeAtom::FuncCall(name) => {
                                 ctx.draw.rounded_rect_with_border(
                                     self.buffer.pixels_mut(),
-                                    &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
+                                    &(
+                                        crect.0 + 2,
+                                        crect.1 + (crect.3 - crect.3 / 2) / 2,
+                                        crect.2 - 4,
+                                        crect.3 / 2,
+                                    ),
                                     stride,
                                     &color,
-                                    &(rounding, rounding, 0.0, 0.0),
+                                    &(rounding, rounding, rounding, rounding),
                                     &border_color,
                                     border_size,
                                 );
@@ -385,6 +432,43 @@ impl TheWidget for TheCodeView {
                                         TheVerticalAlign::Center,
                                     );
                                 }
+                            }
+                            TheCodeAtom::LocalGet(name) => {
+                                ctx.draw.rounded_rect_with_border(
+                                    self.buffer.pixels_mut(),
+                                    &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
+                                    stride,
+                                    &color,
+                                    &(rounding, rounding, rounding, rounding),
+                                    &border_color,
+                                    border_size,
+                                );
+
+                                if let Some(font) = &ctx.ui.font {
+                                    ctx.draw.text_rect_blend(
+                                        self.buffer.pixels_mut(),
+                                        &crect,
+                                        stride,
+                                        font,
+                                        font_size,
+                                        name,
+                                        &text_color,
+                                        TheHorizontalAlign::Center,
+                                        TheVerticalAlign::Center,
+                                    );
+                                }
+
+                                ctx.draw.rect(
+                                    self.buffer.pixels_mut(),
+                                    &(
+                                        crect.0 + crect.2 - zoom_const(3, zoom),
+                                        crect.1 + crect.3 / 2 - zoom_const(1, zoom),
+                                        zoom_const(8, zoom),
+                                        zoom_const(2, zoom),
+                                    ),
+                                    stride,
+                                    &dark,
+                                );
                             }
                             TheCodeAtom::LocalSet(name) => {
                                 ctx.draw.rounded_rect_with_border(
@@ -409,26 +493,6 @@ impl TheWidget for TheCodeView {
                                         TheHorizontalAlign::Center,
                                         TheVerticalAlign::Center,
                                     );
-                                    if let Some(env) = &self.sandbox {
-                                        if let Some(v) = env.get_local(name) {
-                                            ctx.draw.text_rect_blend(
-                                                self.buffer.pixels_mut(),
-                                                &(
-                                                    crect.0,
-                                                    crect.1,
-                                                    crect.2,
-                                                    crect.3 - zoom_const(6, zoom),
-                                                ),
-                                                stride,
-                                                font,
-                                                font_size,
-                                                &v.describe(),
-                                                &hover,
-                                                TheHorizontalAlign::Center,
-                                                TheVerticalAlign::Bottom,
-                                            );
-                                        }
-                                    }
                                 }
 
                                 ctx.draw.rect(
@@ -438,6 +502,18 @@ impl TheWidget for TheCodeView {
                                         crect.1 + crect.3 / 2 - zoom_const(1, zoom),
                                         zoom_const(8, zoom),
                                         zoom_const(2, zoom),
+                                    ),
+                                    stride,
+                                    &dark,
+                                );
+
+                                ctx.draw.rect(
+                                    self.buffer.pixels_mut(),
+                                    &(
+                                        crect.0 + crect.2 / 2 - zoom_const(1, zoom),
+                                        crect.1 + crect.3 - zoom_const(2, zoom),
+                                        zoom_const(2, zoom),
+                                        zoom_const(8, zoom),
                                     ),
                                     stride,
                                     &dark,
@@ -467,6 +543,18 @@ impl TheWidget for TheCodeView {
                                         TheVerticalAlign::Center,
                                     );
                                 }
+
+                                ctx.draw.rect(
+                                    self.buffer.pixels_mut(),
+                                    &(
+                                        crect.0 + crect.2 - zoom_const(3, zoom),
+                                        crect.1 + crect.3 / 2 - zoom_const(1, zoom),
+                                        zoom_const(8, zoom),
+                                        zoom_const(2, zoom),
+                                    ),
+                                    stride,
+                                    &dark,
+                                );
                             }
                             TheCodeAtom::Value(value) => {
                                 ctx.draw.hexagon_with_border(
@@ -542,15 +630,30 @@ impl TheWidget for TheCodeView {
                             }
                             _ => {}
                         }
-                    } // else {
-                      //     ctx.draw.rect_outline_border(
-                      //         self.buffer.pixels_mut(),
-                      //         &rect,
-                      //         stride,
-                      //         &color,
-                      //         0,
-                      //     );
-                      // }
+                        if let Some(v) = self.debug_module.values.get(&(x, y)) {
+                            if let Some(font) = &ctx.ui.font {
+                                ctx.draw.text_rect_blend(
+                                    self.buffer.pixels_mut(),
+                                    &(
+                                        crect.0,
+                                        crect.1,
+                                        crect.2,
+                                        crect.3 - zoom_const(5, zoom),
+                                    ),
+                                    stride,
+                                    font,
+                                    font_size,
+                                    &v.describe(),
+                                    &hover,
+                                    TheHorizontalAlign::Center,
+                                    TheVerticalAlign::Bottom,
+                                );
+                            }
+                        }
+                    } else if Some((x, y)) == self.selected {
+                        ctx.draw
+                            .rect_outline(self.buffer.pixels_mut(), &rect, stride, &selected);
+                    }
                 }
             }
 
@@ -674,9 +777,8 @@ pub trait TheCodeViewTrait {
     /// This function is used when the entire grid needs to be replaced or reset.
     fn set_codegrid(&mut self, code_grid: TheCodeGrid);
 
-    /// Sets the sandbox environment for the code view.
-    /// The sandbox can be used for executing or testing code snippets within the grid.
-    fn set_sandbox(&mut self, sandbox: Option<TheCodeSandbox>);
+    /// Sets the debug values environment for the code view.
+    fn set_debug_module(&mut self, module: TheDebugModule);
 
     /// Sets the background color of the code view.
     /// This affects the visual appearance of the widget's background.
@@ -704,19 +806,19 @@ pub trait TheCodeViewTrait {
 
     /// Returns the currently selected coordinates in the grid, if any.
     /// This is useful for operations that depend on the user's selection.
-    fn selected(&self) -> Option<(u32, u32)>;
+    fn selected(&self) -> Option<(u16, u16)>;
 
     /// Sets the value of an atom in the code grid.
     /// This is used for updating the content or behavior of a specific grid element.
-    fn set_atom_value(&mut self, coord: (u32, u32), name: String, value: TheValue);
+    fn set_atom_value(&mut self, coord: (u16, u16), name: String, value: TheValue);
 
     /// Sets a specific `TheCodeAtom` at given grid coordinates.
     /// This allows for modifying the type or properties of a grid element.
-    fn set_grid_atom(&mut self, coord: (u32, u32), atom: TheCodeAtom);
+    fn set_grid_atom(&mut self, coord: (u16, u16), atom: TheCodeAtom);
 
     /// Calculates and returns the grid coordinates corresponding to a given screen position.
     /// This is used for translating screen interactions into grid operations.
-    fn get_code_grid_offset(&self, coord: Vec2i) -> Option<(u32, u32)>;
+    fn get_code_grid_offset(&self, coord: Vec2i) -> Option<(u16, u16)>;
 }
 
 impl TheCodeViewTrait for TheCodeView {
@@ -751,8 +853,9 @@ impl TheCodeViewTrait for TheCodeView {
         self.code_is_dirty = true;
         self.is_dirty = true;
     }
-    fn set_sandbox(&mut self, exe_env: Option<TheCodeSandbox>) {
-        self.sandbox = exe_env;
+    fn set_debug_module(&mut self, module: TheDebugModule) {
+        println!("gg {:?}", module);
+        self.debug_module = module;
         self.code_is_dirty = true;
         self.is_dirty = true;
     }
@@ -778,22 +881,22 @@ impl TheCodeViewTrait for TheCodeView {
     fn set_associated_layout(&mut self, layout_id: TheId) {
         self.layout_id = layout_id;
     }
-    fn selected(&self) -> Option<(u32, u32)> {
+    fn selected(&self) -> Option<(u16, u16)> {
         self.selected
     }
-    fn set_atom_value(&mut self, coord: (u32, u32), name: String, value: TheValue) {
+    fn set_atom_value(&mut self, coord: (u16, u16), name: String, value: TheValue) {
         if let Some(atom) = self.codegrid.code.get_mut(&coord) {
             atom.process_value_change(name, value);
             self.code_is_dirty = true;
             self.is_dirty = true;
         }
     }
-    fn set_grid_atom(&mut self, coord: (u32, u32), atom: TheCodeAtom) {
+    fn set_grid_atom(&mut self, coord: (u16, u16), atom: TheCodeAtom) {
         self.codegrid.code.insert(coord, atom);
         self.code_is_dirty = true;
         self.is_dirty = true;
     }
-    fn get_code_grid_offset(&self, coord: Vec2i) -> Option<(u32, u32)> {
+    fn get_code_grid_offset(&self, coord: Vec2i) -> Option<(u16, u16)> {
         let centered_offset_x = 0.0;
         // if (self.zoom * self.buffer.dim().width as f32) < self.dim.width as f32 {
         //     (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32) / 2.0
@@ -827,7 +930,7 @@ impl TheCodeViewTrait for TheCodeView {
             if grid_x * grid_size < self.buffer.dim().width
                 && grid_y * grid_size < self.buffer.dim().height
             {
-                return Some((grid_x as u32, grid_y as u32));
+                return Some((grid_x as u16, grid_y as u16));
             }
         }
         None

@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use std::sync::mpsc::Receiver;
-use theframework::prelude::*;
+use theframework::{prelude::*, thecode::thecodesandbox::TheDebugModule};
 
 pub struct CodeEditor {
     sidebar: Sidebar,
@@ -166,10 +166,14 @@ impl TheTrait for CodeEditor {
 
                                     if let Ok(mut module) = rc {
                                         let mut sandbox = TheCodeSandbox::new();
+                                        sandbox.debug_mode = true;
+                                        sandbox.insert_module(module.clone());
                                         module.execute(&mut sandbox);
-                                        code_view.set_sandbox(Some(sandbox));
+                                        code_view.set_debug_module(
+                                            sandbox.get_module_debug_module(module.uuid),
+                                        );
                                     } else {
-                                        code_view.set_sandbox(None);
+                                        code_view.set_debug_module(TheDebugModule::new());
                                     }
 
                                     self.editor.set_grid_status_message(ui, ctx);
@@ -177,15 +181,15 @@ impl TheTrait for CodeEditor {
                                 }
                             }
                         } else {
-                            let mut data: Option<(String, String)> = None;
+                            let mut data: Option<(TheId, String)> = None;
                             if id.name == "Undo" && ctx.ui.undo_stack.has_undo() {
                                 data = Some(ctx.ui.undo_stack.undo());
                             } else if id.name == "Redo" && ctx.ui.undo_stack.has_redo() {
                                 data = Some(ctx.ui.undo_stack.redo());
                             }
 
-                            if let Some((undo_type, json)) = data {
-                                if undo_type.as_str() == "Code Editor" {
+                            if let Some((id, json)) = data {
+                                if id.name == "Code Editor" {
                                     self.editor.set_codegrid_json(json, ui);
                                     self.editor.set_grid_selection_ui(ui, ctx);
                                     self.editor.set_grid_status_message(ui, ctx);

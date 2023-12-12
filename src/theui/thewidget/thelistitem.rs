@@ -73,7 +73,9 @@ impl TheWidget for TheListItem {
                 }
             }
             TheEvent::MouseDragged(coord) => {
-                if ctx.ui.drop.is_none() && distance(Vec2f::from(self.mouse_down_pos), Vec2f::from(*coord)) >= 5.0 {
+                if ctx.ui.drop.is_none()
+                    && distance(Vec2f::from(self.mouse_down_pos), Vec2f::from(*coord)) >= 5.0
+                {
                     ctx.ui.send(TheEvent::DragStarted(self.id().clone()));
                 }
             }

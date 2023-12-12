@@ -12,15 +12,30 @@ pub struct TheCodeSandbox {
     /// The function used to set an object value.
     #[serde(skip)]
     pub set_var: Option<TheSetVarCall>,
-    /// The function calls to native Rust functions for this environment.
+    /// The modules with callable codegrid functions.
     #[serde(skip)]
-    pub functions: FxHashMap<String, TheCodeFunction>,
+    pub modules: FxHashMap<Uuid, TheCodeModule>,
 
     pub objects: FxHashMap<String, TheCodeObject>,
 
-    /// The local variables
+    pub debug_mode: bool,
+
+    // Runtimes
+    /// Function return value.
+    #[serde(skip)]
+    pub func_rc: Option<TheValue>,
+
+    /// The call stack of modules.
+    #[serde(skip)]
+    pub module_stack: Vec<Uuid>,
+
+    /// The call stack of functions.
     #[serde(skip)]
     pub call_stack: Vec<TheCodeFunction>,
+
+    /// The call stack of functions.
+    #[serde(skip)]
+    pub debug_modules: FxHashMap<Uuid, TheDebugModule>,
 }
 
 impl Default for TheCodeSandbox {
@@ -35,19 +50,43 @@ impl TheCodeSandbox {
             get_var: None,
             set_var: None,
             objects: FxHashMap::default(),
-            functions: FxHashMap::default(),
+            modules: FxHashMap::default(),
+
+            debug_mode: false,
+
+            func_rc: None,
+            module_stack: vec![],
             call_stack: vec![],
+            debug_modules: FxHashMap::default(),
         }
     }
 
-    /// Insert a function into the environment.
-    pub fn insert_function(&mut self, name: String, function: TheCodeFunction) {
-        self.functions.insert(name, function);
+    /// Clear the runtime states.
+    pub fn clear_runtime_states(&mut self) {
+        self.func_rc = None;
+        self.module_stack = vec![];
+        self.call_stack = vec![];
+        self.debug_modules = FxHashMap::default();
+    }
+
+    /// Insert a module into the environment.
+    pub fn insert_module(&mut self, module: TheCodeModule) {
+        self.modules.insert(module.uuid, module);
     }
 
     /// Insert an object into the environment.
     pub fn insert_object(&mut self, name: String, function: TheCodeObject) {
         self.objects.insert(name, function);
+    }
+
+    /// Get a clone of the function from the environment.
+    pub fn get_function_cloned(&self, module_id: Uuid, name: &String) -> Option<TheCodeFunction> {
+        if let Some(module) = self.modules.get(&module_id) {
+            if let Some(function) = module.get_function(name) {
+                return Some(function.clone());
+            }
+        }
+        None
     }
 
     /// Returns the given local variable by reversing the local stack.
@@ -58,5 +97,46 @@ impl TheCodeSandbox {
             }
         }
         None
+    }
+
+    /// Pushes the current module to the module stack.
+    pub fn push_current_module(&mut self, module_id: Uuid) {
+        self.module_stack.push(module_id);
+        self.debug_modules
+            .entry(module_id)
+            .or_insert_with(TheDebugModule::new);
+    }
+
+    /// Sets a debug value in the current module.
+    pub fn set_debug_value(&mut self, location: (u16, u16), value: TheValue) {
+        if let Some(module_id) = self.module_stack.last() {
+            if let Some(debug_module) = self.debug_modules.get_mut(module_id) {
+                debug_module.values.insert(location, value);
+            }
+        }
+    }
+
+    /// Returns the debug values for a given module id.
+    pub fn get_module_debug_module(&self, module_id: Uuid) -> TheDebugModule {
+        if let Some(dv) = self.debug_modules.get(&module_id) {
+            dv.clone()
+        } else {
+            TheDebugModule::new()
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TheDebugModule {
+    pub values: FxHashMap<(u16, u16), TheValue>,
+    pub executed: FxHashSet<(u16, u16)>,
+}
+
+impl TheDebugModule {
+    pub fn new() -> Self {
+        Self {
+            values: FxHashMap::default(),
+            executed: FxHashSet::default(),
+        }
     }
 }

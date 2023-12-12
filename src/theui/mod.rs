@@ -170,7 +170,9 @@ impl TheUI {
         self.canvas.draw_overlay(&mut self.style, ctx);
         if let Some(drop) = &ctx.ui.drop {
             if let Some(position) = &drop.position {
-                self.canvas.buffer.copy_into(position.x, position.y, &drop.image)
+                self.canvas
+                    .buffer
+                    .copy_into(position.x, position.y, &drop.image)
             }
         }
         ctx.ui.redraw_all = false;

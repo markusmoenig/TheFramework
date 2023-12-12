@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub struct TheDrop {
-    pub drop_type: String,
+    pub id: TheId,
     pub data: String,
     pub title: String,
     pub image: TheRGBABuffer,
@@ -12,9 +12,9 @@ pub struct TheDrop {
 }
 
 impl TheDrop {
-    pub fn new(drop_type: &str) -> Self {
+    pub fn new(id: TheId) -> Self {
         Self {
-            drop_type: drop_type.to_string(),
+            id,
             data: String::new(),
             title: String::new(),
             image: TheRGBABuffer::empty(),

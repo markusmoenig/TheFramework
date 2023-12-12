@@ -62,12 +62,12 @@ impl TheParseRule {
 #[derive(Clone, Debug)]
 pub struct TheCompilerError {
     // This stack is only used for verification during compilation.
-    pub location: (u32, u32),
+    pub location: (u16, u16),
     pub message: String,
 }
 
 impl TheCompilerError {
-    pub fn new(location: (u32, u32), message: String) -> Self {
+    pub fn new(location: (u16, u16), message: String) -> Self {
         Self { location, message }
     }
 }
@@ -77,7 +77,10 @@ pub struct TheCompilerContext {
     // This stack is only used for verification during compilation.
     pub stack: Vec<TheValue>,
     pub local: Vec<TheCodeObject>,
-    pub location: (u32, u32),
+
+    pub previous_location: (u16, u16),
+    pub current_location: (u16, u16),
+    pub node_location: (u16, u16),
 
     pub module: TheCodeModule,
     pub functions: Vec<TheCodeFunction>,
@@ -97,7 +100,10 @@ impl TheCompilerContext {
         Self {
             stack: vec![],
             local: vec![TheCodeObject::default()],
-            location: (0, 0),
+
+            previous_location: (0, 0),
+            current_location: (0, 0),
+            node_location: (0, 0),
 
             module: TheCodeModule::default(),
             functions: vec![TheCodeFunction::default()],
@@ -218,7 +224,9 @@ impl TheCompiler {
             TheCodeAtom::LocalSet(_name) => {
                 self.advance();
                 let var = self.previous.clone();
+                let location = self.ctx.current_location;
                 self.var_declaration();
+                self.ctx.node_location = location;
                 let node = var.to_node(&mut self.ctx);
                 self.ctx.get_current_function().add_node(node);
             }
@@ -235,12 +243,29 @@ impl TheCompiler {
     fn statement(&mut self) {
         match self.current.clone() {
             TheCodeAtom::Return => {
-                //println!("rr {:?}", self.ctx.functions);
+                self.advance();
+
+                if self.grid.code.contains_key(&(
+                    &self.ctx.current_location.0 + 1,
+                    self.ctx.current_location.1,
+                )) {
+                    // This return statement has a value parse if first.
+                    let ret = self.previous.clone();
+                    self.expression();
+
+                    let node = ret.to_node(&mut self.ctx);
+                    self.ctx.get_current_function().add_node(node);
+                }
+
                 if let Some(f) = self.ctx.remove_function() {
                     self.ctx.module.insert_function(f.name.clone(), f);
                 } else {
-                    self.error("Unexpected 'Return' code.")
+                    self.error_at_current("Unexpected 'Return' code.")
                 }
+            }
+            TheCodeAtom::FuncCall(_name) => {
+                let node = self.current.to_node(&mut self.ctx);
+                self.ctx.get_current_function().add_node(node);
                 self.advance();
             }
             TheCodeAtom::EndOfExpression => {
@@ -248,7 +273,7 @@ impl TheCompiler {
             }
             _ => {
                 self.ctx.error = Some(TheCompilerError::new(
-                    self.ctx.location,
+                    self.ctx.current_location,
                     "Unexpected code.".to_string(),
                 ));
             }
@@ -260,8 +285,19 @@ impl TheCompiler {
     }
 
     fn variable(&mut self, _can_assing: bool) {
-        let node = self.previous.to_node(&mut self.ctx);
-        self.ctx.get_current_function().add_node(node);
+        match self.previous.clone() {
+            TheCodeAtom::LocalGet(_name) => {
+                let node = self.previous.to_node(&mut self.ctx);
+                self.ctx.get_current_function().add_node(node);
+            }
+            TheCodeAtom::FuncCall(_name) => {
+                let node = self.previous.to_node(&mut self.ctx);
+                self.ctx.get_current_function().add_node(node);
+            }
+            _ => {
+                self.error_at_current("Unknown identifier.");
+            }
+        }
     }
 
     fn number(&mut self, _can_assign: bool) {
@@ -334,7 +370,8 @@ impl TheCompiler {
         self.previous = self.current.clone();
 
         if let Some(location) = self.grid.current_pos {
-            self.ctx.location = location;
+            self.ctx.previous_location = self.ctx.current_location;
+            self.ctx.current_location = location;
         }
 
         self.current = self.grid.get_next(false);
@@ -369,9 +406,9 @@ impl TheCompiler {
     }
 
     /// Create an error
-    fn error(&mut self, message: &str) {
+    fn error_at_current(&mut self, message: &str) {
         self.ctx.error = Some(TheCompilerError::new(
-            self.ctx.location,
+            self.ctx.current_location,
             message.to_string(),
         ));
     }

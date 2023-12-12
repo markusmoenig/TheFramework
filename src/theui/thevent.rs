@@ -40,9 +40,7 @@ pub enum TheEvent {
     TileEditorClicked(TheId, Vec2i),
     TileEditorHoverChanged(TheId, Vec2i),
 
-    CodeEditorSelectionChanged(TheId, Option<(u32, u32)>),
-    CodeEditorApply(TheId),
-    CodeEditorDelete(TheId),
+    CodeEditorSelectionChanged(TheId, Option<(u16, u16)>),
 
     // Show the given context menu at the given coordinates
     ShowContextMenu(TheId, Vec2i),

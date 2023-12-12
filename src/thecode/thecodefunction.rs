@@ -62,7 +62,7 @@ impl TheCodeFunction {
         let mut stack: Vec<TheValue> = Vec::with_capacity(10);
 
         for n in &self.nodes {
-            (n.call)(&mut stack, &n.values, sandbox);
+            (n.call)(&mut stack, &n.data, sandbox);
             println!("{:?}", stack);
         }
     }

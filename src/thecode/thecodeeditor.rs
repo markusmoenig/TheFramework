@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 pub struct TheCodeEditor {
     code_list_selection: Option<TheId>,
-    grid_selection: Option<(u32, u32)>,
+    grid_selection: Option<(u16, u16)>,
 
     undo: Option<TheUndo>,
 }
@@ -51,7 +51,7 @@ impl TheCodeEditor {
                         if let Some(widget) = ui.get_widget_id(code_list_selection.uuid) {
                             if let Some(name) = widget.value().to_string() {
                                 if let Some(atom) = Some(self.create_atom(name.as_str())) {
-                                    let mut drop = TheDrop::new("Code Editor Atom");
+                                    let mut drop = TheDrop::new(TheId::named("Code Editor Atom"));
                                     drop.set_data(atom.to_json());
                                     drop.set_title(name);
                                     ui.style.create_drop_image(&mut drop, ctx);
@@ -62,19 +62,19 @@ impl TheCodeEditor {
                     }
                 }
             }
-            TheEvent::CodeEditorDelete(_id) => {
-                if let Some(selection) = self.grid_selection {
-                    if let Some(layout) = ui.get_code_layout("Code Editor") {
-                        if let Some(code_view) = layout.code_view_mut().as_code_view() {
-                            code_view.codegrid_mut().code.remove_entry(&selection);
-                        }
-                    }
-                }
+            // TheEvent::CodeEditorDelete(_id) => {
+            //     if let Some(selection) = self.grid_selection {
+            //         if let Some(layout) = ui.get_code_layout("Code Editor") {
+            //             if let Some(code_view) = layout.code_view_mut().as_code_view() {
+            //                 code_view.codegrid_mut().code.remove_entry(&selection);
+            //             }
+            //         }
+            //     }
 
-                self.set_grid_selection_ui(ui, ctx);
-                self.set_grid_status_message(ui, ctx);
-                redraw = true;
-            }
+            //     self.set_grid_selection_ui(ui, ctx);
+            //     self.set_grid_status_message(ui, ctx);
+            //     redraw = true;
+            // }
             TheEvent::CodeEditorSelectionChanged(_id, selection) => {
                 self.grid_selection = *selection;
 
@@ -127,6 +127,12 @@ impl TheCodeEditor {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.set_selected_atom(ui, TheCodeAtom::FuncDef(name));
+                        }
+                    }
+                } else if id.name == "Atom Func Call" {
+                    if let Some(name) = value.to_string() {
+                        if !name.is_empty() {
+                            self.set_selected_atom(ui, TheCodeAtom::FuncCall(name));
                         }
                     }
                 } else if id.name == "Atom Local Get" {
@@ -240,7 +246,7 @@ impl TheCodeEditor {
 
     /// Start undo by setting the undo data.
     pub fn start_undo(&mut self, ui: &mut TheUI) {
-        let mut undo = TheUndo::new("Code Editor");
+        let mut undo = TheUndo::new(TheId::named("Code Editor"));
         undo.set_undo_data(self.get_codegrid_json(ui));
         self.undo = Some(undo);
     }
@@ -279,8 +285,8 @@ impl TheCodeEditor {
     /// Create an atom for the given name.
     pub fn create_atom(&self, name: &str) -> TheCodeAtom {
         match name {
-            "Func Def" => TheCodeAtom::FuncDef("Name".to_string()),
-            "Func Call" => TheCodeAtom::FuncCall("Name".to_string()),
+            "Function" => TheCodeAtom::FuncDef("Name".to_string()),
+            "Function Call" => TheCodeAtom::FuncCall("Name".to_string()),
             "Return" => TheCodeAtom::Return,
             "Local Get" => TheCodeAtom::LocalGet("Name".to_string()),
             "Local Set" => TheCodeAtom::LocalSet("Name".to_string()),
@@ -303,12 +309,12 @@ impl TheCodeEditor {
         code_layout.limiter_mut().set_max_width(150);
 
         let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Func Def".to_string());
+        item.set_text("Function".to_string());
         item.set_associated_layout(code_layout.id().clone());
         code_layout.add_item(item, ctx);
 
         let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Func Call".to_string());
+        item.set_text("Function Call".to_string());
         item.set_associated_layout(code_layout.id().clone());
         code_layout.add_item(item, ctx);
 

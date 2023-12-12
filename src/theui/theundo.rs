@@ -5,8 +5,8 @@ use crate::prelude::*;
 /// It stores the type of the operation along with the data required to undo or redo the action.
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub struct TheUndo {
-    // Type of the undo operation.
-    pub undo_type: String,
+    // Id of the undo operation.
+    pub id: TheId,
 
     // Data required to perform the undo operation.
     pub undo_data: String,
@@ -19,14 +19,14 @@ impl TheUndo {
     ///
     /// # Arguments
     ///
-    /// * `undo_type` - A string slice that holds the type of the undo operation.
+    /// * `id` - The id of the undo operation.
     ///
     /// # Returns
     ///
     /// A new instance of `TheUndo`.
-    pub fn new(undo_type: &str) -> Self {
+    pub fn new(id: TheId) -> Self {
         Self {
-            undo_type: undo_type.to_string(),
+            id,
             undo_data: String::new(),
             redo_data: String::new(),
         }
@@ -135,9 +135,9 @@ impl TheUndoStack {
     /// # Returns
     ///
     /// A tuple containing the undo type and undo data.
-    pub fn undo(&mut self) -> (String, String) {
+    pub fn undo(&mut self) -> (TheId, String) {
         let rc = (
-            self.stack[self.index as usize].undo_type.clone(),
+            self.stack[self.index as usize].id.clone(),
             self.stack[self.index as usize].undo_data.clone(),
         );
         self.index -= 1;
@@ -149,10 +149,10 @@ impl TheUndoStack {
     /// # Returns
     ///
     /// A tuple containing the redo type and redo data.
-    pub fn redo(&mut self) -> (String, String) {
+    pub fn redo(&mut self) -> (TheId, String) {
         self.index += 1;
         (
-            self.stack[self.index as usize].undo_type.clone(),
+            self.stack[self.index as usize].id.clone(),
             self.stack[self.index as usize].redo_data.clone(),
         )
     }

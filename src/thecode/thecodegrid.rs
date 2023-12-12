@@ -24,11 +24,11 @@ impl TheCodeGridMessage {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct TheCodeGrid {
     #[serde(with = "vectorize")]
-    pub code: FxHashMap<(u32, u32), TheCodeAtom>,
+    pub code: FxHashMap<(u16, u16), TheCodeAtom>,
     #[serde(skip)]
-    pub messages: FxHashMap<(u32, u32), TheCodeGridMessage>,
-    pub current_pos: Option<(u32, u32)>,
-    pub max_pos: Option<(u32, u32)>,
+    pub messages: FxHashMap<(u16, u16), TheCodeGridMessage>,
+    pub current_pos: Option<(u16, u16)>,
+    pub max_pos: Option<(u16, u16)>,
 }
 
 impl Default for TheCodeGrid {
@@ -48,7 +48,7 @@ impl TheCodeGrid {
     }
 
     /// Returns the max xy values in the grid
-    pub fn max_xy(&self) -> Option<(u32, u32)> {
+    pub fn max_xy(&self) -> Option<(u16, u16)> {
         let mut max_x = None;
         let mut max_y = None;
 
@@ -149,17 +149,116 @@ impl TheCodeGrid {
     }
 
     /// Adds a message to the grid.
-    pub fn add_message(&mut self, location: (u32, u32), message: TheCodeGridMessage) {
+    pub fn add_message(&mut self, location: (u16, u16), message: TheCodeGridMessage) {
         self.messages.insert(location, message);
     }
 
     /// Returns the message for the given location (if any).
-    pub fn message(&self, location: (u32, u32)) -> Option<TheCodeGridMessage> {
+    pub fn message(&self, location: (u16, u16)) -> Option<TheCodeGridMessage> {
         let mut message: Option<TheCodeGridMessage> = None;
         if let Some(m) = self.messages.get(&location) {
             message = Some(m.clone());
         }
         message
+    }
+
+    /// Simulate a 'return' press from a given position, moving all subsequent content down by one line.
+    pub fn move_one_line_down(&mut self, start_pos: (u16, u16)) {
+        let mut new_code = FxHashMap::default();
+
+        for ((x, y), atom) in self.code.drain() {
+            if y > start_pos.1 || (y == start_pos.1 && x >= start_pos.0) {
+                // Shift all elements below and including the start position one line down
+                new_code.insert((x, y + 1), atom);
+            } else {
+                // Keep elements above the start position unchanged
+                new_code.insert((x, y), atom);
+            }
+        }
+
+        self.code = new_code;
+    }
+
+    /// Deletes the atom at the current position and moves all subsequent content one position to the left.
+    pub fn delete(&mut self, pos: (u16, u16)) -> (u16, u16) {
+        let (x, y) = pos;
+
+        let mut new_code = FxHashMap::default();
+        let is_start_of_line = x == 0;
+        let previous_line_empty = is_start_of_line && self.is_line_empty(y - 1);
+
+        if is_start_of_line && previous_line_empty {
+            // If at the start of the line and the line above is empty, shift the entire line up
+            for ((cx, cy), atom) in self.code.drain() {
+                if cy == y {
+                    new_code.insert((cx, cy - 1), atom);
+                } else if cy != y {
+                    new_code.insert((cx, cy), atom);
+                }
+            }
+            // Set the new cursor position to the beginning of the moved up line
+            self.code = new_code;
+            return (0, y - 1);
+        }
+
+        for ((cx, cy), atom) in self.code.drain() {
+            if cy < y || (cy == y && cx < x) {
+                new_code.insert((cx, cy), atom);
+            } else if cy == y && cx == x {
+                continue; // Skip the element directly to the left of the current position
+            } else if cy == y && cx >= x {
+                new_code.insert((cx - 1, cy), atom);
+            } else {
+                new_code.insert((cx, cy), atom);
+            }
+        }
+
+        self.code = new_code;
+
+        // Determine the new position for other cases
+        if is_start_of_line {
+            if previous_line_empty {
+                (0, y - 1)
+            } else {
+                pos
+            }
+        } else {
+            (x, y)
+        }
+    }
+
+    /// Moves the items on the line of the given position one position to the right.
+    pub fn insert_space(&mut self, pos: (u16, u16)) {
+        let (x, y) = pos;
+        let mut new_code = FxHashMap::default();
+
+        // Iterate over the code elements and shift each element on the specified line
+        for ((cx, cy), atom) in self.code.drain() {
+            if cy == y && cx >= x {
+                // Shift elements on the specified line and to the right of the position one position to the right
+                new_code.insert((cx + 1, cy), atom);
+            } else {
+                // Keep other elements unchanged
+                new_code.insert((cx, cy), atom);
+            }
+        }
+
+        self.code = new_code;
+    }
+
+    /// Find the maximum x position in a given line
+    fn _max_x_in_line(&self, line: u16) -> u16 {
+        self.code
+            .iter()
+            .filter(|&((_, cy), _)| *cy == line)
+            .map(|((cx, _), _)| *cx)
+            .max()
+            .unwrap_or(0)
+    }
+
+    /// Check if a line is empty
+    fn is_line_empty(&self, line: u16) -> bool {
+        !self.code.iter().any(|(&(_cx, cy), _)| cy == line)
     }
 
     /// Create a grid from json.

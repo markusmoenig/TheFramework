@@ -1,7 +1,7 @@
 pub use crate::prelude::*;
 
 /// Defines the identifier for a widget, its name and Uuid.
-#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TheId {
     pub name: String,
     pub uuid: Uuid,
