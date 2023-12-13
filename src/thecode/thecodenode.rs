@@ -6,11 +6,20 @@ pub type TheCodeNodeCall =
 #[derive(Clone, Debug)]
 pub struct TheCodeNodeData {
     pub values: Vec<TheValue>,
-    pub sub_calls: Vec<TheCodeNodeCall>,
+    pub sub_calls: Vec<Vec<TheCodeNodeCall>>,
     pub location: (u16, u16),
 }
 
 impl TheCodeNodeData {
+
+    pub fn empty() -> Self {
+        Self {
+            values: vec![],
+            sub_calls: vec![],
+            location: (u16::MAX, u16::MAX)
+        }
+    }
+
     pub fn location(location: (u16, u16)) -> Self {
         Self {
             values: vec![],

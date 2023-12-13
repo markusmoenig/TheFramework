@@ -57,13 +57,20 @@ impl TheCodeFunction {
         None
     }
 
+    /// Sets a local variable.
+    pub fn set_local(&mut self, name: String, value: TheValue) {
+        if let Some(f) = self.local.last_mut() {
+            f.set(name, value);
+        }
+    }
+
     /// Execute the function
     pub fn execute(&mut self, sandbox: &mut TheCodeSandbox) {
         let mut stack: Vec<TheValue> = Vec::with_capacity(10);
 
         for n in &self.nodes {
+            //println!("{:?}", stack);
             (n.call)(&mut stack, &n.data, sandbox);
-            println!("{:?}", stack);
         }
     }
 }

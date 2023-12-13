@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use std::sync::mpsc::Receiver;
-use theframework::{prelude::*, thecode::thecodesandbox::TheDebugModule};
+use theframework::{prelude::*, thecode::{thecodesandbox::TheDebugModule, thecodenode::TheCodeNodeData}};
 
 pub struct CodeEditor {
     sidebar: Sidebar,
@@ -167,6 +167,11 @@ impl TheTrait for CodeEditor {
                                     if let Ok(mut module) = rc {
                                         let mut sandbox = TheCodeSandbox::new();
                                         sandbox.debug_mode = true;
+
+                                        sandbox.add_global("test", TheCodeNode::new(|_, _data, _| {
+                                            println!("inside test");
+                                        }, TheCodeNodeData::empty()));
+
                                         sandbox.insert_module(module.clone());
                                         module.execute(&mut sandbox);
                                         code_view.set_debug_module(

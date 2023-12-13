@@ -352,6 +352,10 @@ impl TheWidget for TheCodeView {
                         }
                     }
 
+                    // if x as i32 % grid_size == 0 || y as i32 % grid_size == 0 {
+                    //     color = dark;
+                    // }
+
                     if let Some(atom) = self.codegrid.code.get(&(x, y)) {
                         match atom {
                             TheCodeAtom::FuncDef(name) => {
@@ -403,14 +407,51 @@ impl TheWidget for TheCodeView {
                                     &dark,
                                 );
                             }
+                            TheCodeAtom::FuncArg(name) => {
+                                ctx.draw.rounded_rect_with_border(
+                                    self.buffer.pixels_mut(),
+                                     &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
+                                    stride,
+                                    &color,
+                                    &(0.0, 0.0, 0.0, 0.0),
+                                    &border_color,
+                                    border_size,
+                                );
+
+                                if let Some(font) = &ctx.ui.font {
+                                    ctx.draw.text_rect_blend(
+                                        self.buffer.pixels_mut(),
+                                        &crect,
+                                        stride,
+                                        font,
+                                        font_size,
+                                        name,
+                                        &text_color,
+                                        TheHorizontalAlign::Center,
+                                        TheVerticalAlign::Center,
+                                    );
+                                }
+
+                                ctx.draw.rect(
+                                    self.buffer.pixels_mut(),
+                                    &(
+                                        crect.0 + crect.2 - zoom_const(3, zoom),
+                                        crect.1 + crect.3 / 2 - zoom_const(1, zoom),
+                                        zoom_const(8, zoom),
+                                        zoom_const(2, zoom),
+                                    ),
+                                    stride,
+                                    &dark,
+                                );
+                            }
                             TheCodeAtom::FuncCall(name) => {
                                 ctx.draw.rounded_rect_with_border(
                                     self.buffer.pixels_mut(),
                                     &(
                                         crect.0 + 2,
-                                        crect.1 + (crect.3 - crect.3 / 2) / 2,
+                                        crect.1 + (crect.3 - (crect.3 as f32 * 0.6) as usize) / 2,
                                         crect.2 - 4,
-                                        crect.3 / 2,
+                                        (crect.3 as f32 *  0.6) as usize,
                                     ),
                                     stride,
                                     &color,
@@ -432,6 +473,30 @@ impl TheWidget for TheCodeView {
                                         TheVerticalAlign::Center,
                                     );
                                 }
+
+                                ctx.draw.rect(
+                                    self.buffer.pixels_mut(),
+                                    &(
+                                        crect.0 + crect.2 - zoom_const(3, zoom),
+                                        crect.1 + crect.3 / 2 - zoom_const(1, zoom),
+                                        zoom_const(8, zoom),
+                                        zoom_const(2, zoom),
+                                    ),
+                                    stride,
+                                    &dark,
+                                );
+
+                                ctx.draw.rect(
+                                    self.buffer.pixels_mut(),
+                                    &(
+                                        crect.0 + crect.2 / 2 - zoom_const(1, zoom),
+                                        crect.1 + crect.3 - zoom_const(14, zoom),
+                                        zoom_const(2, zoom),
+                                        zoom_const(20, zoom),
+                                    ),
+                                    stride,
+                                    &dark,
+                                );
                             }
                             TheCodeAtom::LocalGet(name) => {
                                 ctx.draw.rounded_rect_with_border(
@@ -854,7 +919,6 @@ impl TheCodeViewTrait for TheCodeView {
         self.is_dirty = true;
     }
     fn set_debug_module(&mut self, module: TheDebugModule) {
-        println!("gg {:?}", module);
         self.debug_module = module;
         self.code_is_dirty = true;
         self.is_dirty = true;

@@ -42,17 +42,11 @@ impl TheCodeModule {
         if let Some(main) = self.functions.get_mut(&"main".to_string()) {
             let clone = main.clone();
 
-            //sandbox.module_stack.push(self.uuid);
             sandbox.push_current_module(self.uuid);
             sandbox.call_stack.push(clone);
 
             main.execute(sandbox);
-
-            println!("sandbox: {:?}", sandbox);
-
             sandbox.call_stack.pop();
         }
-
-        println!("module {:?} executed", self);
     }
 }

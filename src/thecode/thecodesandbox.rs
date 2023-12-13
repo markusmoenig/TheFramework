@@ -15,6 +15,9 @@ pub struct TheCodeSandbox {
     /// The modules with callable codegrid functions.
     #[serde(skip)]
     pub modules: FxHashMap<Uuid, TheCodeModule>,
+    /// The global external functions added by the host.
+    #[serde(skip)]
+    pub globals: FxHashMap<String, TheCodeNode>,
 
     pub objects: FxHashMap<String, TheCodeObject>,
 
@@ -49,8 +52,10 @@ impl TheCodeSandbox {
         Self {
             get_var: None,
             set_var: None,
+
             objects: FxHashMap::default(),
             modules: FxHashMap::default(),
+            globals: FxHashMap::default(),
 
             debug_mode: false,
 
@@ -67,6 +72,11 @@ impl TheCodeSandbox {
         self.module_stack = vec![];
         self.call_stack = vec![];
         self.debug_modules = FxHashMap::default();
+    }
+
+    /// Adds a globlal function to the environment.
+    pub fn add_global(&mut self, name: &str, node: TheCodeNode) {
+        self.globals.insert(name.to_string(), node);
     }
 
     /// Insert a module into the environment.
@@ -89,6 +99,13 @@ impl TheCodeSandbox {
         None
     }
 
+    /// Call a global, external function provided by the host.
+    pub fn call_global(&mut self, stack: &mut Vec<TheValue>, name: &String) {
+        if let Some(node) = self.globals.get_mut(name).cloned() {
+            (node.call)(stack, &node.data, self);
+        }
+    }
+
     /// Returns the given local variable by reversing the local stack.
     pub fn get_local(&self, name: &String) -> Option<&TheValue> {
         if let Some(function) = self.call_stack.last() {
@@ -104,7 +121,7 @@ impl TheCodeSandbox {
         self.module_stack.push(module_id);
         self.debug_modules
             .entry(module_id)
-            .or_insert_with(TheDebugModule::new);
+            .or_default();
     }
 
     /// Sets a debug value in the current module.
@@ -130,6 +147,12 @@ impl TheCodeSandbox {
 pub struct TheDebugModule {
     pub values: FxHashMap<(u16, u16), TheValue>,
     pub executed: FxHashSet<(u16, u16)>,
+}
+
+impl Default for TheDebugModule {
+    fn default() -> Self {
+        TheDebugModule::new()
+    }
 }
 
 impl TheDebugModule {

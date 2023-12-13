@@ -219,6 +219,7 @@ impl TheWidget for TheTextLineEdit {
                             self.id(),
                             TheValue::Text(self.text.clone()),
                         );
+                        self.original = self.text.clone();
                     }
                 }
             }

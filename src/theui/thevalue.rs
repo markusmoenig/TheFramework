@@ -13,6 +13,8 @@ pub enum TheValue {
     KeyCode(TheKeyCode),
     RangeI32(RangeInclusive<i32>),
     RangeF32(RangeInclusive<f32>),
+    #[cfg(feature = "code")]
+    CodeObject(TheCodeObject),
 }
 
 use TheValue::*;
@@ -84,6 +86,7 @@ impl TheValue {
             Int(i) => i.to_string(),
             Text(s) => s.clone(),
             Char(c) => c.to_string(),
+            CodeObject(_) => "CodeObject".to_string(),
             KeyCode(k) => format!("KeyCode: {:?}", k),
             RangeI32(r) => format!("RangeI32: {:?}", r),
             RangeF32(r) => format!("RangeF32: {:?}", r),

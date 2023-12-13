@@ -1,3 +1,5 @@
+use std::f32::consts::E;
+
 use crate::prelude::*;
 
 use super::thecodenode::TheCodeNodeData;
@@ -11,9 +13,13 @@ pub enum TheCodeAtom {
     LocalSet(String),
     FuncDef(String),
     FuncCall(String),
+    FuncArg(String),
     Return,
     EndOfExpression,
     EndOfCode,
+    Switch,
+    CaseCondition,
+    CaseBody,
 }
 
 impl TheCodeAtom {
@@ -34,7 +40,14 @@ impl TheCodeAtom {
             TheCodeAtom::FuncDef(_name) => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
-                     data: &TheCodeNodeData,
+                     _data: &TheCodeNodeData,
+                     _sandbox: &mut TheCodeSandbox| {};
+                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
+            }
+            TheCodeAtom::FuncArg(_name) => {
+                let call: TheCodeNodeCall =
+                    |_stack: &mut Vec<TheValue>,
+                     _data: &TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {};
                 TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
@@ -44,7 +57,6 @@ impl TheCodeAtom {
                     |stack: &mut Vec<TheValue>,
                      _data: &TheCodeNodeData,
                      sandbox: &mut TheCodeSandbox| {
-                        println!("inside return {:?}", stack);
                         sandbox.func_rc = stack.pop();
                     };
                 TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
@@ -58,15 +70,25 @@ impl TheCodeAtom {
                             if let Some(mut function) = sandbox
                                 .get_function_cloned(*id, &data.values[0].to_string().unwrap())
                             {
-                                let clone = function.clone();
+                                let mut clone = function.clone();
+
+                                // Insert the arguments (if any) into the clone locals
+
+                                let arguments = clone.arguments.clone();
+                                for arg in &arguments {//}.iter().enumerate() {
+                                    if let Some(arg_value) = stack.pop() {
+                                        clone.set_local(arg.clone(), arg_value);
+                                    }
+                                }
+
                                 sandbox.call_stack.push(clone);
                                 function.execute(sandbox);
-                                println!("clone: {:?}", sandbox.call_stack.last());
-                                println!("func_rc {:?}", sandbox.func_rc.clone());
                                 if let Some(rc_value) = &sandbox.func_rc {
                                     stack.push(rc_value.clone());
                                 }
                                 sandbox.call_stack.pop();
+                            } else {
+                                sandbox.call_global(stack, &data.values[0].to_string().unwrap())
                             }
                         }
                     };
@@ -88,22 +110,26 @@ impl TheCodeAtom {
                                 function.get_local(&data.values[0].to_string().unwrap())
                             {
                                 stack.push(local.clone());
+                            } else {
+                                println!("Runtime error: Unknown local variable {}.", &data.values[0].to_string().unwrap());
                             }
                         }
                     };
 
-                let mut error = true;
-                if let Some(local) = ctx.local.last_mut() {
-                    if let Some(local) = local.get(&name.clone()) {
-                        ctx.stack.push(local.clone());
-                        error = false;
+                if ctx.error.is_none() {
+                    let mut error = true;
+                    if let Some(local) = ctx.local.last_mut() {
+                        if let Some(local) = local.get(&name.clone()) {
+                            ctx.stack.push(local.clone());
+                            error = false;
+                        }
                     }
-                }
-                if error {
-                    ctx.error = Some(TheCompilerError::new(
-                        ctx.current_location,
-                        format!("Unknown local variable {}.", name),
-                    ));
+                    if error {
+                        ctx.error = Some(TheCompilerError::new(
+                            ctx.current_location,
+                            format!("Unknown local variable {}.", name),
+                        ));
+                    }
                 }
                 TheCodeNode::new(
                     call,
@@ -136,13 +162,15 @@ impl TheCodeAtom {
                         }
                     };
 
-                if ctx.stack.is_empty() {
-                    ctx.error = Some(TheCompilerError::new(
-                        ctx.current_location,
-                        "Nothing to assign to local variable.".to_string(),
-                    ));
-                } else if let Some(local) = ctx.local.last_mut() {
-                    local.set(name.clone(), ctx.stack.pop().unwrap());
+                if ctx.error.is_none() {
+                    if ctx.stack.is_empty() {
+                        ctx.error = Some(TheCompilerError::new(
+                            ctx.current_location,
+                            "Nothing to assign to local variable.".to_string(),
+                        ));
+                    } else if let Some(local) = ctx.local.last_mut() {
+                        local.set(name.clone(), ctx.stack.pop().unwrap());
+                    }
                 }
 
                 TheCodeNode::new(
@@ -178,7 +206,7 @@ impl TheCodeAtom {
                         stack.push(TheValue::Int(a + b));
                     };
 
-                if ctx.stack.len() < 2 {
+                if ctx.error.is_none() && ctx.stack.len() < 2 {
                     ctx.error = Some(TheCompilerError::new(
                         ctx.current_location,
                         format!("Invalid stack for Add ({})", ctx.stack.len()),
@@ -197,7 +225,7 @@ impl TheCodeAtom {
                         stack.push(TheValue::Int(a * b));
                     };
 
-                if ctx.stack.len() < 2 {
+                if ctx.error.is_none() && ctx.stack.len() < 2 {
                     ctx.error = Some(TheCompilerError::new(
                         ctx.current_location,
                         format!("Invalid stack for Multiply ({})", ctx.stack.len()),
@@ -212,12 +240,34 @@ impl TheCodeAtom {
                      _sandbox: &mut TheCodeSandbox| {};
                 TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
+            TheCodeAtom::Switch => {
+                let call: TheCodeNodeCall =
+                    |_stack: &mut Vec<TheValue>,
+                     _data: &TheCodeNodeData,
+                     _sandbox: &mut TheCodeSandbox| {};
+                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
+            }
+            TheCodeAtom::CaseCondition => {
+                let call: TheCodeNodeCall =
+                    |_stack: &mut Vec<TheValue>,
+                     _data: &TheCodeNodeData,
+                     _sandbox: &mut TheCodeSandbox| {};
+                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
+            }
+            TheCodeAtom::CaseBody => {
+                let call: TheCodeNodeCall =
+                    |_stack: &mut Vec<TheValue>,
+                     _data: &TheCodeNodeData,
+                     _sandbox: &mut TheCodeSandbox| {};
+                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
+            }
         }
     }
 
     pub fn to_kind(&self) -> TheCodeAtomKind {
         match self {
             TheCodeAtom::FuncDef(_name) => TheCodeAtomKind::Fn,
+            TheCodeAtom::FuncArg(_name) => TheCodeAtomKind::Identifier,
             TheCodeAtom::FuncCall(_name) => TheCodeAtomKind::Identifier,
             TheCodeAtom::Return => TheCodeAtomKind::Return,
             TheCodeAtom::LocalGet(_name) => TheCodeAtomKind::Identifier,
@@ -227,12 +277,16 @@ impl TheCodeAtom {
             TheCodeAtom::Multiply => TheCodeAtomKind::Star,
             TheCodeAtom::EndOfExpression => TheCodeAtomKind::Semicolon,
             TheCodeAtom::EndOfCode => TheCodeAtomKind::Eof,
+            TheCodeAtom::Switch => TheCodeAtomKind::If,
+            TheCodeAtom::CaseCondition => TheCodeAtomKind::If,
+            TheCodeAtom::CaseBody => TheCodeAtomKind::If,
         }
     }
 
     pub fn describe(&self) -> String {
         match self {
             TheCodeAtom::FuncDef(name) => name.clone(),
+            TheCodeAtom::FuncArg(name) => name.clone(),
             TheCodeAtom::FuncCall(name) => name.clone(),
             TheCodeAtom::Return => "Return".to_string(),
             TheCodeAtom::LocalGet(name) => name.clone(), //"name".to_string(),
@@ -242,6 +296,9 @@ impl TheCodeAtom {
             TheCodeAtom::Multiply => "*".to_string(),
             TheCodeAtom::EndOfExpression => ";".to_string(),
             TheCodeAtom::EndOfCode => "Stop".to_string(),
+            TheCodeAtom::Switch => "Switch".to_string(),
+            TheCodeAtom::CaseCondition => "Case".to_string(),
+            TheCodeAtom::CaseBody => ":".to_string(),
         }
     }
 
@@ -253,6 +310,15 @@ impl TheCodeAtom {
                 let mut text = TheText::new(TheId::empty());
                 text.set_text("Function Name:".to_string());
                 let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Func Def"));
+                name_edit.set_text(name.clone());
+                name_edit.set_needs_redraw(true);
+                layout.add_widget(Box::new(text));
+                layout.add_widget(Box::new(name_edit));
+            }
+            TheCodeAtom::FuncArg(name) => {
+                let mut text = TheText::new(TheId::empty());
+                text.set_text("Argument Name:".to_string());
+                let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Func Arg"));
                 name_edit.set_text(name.clone());
                 name_edit.set_needs_redraw(true);
                 layout.add_widget(Box::new(text));

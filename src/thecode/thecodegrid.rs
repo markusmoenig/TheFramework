@@ -88,7 +88,7 @@ impl TheCodeGrid {
                     return atom.clone();
                 }
 
-                if x == max_pos.0 && y == max_pos.1 {
+                if x == max_pos.0 && y >= max_pos.1 {
                     return TheCodeAtom::EndOfCode; // Reached the end of the grid
                 }
 
@@ -187,7 +187,7 @@ impl TheCodeGrid {
         let is_start_of_line = x == 0;
         let previous_line_empty = is_start_of_line && self.is_line_empty(y - 1);
 
-        if is_start_of_line && previous_line_empty {
+        if is_start_of_line && previous_line_empty && y > 0 {
             // If at the start of the line and the line above is empty, shift the entire line up
             for ((cx, cy), atom) in self.code.drain() {
                 if cy == y {

@@ -25,7 +25,6 @@ impl TheCodeEditor {
 
     pub fn handle_event(&mut self, event: &TheEvent, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
-
         match event {
             /*
             TheEvent::CodeEditorApply(_id) => {
@@ -129,7 +128,13 @@ impl TheCodeEditor {
                             self.set_selected_atom(ui, TheCodeAtom::FuncDef(name));
                         }
                     }
-                } else if id.name == "Atom Func Call" {
+                }  else if id.name == "Atom Func Arg" {
+                    if let Some(name) = value.to_string() {
+                        if !name.is_empty() {
+                            self.set_selected_atom(ui, TheCodeAtom::FuncArg(name));
+                        }
+                    }
+                }  else if id.name == "Atom Func Call" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.set_selected_atom(ui, TheCodeAtom::FuncCall(name));
@@ -286,6 +291,7 @@ impl TheCodeEditor {
     pub fn create_atom(&self, name: &str) -> TheCodeAtom {
         match name {
             "Function" => TheCodeAtom::FuncDef("Name".to_string()),
+            "Function Argument" => TheCodeAtom::FuncArg("Name".to_string()),
             "Function Call" => TheCodeAtom::FuncCall("Name".to_string()),
             "Return" => TheCodeAtom::Return,
             "Local Get" => TheCodeAtom::LocalGet("Name".to_string()),
@@ -310,6 +316,11 @@ impl TheCodeEditor {
 
         let mut item = TheListItem::new(TheId::named("Code List Item"));
         item.set_text("Function".to_string());
+        item.set_associated_layout(code_layout.id().clone());
+        code_layout.add_item(item, ctx);
+
+        let mut item = TheListItem::new(TheId::named("Code List Item"));
+        item.set_text("Function Argument".to_string());
         item.set_associated_layout(code_layout.id().clone());
         code_layout.add_item(item, ctx);
 
