@@ -4,7 +4,7 @@ version = "0.1.1"
 edition = "2021"
 description = "A cross platform application UI framework."
 license = "MIT"
-keywords = ["application", "framework", "graphics", "user-interface", "ui", "gui", "cross-platform"]
+keywords = ["application", "framework", "graphics", "user-interface", "gui"]
 repository = "https://github.com/markusmoenig/theframework.git"
 exclude = ["Xcode"]
 
