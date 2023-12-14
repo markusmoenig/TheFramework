@@ -1,5 +1,3 @@
-use std::f32::consts::E;
-
 use crate::prelude::*;
 
 use super::thecodenode::TheCodeNodeData;
@@ -318,7 +316,12 @@ impl TheCodeAtom {
                     TheValue::Float(_v) => format!("Float constant ({}).", value.describe()),
                     TheValue::Text(v) => format!("Text constant ({}).", v),
                     TheValue::Char(v) => format!("Char constant ({}).", v),
-                    TheValue::Coordinate(v) => format!("Coordinate constant ({}).", v),
+                    TheValue::Int2(v) => format!("Int2 constant ({}).", v),
+                    TheValue::Float2(v) => format!("Float2 constant ({}).", v),
+                    TheValue::Int3(v) => format!("Int3 constant ({}).", v),
+                    TheValue::Float3(v) => format!("Float3 constant ({}).", v),
+                    TheValue::Int4(v) => format!("Int4 constant ({}).", v),
+                    TheValue::Float4(v) => format!("Float4 constant ({}).", v),
                     TheValue::KeyCode(_v) => "Key Code value.".to_string(),
                     TheValue::RangeI32(_v) => "Range value.".to_string(),
                     TheValue::RangeF32(_v) => "Range value.".to_string(),
@@ -397,19 +400,19 @@ impl TheCodeAtom {
         };
     }
 
-    #[cfg(feature = "ui")]
-    /// Generates a text layout to edit the properties of the atom
-    pub fn process_value_change(&mut self, name: String, value: TheValue) {
-        match self {
-            TheCodeAtom::Value(_) => {
-                //println!("{} {:?}", name, value);
-                if name == "Atom Integer Edit" {
-                    *self = TheCodeAtom::Value(value.clone());
-                }
-            }
-            _ => {}
-        };
-    }
+    // #[cfg(feature = "ui")]
+    // / Generates a text layout to edit the properties of the atom
+    // pub fn process_value_change(&mut self, name: String, value: TheValue) {
+    //     match self {
+    //         TheCodeAtom::Value(_) => {
+    //             //println!("{} {:?}", name, value);
+    //             if name == "Atom Integer Edit" {
+    //                 *self = TheCodeAtom::Value(value.clone());
+    //             }
+    //         }
+    //         _ => {}
+    //     };
+    // }
 }
 
 #[allow(dead_code)]

@@ -891,9 +891,9 @@ pub trait TheCodeViewTrait {
     /// This is useful for operations that depend on the user's selection.
     fn selected(&self) -> Option<(u16, u16)>;
 
-    /// Sets the value of an atom in the code grid.
-    /// This is used for updating the content or behavior of a specific grid element.
-    fn set_atom_value(&mut self, coord: (u16, u16), name: String, value: TheValue);
+    // / Sets the value of an atom in the code grid.
+    // / This is used for updating the content or behavior of a specific grid element.
+    //fn set_atom_value(&mut self, coord: (u16, u16), name: String, value: TheValue);
 
     /// Sets a specific `TheCodeAtom` at given grid coordinates.
     /// This allows for modifying the type or properties of a grid element.
@@ -966,13 +966,13 @@ impl TheCodeViewTrait for TheCodeView {
     fn selected(&self) -> Option<(u16, u16)> {
         self.selected
     }
-    fn set_atom_value(&mut self, coord: (u16, u16), name: String, value: TheValue) {
-        if let Some(atom) = self.codegrid.code.get_mut(&coord) {
-            atom.process_value_change(name, value);
-            self.code_is_dirty = true;
-            self.is_dirty = true;
-        }
-    }
+    // fn set_atom_value(&mut self, coord: (u16, u16), name: String, value: TheValue) {
+    //     if let Some(atom) = self.codegrid.code.get_mut(&coord) {
+    //         atom.process_value_change(name, value);
+    //         self.code_is_dirty = true;
+    //         self.is_dirty = true;
+    //     }
+    // }
     fn set_grid_atom(&mut self, coord: (u16, u16), atom: TheCodeAtom) {
         self.codegrid.code.insert(coord, atom);
         self.code_is_dirty = true;

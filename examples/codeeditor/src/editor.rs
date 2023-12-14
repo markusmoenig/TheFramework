@@ -95,18 +95,6 @@ impl TheTrait for CodeEditor {
             while let Ok(event) = receiver.try_recv() {
                 redraw = self.editor.handle_event(&event, ui, ctx);
                 match event {
-                    TheEvent::ValueChanged(id, value) => {
-                        if id.name.starts_with("Atom") {
-                            // Set an edited value to the code grid
-                            if let Some(layout) = ui.get_code_layout("Code Editor") {
-                                if let Some(code_view) = layout.code_view_mut().as_code_view() {
-                                    if let Some(selection) = self.sidebar.editor_selection {
-                                        code_view.set_atom_value(selection, id.name, value);
-                                    }
-                                }
-                            }
-                        }
-                    }
                     TheEvent::FileRequesterResult(id, paths) => {
                         if id.name == "Open" {
                             for p in paths {

@@ -5,12 +5,17 @@ use std::ops::RangeInclusive;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum TheValue {
     Empty,
-    Coordinate(Vec2i),
     Bool(bool),
     Float(f32),
     Int(i32),
     Text(String),
     Char(char),
+    Int2(Vec2i),
+    Float2(Vec2f),
+    Int3(Vec3i),
+    Float3(Vec3f),
+    Int4(Vec4i),
+    Float4(Vec4f),
     KeyCode(TheKeyCode),
     RangeI32(RangeInclusive<i32>),
     RangeF32(RangeInclusive<f32>),
@@ -23,7 +28,14 @@ use TheValue::*;
 impl TheValue {
     pub fn to_vec2i(&self) -> Option<Vec2i> {
         match self {
-            Coordinate(v) => Some(*v),
+            Int2(v) => Some(*v),
+            _ => None,
+        }
+    }
+
+    pub fn to_vec2f(&self) -> Option<Vec2f> {
+        match self {
+            Float2(v) => Some(*v),
             _ => None,
         }
     }
@@ -83,10 +95,15 @@ impl TheValue {
         match self {
             Empty => "Empty".to_string(),
             Bool(v) => if *v { "True".to_string() } else { "False".to_string() },
-            Coordinate(v) => format!("Coordinate: {:?}", v),
             Float(v) =>  if v.fract() == 0.0 { format!("{:.1}", *v) } else { v.to_string() },
             Int(i) => i.to_string(),
             Text(s) => s.clone(),
+            Int2(v) => format!("Int2: {:?}", v),
+            Float2(v) => format!("Float22: {:?}", v),
+            Int3(v) => format!("Int3: {:?}", v),
+            Float3(v) => format!("Float3: {:?}", v),
+            Int4(v) => format!("Int4: {:?}", v),
+            Float4(v) => format!("Float4: {:?}", v),
             Char(c) => c.to_string(),
             CodeObject(_) => "Object".to_string(),
             KeyCode(k) => format!("KeyCode: {:?}", k),

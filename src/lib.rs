@@ -42,7 +42,7 @@ pub mod prelude {
 
     pub use maths_rs::prelude::*;
     pub use rustc_hash::*;
-    pub use uuid::*;
+    pub use uuid::Uuid;
 
     pub use crate::theapp::TheApp;
     pub use crate::thecolor::TheColor;
