@@ -99,12 +99,17 @@ impl TheCodeSandbox {
         None
     }
 
-    /// Call a global, external function provided by the host.
-    pub fn call_global(&mut self, stack: &mut Vec<TheValue>, name: &String) {
-        if let Some(node) = self.globals.get_mut(name).cloned() {
-            (node.call)(stack, &node.data, self);
-        }
+    // /// Call a global, external function provided by the host.
+pub fn call_global(&mut self, stack: &mut Vec<TheValue>, name: &String) {
+    // Temporarily remove the node from the map
+    if let Some(mut node) = self.globals.remove(name) {
+        // Call the function with a mutable reference to node.data
+        (node.call)(stack, &mut node.data, self);
+
+        // Reinsert the node back into the map
+        self.globals.insert(name.clone(), node);
     }
+}
 
     /// Returns the given local variable by reversing the local stack.
     pub fn get_local(&self, name: &String) -> Option<&TheValue> {

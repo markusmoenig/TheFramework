@@ -278,6 +278,16 @@ impl TheUI {
                             }
                         }
                     }
+                    TheEvent::SetStatusText(_id, text) => {
+                        if let Some(statusbar_name) = &self.statusbar_name {
+                            if let Some(widget) = self.canvas.get_widget(Some(statusbar_name), None)
+                            {
+                                if let Some(widget) = widget.as_statusbar() {
+                                    widget.set_text(text);
+                                }
+                            }
+                        }
+                    }
                     TheEvent::ValueChanged(id, value) => {
                         //println!("Widget Value changed {:?}: {:?}", id, value);
                     }

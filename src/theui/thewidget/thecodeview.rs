@@ -158,6 +158,20 @@ impl TheWidget for TheCodeView {
                     self.code_is_dirty = true;
                     self.hover = hover;
                     redraw = true;
+                    if let Some(hover) = hover {
+                        if let Some(atom) = self.codegrid.code.get(&hover) {
+                            let text = atom.help();//format!("({}, {}) {}", hover.0, hover.1, atom.help());
+                            ctx.ui.send(TheEvent::SetStatusText(
+                                self.id().clone(),
+                                text,
+                            ));
+                        } else {
+                        ctx.ui.send(TheEvent::SetStatusText(
+                            self.id().clone(),
+                            "".to_string(),
+                        ));
+                    }
+                    }
                 }
             }
             TheEvent::KeyCodeDown(code) => {
@@ -245,6 +259,10 @@ impl TheWidget for TheCodeView {
 
     fn supports_hover(&mut self) -> bool {
         true
+    }
+
+    fn status_text(&self) -> Option<String> {
+        Some("".to_string())
     }
 
     fn draw(

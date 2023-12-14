@@ -297,6 +297,7 @@ impl TheCodeEditor {
             "Local Get" => TheCodeAtom::LocalGet("Name".to_string()),
             "Local Set" => TheCodeAtom::LocalSet("Name".to_string()),
             "Integer" => TheCodeAtom::Value(TheValue::Int(1)),
+            "Float" => TheCodeAtom::Value(TheValue::Float(1.0)),
             "Add" => TheCodeAtom::Add,
             "Multiply" => TheCodeAtom::Multiply,
             _ => TheCodeAtom::EndOfCode,
@@ -350,6 +351,11 @@ impl TheCodeEditor {
         code_layout.add_item(item, ctx);
 
         let mut item = TheListItem::new(TheId::named("Code List Item"));
+        item.set_text("Float".to_string());
+        item.set_associated_layout(code_layout.id().clone());
+        code_layout.add_item(item, ctx);
+
+        let mut item = TheListItem::new(TheId::named("Code List Item"));
         item.set_text("Add".to_string());
         item.set_associated_layout(code_layout.id().clone());
         code_layout.add_item(item, ctx);
@@ -365,9 +371,61 @@ impl TheCodeEditor {
         // ---
 
         let mut list_toolbar_canvas = TheCanvas::new();
+
         let mut toolbar_hlayout = TheHLayout::new(TheId::empty());
+
+        let icon_color = [85, 81, 85, 255];
+        let icon_border_color = [174, 174, 174, 255];
+
+        let mut syntax_icon = TheTraybarButton::new(TheId::named("Code List Control"));
+        syntax_icon.set_status_text("Show all keywords.");
+        syntax_icon.limiter_mut().set_max_size(vec2i(24, 24));
+        let mut buffer = TheRGBABuffer::new(TheDim::new(0, 0, 22, 22));
+        buffer.pixels_mut().fill(0);
+        let icon_stride = buffer.stride();
+        let icon_rect = buffer.dim().to_buffer_utuple();
+        ctx.draw.circle_with_border(buffer.pixels_mut(), &icon_rect, icon_stride, &icon_border_color, 10.5, &icon_border_color, 0.0);
+        syntax_icon.set_icon(buffer);
+        toolbar_hlayout.add_widget(Box::new(syntax_icon));
+
+        let mut values_icon = TheTraybarButton::new(TheId::named("Code List Types"));
+        values_icon.set_status_text("Show all value types.");
+        values_icon.limiter_mut().set_max_size(vec2i(24, 24));
+        buffer = TheRGBABuffer::new(TheDim::new(0, 0, 22, 22));
+        buffer.pixels_mut().fill(0);
+        let icon_stride = buffer.stride();
+        let icon_rect = buffer.dim().to_buffer_utuple();
+        ctx.draw.hexagon_with_border(buffer.pixels_mut(), &icon_rect, icon_stride, &icon_color, &icon_border_color, 0.0);
+        values_icon.set_icon(buffer);
+        toolbar_hlayout.add_widget(Box::new(values_icon));
+
+        let mut operators_icon = TheTraybarButton::new(TheId::named("Code List Operators"));
+        operators_icon.set_status_text("Show all operators.");
+        operators_icon.limiter_mut().set_max_size(vec2i(24, 24));
+        buffer = TheRGBABuffer::new(TheDim::new(0, 0, 22, 22));
+        buffer.pixels_mut().fill(0);
+        let icon_stride = buffer.stride();
+        let icon_rect = buffer.dim().to_buffer_utuple();
+        ctx.draw.rhombus_with_border (buffer.pixels_mut(), &icon_rect, icon_stride, &icon_color, &icon_border_color, 0.0);
+        operators_icon.set_icon(buffer);
+        toolbar_hlayout.add_widget(Box::new(operators_icon));
+
+        let mut functions_icon = TheTraybarButton::new(TheId::named("Code List Functions"));
+        functions_icon.set_status_text("Show all available functions.");
+        functions_icon.limiter_mut().set_max_size(vec2i(24, 24));
+        buffer = TheRGBABuffer::new(TheDim::new(0, 0, 22, 22));
+        buffer.pixels_mut().fill(0);
+        let icon_stride = buffer.stride();
+        let mut icon_rect = buffer.dim().to_buffer_utuple();
+        icon_rect.1 += 4;
+        icon_rect.3 -= 6;
+        ctx.draw.rounded_rect_with_border (buffer.pixels_mut(), &icon_rect, icon_stride, &icon_color, &(5.0, 5.0, 5.0, 5.0), &icon_border_color, 0.0);
+        functions_icon.set_icon(buffer);
+        toolbar_hlayout.add_widget(Box::new(functions_icon));
+
         toolbar_hlayout.set_background_color(None);
         toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
+        toolbar_hlayout.set_padding(10);
         list_toolbar_canvas.set_layout(toolbar_hlayout);
         list_toolbar_canvas.set_widget(TheTraybar::new(TheId::empty()));
         list_canvas.set_top(list_toolbar_canvas);

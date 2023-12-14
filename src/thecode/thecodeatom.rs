@@ -40,14 +40,14 @@ impl TheCodeAtom {
             TheCodeAtom::FuncDef(_name) => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
-                     _data: &TheCodeNodeData,
+                     _data: &mut TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {};
                 TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
             TheCodeAtom::FuncArg(_name) => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
-                     _data: &TheCodeNodeData,
+                     _data: &mut TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {};
                 TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
@@ -55,7 +55,7 @@ impl TheCodeAtom {
                 // This is only called if the function has a return value.
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
-                     _data: &TheCodeNodeData,
+                     _data: &mut TheCodeNodeData,
                      sandbox: &mut TheCodeSandbox| {
                         sandbox.func_rc = stack.pop();
                     };
@@ -64,7 +64,7 @@ impl TheCodeAtom {
             TheCodeAtom::FuncCall(name) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
-                     data: &TheCodeNodeData,
+                     data: &mut TheCodeNodeData,
                      sandbox: &mut TheCodeSandbox| {
                         if let Some(id) = sandbox.module_stack.last() {
                             if let Some(mut function) = sandbox
@@ -103,7 +103,7 @@ impl TheCodeAtom {
             TheCodeAtom::LocalGet(name) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
-                     data: &TheCodeNodeData,
+                     data: &mut TheCodeNodeData,
                      sandbox: &mut TheCodeSandbox| {
                         if let Some(function) = sandbox.call_stack.last_mut() {
                             if let Some(local) =
@@ -142,7 +142,7 @@ impl TheCodeAtom {
             TheCodeAtom::LocalSet(name) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
-                     data: &TheCodeNodeData,
+                     data: &mut TheCodeNodeData,
                      sandbox: &mut TheCodeSandbox| {
 
                         let mut debug_value: Option<TheValue> = None;
@@ -184,7 +184,7 @@ impl TheCodeAtom {
             TheCodeAtom::Value(value) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
-                     data: &TheCodeNodeData,
+                     data: &mut TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {
                         stack.push(data.values[0].clone());
                     };
@@ -199,7 +199,7 @@ impl TheCodeAtom {
             TheCodeAtom::Add => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
-                     _data: &TheCodeNodeData,
+                     _data: &mut TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {
                         let a = stack.pop().unwrap().to_i32().unwrap();
                         let b = stack.pop().unwrap().to_i32().unwrap();
@@ -218,7 +218,7 @@ impl TheCodeAtom {
             TheCodeAtom::Multiply => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
-                     _data: &TheCodeNodeData,
+                     _data: &mut TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {
                         let a = stack.pop().unwrap().to_i32().unwrap();
                         let b = stack.pop().unwrap().to_i32().unwrap();
@@ -236,28 +236,28 @@ impl TheCodeAtom {
             TheCodeAtom::EndOfCode | TheCodeAtom::EndOfExpression => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
-                     _data: &TheCodeNodeData,
+                     _data: &mut TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {};
                 TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
             TheCodeAtom::Switch => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
-                     _data: &TheCodeNodeData,
+                     _data: &mut TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {};
                 TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
             TheCodeAtom::CaseCondition => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
-                     _data: &TheCodeNodeData,
+                     _data: &mut TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {};
                 TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
             TheCodeAtom::CaseBody => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
-                     _data: &TheCodeNodeData,
+                     _data: &mut TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {};
                 TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
@@ -299,6 +299,39 @@ impl TheCodeAtom {
             TheCodeAtom::Switch => "Switch".to_string(),
             TheCodeAtom::CaseCondition => "Case".to_string(),
             TheCodeAtom::CaseBody => ":".to_string(),
+        }
+    }
+
+    pub fn help(&self) -> String {
+        match self {
+            TheCodeAtom::FuncDef(name) => format!("Function definition ({}).", name),
+            TheCodeAtom::FuncArg(name) => format!("Function argument ({}).", name),
+            TheCodeAtom::FuncCall(name) => format!("Function call ({}). Values below will be passed as arguments.", name),
+            TheCodeAtom::Return => "Return from a function. Optionally with a value.".to_string(),
+            TheCodeAtom::LocalGet(name) => format!("Get the value of a local variable ({}).", name),
+            TheCodeAtom::LocalSet(name) => format!("Set a value to a local variable ({}).", name),
+            TheCodeAtom::Value(value) => {
+                match value {
+                    TheValue::Bool(_v) => format!("Boolean constant ({}).", self.describe()),
+                    TheValue::CodeObject(_v) => "An Object.".to_string(),
+                    TheValue::Int(v) => format!("Integer constant ({}).", v),
+                    TheValue::Float(_v) => format!("Float constant ({}).", value.describe()),
+                    TheValue::Text(v) => format!("Text constant ({}).", v),
+                    TheValue::Char(v) => format!("Char constant ({}).", v),
+                    TheValue::Coordinate(v) => format!("Coordinate constant ({}).", v),
+                    TheValue::KeyCode(_v) => "Key Code value.".to_string(),
+                    TheValue::RangeI32(_v) => "Range value.".to_string(),
+                    TheValue::RangeF32(_v) => "Range value.".to_string(),
+                    TheValue::Empty => "Empty value.".to_string(),
+                }
+            }
+            TheCodeAtom::Add => "Operator ('+')".to_string(),
+            TheCodeAtom::Multiply => "Operator ('*')".to_string(),
+            TheCodeAtom::EndOfExpression => ";".to_string(),
+            TheCodeAtom::EndOfCode => "Stop".to_string(),
+            TheCodeAtom::Switch => "Switch statement.".to_string(),
+            TheCodeAtom::CaseCondition => "Switch 'Case' statement.".to_string(),
+            TheCodeAtom::CaseBody => "Switch 'Case' body.".to_string(),
         }
     }
 

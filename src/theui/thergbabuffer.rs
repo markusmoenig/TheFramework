@@ -290,4 +290,13 @@ impl TheRGBATile {
             blocking: false,
         }
     }
+
+    pub fn buffer(buffer: TheRGBABuffer) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            buffer: vec![buffer],
+            role: 0,
+            blocking: false,
+        }
+    }
 }

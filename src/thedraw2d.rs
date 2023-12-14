@@ -206,7 +206,7 @@ impl TheDraw2D {
         rect: &(usize, usize, usize, usize),
         stride: usize,
         color: &[u8; 4],
-        radius: usize,
+        radius: f32,
     ) {
         let center = (
             rect.0 as f32 + rect.2 as f32 / 2.0,
@@ -217,11 +217,11 @@ impl TheDraw2D {
                 let i = x * 4 + y * stride * 4;
 
                 let mut d = (x as f32 - center.0).powf(2.0) + (y as f32 - center.1).powf(2.0);
-                d = d.sqrt() - radius as f32;
+                d = d.sqrt() - radius;
 
-                if d < 0.0 {
-                    let t = self.fill_mask(d);
-                    //let t = self.smoothstep(0.0, -2.0, r);
+                if d <= 0.0 {
+                    // let t = self.fill_mask(d);
+                    let t = self._smoothstep(0.0, -2.0, d);
 
                     let background = &[frame[i], frame[i + 1], frame[i + 2], 255];
                     let mixed_color = self.mix_color(background, color, t);
@@ -242,7 +242,7 @@ impl TheDraw2D {
         color: &[u8; 4],
         radius: f32,
         border_color: &[u8; 4],
-        border_size: usize,
+        border_size: f32,
     ) {
         let center = (
             rect.0 as f32 + rect.2 as f32 / 2.0,
@@ -258,10 +258,10 @@ impl TheDraw2D {
                 if d < 1.0 {
                     let t = self.fill_mask(d);
 
-                    let background = &[frame[i], frame[i + 1], frame[i + 2], 255];
+                    let background = &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
                     let mut mixed_color = self.mix_color(background, color, t);
 
-                    let b = self.border_mask(d, border_size as f32);
+                    let b = self.border_mask(d, border_size);
                     mixed_color = self.mix_color(&mixed_color, border_color, b);
 
                     frame[i..i + 4].copy_from_slice(&mixed_color);
@@ -311,7 +311,7 @@ impl TheDraw2D {
                 if d < 0.0 {
                     let t = self.fill_mask(d);
 
-                    let background = &[frame[i], frame[i + 1], frame[i + 2], 255];
+                    let background = &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
                     let mut mixed_color =
                         self.mix_color(background, color, t * (color[3] as f32 / 255.0));
                     mixed_color[3] = (mixed_color[3] as f32 * (color[3] as f32 / 255.0)) as u8;
@@ -366,7 +366,7 @@ impl TheDraw2D {
                 if d < 1.0 {
                     let t = self.fill_mask(d);
 
-                    let background = &[frame[i], frame[i + 1], frame[i + 2], 255];
+                    let background = &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
                     let mut mixed_color =
                         self.mix_color(background, color, t * (color[3] as f32 / 255.0));
 
@@ -409,8 +409,9 @@ impl TheDraw2D {
 
                 if d < 1.0 {
                     let t = self.fill_mask(d);
+                    // let t = self._smoothstep(0.0, -2.0, d);
 
-                    let background = &[frame[i], frame[i + 1], frame[i + 2], 255];
+                    let background: &[u8; 4] = &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
                     let mut mixed_color =
                         self.mix_color(background, color, t * (color[3] as f32 / 255.0));
 
@@ -468,7 +469,7 @@ impl TheDraw2D {
                 if d < 1.0 {
                     let t = self.fill_mask(d);
 
-                    let background = &[frame[i], frame[i + 1], frame[i + 2], 255];
+                    let background: &[u8; 4] = &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
                     let mut mixed_color =
                         self.mix_color(background, color, t * (color[3] as f32 / 255.0));
 
@@ -963,6 +964,38 @@ impl TheDraw2D {
         }
     }
 
+    /// Scale a chunk to the destination size
+    pub fn blend_scale_chunk(
+        &self,
+        frame: &mut [u8],
+        rect: &(usize, usize, usize, usize),
+        stride: usize,
+        source_frame: &[u8],
+        source_size: &(usize, usize),
+    ) {
+        let x_ratio = source_size.0 as f32 / rect.2 as f32;
+        let y_ratio = source_size.1 as f32 / rect.3 as f32;
+
+        for sy in 0..rect.3 {
+            let y = (sy as f32 * y_ratio) as usize;
+
+            for sx in 0..rect.2 {
+                let x = (sx as f32 * x_ratio) as usize;
+
+                let d = (rect.0 + sx) * 4 + (sy + rect.1) * stride * 4;
+                let s = x * 4 + y * source_size.0 * 4;
+
+                let color = &[source_frame[s], source_frame[s + 1], source_frame[s + 2], source_frame[s + 3]];
+                let background = &[frame[d], frame[d + 1], frame[d + 2], frame[d + 3]];
+                frame[d..d + 4].copy_from_slice(&self.mix_color(
+                    background,
+                    color,
+                    (color[3] as f32) / 255.0,
+                ));
+            }
+        }
+    }
+
     /// The fill mask for an SDF distance
     fn fill_mask(&self, dist: f32) -> f32 {
         (-dist).clamp(0.0, 1.0)
@@ -985,7 +1018,7 @@ impl TheDraw2D {
             (((1.0 - v) * (a[0] as f32 / 255.0) + b[0] as f32 / 255.0 * v) * 255.0) as u8,
             (((1.0 - v) * (a[1] as f32 / 255.0) + b[1] as f32 / 255.0 * v) * 255.0) as u8,
             (((1.0 - v) * (a[2] as f32 / 255.0) + b[2] as f32 / 255.0 * v) * 255.0) as u8,
-            255,
+            (((1.0 - v) * (a[3] as f32 / 255.0) + b[3] as f32 / 255.0 * v) * 255.0) as u8,
         ]
     }
 

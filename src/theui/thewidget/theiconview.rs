@@ -104,7 +104,7 @@ impl TheWidget for TheIconView {
         let utuple = self.dim.to_buffer_utuple();
 
         if !self.tile.buffer.is_empty() {
-            ctx.draw.scale_chunk(
+            ctx.draw.blend_scale_chunk(
                 buffer.pixels_mut(),
                 &(
                     utuple.0,
@@ -118,7 +118,6 @@ impl TheWidget for TheIconView {
                     self.tile.buffer[0].dim().width as usize,
                     self.tile.buffer[0].dim().height as usize,
                 ),
-                1.0,
             );
         }
 

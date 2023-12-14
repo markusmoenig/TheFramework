@@ -37,13 +37,23 @@ impl TheApp {
         let width: usize = 1200;
         let height: usize = 700;
 
+        let mut ctx = TheContext::new(width, height);
+        #[cfg(feature = "ui")]
+        let mut ui = TheUI::new();
+        #[cfg(feature = "ui")]
+        ui.init(&mut ctx);
+
+        app.init(&mut ctx);
+
+        let window_title = app.window_title();
+
         let event_loop = EventLoop::new();
         let mut input = WinitInputHelper::new();
         let window = {
             if cfg!(target_os = "macos") {
                 let size = LogicalSize::new(width as f64, height as f64);
                 WindowBuilder::new()
-                    .with_title("The Framework")
+                    .with_title(window_title)
                     .with_inner_size(size)
                     .with_min_inner_size(size)
                     .build(&event_loop)
@@ -51,7 +61,7 @@ impl TheApp {
             } else {
                 let size = PhysicalSize::new(width as f64, height as f64);
                 WindowBuilder::new()
-                    .with_title("The Framework")
+                    .with_title(window_title)
                     .with_inner_size(size)
                     .with_min_inner_size(size)
                     .build(&event_loop)
@@ -65,14 +75,6 @@ impl TheApp {
                 SurfaceTexture::new(window_size.width, window_size.height, &window);
             Pixels::new(width as u32, height as u32, surface_texture)?
         };
-
-        let mut ctx = TheContext::new(width, height);
-        #[cfg(feature = "ui")]
-        let mut ui = TheUI::new();
-        #[cfg(feature = "ui")]
-        ui.init(&mut ctx);
-
-        app.init(&mut ctx);
 
         #[cfg(feature = "ui")]
         {

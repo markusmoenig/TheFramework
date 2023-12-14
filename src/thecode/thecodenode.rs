@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub type TheCodeNodeCall =
-    fn(stack: &mut Vec<TheValue>, values: &TheCodeNodeData, sandbox: &mut TheCodeSandbox);
+    fn(stack: &mut Vec<TheValue>, values: &mut TheCodeNodeData, sandbox: &mut TheCodeSandbox);
 
 #[derive(Clone, Debug)]
 pub struct TheCodeNodeData {
@@ -33,6 +33,14 @@ impl TheCodeNodeData {
             values,
             sub_calls: vec![],
             location,
+        }
+    }
+
+    pub fn values(values: Vec<TheValue>) -> Self {
+        Self {
+            values,
+            sub_calls: vec![],
+            location: (u16::MAX, u16::MAX)
         }
     }
 }

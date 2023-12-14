@@ -8,7 +8,10 @@ pub struct TheTraybarButton {
     is_disabled: bool,
 
     icon_name: String,
+    icon: Option<TheRGBABuffer>,
     icon_offset: Vec2i,
+
+    status: Option<String>,
 
     text: String,
     text_size: f32,
@@ -32,6 +35,9 @@ impl TheWidget for TheTraybarButton {
 
             icon_name: "".to_string(),
             icon_offset: vec2i(0, 0),
+            icon: None,
+
+            status: None,
 
             text: "".to_string(),
             text_size: 13.0,
@@ -44,6 +50,15 @@ impl TheWidget for TheTraybarButton {
 
     fn id(&self) -> &TheId {
         &self.id
+    }
+
+    fn status_text(&self) -> Option<String> {
+        self.status.clone()
+    }
+
+    /// Sets the status text for the widget.
+    fn set_status_text(&mut self, text: &str) {
+        self.status = Some(text.to_string());
     }
 
     #[allow(clippy::single_match)]
@@ -243,7 +258,19 @@ impl TheWidget for TheTraybarButton {
             }
         }
 
-        if let Some(icon) = ctx.ui.icon(&self.icon_name) {
+        if let Some(icon) = &self.icon {
+            let utuple = self.dim.to_buffer_shrunk_utuple(&shrinker);
+            let r = (
+                ((utuple.0 + (utuple.2 - icon.dim().width as usize) / 2) as i32
+                    + self.icon_offset.x) as usize,
+                ((utuple.1 + (utuple.3 - icon.dim().height as usize) / 2) as i32
+                    + self.icon_offset.y) as usize,
+                icon.dim().width as usize,
+                icon.dim().height as usize,
+            );
+            ctx.draw
+                .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
+        } else if let Some(icon) = ctx.ui.icon(&self.icon_name) {
             let utuple = self.dim.to_buffer_shrunk_utuple(&shrinker);
             let r = (
                 ((utuple.0 + (utuple.2 - icon.dim().width as usize) / 2) as i32
@@ -285,11 +312,15 @@ pub trait TheTraybarButtonTrait {
     fn set_icon_name(&mut self, text: String);
     fn set_icon_offset(&mut self, offset: Vec2i);
     fn set_text(&mut self, text: String);
+    fn set_icon(&mut self, icon: TheRGBABuffer);
 }
 
 impl TheTraybarButtonTrait for TheTraybarButton {
     fn set_icon_name(&mut self, text: String) {
         self.icon_name = text;
+    }
+    fn set_icon(&mut self, icon: TheRGBABuffer) {
+        self.icon = Some(icon);
     }
     fn set_icon_offset(&mut self, offset: Vec2i) {
         self.icon_offset = offset;

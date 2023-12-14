@@ -32,6 +32,8 @@ pub enum TheEvent {
     GainedHover(TheId),
     LostHover(TheId),
 
+    SetStatusText(TheId, String),
+
     // Tabbar, Groupbutton
     IndexChanged(TheId, usize),
 

@@ -20,6 +20,15 @@ The UI support is currently under development, see the *uidemo* example app.
 
 A dedicated demo and documentation website will come soon.
 
+![UI Screenshot](images/screenshot_codegrid.png)
+
+### Option: code
+
+The **code** option adds a unique and powerful visual scripting system to TheFramework.
+
+* Easy-to-use via drag and drop.
+* Very fast as it compiles to native closures.
+
 ### Option: renderer
 
 A fast state-based 2D renderer supporting varuous shapes and text. The development of the *renderer* option is currently on hold to focus on the *ui* first.

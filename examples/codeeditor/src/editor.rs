@@ -26,6 +26,10 @@ impl TheTrait for CodeEditor {
         }
     }
 
+    fn window_title(&mut self) -> String {
+        "CodeGrid Editor".to_string()
+    }
+
     fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
         // Top
         let mut top_canvas = TheCanvas::new();
@@ -168,9 +172,13 @@ impl TheTrait for CodeEditor {
                                         let mut sandbox = TheCodeSandbox::new();
                                         sandbox.debug_mode = true;
 
-                                        sandbox.add_global("test", TheCodeNode::new(|_, _data, _| {
+                                        sandbox.add_global("test", TheCodeNode::new(|_, data, _| {
                                             println!("inside test");
-                                        }, TheCodeNodeData::empty()));
+                                            if let Some(i) = data.values[0].to_i32() {
+                                                println!("i: {:?}", i);
+                                                data.values[0] = TheValue::Int(i + 1);
+                                            }
+                                        }, TheCodeNodeData::values(vec![TheValue::Int(0)])));
 
                                         sandbox.insert_module(module.clone());
                                         module.execute(&mut sandbox);
