@@ -100,16 +100,16 @@ impl TheCodeSandbox {
     }
 
     // /// Call a global, external function provided by the host.
-pub fn call_global(&mut self, stack: &mut Vec<TheValue>, name: &String) {
-    // Temporarily remove the node from the map
-    if let Some(mut node) = self.globals.remove(name) {
-        // Call the function with a mutable reference to node.data
-        (node.call)(stack, &mut node.data, self);
+    pub fn call_global(&mut self, stack: &mut Vec<TheValue>, name: &String) {
+        // Temporarily remove the node from the map
+        if let Some(mut node) = self.globals.remove(name) {
+            // Call the function with a mutable reference to node.data
+            (node.call)(stack, &mut node.data, self);
 
-        // Reinsert the node back into the map
-        self.globals.insert(name.clone(), node);
+            // Reinsert the node back into the map
+            self.globals.insert(name.clone(), node);
+        }
     }
-}
 
     /// Returns the given local variable by reversing the local stack.
     pub fn get_local(&self, name: &String) -> Option<&TheValue> {
@@ -124,9 +124,7 @@ pub fn call_global(&mut self, stack: &mut Vec<TheValue>, name: &String) {
     /// Pushes the current module to the module stack.
     pub fn push_current_module(&mut self, module_id: Uuid) {
         self.module_stack.push(module_id);
-        self.debug_modules
-            .entry(module_id)
-            .or_default();
+        self.debug_modules.entry(module_id).or_default();
     }
 
     /// Sets a debug value in the current module.

@@ -94,8 +94,20 @@ impl TheValue {
     pub fn describe(&self) -> String {
         match self {
             Empty => "Empty".to_string(),
-            Bool(v) => if *v { "True".to_string() } else { "False".to_string() },
-            Float(v) =>  if v.fract() == 0.0 { format!("{:.1}", *v) } else { v.to_string() },
+            Bool(v) => {
+                if *v {
+                    "True".to_string()
+                } else {
+                    "False".to_string()
+                }
+            }
+            Float(v) => {
+                if v.fract() == 0.0 {
+                    format!("{:.1}", *v)
+                } else {
+                    v.to_string()
+                }
+            }
             Int(i) => i.to_string(),
             Text(s) => s.clone(),
             Int2(v) => format!("Int2: {:?}", v),
@@ -105,6 +117,7 @@ impl TheValue {
             Int4(v) => format!("Int4: {:?}", v),
             Float4(v) => format!("Float4: {:?}", v),
             Char(c) => c.to_string(),
+            #[cfg(feature = "code")]
             CodeObject(_) => "Object".to_string(),
             KeyCode(k) => format!("KeyCode: {:?}", k),
             RangeI32(r) => format!("RangeI32: {:?}", r),

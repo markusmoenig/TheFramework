@@ -2,8 +2,8 @@
 
 use theframework::prelude::*;
 
-pub mod demo;
-use crate::demo::UIDemo;
+pub mod circle;
+use crate::circle::Circle;
 
 pub mod prelude {
     pub const KEY_ESCAPE: u32 = 0;
@@ -26,12 +26,18 @@ use lazy_static::lazy_static;
 use std::sync::Mutex;
 
 lazy_static! {
-    static ref APP: Mutex<UIDemo> = Mutex::new(UIDemo::new());
+    static ref APP: Mutex<Circle> = Mutex::new(Circle::new());
     static ref CTX: Mutex<TheContext> = Mutex::new(TheContext::new(800, 600));
 }
 
 #[no_mangle]
-pub extern "C" fn rust_draw(pixels: *mut u8, width: u32, height: u32) {
+pub extern "C" fn rust_init() {
+    APP.lock().unwrap().init(&mut CTX.lock().unwrap());
+}
+
+/// # Safety
+#[no_mangle]
+pub unsafe extern "C" fn rust_draw(pixels: *mut u8, width: u32, height: u32) {
     let length = width as usize * height as usize * 4;
     let slice = unsafe { std::slice::from_raw_parts_mut(pixels, length) };
 
@@ -82,10 +88,11 @@ pub extern "C" fn rust_touch_wheel(x: f32, y: f32) -> bool {
         .mouse_wheel((x as isize, y as isize), &mut CTX.lock().unwrap())
 }
 
+/// # Safety
 #[no_mangle]
-pub extern "C" fn rust_key_down(p: *const c_char) -> bool {
+pub unsafe extern "C" fn rust_key_down(p: *const c_char) -> bool {
     let c_str = unsafe { CStr::from_ptr(p) };
-    if let Some(key) = c_str.to_str().ok() {
+    if let Ok(key) = c_str.to_str() {
         if let Some(ch) = key.chars().next() {
             return APP
                 .lock()
@@ -101,40 +108,40 @@ pub extern "C" fn rust_special_key_down(key: u32) -> bool {
     if key == KEY_ESCAPE {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Escape), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Escape), &mut CTX.lock().unwrap())
     } else if key == KEY_RETURN {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Return), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Return), &mut CTX.lock().unwrap())
     } else if key == KEY_DELETE {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Delete), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Delete), &mut CTX.lock().unwrap())
     } else if key == KEY_UP {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Up), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Up), &mut CTX.lock().unwrap())
     } else if key == KEY_RIGHT {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Right), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Right), &mut CTX.lock().unwrap())
     } else if key == KEY_DOWN {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Down), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Down), &mut CTX.lock().unwrap())
     } else if key == KEY_LEFT {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Left), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Left), &mut CTX.lock().unwrap())
     } else if key == KEY_SPACE {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Space), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Space), &mut CTX.lock().unwrap())
     } else {
         //if key == KEY_TAB {
         APP.lock()
             .unwrap()
-            .key_down(None, Some(WidgetKey::Tab), &mut CTX.lock().unwrap())
+            .key_down(None, Some(TheKeyCode::Tab), &mut CTX.lock().unwrap())
     }
 }
 
@@ -148,10 +155,11 @@ pub extern "C" fn rust_key_modifier_changed(
     APP.lock().unwrap().modifier_changed(shift, ctrl, alt, logo)
 }
 
+/// # Safety
 #[no_mangle]
-pub extern "C" fn rust_dropped_file(p: *const c_char) {
+pub unsafe extern "C" fn rust_dropped_file(p: *const c_char) {
     let path_str = unsafe { CStr::from_ptr(p) };
-    if let Some(path) = path_str.to_str().ok() {
+    if let Ok(path) = path_str.to_str() {
         APP.lock().unwrap().dropped_file(path.to_string());
     }
 }
@@ -183,10 +191,11 @@ pub extern "C" fn rust_copy() -> *mut c_char {
     CString::new(text).unwrap().into_raw()
 }
 
+/// # Safety
 #[no_mangle]
-pub extern "C" fn rust_paste(p: *const c_char) {
+pub unsafe extern "C" fn rust_paste(p: *const c_char) {
     let text_str = unsafe { CStr::from_ptr(p) };
-    if let Some(text) = text_str.to_str().ok() {
+    if let Ok(text) = text_str.to_str() {
         APP.lock().unwrap().paste(text.to_string());
     }
 }

@@ -18,6 +18,8 @@ With the **ui** option TheFramework becomes a full-featured UI framework for pro
 
 The UI support is currently under development, see the *uidemo* example app.
 
+I use TheFramework with the UI option for my own apps and games, notably [Eldiron](https://github.com/markusmoenig/Eldiron).
+
 A dedicated demo and documentation website will come soon.
 
 ![UI Screenshot](images/screenshot_codegrid.png)

@@ -128,13 +128,13 @@ impl TheCodeEditor {
                             self.set_selected_atom(ui, TheCodeAtom::FuncDef(name));
                         }
                     }
-                }  else if id.name == "Atom Func Arg" {
+                } else if id.name == "Atom Func Arg" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.set_selected_atom(ui, TheCodeAtom::FuncArg(name));
                         }
                     }
-                }  else if id.name == "Atom Func Call" {
+                } else if id.name == "Atom Func Call" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.set_selected_atom(ui, TheCodeAtom::FuncCall(name));
@@ -384,7 +384,15 @@ impl TheCodeEditor {
         buffer.pixels_mut().fill(0);
         let icon_stride = buffer.stride();
         let icon_rect = buffer.dim().to_buffer_utuple();
-        ctx.draw.circle_with_border(buffer.pixels_mut(), &icon_rect, icon_stride, &icon_border_color, 10.5, &icon_border_color, 0.0);
+        ctx.draw.circle_with_border(
+            buffer.pixels_mut(),
+            &icon_rect,
+            icon_stride,
+            &icon_border_color,
+            10.5,
+            &icon_border_color,
+            0.0,
+        );
         syntax_icon.set_icon(buffer);
         toolbar_hlayout.add_widget(Box::new(syntax_icon));
 
@@ -395,7 +403,14 @@ impl TheCodeEditor {
         buffer.pixels_mut().fill(0);
         let icon_stride = buffer.stride();
         let icon_rect = buffer.dim().to_buffer_utuple();
-        ctx.draw.hexagon_with_border(buffer.pixels_mut(), &icon_rect, icon_stride, &icon_color, &icon_border_color, 0.0);
+        ctx.draw.hexagon_with_border(
+            buffer.pixels_mut(),
+            &icon_rect,
+            icon_stride,
+            &icon_color,
+            &icon_border_color,
+            0.0,
+        );
         values_icon.set_icon(buffer);
         toolbar_hlayout.add_widget(Box::new(values_icon));
 
@@ -406,7 +421,14 @@ impl TheCodeEditor {
         buffer.pixels_mut().fill(0);
         let icon_stride = buffer.stride();
         let icon_rect = buffer.dim().to_buffer_utuple();
-        ctx.draw.rhombus_with_border (buffer.pixels_mut(), &icon_rect, icon_stride, &icon_color, &icon_border_color, 0.0);
+        ctx.draw.rhombus_with_border(
+            buffer.pixels_mut(),
+            &icon_rect,
+            icon_stride,
+            &icon_color,
+            &icon_border_color,
+            0.0,
+        );
         operators_icon.set_icon(buffer);
         toolbar_hlayout.add_widget(Box::new(operators_icon));
 
@@ -419,7 +441,15 @@ impl TheCodeEditor {
         let mut icon_rect = buffer.dim().to_buffer_utuple();
         icon_rect.1 += 4;
         icon_rect.3 -= 6;
-        ctx.draw.rounded_rect_with_border (buffer.pixels_mut(), &icon_rect, icon_stride, &icon_color, &(5.0, 5.0, 5.0, 5.0), &icon_border_color, 0.0);
+        ctx.draw.rounded_rect_with_border(
+            buffer.pixels_mut(),
+            &icon_rect,
+            icon_stride,
+            &icon_color,
+            &(5.0, 5.0, 5.0, 5.0),
+            &icon_border_color,
+            0.0,
+        );
         functions_icon.set_icon(buffer);
         toolbar_hlayout.add_widget(Box::new(functions_icon));
 

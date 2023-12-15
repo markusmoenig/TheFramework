@@ -73,7 +73,8 @@ impl TheCodeAtom {
                                 // Insert the arguments (if any) into the clone locals
 
                                 let arguments = clone.arguments.clone();
-                                for arg in &arguments {//}.iter().enumerate() {
+                                for arg in &arguments {
+                                    //}.iter().enumerate() {
                                     if let Some(arg_value) = stack.pop() {
                                         clone.set_local(arg.clone(), arg_value);
                                     }
@@ -109,7 +110,10 @@ impl TheCodeAtom {
                             {
                                 stack.push(local.clone());
                             } else {
-                                println!("Runtime error: Unknown local variable {}.", &data.values[0].to_string().unwrap());
+                                println!(
+                                    "Runtime error: Unknown local variable {}.",
+                                    &data.values[0].to_string().unwrap()
+                                );
                             }
                         }
                     };
@@ -142,7 +146,6 @@ impl TheCodeAtom {
                     |stack: &mut Vec<TheValue>,
                      data: &mut TheCodeNodeData,
                      sandbox: &mut TheCodeSandbox| {
-
                         let mut debug_value: Option<TheValue> = None;
 
                         if let Some(function) = sandbox.call_stack.last_mut() {
@@ -304,30 +307,31 @@ impl TheCodeAtom {
         match self {
             TheCodeAtom::FuncDef(name) => format!("Function definition ({}).", name),
             TheCodeAtom::FuncArg(name) => format!("Function argument ({}).", name),
-            TheCodeAtom::FuncCall(name) => format!("Function call ({}). Values below will be passed as arguments.", name),
+            TheCodeAtom::FuncCall(name) => format!(
+                "Function call ({}). Values below will be passed as arguments.",
+                name
+            ),
             TheCodeAtom::Return => "Return from a function. Optionally with a value.".to_string(),
             TheCodeAtom::LocalGet(name) => format!("Get the value of a local variable ({}).", name),
             TheCodeAtom::LocalSet(name) => format!("Set a value to a local variable ({}).", name),
-            TheCodeAtom::Value(value) => {
-                match value {
-                    TheValue::Bool(_v) => format!("Boolean constant ({}).", self.describe()),
-                    TheValue::CodeObject(_v) => "An Object.".to_string(),
-                    TheValue::Int(v) => format!("Integer constant ({}).", v),
-                    TheValue::Float(_v) => format!("Float constant ({}).", value.describe()),
-                    TheValue::Text(v) => format!("Text constant ({}).", v),
-                    TheValue::Char(v) => format!("Char constant ({}).", v),
-                    TheValue::Int2(v) => format!("Int2 constant ({}).", v),
-                    TheValue::Float2(v) => format!("Float2 constant ({}).", v),
-                    TheValue::Int3(v) => format!("Int3 constant ({}).", v),
-                    TheValue::Float3(v) => format!("Float3 constant ({}).", v),
-                    TheValue::Int4(v) => format!("Int4 constant ({}).", v),
-                    TheValue::Float4(v) => format!("Float4 constant ({}).", v),
-                    TheValue::KeyCode(_v) => "Key Code value.".to_string(),
-                    TheValue::RangeI32(_v) => "Range value.".to_string(),
-                    TheValue::RangeF32(_v) => "Range value.".to_string(),
-                    TheValue::Empty => "Empty value.".to_string(),
-                }
-            }
+            TheCodeAtom::Value(value) => match value {
+                TheValue::Bool(_v) => format!("Boolean constant ({}).", self.describe()),
+                TheValue::CodeObject(_v) => "An Object.".to_string(),
+                TheValue::Int(v) => format!("Integer constant ({}).", v),
+                TheValue::Float(_v) => format!("Float constant ({}).", value.describe()),
+                TheValue::Text(v) => format!("Text constant ({}).", v),
+                TheValue::Char(v) => format!("Char constant ({}).", v),
+                TheValue::Int2(v) => format!("Int2 constant ({}).", v),
+                TheValue::Float2(v) => format!("Float2 constant ({}).", v),
+                TheValue::Int3(v) => format!("Int3 constant ({}).", v),
+                TheValue::Float3(v) => format!("Float3 constant ({}).", v),
+                TheValue::Int4(v) => format!("Int4 constant ({}).", v),
+                TheValue::Float4(v) => format!("Float4 constant ({}).", v),
+                TheValue::KeyCode(_v) => "Key Code value.".to_string(),
+                TheValue::RangeI32(_v) => "Range value.".to_string(),
+                TheValue::RangeF32(_v) => "Range value.".to_string(),
+                TheValue::Empty => "Empty value.".to_string(),
+            },
             TheCodeAtom::Add => "Operator ('+')".to_string(),
             TheCodeAtom::Multiply => "Operator ('*')".to_string(),
             TheCodeAtom::EndOfExpression => ";".to_string(),

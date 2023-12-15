@@ -65,7 +65,7 @@ impl TheTrait for UIDemo {
 
         // Bottom
 
-        self.browser.init_ui(ui, ctx);
+        //self.browser.init_ui(ui, ctx);
 
         /*
         let mut bottom_canvas = TheCanvas::new();

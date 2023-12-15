@@ -11,12 +11,11 @@ pub struct TheCodeNodeData {
 }
 
 impl TheCodeNodeData {
-
     pub fn empty() -> Self {
         Self {
             values: vec![],
             sub_calls: vec![],
-            location: (u16::MAX, u16::MAX)
+            location: (u16::MAX, u16::MAX),
         }
     }
 
@@ -40,7 +39,7 @@ impl TheCodeNodeData {
         Self {
             values,
             sub_calls: vec![],
-            location: (u16::MAX, u16::MAX)
+            location: (u16::MAX, u16::MAX),
         }
     }
 }

@@ -93,6 +93,8 @@ class Renderer: NSObject, MTKViewDelegate {
     
     func draw(in view: MTKView) {
         
+        rust_update()
+
         checkTexture()
         //print(screenWidth, screenHeight)
         guard let drawable = view.currentDrawable else {
@@ -117,7 +119,7 @@ class Renderer: NSObject, MTKViewDelegate {
 //        #endif
                 
         startDrawing()
-        
+         
         let count =  Int(texture!.width) *  Int(texture!.height) * 4
         let result = texture?.buffer?.contents().bindMemory(to: UInt8.self, capacity: count)
         rust_draw(result!, UInt32(texture!.width), UInt32(texture!.height), anim_counter)

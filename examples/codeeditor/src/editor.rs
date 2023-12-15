@@ -1,6 +1,9 @@
 use crate::prelude::*;
 use std::sync::mpsc::Receiver;
-use theframework::{prelude::*, thecode::{thecodesandbox::TheDebugModule, thecodenode::TheCodeNodeData}};
+use theframework::{
+    prelude::*,
+    thecode::{thecodenode::TheCodeNodeData, thecodesandbox::TheDebugModule},
+};
 
 pub struct CodeEditor {
     sidebar: Sidebar,
@@ -123,6 +126,7 @@ impl TheTrait for CodeEditor {
                         //println!("app Widget State changed {:?}: {:?}", id, state);
 
                         if id.name == "Open" {
+                            #[cfg(not(target_arch = "wasm32"))]
                             ctx.ui.open_file_requester(
                                 TheId::named_with_id(id.name.as_str(), Uuid::new_v4()),
                                 "Open".into(),
@@ -136,6 +140,7 @@ impl TheTrait for CodeEditor {
                             ctx.ui.clear_hover();
                             redraw = true;
                         } else if id.name == "Save" {
+                            #[cfg(not(target_arch = "wasm32"))]
                             ctx.ui.save_file_requester(
                                 TheId::named_with_id(id.name.as_str(), Uuid::new_v4()),
                                 "Save".into(),
@@ -160,13 +165,19 @@ impl TheTrait for CodeEditor {
                                         let mut sandbox = TheCodeSandbox::new();
                                         sandbox.debug_mode = true;
 
-                                        sandbox.add_global("test", TheCodeNode::new(|_, data, _| {
-                                            println!("inside test");
-                                            if let Some(i) = data.values[0].to_i32() {
-                                                println!("i: {:?}", i);
-                                                data.values[0] = TheValue::Int(i + 1);
-                                            }
-                                        }, TheCodeNodeData::values(vec![TheValue::Int(0)])));
+                                        sandbox.add_global(
+                                            "test",
+                                            TheCodeNode::new(
+                                                |_, data, _| {
+                                                    println!("inside test");
+                                                    if let Some(i) = data.values[0].to_i32() {
+                                                        println!("i: {:?}", i);
+                                                        data.values[0] = TheValue::Int(i + 1);
+                                                    }
+                                                },
+                                                TheCodeNodeData::values(vec![TheValue::Int(0)]),
+                                            ),
+                                        );
 
                                         sandbox.insert_module(module.clone());
                                         module.execute(&mut sandbox);

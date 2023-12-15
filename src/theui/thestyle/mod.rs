@@ -7,7 +7,7 @@ pub mod prelude {
 }
 
 #[allow(unused)]
-pub trait TheStyle {
+pub trait TheStyle: Send {
     fn new() -> Self
     where
         Self: Sized;

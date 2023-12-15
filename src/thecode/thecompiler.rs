@@ -180,7 +180,6 @@ impl TheCompiler {
     }
 
     pub fn compile(&mut self, grid: &mut TheCodeGrid) -> Result<TheCodeModule, TheCompilerError> {
-
         self.ctx = TheCompilerContext::default();
 
         grid.clear_messages();
@@ -252,10 +251,11 @@ impl TheCompiler {
             TheCodeAtom::Return => {
                 self.advance();
 
-                if self.grid.code.contains_key(&(
-                    self.ctx.current_location.0 + 1,
-                    self.ctx.current_location.1,
-                )) {
+                if self
+                    .grid
+                    .code
+                    .contains_key(&(self.ctx.current_location.0 + 1, self.ctx.current_location.1))
+                {
                     // This return statement has a value parse if first.
                     let ret = self.ctx.previous.clone();
                     self.expression();
@@ -302,10 +302,7 @@ impl TheCompiler {
                 let node = self.ctx.previous.clone().to_node(&mut self.ctx);
                 println!("FuncCall {:?}", self.ctx.current_location);
 
-                let arg_loc = (
-                    self.ctx.current_location.0,
-                    self.ctx.current_location.1 + 1
-                );
+                let arg_loc = (self.ctx.current_location.0, self.ctx.current_location.1 + 1);
 
                 if let Some(arg) = self.grid.code.get(&arg_loc).cloned() {
                     //self.ctx.previous_location = (arg_loc.0 - 1, arg_loc.1);
@@ -339,7 +336,10 @@ impl TheCompiler {
     fn number(&mut self, _can_assign: bool) {
         let node = self.ctx.previous.clone().to_node(&mut self.ctx);
         self.ctx.get_current_function().add_node(node);
-        println!("{:?} : Number {:?}", self.ctx.current_location, self.ctx.previous);
+        println!(
+            "{:?} : Number {:?}",
+            self.ctx.current_location, self.ctx.previous
+        );
     }
 
     fn binary(&mut self, _can_assign: bool) {

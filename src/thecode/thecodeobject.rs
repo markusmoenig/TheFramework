@@ -32,7 +32,8 @@ impl TheCodeObject {
     pub fn describe(&self) -> String {
         let mut items: Vec<_> = self.values.iter().collect();
         items.sort_by_key(|&(key, _)| key);
-        items.iter()
+        items
+            .iter()
             .map(|(key, value)| format!("{}: {}", key, value.describe()))
             .collect::<Vec<String>>()
             .join("\n")

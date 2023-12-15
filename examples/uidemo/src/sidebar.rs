@@ -144,6 +144,7 @@ impl Sidebar {
                         //println!("app Widget State changed {:?}: {:?}", id, state);
 
                         if id.name == "Open" {
+                            #[cfg(not(target_arch = "wasm32"))]
                             ctx.ui.open_file_requester(
                                 TheId::named("MyID"),
                                 "Open".into(),

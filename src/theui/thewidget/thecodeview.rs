@@ -160,17 +160,13 @@ impl TheWidget for TheCodeView {
                     redraw = true;
                     if let Some(hover) = hover {
                         if let Some(atom) = self.codegrid.code.get(&hover) {
-                            let text = atom.help();//format!("({}, {}) {}", hover.0, hover.1, atom.help());
-                            ctx.ui.send(TheEvent::SetStatusText(
-                                self.id().clone(),
-                                text,
-                            ));
+                            let text = atom.help(); //format!("({}, {}) {}", hover.0, hover.1, atom.help());
+                            ctx.ui
+                                .send(TheEvent::SetStatusText(self.id().clone(), text));
                         } else {
-                        ctx.ui.send(TheEvent::SetStatusText(
-                            self.id().clone(),
-                            "".to_string(),
-                        ));
-                    }
+                            ctx.ui
+                                .send(TheEvent::SetStatusText(self.id().clone(), "".to_string()));
+                        }
                     }
                 }
             }
@@ -428,7 +424,7 @@ impl TheWidget for TheCodeView {
                             TheCodeAtom::FuncArg(name) => {
                                 ctx.draw.rounded_rect_with_border(
                                     self.buffer.pixels_mut(),
-                                     &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
+                                    &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
                                     stride,
                                     &color,
                                     &(0.0, 0.0, 0.0, 0.0),
@@ -469,7 +465,7 @@ impl TheWidget for TheCodeView {
                                         crect.0 + 2,
                                         crect.1 + (crect.3 - (crect.3 as f32 * 0.6) as usize) / 2,
                                         crect.2 - 4,
-                                        (crect.3 as f32 *  0.6) as usize,
+                                        (crect.3 as f32 * 0.6) as usize,
                                     ),
                                     stride,
                                     &color,
@@ -717,12 +713,7 @@ impl TheWidget for TheCodeView {
                             if let Some(font) = &ctx.ui.font {
                                 ctx.draw.text_rect_blend(
                                     self.buffer.pixels_mut(),
-                                    &(
-                                        crect.0,
-                                        crect.1,
-                                        crect.2,
-                                        crect.3 - zoom_const(5, zoom),
-                                    ),
+                                    &(crect.0, crect.1, crect.2, crect.3 - zoom_const(5, zoom)),
                                     stride,
                                     font,
                                     font_size,

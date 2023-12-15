@@ -96,7 +96,9 @@ impl TheApp {
                 #[cfg(feature = "ui")]
                 ui.draw(frame, &mut ctx);
 
+                #[cfg(not(feature = "ui"))]
                 app.draw(frame, &mut ctx);
+
                 if pixels
                     .render()
                     .map_err(|e| error!("pixels.render() failed: {}", e))
@@ -327,9 +329,9 @@ impl TheApp {
                             window.request_redraw();
                         }
 
-                        // if app.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
-                        //     window.request_redraw();
-                        // }
+                        if app.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                            window.request_redraw();
+                        }
                     }
                 }
 
@@ -418,32 +420,6 @@ impl TheApp {
                 if app.update(&mut ctx) {
                     window.request_redraw();
                 }
-                /*
-                let curr_time = get_time();
-
-                // Game tick ?
-                if curr_time > game_tick_timer + GAME_TICK_IN_MS {
-                    window.request_redraw();
-                    game_tick_timer = curr_time;
-                    anim_counter = anim_counter.wrapping_add(1);
-                } else {
-
-                    // If not, lets see if we need to redraw for the target fps
-                    let fps = creator_lib::rust_target_fps() as f32;//if mouse_wheel_ongoing { 60.0 } else { curr_screen.get_target_fps() as f32 };
-                    //println!("{}", fps);
-                    let tick_in_ms =  (1000.0 / fps) as u128;
-
-                    if curr_time > timer + tick_in_ms {
-                        window.request_redraw();
-                        timer = curr_time;
-                    } else
-                    if mouse_wheel_ongoing == false {
-                        let t = (timer + tick_in_ms - curr_time) as u64;
-                        if t > 10 {
-                            std::thread::sleep(Duration::from_millis(10));
-                        }
-                    }
-                }*/
             }
         });
     }
@@ -451,6 +427,8 @@ impl TheApp {
     // Run on WASM
     #[cfg(target_arch = "wasm32")]
     pub fn run(&mut self, mut app: Box<dyn TheTrait>) {
+        use winit::window;
+
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
         console_log::init_with_level(log::Level::Trace).expect("error initializing logger");
 
@@ -466,18 +444,28 @@ impl TheApp {
             use winit::window::WindowBuilder;
             use winit_input_helper::WinitInputHelper;
 
-            const WIDTH: u32 = 800;
-            const HEIGHT: u32 = 600;
+            let width: usize = 1200;
+            let height: usize = 700;
 
             fn log_error<E: std::error::Error + 'static>(method_name: &str, err: E) {
                 error!("{method_name}() failed: {err}");
             }
 
+            let mut ctx = TheContext::new(width, height);
+            #[cfg(feature = "ui")]
+            let mut ui = TheUI::new();
+            #[cfg(feature = "ui")]
+            ui.init(&mut ctx);
+
+            app.init(&mut ctx);
+
+            let window_title = app.window_title();
+
             let event_loop = EventLoop::new();
             let window = {
-                let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
+                let size = LogicalSize::new(width as f64, height as f64);
                 WindowBuilder::new()
-                    .with_title("The Framework")
+                    .with_title(window_title)
                     .with_inner_size(size)
                     .with_min_inner_size(size)
                     .build(&event_loop)
@@ -536,20 +524,30 @@ impl TheApp {
                 let window_size = window.inner_size();
                 let surface_texture =
                     SurfaceTexture::new(window_size.width, window_size.height, window.as_ref());
-                Pixels::new_async(WIDTH, HEIGHT, surface_texture)
+                Pixels::new_async(width as u32, height as u32, surface_texture)
                     .await
                     .expect("Pixels error")
             };
 
-            let mut ctx = TheContext::new(WIDTH as usize, HEIGHT as usize);
-            app.init(&mut ctx);
+            #[cfg(feature = "ui")]
+            {
+                ui.canvas.root = true;
+                ui.canvas
+                    .set_dim(TheDim::new(0, 0, width as i32, height as i32), &mut ctx);
+
+                app.init_ui(&mut ui, &mut ctx);
+                ui.canvas.layout(width as i32, height as i32, &mut ctx);
+            }
 
             event_loop.run(move |event, _, control_flow| {
                 // Draw the current frame
                 if let Event::RedrawRequested(_) = event {
-                    //world.draw(pixels.frame_mut());
-                    app.draw(pixels.frame_mut(), &ctx);
-                    //app:draw()
+                    #[cfg(feature = "ui")]
+                    ui.draw(pixels.frame_mut(), &mut ctx);
+
+                    #[cfg(not(feature = "ui"))]
+                    app.draw(pixels.frame_mut(), &mut ctx);
+
                     if let Err(err) = pixels.render() {
                         log_error("pixels.render", err);
                         *control_flow = ControlFlow::Exit;
@@ -568,7 +566,7 @@ impl TheApp {
 
                         WindowEvent::ReceivedCharacter(char) => match char {
                             _ => {
-                                if app.key_down(Some(*char), None) {
+                                if app.key_down(Some(*char), None, &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
@@ -597,52 +595,52 @@ impl TheApp {
                             ..
                         } => match virtual_code {
                             VirtualKeyCode::Delete => {
-                                if app.key_down(None, Some(WidgetKey::Delete)) {
+                                if app.key_down(None, Some(TheKeyCode::Delete), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Back => {
-                                if app.key_down(None, Some(WidgetKey::Delete)) {
+                                if app.key_down(None, Some(TheKeyCode::Delete), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Up => {
-                                if app.key_down(None, Some(WidgetKey::Up)) {
+                                if app.key_down(None, Some(TheKeyCode::Up), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Right => {
-                                if app.key_down(None, Some(WidgetKey::Right)) {
+                                if app.key_down(None, Some(TheKeyCode::Right), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Down => {
-                                if app.key_down(None, Some(WidgetKey::Down)) {
+                                if app.key_down(None, Some(TheKeyCode::Down), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Left => {
-                                if app.key_down(None, Some(WidgetKey::Left)) {
+                                if app.key_down(None, Some(TheKeyCode::Left), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Space => {
-                                if app.key_down(None, Some(WidgetKey::Space)) {
+                                if app.key_down(None, Some(TheKeyCode::Space), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Tab => {
-                                if app.key_down(None, Some(WidgetKey::Tab)) {
+                                if app.key_down(None, Some(TheKeyCode::Tab), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Return => {
-                                if app.key_down(None, Some(WidgetKey::Return)) {
+                                if app.key_down(None, Some(TheKeyCode::Return), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Escape => {
-                                if app.key_down(None, Some(WidgetKey::Escape)) {
+                                if app.key_down(None, Some(TheKeyCode::Escape), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
@@ -658,7 +656,10 @@ impl TheApp {
                         DeviceEvent::MouseWheel { delta } => match delta {
                             winit::event::MouseScrollDelta::LineDelta(x, y) => {
                                 //println!("mouse wheel Line Delta: ({},{})", x, y);
-                                if app.mouse_wheel(((*x * 100.0) as isize, (*y * 100.0) as isize)) {
+                                if app.mouse_wheel(
+                                    ((*x * 100.0) as isize, (*y * 100.0) as isize),
+                                    &mut ctx,
+                                ) {
                                     window.request_redraw();
                                     //mouse_wheel_ongoing = true;
                                 }
@@ -669,7 +670,7 @@ impl TheApp {
                             }
                             winit::event::MouseScrollDelta::PixelDelta(p) => {
                                 //println!("mouse wheel Pixel Delta: ({},{})", p.x, p.y);
-                                if app.mouse_wheel((p.x as isize, p.y as isize)) {
+                                if app.mouse_wheel((p.x as isize, p.y as isize), &mut ctx) {
                                     window.request_redraw();
                                     //mouse_wheel_ongoing = true;
                                 }
@@ -687,13 +688,12 @@ impl TheApp {
                 // Handle input events
                 if input.update(&event) {
                     // Close events
-                    if input.key_pressed(VirtualKeyCode::Escape) || input.quit() {
+                    if input.key_pressed(VirtualKeyCode::Escape) || input.close_requested() {
                         *control_flow = ControlFlow::Exit;
                         return;
                     }
 
-                    if input.mouse_pressed(0) {
-                        let coords = input.mouse().unwrap();
+                    if let Some(coords) = input.mouse() {
                         let pixel_pos: (usize, usize) = pixels
                             .window_pos_to_pixel(coords)
                             .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
@@ -703,21 +703,7 @@ impl TheApp {
                             window.request_redraw();
                         }
 
-                        if app.touch_down(0, pixel_pos.0 as f32, pixel_pos.1 as f32) {
-                            window.request_redraw();
-                        }
-                    } else if input.mouse_pressed(1) {
-                        let coords = input.mouse().unwrap();
-                        let pixel_pos: (usize, usize) = pixels
-                            .window_pos_to_pixel(coords)
-                            .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
-
-                        #[cfg(feature = "ui")]
-                        if ui.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
-                            window.request_redraw();
-                        }
-
-                        if app.touch_down(1, pixel_pos.0 as f32, pixel_pos.1 as f32) {
+                        if app.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
                             window.request_redraw();
                         }
                     }
@@ -728,7 +714,7 @@ impl TheApp {
                             .window_pos_to_pixel(coords)
                             .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
-                        if app.touch_up(pixel_pos.0 as f32, pixel_pos.1 as f32) {
+                        if app.touch_up(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
                             window.request_redraw();
                         }
                     }
@@ -741,7 +727,7 @@ impl TheApp {
                                 .window_pos_to_pixel(coords)
                                 .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
-                            if app.touch_dragged(pixel_pos.0 as f32, pixel_pos.1 as f32) {
+                            if app.touch_dragged(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
                                 window.request_redraw();
                             }
                         }
@@ -753,7 +739,7 @@ impl TheApp {
                                 .window_pos_to_pixel(coords)
                                 .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
-                            if app.hover(pixel_pos.0 as f32, pixel_pos.1 as f32) {
+                            if app.hover(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
                                 window.request_redraw();
                             }
                         }
@@ -766,10 +752,35 @@ impl TheApp {
                             *control_flow = ControlFlow::Exit;
                             return;
                         }
+
+                        let scale = window.scale_factor() as u32;
+                        let _rc = pixels.resize_buffer(size.width / scale, size.height / scale);
+                        // editor.resize(size.width as usize / scale as usize, size.height as usize / scale as usize);
+                        let width = size.width as usize / scale as usize;
+                        let height = size.height as usize / scale as usize;
+                        ctx.width = width;
+                        ctx.height = height;
+
+                        #[cfg(feature = "ui")]
+                        ui.canvas
+                            .set_dim(TheDim::new(0, 0, width as i32, height as i32), &mut ctx);
+
+                        window.request_redraw();
+                    }
+
+                    #[cfg(feature = "ui")]
+                    if ui.update(&mut ctx) {
+                        window.request_redraw();
+                    }
+
+                    #[cfg(feature = "ui")]
+                    // Test if the app needs an update
+                    if app.update_ui(&mut ui, &mut ctx) {
+                        window.request_redraw();
                     }
 
                     // Update internal state and request a redraw
-                    app.update();
+                    app.update(&mut ctx);
                     window.request_redraw();
                 }
             });

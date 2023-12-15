@@ -411,7 +411,8 @@ impl TheDraw2D {
                     let t = self.fill_mask(d);
                     // let t = self._smoothstep(0.0, -2.0, d);
 
-                    let background: &[u8; 4] = &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
+                    let background: &[u8; 4] =
+                        &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
                     let mut mixed_color =
                         self.mix_color(background, color, t * (color[3] as f32 / 255.0));
 
@@ -469,7 +470,8 @@ impl TheDraw2D {
                 if d < 1.0 {
                     let t = self.fill_mask(d);
 
-                    let background: &[u8; 4] = &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
+                    let background: &[u8; 4] =
+                        &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
                     let mut mixed_color =
                         self.mix_color(background, color, t * (color[3] as f32 / 255.0));
 
@@ -985,7 +987,12 @@ impl TheDraw2D {
                 let d = (rect.0 + sx) * 4 + (sy + rect.1) * stride * 4;
                 let s = x * 4 + y * source_size.0 * 4;
 
-                let color = &[source_frame[s], source_frame[s + 1], source_frame[s + 2], source_frame[s + 3]];
+                let color = &[
+                    source_frame[s],
+                    source_frame[s + 1],
+                    source_frame[s + 2],
+                    source_frame[s + 3],
+                ];
                 let background = &[frame[d], frame[d + 1], frame[d + 2], frame[d + 3]];
                 frame[d..d + 4].copy_from_slice(&self.mix_color(
                     background,

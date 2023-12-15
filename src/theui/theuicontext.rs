@@ -210,6 +210,7 @@ impl TheUIContext {
     }
 
     /// Opens a file requester with the given title and extensions. Upon completion a TheEvent::FileRequesterResult event will be send.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn open_file_requester(&mut self, id: TheId, title: String, extension: TheFileExtension) {
         let (tx, rx): (Sender<Vec<PathBuf>>, Receiver<Vec<PathBuf>>) = mpsc::channel();
 
@@ -236,6 +237,7 @@ impl TheUIContext {
     }
 
     /// Opens a save file requester with the given title and extensions. Upon completion a TheEvent::FileRequesterResult event will be send.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn save_file_requester(&mut self, id: TheId, title: String, extension: TheFileExtension) {
         let (tx, rx): (Sender<Vec<PathBuf>>, Receiver<Vec<PathBuf>>) = mpsc::channel();
 

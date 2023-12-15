@@ -8,7 +8,7 @@ pub mod prelude {
 
 /// TheTheme defines all colors and other attributes of a theme.
 #[allow(unused)]
-pub trait TheTheme {
+pub trait TheTheme: Send {
     fn new() -> Self
     where
         Self: Sized;
