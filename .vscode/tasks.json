@@ -19,14 +19,14 @@
             }
         },
         {
-            "label": "cargo run code demo",
+            "label": "cargo run code editor",
             "type": "shell",
             "command": "cargo",
             "args": [
                 "run",
                 "--release",
                 "--package",
-                "codedemo",
+                "codeeditor",
                 // "--",
                 // "arg1"
             ],
