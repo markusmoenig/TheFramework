@@ -16,8 +16,8 @@ maths-rs = { version = "0.2", features = ["short_types", "short_hand_constructor
 pixels = { version = "0.13.0", optional = true }
 winit = { version = "0.28.7", optional = true }
 winit_input_helper = { version = "0.14.1", optional = true }
-# therenderer = { version = "0.1.1", optional = true }
-therenderer = { path = "../therenderer", optional = true }
+therenderer = { version = "0.1.1", optional = true }
+# therenderer = { path = "../therenderer", optional = true }
 rust-embed = { version = "8.0.0", default-features = true, features = ["include-exclude"] }
 png = "0.17.8"
 rustc-hash = "1.1.0"
