@@ -6,10 +6,9 @@ use theframework::{
 };
 
 pub struct CodeEditor {
-    sidebar: Sidebar,
-    // browser: Browser,
     project: Project,
     editor: TheCodeEditor,
+    right_width: i32,
 
     event_receiver: Option<Receiver<TheEvent>>,
 }
@@ -20,10 +19,9 @@ impl TheTrait for CodeEditor {
         Self: Sized,
     {
         Self {
-            sidebar: Sidebar::new(),
-            // browser: Browser::new(),
             project: Project::new(),
             editor: TheCodeEditor::default(),
+            right_width: 280,
 
             event_receiver: None,
         }
@@ -68,12 +66,12 @@ impl TheTrait for CodeEditor {
         top_canvas.set_widget(menubar);
         top_canvas.set_layout(hlayout);
 
-        // Right
-        //self.sidebar.init_ui(ui, ctx);
+        // Side
 
-        // Bottom
-
-        //self.browser.init_ui(ui, ctx);
+        let bundle_canvas =
+            self.editor
+                .set_bundle(self.project.bundle.clone(), ctx, self.right_width);
+        ui.canvas.set_right(bundle_canvas);
 
         let mut status_canvas = TheCanvas::new();
         let mut statusbar = TheStatusbar::new(TheId::named("Statusbar"));
@@ -104,13 +102,15 @@ impl TheTrait for CodeEditor {
                                 let contents = std::fs::read_to_string(p).unwrap_or("".to_string());
                                 self.project =
                                     serde_json::from_str(&contents).unwrap_or(Project::new());
-                                //self.sidebar.load_from_project(ui, ctx, &self.project);
-                                //self.tileeditor.load_from_project(ui, ctx, &self.project);
-                                self.editor.set_codegrid(self.project.codegrid.clone(), ui);
+                                ui.canvas.set_right(self.editor.set_bundle(
+                                    self.project.bundle.clone(),
+                                    ctx,
+                                    self.right_width,
+                                ));
                                 redraw = true;
                             }
                         } else if id.name == "Save" {
-                            self.project.codegrid = self.editor.get_codegrid(ui);
+                            self.project.bundle = self.editor.get_bundle();
 
                             for p in paths {
                                 let json = serde_json::to_string(&self.project); //.unwrap();
@@ -189,7 +189,10 @@ impl TheTrait for CodeEditor {
                                     }
 
                                     self.editor.set_grid_status_message(ui, ctx);
-                                    //println!("Size of MyEnum: {} bytes", std::mem::size_of::<TheCodeAtom>());
+                                    println!(
+                                        "Size of MyEnum: {} bytes",
+                                        std::mem::size_of::<TheEvent>()
+                                    );
                                 }
                             }
                         } else {

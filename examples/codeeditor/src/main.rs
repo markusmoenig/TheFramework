@@ -1,14 +1,11 @@
 use theframework::*;
 
-pub mod browser;
 pub mod editor;
 pub mod project;
-pub mod sidebar;
 
 use crate::editor::CodeEditor;
 
 pub mod prelude {
-    pub use crate::sidebar::*;
     pub use theframework::prelude::*;
 
     pub use crate::project::Project;

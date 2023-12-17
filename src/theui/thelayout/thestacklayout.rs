@@ -157,6 +157,9 @@ pub trait TheStackLayoutTrait: TheLayout {
 
     /// Set the index of the current layout.
     fn set_index(&mut self, index: usize);
+
+    /// Get a mutable reference to the canvas at the given index.
+    fn canvas_at_mut(&mut self, index: usize) -> Option<&mut TheCanvas>;
 }
 
 impl TheStackLayoutTrait for TheStackLayout {
@@ -170,5 +173,13 @@ impl TheStackLayoutTrait for TheStackLayout {
 
     fn set_index(&mut self, index: usize) {
         self.index = index;
+    }
+
+    fn canvas_at_mut(&mut self, index: usize) -> Option<&mut TheCanvas> {
+        if index < self.canvas.len() {
+            Some(&mut self.canvas[index])
+        } else {
+            None
+        }
     }
 }

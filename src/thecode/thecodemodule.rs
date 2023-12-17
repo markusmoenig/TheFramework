@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+/// TheCodeModule is a compiled output of the TheCodeGrid source.
 #[derive(Clone, Debug)]
 pub struct TheCodeModule {
     pub name: String,

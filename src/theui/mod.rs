@@ -548,6 +548,14 @@ impl TheUI {
         None
     }
 
+    /// Gets a given TheStackLayout by name
+    pub fn get_stack_layout(&mut self, name: &str) -> Option<&mut dyn TheStackLayoutTrait> {
+        if let Some(text_line_edit) = self.canvas.get_layout(Some(&name.to_string()), None) {
+            return text_line_edit.as_stack_layout();
+        }
+        None
+    }
+
     /// Selects the first item of a list layout.
     pub fn select_first_list_item(&mut self, name: &str, ctx: &mut TheContext) {
         if let Some(layout) = self.get_list_layout(name) {

@@ -43,6 +43,7 @@ pub enum TheEvent {
     TileEditorHoverChanged(TheId, Vec2i),
 
     CodeEditorSelectionChanged(TheId, Option<(u16, u16)>),
+    CodeEditorChanged(TheId, TheCodeGrid),
 
     // Show the given context menu at the given coordinates
     ShowContextMenu(TheId, Vec2i),

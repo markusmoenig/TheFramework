@@ -4,6 +4,9 @@ pub struct TheCodeEditor {
     code_list_selection: Option<TheId>,
     grid_selection: Option<(u16, u16)>,
 
+    codegrid_selection: Option<TheId>,
+    bundle: TheCodeBundle,
+
     undo: Option<TheUndo>,
 }
 
@@ -18,6 +21,9 @@ impl TheCodeEditor {
         Self {
             code_list_selection: None,
             grid_selection: None,
+            codegrid_selection: None,
+
+            bundle: TheCodeBundle::new(),
 
             undo: None,
         }
@@ -74,6 +80,9 @@ impl TheCodeEditor {
             //     self.set_grid_status_message(ui, ctx);
             //     redraw = true;
             // }
+            TheEvent::CodeEditorChanged(_id, codegrid) => {
+                self.bundle.insert_grid(codegrid.clone());
+            }
             TheEvent::CodeEditorSelectionChanged(_id, selection) => {
                 self.grid_selection = *selection;
 
@@ -81,39 +90,76 @@ impl TheCodeEditor {
                 self.set_grid_status_message(ui, ctx);
                 redraw = true;
             }
-            TheEvent::StateChanged(id, _state) => {
+            TheEvent::StateChanged(id, state) => {
                 if id.name == "Code List Item" {
                     self.code_list_selection = Some(id.clone());
+                } else if id.name == "CodeGrid List Add" {
+                    if *state == TheWidgetState::Clicked {
+                        let codegrid = TheCodeGrid::new();
+                        self.bundle.insert_grid(codegrid.clone());
 
-                    /*
-                    let mut atom: Option<TheCodeAtom> = None;
+                        if let Some(code_list) = ui.get_list_layout("CodeGrid List") {
+                            let item_id = TheId::named_with_id("CodeGrid List Item", codegrid.uuid);
+                            let mut item = TheListItem::new(item_id.clone());
+                            item.set_text(codegrid.name.clone());
+                            item.set_associated_layout(code_list.id().clone());
+                            item.set_state(TheWidgetState::Selected);
+                            code_list.deselect_all();
+                            code_list.add_item(item, ctx);
 
-                    if let Some(widget) = ui.get_widget_id(id.uuid) {
-                        if let Some(name) = widget.value().to_string() {
-                            atom = Some(self.create_atom(name.as_str()));
+                            ctx.ui
+                                .send_widget_state_changed(&item_id, TheWidgetState::Selected);
+                        }
+
+                        self.set_codegrid(codegrid.clone(), ui);
+                        self.set_grid_selection_ui(ui, ctx);
+                        self.set_grid_status_message(ui, ctx);
+                    }
+                } else if id.name == "CodeGrid List Remove" {
+                    if *state == TheWidgetState::Clicked {
+                        if let Some(codegrid_selection) = &self.codegrid_selection {
+                            self.bundle.grids.remove(&codegrid_selection.uuid);
+                            if let Some(code_list) = ui.get_list_layout("CodeGrid List") {
+                                code_list.remove(codegrid_selection.clone());
+                                code_list.select_first_item(ctx);
+                            }
+                            self.codegrid_selection = None;
+
+                            self.set_grid_selection_ui(ui, ctx);
+                            self.set_grid_status_message(ui, ctx);
                         }
                     }
-
-                    if let Some(atom) = atom {
-                        if let Some(grid_selection) = &self.grid_selection {
-                            if let Some(layout) = ui.get_code_layout("Code Editor") {
-                                if let Some(code_view) = layout.code_view_mut().as_code_view() {
-                                    code_view.set_grid_atom(*grid_selection, atom);
-                                    self.set_grid_selection_ui(ui, ctx);
-                                    // ctx.ui.send(TheEvent::CodeEditorSelectionChanged(
-                                    //     id.clone(),
-                                    //     Some(*grid_selection),
-                                    // ));
-                                }
-                            }
+                } else if id.name == "CodeGrid List Item" && *state == TheWidgetState::Selected {
+                    if let Some(codegrid) = self.bundle.get_grid(&id.uuid) {
+                        self.codegrid_selection = Some(id.clone());
+                        if let Some(text_edit) = ui.get_text_line_edit("CodeGrid List Name") {
+                            text_edit.set_text(codegrid.name.clone());
                         }
-                    }*/
+
+                        self.set_codegrid(codegrid.clone(), ui);
+                        self.set_grid_selection_ui(ui, ctx);
+                        self.set_grid_status_message(ui, ctx);
+                    }
                 }
 
                 redraw = true;
             }
             TheEvent::ValueChanged(id, value) => {
-                if id.name == "Code Zoom" {
+                if id.name == "CodeGrid List Name" {
+                    if let Some(text) = value.to_string() {
+                        if let Some(codegrid_selection) = &self.codegrid_selection {
+                            if let Some(codegrid) = self.bundle.get_grid_mut(&codegrid_selection.uuid) {
+                                if codegrid.name != text {
+                                    if let Some(widget) = ui.get_widget_id(codegrid_selection.uuid){
+                                        widget.set_value(TheValue::Text(text.clone()));
+                                        codegrid.name = text.clone();
+                                        ctx.ui.relayout = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if id.name == "Code Zoom" {
                     if let Some(v) = value.to_f32() {
                         if let Some(layout) = ui.get_code_layout("Code Editor") {
                             if let Some(code_view) = layout.code_view_mut().as_code_view() {
@@ -514,5 +560,83 @@ impl TheCodeEditor {
         canvas.set_bottom(bottom_toolbar_canvas);
 
         canvas
+    }
+
+    /// Sets the bundle and returns the list canvas for it.
+    pub fn set_bundle(
+        &mut self,
+        bundle: TheCodeBundle,
+        ctx: &mut TheContext,
+        width: i32,
+    ) -> TheCanvas {
+        self.bundle = bundle;
+
+        let mut canvas: TheCanvas = TheCanvas::new();
+
+        let mut settings_header = TheCanvas::new();
+        let mut switchbar = TheSwitchbar::new(TheId::empty());
+        switchbar.set_text("Codes".to_string());
+        settings_header.set_widget(switchbar);
+
+        canvas.set_top(settings_header);
+
+        // Grid list
+
+        let mut list_canvas: TheCanvas = TheCanvas::new();
+        list_canvas.limiter_mut().set_max_width(width);
+
+        let mut code_layout = TheListLayout::new(TheId::named("CodeGrid List"));
+
+        for key in self.bundle.grids.keys() {
+            if let Some(grid) = self.bundle.grids.get(key) {
+                let mut item = TheListItem::new(TheId::named_with_id("CodeGrid List Item", grid.uuid));
+                item.set_text(grid.name.clone());
+                item.set_associated_layout(code_layout.id().clone());
+                code_layout.add_item(item, ctx);
+            }
+        }
+
+        code_layout.select_first_item(ctx);
+        list_canvas.set_layout(code_layout);
+
+        canvas.set_center(list_canvas);
+
+        // Toolbar
+
+        let mut add_button = TheTraybarButton::new(TheId::named("CodeGrid List Add"));
+        add_button.set_icon_name("icon_role_add".to_string());
+        add_button.set_status_text("Add new code.");
+        let mut remove_button = TheTraybarButton::new(TheId::named("CodeGrid List Remove"));
+        remove_button.set_icon_name("icon_role_remove".to_string());
+        //remove_button.set_disabled(true);
+        remove_button.set_status_text("Remove code.");
+        // let mut region_settings_button = TheTraybarButton::new(TheId::named("Region Settings"));
+        // region_settings_button.set_text("Settings ...".to_string());
+        // region_settings_button.set_disabled(true);
+
+        let mut text_edit = TheTextLineEdit::new(TheId::named("CodeGrid List Name"));
+        text_edit.limiter_mut().set_max_width(180);
+        //text_edit.set_text("text".to_string());
+        //text_edit.set_embedded(true);
+
+        let mut toolbar_hlayout = TheHLayout::new(TheId::empty());
+        toolbar_hlayout.set_background_color(None);
+        toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
+        toolbar_hlayout.add_widget(Box::new(add_button));
+        toolbar_hlayout.add_widget(Box::new(remove_button));
+        toolbar_hlayout.add_widget(Box::new(TheHDivider::new(TheId::empty())));
+        toolbar_hlayout.add_widget(Box::new(text_edit));
+
+        let mut toolbar_canvas = TheCanvas::default();
+        toolbar_canvas.set_widget(TheTraybar::new(TheId::empty()));
+        toolbar_canvas.set_layout(toolbar_hlayout);
+        canvas.set_bottom(toolbar_canvas);
+
+        canvas
+    }
+
+    /// Returns the bundle
+    pub fn get_bundle(&self) -> TheCodeBundle {
+        self.bundle.clone()
     }
 }

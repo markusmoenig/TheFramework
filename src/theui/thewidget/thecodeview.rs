@@ -136,6 +136,7 @@ impl TheWidget for TheCodeView {
                         self.codegrid.code.insert(c, atom);
                         redraw = true;
                         self.code_is_dirty = true;
+                        ctx.ui.send(TheEvent::CodeEditorChanged(self.id.clone(), self.codegrid.clone()));
                     }
                 }
             }
@@ -159,7 +160,14 @@ impl TheWidget for TheCodeView {
                     self.hover = hover;
                     redraw = true;
                     if let Some(hover) = hover {
-                        if let Some(atom) = self.codegrid.code.get(&hover) {
+                        if let Some(message) = self.codegrid.messages.get(&hover) {
+                            if message.message_type == TheCodeGridMessageType::Error {
+                                ctx.ui.send(TheEvent::SetStatusText(
+                                    self.id().clone(),
+                                    format!("Error: {}", message.message),
+                                ));
+                            }
+                        } else if let Some(atom) = self.codegrid.code.get(&hover) {
                             let text = atom.help(); //format!("({}, {}) {}", hover.0, hover.1, atom.help());
                             ctx.ui
                                 .send(TheEvent::SetStatusText(self.id().clone(), text));
@@ -178,6 +186,7 @@ impl TheWidget for TheCodeView {
                             selected.1 += 1;
                             self.code_is_dirty = true;
                             redraw = true;
+                            ctx.ui.send(TheEvent::CodeEditorChanged(self.id.clone(), self.codegrid.clone()));
                         }
                     } else if code == TheKeyCode::Delete {
                         if let Some(selected) = self.selected {
@@ -189,6 +198,7 @@ impl TheWidget for TheCodeView {
                             // }
                             self.code_is_dirty = true;
                             redraw = true;
+                            ctx.ui.send(TheEvent::CodeEditorChanged(self.id.clone(), self.codegrid.clone()));
                         }
                     } else if code == TheKeyCode::Space {
                         if let Some(selected) = &mut self.selected {
@@ -196,6 +206,7 @@ impl TheWidget for TheCodeView {
                             selected.0 += 1;
                             self.code_is_dirty = true;
                             redraw = true;
+                            ctx.ui.send(TheEvent::CodeEditorChanged(self.id.clone(), self.codegrid.clone()));
                         }
                     }
                 }
@@ -274,12 +285,12 @@ impl TheWidget for TheCodeView {
         /*
         let stride: usize = self.buffer.stride();
         let background: [u8; 4] = *style.theme().color(CodeGridBackground);
-        let line: [u8; 4] = *style.theme().color(CodeGridLine);
+        let line: [u8; 4] = *style.theme().color(CodeGridDark);
 
         let offset_x = 0 as f32;//-self.scroll_offset.x as f32;
         let offset_y = -self.scroll_offset.y as f32;
 
-        let target = buffer;
+        //let target = buffer;
         let grid = self.grid_size;
 
         for target_y in 0..self.dim.height {
@@ -289,7 +300,7 @@ impl TheWidget for TheCodeView {
                 let src_y = (target_y as f32 - offset_y) / self.zoom;
 
                 // Calculate the index for the destination pixel
-                let target_index = ((self.dim.buffer_y + target_y) * target.dim().width
+                let target_index = ((self.dim.buffer_y + target_y) * buffer.dim().width
                     + target_x
                     + self.dim.buffer_x) as usize
                     * 4;
@@ -300,7 +311,7 @@ impl TheWidget for TheCodeView {
                     color = line;
                 }
 
-                target.pixels_mut()[target_index..target_index + 4]
+                buffer.pixels_mut()[target_index..target_index + 4]
                     .copy_from_slice(&color);
             }
         }*/
@@ -365,10 +376,6 @@ impl TheWidget for TheCodeView {
                             color = error;
                         }
                     }
-
-                    // if x as i32 % grid_size == 0 || y as i32 % grid_size == 0 {
-                    //     color = dark;
-                    // }
 
                     if let Some(atom) = self.codegrid.code.get(&(x, y)) {
                         match atom {
@@ -718,7 +725,7 @@ impl TheWidget for TheCodeView {
                                     font,
                                     font_size,
                                     &v.describe(),
-                                    &hover,
+                                    &WHITE,
                                     TheHorizontalAlign::Center,
                                     TheVerticalAlign::Bottom,
                                 );

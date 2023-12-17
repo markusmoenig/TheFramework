@@ -1,9 +1,9 @@
 use crate::prelude::*;
 
-#[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Project {
     pub name: String,
-    pub codegrid: TheCodeGrid,
+    pub bundle: TheCodeBundle,
 
     #[serde(skip)]
     pub undo_stack: TheUndoStack,
@@ -17,9 +17,12 @@ impl Default for Project {
 
 impl Project {
     pub fn new() -> Self {
+        let mut bundle = TheCodeBundle::default();
+        bundle.insert_grid(TheCodeGrid::default());
+
         Self {
             name: "Untitled".to_string(),
-            codegrid: TheCodeGrid::default(),
+            bundle,
             undo_stack: TheUndoStack::default(),
         }
     }

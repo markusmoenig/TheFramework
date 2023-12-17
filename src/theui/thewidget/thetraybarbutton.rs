@@ -73,7 +73,7 @@ impl TheWidget for TheTraybarButton {
                 if self.state != TheWidgetState::Clicked {
                     //self.state = TheWidgetState::Clicked;
                     ctx.ui.set_focus(self.id());
-                    ctx.ui.send_widget_state_changed(self.id(), self.state);
+                    ctx.ui.send_widget_state_changed(self.id(), TheWidgetState::Clicked);
                 }
                 self.is_dirty = true;
                 redraw = true;

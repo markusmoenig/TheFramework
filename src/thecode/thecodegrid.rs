@@ -23,12 +23,15 @@ impl TheCodeGridMessage {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct TheCodeGrid {
+    pub uuid: Uuid,
+    pub name: String,
+
     #[serde(with = "vectorize")]
     pub code: FxHashMap<(u16, u16), TheCodeAtom>,
+
     #[serde(skip)]
     pub messages: FxHashMap<(u16, u16), TheCodeGridMessage>,
     pub current_pos: Option<(u16, u16)>,
-    pub max_pos: Option<(u16, u16)>,
 }
 
 impl Default for TheCodeGrid {
@@ -40,10 +43,13 @@ impl Default for TheCodeGrid {
 impl TheCodeGrid {
     pub fn new() -> Self {
         Self {
+            uuid: Uuid::new_v4(),
+            name: "Unnamed".to_string(),
+
             code: FxHashMap::default(),
+
             messages: FxHashMap::default(),
             current_pos: None,
-            max_pos: None,
         }
     }
 
