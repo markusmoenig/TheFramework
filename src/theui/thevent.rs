@@ -44,6 +44,7 @@ pub enum TheEvent {
 
     CodeEditorSelectionChanged(TheId, Option<(u16, u16)>),
     CodeEditorChanged(TheId, TheCodeGrid),
+    CodeBundleChanged(TheCodeBundle),
 
     // Show the given context menu at the given coordinates
     ShowContextMenu(TheId, Vec2i),

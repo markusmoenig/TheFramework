@@ -444,7 +444,7 @@ impl TheWidget for TheRGBAView {
     }
 }
 
-pub trait TheRGBAViewTrait {
+pub trait TheRGBAViewTrait : TheWidget {
     fn buffer(&self) -> &TheRGBABuffer;
     fn buffer_mut(&mut self) -> &mut TheRGBABuffer;
     fn set_buffer(&mut self, buffer: TheRGBABuffer);

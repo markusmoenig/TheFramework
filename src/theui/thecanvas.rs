@@ -358,8 +358,9 @@ impl TheCanvas {
             }
         }
 
+        let mut left_width = 0;
         if let Some(left) = &mut self.left {
-            let left_width = left.get_limiter_width(w);
+            left_width = left.get_limiter_width(w);
             let left_height = left.get_limiter_height(h);
             left.set_dim(TheDim::new(x, y, left_width, left_height), ctx);
             left.offset = vec2i(0, buffer_y);
@@ -386,14 +387,14 @@ impl TheCanvas {
                 let top_height = top.get_limiter_height(h);
                 top.set_dim(
                     TheDim::new(
-                        x + width - top_width - right_width,
+                        x + width - top_width - right_width - left_width,
                         y,
                         top_width,
                         top_height,
                     ),
                     ctx,
                 );
-                top.offset = vec2i(0, 0);
+                top.offset = vec2i(buffer_x, 0);
                 y += top_height;
                 buffer_y += top_height;
                 h -= top_height;

@@ -186,6 +186,24 @@ impl TheRGBABuffer {
             None
         }
     }
+
+    /// Returns the pixel at the given position.
+    pub fn at(&self, position: Vec2i) -> Option<[u8; 4]> {
+        let x = position.x;
+        let y = position.y;
+
+        if x >= 0 && x < self.dim.width && y >= 0 && y < self.dim.height {
+            let pixel_index = (y * self.dim.width + x) as usize * 4;
+            Some([
+                self.buffer[pixel_index],
+                self.buffer[pixel_index + 1],
+                self.buffer[pixel_index + 2],
+                self.buffer[pixel_index + 3],
+            ])
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]

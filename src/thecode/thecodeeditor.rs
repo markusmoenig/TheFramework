@@ -82,6 +82,7 @@ impl TheCodeEditor {
             // }
             TheEvent::CodeEditorChanged(_id, codegrid) => {
                 self.bundle.insert_grid(codegrid.clone());
+                ctx.ui.send(TheEvent::CodeBundleChanged(self.bundle.clone()));
             }
             TheEvent::CodeEditorSelectionChanged(_id, selection) => {
                 self.grid_selection = *selection;
@@ -111,6 +112,11 @@ impl TheCodeEditor {
                                 .send_widget_state_changed(&item_id, TheWidgetState::Selected);
                         }
 
+                        ui.set_widget_disabled_state("CodeGrid List Name", ctx, false);
+                        ui.set_widget_disabled_state("CodeGrid List Remove", ctx, false);
+
+                        ctx.ui.send(TheEvent::CodeBundleChanged(self.bundle.clone()));
+
                         self.set_codegrid(codegrid.clone(), ui);
                         self.set_grid_selection_ui(ui, ctx);
                         self.set_grid_status_message(ui, ctx);
@@ -119,11 +125,20 @@ impl TheCodeEditor {
                     if *state == TheWidgetState::Clicked {
                         if let Some(codegrid_selection) = &self.codegrid_selection {
                             self.bundle.grids.remove(&codegrid_selection.uuid);
+                            let mut disable = false;
                             if let Some(code_list) = ui.get_list_layout("CodeGrid List") {
                                 code_list.remove(codegrid_selection.clone());
                                 code_list.select_first_item(ctx);
+
+                                disable = code_list.widgets().is_empty();
                             }
+
+                            ui.set_widget_disabled_state("CodeGrid List Name", ctx, disable);
+                            ui.set_widget_disabled_state("CodeGrid List Remove", ctx, disable);
+
                             self.codegrid_selection = None;
+
+                            ctx.ui.send(TheEvent::CodeBundleChanged(self.bundle.clone()));
 
                             self.set_grid_selection_ui(ui, ctx);
                             self.set_grid_status_message(ui, ctx);
@@ -135,6 +150,9 @@ impl TheCodeEditor {
                         if let Some(text_edit) = ui.get_text_line_edit("CodeGrid List Name") {
                             text_edit.set_text(codegrid.name.clone());
                         }
+
+                        ui.set_widget_disabled_state("CodeGrid List Name", ctx, false);
+                        ui.set_widget_disabled_state("CodeGrid List Remove", ctx, false);
 
                         self.set_codegrid(codegrid.clone(), ui);
                         self.set_grid_selection_ui(ui, ctx);
@@ -558,6 +576,7 @@ impl TheCodeEditor {
         canvas.set_left(list_canvas);
         canvas.set_top(top_toolbar_canvas);
         canvas.set_bottom(bottom_toolbar_canvas);
+        canvas.top_is_expanding = false;
 
         canvas
     }
@@ -608,16 +627,11 @@ impl TheCodeEditor {
         add_button.set_status_text("Add new code.");
         let mut remove_button = TheTraybarButton::new(TheId::named("CodeGrid List Remove"));
         remove_button.set_icon_name("icon_role_remove".to_string());
-        //remove_button.set_disabled(true);
+        remove_button.set_disabled(true);
         remove_button.set_status_text("Remove code.");
-        // let mut region_settings_button = TheTraybarButton::new(TheId::named("Region Settings"));
-        // region_settings_button.set_text("Settings ...".to_string());
-        // region_settings_button.set_disabled(true);
 
         let mut text_edit = TheTextLineEdit::new(TheId::named("CodeGrid List Name"));
         text_edit.limiter_mut().set_max_width(180);
-        //text_edit.set_text("text".to_string());
-        //text_edit.set_embedded(true);
 
         let mut toolbar_hlayout = TheHLayout::new(TheId::empty());
         toolbar_hlayout.set_background_color(None);

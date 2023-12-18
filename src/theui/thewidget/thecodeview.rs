@@ -833,7 +833,7 @@ impl TheWidget for TheCodeView {
 }
 
 /// `TheCodeViewTrait` trait defines a set of functionalities specifically for `TheCodeView` widget.
-pub trait TheCodeViewTrait {
+pub trait TheCodeViewTrait : TheWidget {
     /// Adjusts the buffer size to match the size of the code grid. This ensures
     /// that the buffer is correctly sized to fit the grid layout.
     fn adjust_buffer_to_grid(&mut self);

@@ -16,10 +16,15 @@ impl Default for TheCodeBundle {
 
 impl TheCodeBundle {
     pub fn new() -> Self {
+
+        let mut grids = FxHashMap::default();
+        let def = TheCodeGrid::default();
+        grids.insert(def.uuid, def);
+
         Self {
             name: "Unnamed".to_string(),
             uuid: Uuid::new_v4(),
-            grids: FxHashMap::default(),
+            grids,
         }
     }
 
