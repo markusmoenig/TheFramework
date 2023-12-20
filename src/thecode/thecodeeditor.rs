@@ -50,20 +50,15 @@ impl TheCodeEditor {
                     redraw = true;
                 }
             }*/
-            TheEvent::DragStarted(id) => {
+            TheEvent::DragStarted(id, text, offset) => {
                 if id.name == "Code List Item" {
-                    if let Some(code_list_selection) = &self.code_list_selection {
-                        if let Some(widget) = ui.get_widget_id(code_list_selection.uuid) {
-                            if let Some(name) = widget.value().to_string() {
-                                if let Some(atom) = Some(self.create_atom(name.as_str())) {
-                                    let mut drop = TheDrop::new(TheId::named("Code Editor Atom"));
-                                    drop.set_data(atom.to_json());
-                                    drop.set_title(name);
-                                    ui.style.create_drop_image(&mut drop, ctx);
-                                    ctx.ui.set_drop(drop);
-                                }
-                            }
-                        }
+                    if let Some(atom) = Some(self.create_atom(text.as_str())) {
+                        let mut drop = TheDrop::new(TheId::named("Code Editor Atom"));
+                        drop.set_data(atom.to_json());
+                        drop.set_title(text.clone());
+                        drop.set_offset(*offset);
+                        ui.style.create_drop_image(&mut drop, ctx);
+                        ctx.ui.set_drop(drop);
                     }
                 }
             }
@@ -82,7 +77,8 @@ impl TheCodeEditor {
             // }
             TheEvent::CodeEditorChanged(_id, codegrid) => {
                 self.bundle.insert_grid(codegrid.clone());
-                ctx.ui.send(TheEvent::CodeBundleChanged(self.bundle.clone()));
+                ctx.ui
+                    .send(TheEvent::CodeBundleChanged(self.bundle.clone()));
             }
             TheEvent::CodeEditorSelectionChanged(_id, selection) => {
                 self.grid_selection = *selection;
@@ -115,7 +111,8 @@ impl TheCodeEditor {
                         ui.set_widget_disabled_state("CodeGrid List Name", ctx, false);
                         ui.set_widget_disabled_state("CodeGrid List Remove", ctx, false);
 
-                        ctx.ui.send(TheEvent::CodeBundleChanged(self.bundle.clone()));
+                        ctx.ui
+                            .send(TheEvent::CodeBundleChanged(self.bundle.clone()));
 
                         self.set_codegrid(codegrid.clone(), ui);
                         self.set_grid_selection_ui(ui, ctx);
@@ -138,7 +135,8 @@ impl TheCodeEditor {
 
                             self.codegrid_selection = None;
 
-                            ctx.ui.send(TheEvent::CodeBundleChanged(self.bundle.clone()));
+                            ctx.ui
+                                .send(TheEvent::CodeBundleChanged(self.bundle.clone()));
 
                             self.set_grid_selection_ui(ui, ctx);
                             self.set_grid_status_message(ui, ctx);
@@ -166,9 +164,12 @@ impl TheCodeEditor {
                 if id.name == "CodeGrid List Name" {
                     if let Some(text) = value.to_string() {
                         if let Some(codegrid_selection) = &self.codegrid_selection {
-                            if let Some(codegrid) = self.bundle.get_grid_mut(&codegrid_selection.uuid) {
+                            if let Some(codegrid) =
+                                self.bundle.get_grid_mut(&codegrid_selection.uuid)
+                            {
                                 if codegrid.name != text {
-                                    if let Some(widget) = ui.get_widget_id(codegrid_selection.uuid){
+                                    if let Some(widget) = ui.get_widget_id(codegrid_selection.uuid)
+                                    {
                                         widget.set_value(TheValue::Text(text.clone()));
                                         codegrid.name = text.clone();
                                         ctx.ui.relayout = true;
@@ -606,9 +607,12 @@ impl TheCodeEditor {
 
         let mut code_layout = TheListLayout::new(TheId::named("CodeGrid List"));
 
-        for key in self.bundle.grids.keys() {
+        let keys = self.bundle.sorted();
+
+        for key in &keys {
             if let Some(grid) = self.bundle.grids.get(key) {
-                let mut item = TheListItem::new(TheId::named_with_id("CodeGrid List Item", grid.uuid));
+                let mut item =
+                    TheListItem::new(TheId::named_with_id("CodeGrid List Item", grid.uuid));
                 item.set_text(grid.name.clone());
                 item.set_associated_layout(code_layout.id().clone());
                 code_layout.add_item(item, ctx);

@@ -106,8 +106,11 @@ impl TheLayout for TheHLayout {
 
                         let mut y = self.margin.y;
                         if self.dim.height > self.margin.y + self.margin.w {
-                            let off =
+                            let mut off =
                                 (self.dim.height - self.margin.y - self.margin.w - height) / 2;
+                            if w.as_text().is_some() {
+                                off -= 1;
+                            }
                             if y + off + height < self.dim.height {
                                 y += off;
                             }

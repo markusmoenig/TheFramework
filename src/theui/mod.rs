@@ -170,9 +170,11 @@ impl TheUI {
         self.canvas.draw_overlay(&mut self.style, ctx);
         if let Some(drop) = &ctx.ui.drop {
             if let Some(position) = &drop.position {
-                self.canvas
-                    .buffer
-                    .copy_into(position.x, position.y, &drop.image)
+                self.canvas.buffer.blend_into(
+                    position.x - drop.offset.x,
+                    position.y - drop.offset.y,
+                    &drop.image,
+                )
             }
         }
         ctx.ui.redraw_all = false;
@@ -191,6 +193,11 @@ impl TheUI {
                 }
 
                 match event {
+                    TheEvent::DragStartedWithNoImage(drop) => {
+                        let mut drop = drop.clone();
+                        self.style.create_drop_image(&mut drop, ctx);
+                        ctx.ui.drop = Some(drop);
+                    }
                     TheEvent::NewListItemSelected(id, layout_id) => {
                         if let Some(layout) = self.canvas.get_layout(None, Some(&layout_id.uuid)) {
                             if let Some(list) = layout.as_list_layout() {
@@ -349,7 +356,7 @@ impl TheUI {
         let coord = vec2i(x as i32, y as i32);
 
         if let Some(id) = &ctx.ui.focus {
-            if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
+            if let Some(widget) = self.get_widget_abs(None, Some(&id.uuid)) {
                 let event = TheEvent::MouseDragged(widget.dim().to_local(coord));
                 redraw = widget.on_event(&event, ctx);
                 self.process_events(ctx);
@@ -406,7 +413,7 @@ impl TheUI {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
         if let Some(widget) = self.get_widget_at_coord(coord) {
-            // println!("Hover {:?}", widget.id());
+            //println!("Hover {:?}", widget.id());
             let event = TheEvent::Hover(widget.dim().to_local(coord));
             redraw = widget.on_event(&event, ctx);
 
@@ -479,9 +486,9 @@ impl TheUI {
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheWidget>> {
         if let Some(dialog) = &mut self.dialog {
-            dialog.get_widget(name, None)
+            dialog.get_widget(name, uuid)
         } else {
-            self.canvas.get_widget(name, None)
+            self.canvas.get_widget(name, uuid)
         }
     }
 

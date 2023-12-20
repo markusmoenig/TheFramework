@@ -108,6 +108,10 @@ impl TheTheme for TheDarkTheme {
         colors.insert(CodeGridText, [85, 81, 85, 255]);
         colors.insert(CodeGridHover, [237, 237, 237, 255]);
 
+        colors.insert(DropItemBackground, [174, 174, 174, 255]);
+        colors.insert(DropItemBorder, [237, 237, 237, 255]);
+        colors.insert(DropItemText, [85, 81, 85, 255]);
+
         Self {
             temp_color: BLACK,
             colors,

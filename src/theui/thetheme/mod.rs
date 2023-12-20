@@ -121,4 +121,8 @@ pub enum TheThemeColors {
     CodeGridSelected,
     CodeGridHover,
     CodeGridText,
+
+    DropItemBackground,
+    DropItemBorder,
+    DropItemText,
 }

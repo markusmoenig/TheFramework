@@ -90,6 +90,46 @@ impl TheRGBABuffer {
         }
     }
 
+    /// Blends the other buffer into this buffer at the given coordinates.
+    pub fn blend_into(&mut self, x: i32, y: i32, other: &TheRGBABuffer) {
+        let width = other.dim.width as usize;
+
+        let stride = self.stride();
+        let dest = &mut self.buffer[..];
+
+        for h in 0..other.dim.height {
+            for w in 0..width {
+                let dest_x = w as i32 + x;
+                let dest_y = h + y;
+
+                // Check if the destination coordinates are within the bounds of the destination buffer
+                if dest_x >= 0 && dest_x < self.dim.width && dest_y >= 0 && dest_y < self.dim.height
+                {
+                    let src_index = (h as usize * width + w) * 4;
+                    let dst_index = (dest_y as usize * stride + dest_x as usize) * 4;
+
+                    if dst_index + 3 < dest.len() && src_index + 3 < other.buffer.len() {
+                        let src_pixel = &other.buffer[src_index..src_index + 4];
+                        let dst_pixel = &mut dest[dst_index..dst_index + 4];
+
+                        // Alpha blending
+                        let alpha = src_pixel[3] as f32 / 255.0;
+                        let inv_alpha = 1.0 - alpha;
+
+                        dst_pixel[0] =
+                            (alpha * src_pixel[0] as f32 + inv_alpha * dst_pixel[0] as f32) as u8;
+                        dst_pixel[1] =
+                            (alpha * src_pixel[1] as f32 + inv_alpha * dst_pixel[1] as f32) as u8;
+                        dst_pixel[2] =
+                            (alpha * src_pixel[2] as f32 + inv_alpha * dst_pixel[2] as f32) as u8;
+                        // Optionally blend the alpha itself
+                        // dst_pixel[3] = (alpha * src_pixel[3] as f32 + inv_alpha * dst_pixel[3] as f32) as u8;
+                    }
+                }
+            }
+        }
+    }
+
     /// Copy the vertical range of the other buffer into this buffer at the given coordinates.
     pub fn copy_vertical_range_into(
         &mut self,

@@ -10,6 +10,8 @@ pub struct TheSlider {
 
     text_width: i32,
 
+    status: Option<String>,
+
     dim: TheDim,
     is_dirty: bool,
 
@@ -36,6 +38,8 @@ impl TheWidget for TheSlider {
 
             text_width: 50,
 
+            status: None,
+
             dim: TheDim::zero(),
             is_dirty: false,
 
@@ -46,6 +50,14 @@ impl TheWidget for TheSlider {
 
     fn id(&self) -> &TheId {
         &self.id
+    }
+
+    fn status_text(&self) -> Option<String> {
+        self.status.clone()
+    }
+
+    fn set_status_text(&mut self, text: &str) {
+        self.status = Some(text.to_string());
     }
 
     fn dim(&self) -> &TheDim {
@@ -113,9 +125,9 @@ impl TheWidget for TheSlider {
                 if self.state != TheWidgetState::Selected {
                     self.state = TheWidgetState::Selected;
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
-                    ctx.ui.set_focus(self.id());
-                    ctx.ui.set_overlay(self.id());
                 }
+
+                ctx.ui.set_focus(self.id());
 
                 if let Some(range_f32) = self.range.to_range_f32() {
                     let d = abs(range_f32.end() - range_f32.start())
@@ -139,13 +151,11 @@ impl TheWidget for TheSlider {
                         * (coord.x as f32 / (self.dim.width - self.text_width) as f32)
                             .clamp(0.0, 1.0);
                     let v = *range_f32.start() + d;
-                    self.original = self.value.clone();
                     self.value = TheValue::Float(v);
                 } else if let Some(range_i32) = self.range.to_range_i32() {
                     let range_diff = range_i32.end() - range_i32.start();
                     let d = (coord.x * range_diff) / (self.dim.width - self.text_width);
                     let v = (*range_i32.start() + d).clamp(*range_i32.start(), *range_i32.end());
-                    self.original = self.value.clone();
                     self.value = TheValue::Int(v);
                 }
                 if self.continuous {
@@ -159,11 +169,11 @@ impl TheWidget for TheSlider {
                 self.is_dirty = true;
                 if self.state == TheWidgetState::Selected {
                     self.state = TheWidgetState::None;
+                }
 
-                    if self.value != self.original {
-                        ctx.ui
-                            .send_widget_value_changed(self.id(), self.value.clone());
-                    }
+                if self.value != self.original {
+                    ctx.ui
+                        .send_widget_value_changed(self.id(), self.value.clone());
                 }
                 redraw = true;
             }

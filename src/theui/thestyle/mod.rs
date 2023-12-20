@@ -39,13 +39,49 @@ pub trait TheStyle: Send {
     }
 
     /// Creates a preview image for the drop.
-    fn create_drop_image(&self, drop: &mut TheDrop, ctx: &mut TheContext) {
-        let mut buffer = TheRGBABuffer::new(TheDim::new(0, 0, 120, 20));
+    fn create_drop_image(&mut self, drop: &mut TheDrop, ctx: &mut TheContext) {
+        let mut width: i32 = 120;
 
-        let utuple = buffer.dim().to_buffer_utuple();
+        if let Some(font) = &ctx.ui.font {
+            let size = ctx.draw.get_text_size(font, 12.5, &drop.title);
+            width = size.0 as i32 + 20;
+        }
+
+        if drop.offset.x > width {
+            drop.offset.x = width - 10;
+        }
+
+        let mut buffer = TheRGBABuffer::new(TheDim::new(0, 0, width, 24));
+
+        let mut shrinker = TheDimShrinker::zero();
+        shrinker.shrink(2);
+        let mut utuple = buffer.dim().to_buffer_shrunk_utuple(&shrinker);
+
         let stride = buffer.stride();
 
-        ctx.draw.rect(buffer.pixels_mut(), &utuple, stride, &WHITE);
+        ctx.draw.rounded_rect_with_border(
+            buffer.pixels_mut(),
+            &utuple,
+            stride,
+            &self.theme().color(DropItemBackground).clone(),
+            &(2.0, 2.0, 2.0, 2.0),
+            self.theme().color(DropItemBorder),
+            1.5,
+        );
+
+        if let Some(font) = &ctx.ui.font {
+            ctx.draw.text_rect_blend(
+                buffer.pixels_mut(),
+                &utuple,
+                stride,
+                font,
+                12.5,
+                &drop.title,
+                self.theme().color(DropItemText),
+                TheHorizontalAlign::Center,
+                TheVerticalAlign::Center,
+            );
+        }
 
         drop.set_image(buffer);
     }

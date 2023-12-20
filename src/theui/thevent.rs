@@ -21,7 +21,8 @@ pub enum TheEvent {
     StateChanged(TheId, TheWidgetState),
     SetState(String, TheWidgetState),
 
-    DragStarted(TheId),
+    DragStarted(TheId, String, Vec2i),
+    DragStartedWithNoImage(TheDrop),
 
     ValueChanged(TheId, TheValue),
     SetValue(Uuid, TheValue),
@@ -42,8 +43,11 @@ pub enum TheEvent {
     TileEditorClicked(TheId, Vec2i),
     TileEditorHoverChanged(TheId, Vec2i),
 
+    #[cfg(feature = "code")]
     CodeEditorSelectionChanged(TheId, Option<(u16, u16)>),
+    #[cfg(feature = "code")]
     CodeEditorChanged(TheId, TheCodeGrid),
+    #[cfg(feature = "code")]
     CodeBundleChanged(TheCodeBundle),
 
     // Show the given context menu at the given coordinates

@@ -6,7 +6,11 @@ edition = "2021"
 [dependencies]
 theframework = { path = "../..", features = ["ui"] }
 lazy_static = "1.4.0"
+#rust-pathtracer = "0.2.3"
+rust-pathtracer = { path = "../../../rust-pathtracer/rust-pathtracer" }
+nalgebra = "0.32.1"
 
+# theframework = { path = "../..", features = ["ui"] }
 # [lib]
 # name = "rustapi"
 # crate-type = ["staticlib"]

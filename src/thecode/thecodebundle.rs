@@ -16,10 +16,9 @@ impl Default for TheCodeBundle {
 
 impl TheCodeBundle {
     pub fn new() -> Self {
-
-        let mut grids = FxHashMap::default();
-        let def = TheCodeGrid::default();
-        grids.insert(def.uuid, def);
+        let grids = FxHashMap::default();
+        //let def = TheCodeGrid::default();
+        //grids.insert(def.uuid, def);
 
         Self {
             name: "Unnamed".to_string(),
@@ -41,5 +40,17 @@ impl TheCodeBundle {
     /// Get a mutable grid from the module.
     pub fn get_grid_mut(&mut self, id: &Uuid) -> Option<&mut TheCodeGrid> {
         self.grids.get_mut(id)
+    }
+
+    /// Returns a list of all codegrid keys in the bundle sorted by their name.
+    pub fn sorted(&self) -> Vec<Uuid> {
+        let mut entries: Vec<(Uuid, String)> = self
+            .grids
+            .iter()
+            .map(|(uuid, data)| (*uuid, data.name.clone()))
+            .collect();
+
+        entries.sort_by(|a, b| a.1.cmp(&b.1));
+        entries.into_iter().map(|(uuid, _)| uuid).collect()
     }
 }

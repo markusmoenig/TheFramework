@@ -68,15 +68,19 @@ impl TheWidget for TheListItem {
                         self.id().clone(),
                         self.layout_id.clone(),
                     ));
-                    ctx.ui.set_focus(self.id());
                     redraw = true;
                 }
+                ctx.ui.set_focus(self.id());
             }
             TheEvent::MouseDragged(coord) => {
                 if ctx.ui.drop.is_none()
                     && distance(Vec2f::from(self.mouse_down_pos), Vec2f::from(*coord)) >= 5.0
                 {
-                    ctx.ui.send(TheEvent::DragStarted(self.id().clone()));
+                    ctx.ui.send(TheEvent::DragStarted(
+                        self.id().clone(),
+                        self.text.clone(),
+                        *coord,
+                    ));
                 }
             }
             TheEvent::Hover(_coord) => {

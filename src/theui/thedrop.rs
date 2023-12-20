@@ -5,6 +5,7 @@ pub struct TheDrop {
     pub id: TheId,
     pub data: String,
     pub title: String,
+    pub text: String,
     pub image: TheRGBABuffer,
 
     pub position: Option<Vec2i>,
@@ -17,6 +18,7 @@ impl TheDrop {
             id,
             data: String::new(),
             title: String::new(),
+            text: String::new(),
             image: TheRGBABuffer::empty(),
             position: None,
             offset: Vec2i::zero(),
@@ -37,6 +39,10 @@ impl TheDrop {
 
     pub fn set_title(&mut self, title: String) {
         self.title = title;
+    }
+
+    pub fn set_text(&mut self, title: String) {
+        self.text = title;
     }
 
     pub fn set_image(&mut self, image: TheRGBABuffer) {

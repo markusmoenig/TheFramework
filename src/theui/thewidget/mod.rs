@@ -256,5 +256,6 @@ pub trait TheWidget: Send {
         None
     }
 
+    /// Cast to any
     fn as_any(&mut self) -> &mut dyn Any;
 }

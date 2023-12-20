@@ -44,6 +44,10 @@ impl TheId {
             return false;
         }
 
+        if uuid.is_some() {
+            return uuid == Some(&self.uuid);
+        }
+
         name == Some(&self.name) || uuid == Some(&self.uuid)
     }
 

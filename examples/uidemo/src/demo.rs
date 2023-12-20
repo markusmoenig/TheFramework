@@ -1,9 +1,13 @@
-use crate::{browser::Browser, prelude::*};
+use crate::prelude::*;
+use std::sync::mpsc::Receiver;
 use theframework::prelude::*;
 
 pub struct UIDemo {
     sidebar: Sidebar,
-    browser: Browser,
+    renderer: Renderer,
+    project: Project,
+
+    event_receiver: Option<Receiver<TheEvent>>,
 }
 
 impl TheTrait for UIDemo {
@@ -13,20 +17,19 @@ impl TheTrait for UIDemo {
     {
         Self {
             sidebar: Sidebar::new(),
-            browser: Browser::new(),
+            renderer: Renderer::new(),
+            project: Project::new(),
+
+            event_receiver: None,
         }
     }
 
+    fn window_title(&mut self) -> String {
+        "UIDemo".to_string()
+    }
+
     fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
-        // Left
-        let mut left_canvas = TheCanvas::new();
-
-        let mut blue_color = TheColorButton::new(TheId::named("Blue"));
-        blue_color.set_color([0, 0, 255, 255]);
-        blue_color.limiter_mut().set_max_width(60);
-        left_canvas.set_widget(blue_color);
-
-        // Top
+        // Menubar
         let mut top_canvas = TheCanvas::new();
 
         let menubar = TheMenubar::new(TheId::named("Menubar"));
@@ -60,30 +63,59 @@ impl TheTrait for UIDemo {
         top_canvas.set_widget(menubar);
         top_canvas.set_layout(hlayout);
 
-        // Right
-        self.sidebar.init_ui(ui, ctx);
+        // Right Sidebar
+        self.sidebar.init_ui(ui, ctx, &mut self.project);
 
-        // Bottom
+        // Renderer
+        self.renderer.init_ui(ui, ctx, &mut self.project);
 
-        //self.browser.init_ui(ui, ctx);
+        // Copy the command command from the renderer to the sidebar.
+        self.sidebar.renderer_command = self.renderer.renderer_command.clone();
 
-        /*
-        let mut bottom_canvas = TheCanvas::new();
+        // Statusbar
 
-        let mut yellow_color = TheColorButton::new("Yellow".to_string());
-        yellow_color.set_color([255, 255, 0, 255]);
-        yellow_color.limiter_mut().set_max_height(200);
-        bottom_canvas.set_widget(yellow_color);*/
+        let mut status_canvas = TheCanvas::new();
+        let mut statusbar = TheStatusbar::new(TheId::named("Statusbar"));
+        statusbar.set_text("Welcome to TheFramework!".to_string());
+        status_canvas.set_widget(statusbar);
 
-        //
-
-        ui.canvas.set_left(left_canvas);
+        ui.set_statusbar_name("Statusbar".to_string());
         ui.canvas.set_top(top_canvas);
-        ui.canvas
-            .set_widget(TheColorButton::new(TheId::named("White")));
+        ui.canvas.set_bottom(status_canvas);
+
+        // Create an event listener.
+        self.event_receiver = Some(ui.add_state_listener("Main".into()));
     }
 
+    /// Update the UI by handling the events from the UI subsystem.
+    /// Return true if the UI needs to be redrawn.
     fn update_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
-        self.sidebar.update_ui(ui, ctx)
+        let mut redraw = self.renderer.check_renderer_update(ui, ctx);
+
+        if let Some(receiver) = &mut self.event_receiver {
+            while let Ok(event) = receiver.try_recv() {
+                // Handle the UI events in the sidebar
+                if self
+                    .sidebar
+                    .handle_event(&event, ui, ctx, &mut self.project)
+                {
+                    redraw = true;
+                }
+
+                // Handle the UI events in the renderer
+                if self
+                    .renderer
+                    .handle_event(&event, ui, ctx, &mut self.project)
+                {
+                    redraw = true;
+                }
+
+                // match event {
+                //     _ => {}
+                // }
+            }
+        }
+
+        redraw
     }
 }

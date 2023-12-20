@@ -111,8 +111,9 @@ impl TheWidget for TheCodeView {
                     {
                         if let Some(atom) = self.codegrid.code.get(selected) {
                             let mut drop = TheDrop::new(TheId::named("Code Editor Atom"));
+                            drop.title = atom.describe();
                             drop.set_data(atom.to_json());
-                            ctx.ui.drop = Some(drop);
+                            ctx.ui.send(TheEvent::DragStartedWithNoImage(drop));
                         }
                     }
                 }
@@ -136,7 +137,10 @@ impl TheWidget for TheCodeView {
                         self.codegrid.code.insert(c, atom);
                         redraw = true;
                         self.code_is_dirty = true;
-                        ctx.ui.send(TheEvent::CodeEditorChanged(self.id.clone(), self.codegrid.clone()));
+                        ctx.ui.send(TheEvent::CodeEditorChanged(
+                            self.id.clone(),
+                            self.codegrid.clone(),
+                        ));
                     }
                 }
             }
@@ -186,7 +190,10 @@ impl TheWidget for TheCodeView {
                             selected.1 += 1;
                             self.code_is_dirty = true;
                             redraw = true;
-                            ctx.ui.send(TheEvent::CodeEditorChanged(self.id.clone(), self.codegrid.clone()));
+                            ctx.ui.send(TheEvent::CodeEditorChanged(
+                                self.id.clone(),
+                                self.codegrid.clone(),
+                            ));
                         }
                     } else if code == TheKeyCode::Delete {
                         if let Some(selected) = self.selected {
@@ -198,7 +205,10 @@ impl TheWidget for TheCodeView {
                             // }
                             self.code_is_dirty = true;
                             redraw = true;
-                            ctx.ui.send(TheEvent::CodeEditorChanged(self.id.clone(), self.codegrid.clone()));
+                            ctx.ui.send(TheEvent::CodeEditorChanged(
+                                self.id.clone(),
+                                self.codegrid.clone(),
+                            ));
                         }
                     } else if code == TheKeyCode::Space {
                         if let Some(selected) = &mut self.selected {
@@ -206,7 +216,10 @@ impl TheWidget for TheCodeView {
                             selected.0 += 1;
                             self.code_is_dirty = true;
                             redraw = true;
-                            ctx.ui.send(TheEvent::CodeEditorChanged(self.id.clone(), self.codegrid.clone()));
+                            ctx.ui.send(TheEvent::CodeEditorChanged(
+                                self.id.clone(),
+                                self.codegrid.clone(),
+                            ));
                         }
                     }
                 }
@@ -833,7 +846,7 @@ impl TheWidget for TheCodeView {
 }
 
 /// `TheCodeViewTrait` trait defines a set of functionalities specifically for `TheCodeView` widget.
-pub trait TheCodeViewTrait : TheWidget {
+pub trait TheCodeViewTrait: TheWidget {
     /// Adjusts the buffer size to match the size of the code grid. This ensures
     /// that the buffer is correctly sized to fit the grid layout.
     fn adjust_buffer_to_grid(&mut self);

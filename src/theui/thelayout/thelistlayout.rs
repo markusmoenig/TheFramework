@@ -240,7 +240,7 @@ impl TheLayout for TheListLayout {
 }
 
 /// TheListLayout specific functions.
-pub trait TheListLayoutTrait : TheLayout {
+pub trait TheListLayoutTrait: TheLayout {
     /// Adds an item.
     fn add_item(&mut self, item: TheListItem, ctx: &mut TheContext);
     /// A new item was selected, manage the selection states.
