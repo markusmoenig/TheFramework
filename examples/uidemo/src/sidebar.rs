@@ -123,6 +123,7 @@ impl Sidebar {
 
         let mut ior = TheSlider::new(TheId::named("IOR"));
         ior.set_status_text("The index of refraction attribute of the material.");
+        ior.set_range(TheValue::RangeF32(0.0..=2.0));
         ior.set_value(TheValue::Float(project.material.ior));
         text_layout.add_pair("IOR".to_string(), Box::new(ior));
 
