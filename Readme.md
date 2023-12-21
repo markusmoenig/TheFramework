@@ -2,6 +2,8 @@ TheFramework is an abstraction layer for your application or game. You create yo
 
 Without any enabled options, TheFramework opens a window and provides a pixel buffer for drawing and user events (mouse, keyboard, trackpads etc). to your application trait.
 
+![UI Screenshot](images/screenshot_uidemo.png)
+
 ![UI Screenshot](images/screenshot_ui.png)
 
 ### Option: ui

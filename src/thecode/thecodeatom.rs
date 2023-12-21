@@ -330,6 +330,7 @@ impl TheCodeAtom {
                 TheValue::KeyCode(_v) => "Key Code value.".to_string(),
                 TheValue::RangeI32(_v) => "Range value.".to_string(),
                 TheValue::RangeF32(_v) => "Range value.".to_string(),
+                TheValue::ColorObject(_v) => "Color.".to_string(),
                 TheValue::Empty => "Empty value.".to_string(),
             },
             TheCodeAtom::Add => "Operator ('+')".to_string(),

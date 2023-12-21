@@ -98,7 +98,11 @@ impl TheLayout for TheTextLayout {
 
             for t in &mut self.text {
                 if let Some(font) = &ctx.ui.font {
-                    let size = ctx.draw.get_text_size(font, self.text_size, t);
+                    let size = if !t.is_empty() {
+                        ctx.draw.get_text_size(font, self.text_size, t)
+                    } else {
+                        (0, 0)
+                    };
                     if size.0 > text_width {
                         text_width = size.0;
                     }
@@ -110,9 +114,16 @@ impl TheLayout for TheTextLayout {
             let mut texts_rect: Vec<(usize, usize, usize, usize)> = vec![];
             let max_width = dim.width - text_width as i32 - self.margin.x - self.margin.z;
 
-            for w in &mut self.widgets {
+            for (index, w) in &mut self.widgets.iter_mut().enumerate() {
                 w.calculate_size(ctx);
-                let width = w.limiter().get_width(max_width);
+
+                let text_is_empty = self.text[index].is_empty();
+
+                let width = w.limiter().get_width(if text_is_empty {
+                    max_width + text_width as i32
+                } else {
+                    max_width
+                });
                 let height = w.limiter().get_height(dim.height);
 
                 // Limit to visible area
@@ -127,16 +138,23 @@ impl TheLayout for TheTextLayout {
                     self.text_size as usize,
                 ));
 
-                w.set_dim(TheDim::new(
-                    dim.x + x + text_width as i32,
-                    dim.y + y,
-                    width,
-                    height,
-                ));
-                w.dim_mut().set_buffer_offset(
-                    self.dim.buffer_x + x + text_width as i32,
-                    self.dim.buffer_y + y,
-                );
+                if text_is_empty {
+                    let offset = (max_width + text_width as i32 - width) / 2;
+                    w.set_dim(TheDim::new(dim.x + x + offset, dim.y + y, width, height));
+                    w.dim_mut()
+                        .set_buffer_offset(self.dim.buffer_x + x + offset, self.dim.buffer_y + y);
+                } else {
+                    w.set_dim(TheDim::new(
+                        dim.x + x + text_width as i32,
+                        dim.y + y,
+                        width,
+                        height,
+                    ));
+                    w.dim_mut().set_buffer_offset(
+                        self.dim.buffer_x + x + text_width as i32,
+                        self.dim.buffer_y + y,
+                    );
+                }
 
                 y += height + self.padding;
             }
@@ -182,6 +200,9 @@ impl TheLayout for TheTextLayout {
         }
 
         for i in 0..self.text.len() {
+            if self.text[i].is_empty() {
+                continue;
+            }
             if let Some(font) = &ctx.ui.font {
                 ctx.draw.text_rect_blend(
                     buffer.pixels_mut(),

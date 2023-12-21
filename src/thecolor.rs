@@ -2,7 +2,7 @@ pub use crate::prelude::*;
 use std::ops::{Index, IndexMut};
 
 /// Holds a given color value and offers several import and export methods.
-#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct TheColor {
     pub r: f32,
     pub g: f32,
@@ -14,6 +14,51 @@ impl TheColor {
     /// Creates a color from u8 values.
     pub fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
         Self { r, g, b, a }
+    }
+
+    /// Creates a color from hsl.
+    pub fn from_hsl(h: f32, s: f32, l: f32) -> Self {
+        fn hue_angle(hue_in: f32, x: f32, y: f32) -> f32 {
+            let mut hue = hue_in;
+
+            if hue < 0.0 {
+                hue += 1.0;
+            } else if hue > 1.0 {
+                hue -= 1.0;
+            }
+
+            if hue < 1.0 / 6.0 {
+                return x + (y - x) * 6.0 * hue;
+            }
+            if hue < 1.0 / 2.0 {
+                return y;
+            }
+            if hue < 2.0 / 3.0 {
+                return x + (y - x) * ((2.0 / 3.0) - hue) * 6.0;
+            }
+
+            x
+        }
+
+        let (r, g, b) = if s == 0.0 {
+            (l, l, l)
+        } else {
+            let y = if l < 0.5 {
+                l * (1.0 + s)
+            } else {
+                l + s - l * s
+            };
+            let x = 2.0 * l - y;
+            let hue = h / 360.0;
+
+            (
+                hue_angle(hue + 1.0 / 3.0, x, y),
+                hue_angle(hue, x, y),
+                hue_angle(hue - 1.0 / 3.0, x, y),
+            )
+        };
+
+        Self { r, g, b, a: 1.0 }
     }
 
     /// Creates a color from u8 values.
@@ -33,6 +78,16 @@ impl TheColor {
             g: color[1] as f32 / 255.0,
             b: color[2] as f32 / 255.0,
             a: color[3] as f32 / 255.0,
+        }
+    }
+
+    /// Creates a color from an vec3.
+    pub fn from_vec3f(color: Vec3f) -> Self {
+        Self {
+            r: color.x,
+            g: color.y,
+            b: color.z,
+            a: 1.0,
         }
     }
 
@@ -103,6 +158,11 @@ impl TheColor {
         ]
     }
 
+    /// Convert the color to Vec3f.
+    pub fn to_vec3f(&self) -> Vec3f {
+        vec3f(self.r, self.g, self.b)
+    }
+
     pub fn as_srgba(&self) -> TheColor {
         TheColor::new(
             powf(self.r, 0.45),
@@ -110,6 +170,40 @@ impl TheColor {
             powf(self.b, 0.45),
             powf(self.a, 0.45),
         )
+    }
+
+    /// Convert the color to HSL
+    pub fn as_hsl(&self) -> Vec3f {
+        let max = self.r.max(self.g.max(self.b));
+        let min = self.r.min(self.g.min(self.b));
+
+        let l = (max + min) / 2.0;
+        let mut h; // = l;
+        let s; // = l;
+
+        if max == min {
+            h = 0.0;
+            s = 0.0;
+        } else {
+            let d = max - min;
+            s = if l > 0.5 {
+                d / (2.0 - max - min)
+            } else {
+                d / (max + min)
+            };
+
+            h = if max == self.r {
+                (self.g - self.b) / d + if self.g < self.b { 6.0 } else { 0.0 }
+            } else if max == self.g {
+                (self.b - self.r) / d + 2.0
+            } else {
+                (self.r - self.g) / d + 4.0
+            };
+
+            h /= 6.0;
+        }
+
+        vec3f(h, clamp(s, 0.0, 1.0), clamp(l, 0.0, 1.0))
     }
 }
 

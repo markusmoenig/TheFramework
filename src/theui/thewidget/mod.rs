@@ -24,6 +24,7 @@ pub mod theswitchbar;
 pub mod thetabbar;
 pub mod thetext;
 // pub mod thetextedit;
+pub mod thecolorpicker;
 pub mod thetextlineedit;
 pub mod thetoolbar;
 pub mod thetoolbarbutton;
@@ -80,6 +81,7 @@ pub mod prelude {
     #[cfg(feature = "code")]
     pub use crate::theui::thewidget::thecodeview::{TheCodeView, TheCodeViewTrait};
 
+    pub use crate::theui::thewidget::thecolorpicker::{TheColorPicker, TheColorPickerTrait};
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetState;
 }

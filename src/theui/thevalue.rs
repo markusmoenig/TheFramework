@@ -19,6 +19,7 @@ pub enum TheValue {
     KeyCode(TheKeyCode),
     RangeI32(RangeInclusive<i32>),
     RangeF32(RangeInclusive<f32>),
+    ColorObject(TheColor),
     #[cfg(feature = "code")]
     CodeObject(TheCodeObject),
 }
@@ -90,6 +91,14 @@ impl TheValue {
         }
     }
 
+
+    pub fn to_color(&self) -> Option<TheColor> {
+        match self {
+            ColorObject(v) => Some(v.clone()),
+            _ => None,
+        }
+    }
+
     /// Returns a description of the value as string.
     pub fn describe(&self) -> String {
         match self {
@@ -122,6 +131,7 @@ impl TheValue {
             KeyCode(k) => format!("KeyCode: {:?}", k),
             RangeI32(r) => format!("RangeI32: {:?}", r),
             RangeF32(r) => format!("RangeF32: {:?}", r),
+            ColorObject(c) => format!("Color: {:?}", c),
         }
     }
 }

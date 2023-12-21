@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use std::sync::mpsc;
+use rust_pathtracer::prelude::*;
 
 pub struct Sidebar {
     stack_layout_id: TheId,
@@ -71,6 +72,15 @@ impl Sidebar {
         let mut text_layout = TheTextLayout::new(TheId::named("Material Layout"));
         text_layout.limiter_mut().set_max_width(width);
 
+        let mut color_picker = TheColorPicker::new(TheId::named("Color Picker"));
+        color_picker.set_color(vec3f(project.material.rgb.x, project.material.rgb.y, project.material.rgb.z));
+        text_layout.add_pair("".to_string(), Box::new(color_picker));
+
+        let mut anisotropic = TheSlider::new(TheId::named("Anisotropic"));
+        anisotropic.set_status_text("The anisotropic attribute of the material.");
+        anisotropic.set_value(TheValue::Float(project.material.anisotropic));
+        text_layout.add_pair("Anisotropic".to_string(), Box::new(anisotropic));
+
         let mut metallic = TheSlider::new(TheId::named("Metallic"));
         metallic.set_status_text("The metallic attribute of the material.");
         metallic.set_value(TheValue::Float(project.material.metallic));
@@ -81,10 +91,46 @@ impl Sidebar {
         roughness.set_value(TheValue::Float(project.material.roughness));
         text_layout.add_pair("Roughness".to_string(), Box::new(roughness));
 
+        let mut subsurface = TheSlider::new(TheId::named("Subsurface"));
+        subsurface.set_status_text("The subsurface attribute of the material.");
+        subsurface.set_value(TheValue::Float(project.material.subsurface));
+        text_layout.add_pair("Subsurface".to_string(), Box::new(subsurface));
+
+        let mut sheen = TheSlider::new(TheId::named("Sheen"));
+        sheen.set_status_text("The sheen attribute of the material.");
+        sheen.set_value(TheValue::Float(project.material.sheen));
+        text_layout.add_pair("Sheen".to_string(), Box::new(sheen));
+
+        let mut sheen_tint = TheSlider::new(TheId::named("Sheen Tint"));
+        sheen_tint.set_status_text("The specular tint attribute of the material.");
+        sheen_tint.set_value(TheValue::Float(project.material.sheen_tint));
+        text_layout.add_pair("Sheen Tint".to_string(), Box::new(sheen_tint));
+
+        let mut clearcoat = TheSlider::new(TheId::named("Clearcoat"));
+        clearcoat.set_status_text("The clearcoat attribute of the material.");
+        clearcoat.set_value(TheValue::Float(project.material.clearcoat));
+        text_layout.add_pair("Clearcoat".to_string(), Box::new(clearcoat));
+
+        let mut clearcoat_gloss = TheSlider::new(TheId::named("Clearcoat Gloss"));
+        clearcoat_gloss.set_status_text("The clearcoat gloss attribute of the material.");
+        clearcoat_gloss.set_value(TheValue::Float(project.material.clearcoat_gloss));
+        text_layout.add_pair("Clearcoat Gloss".to_string(), Box::new(clearcoat_gloss));
+
         let mut transmission = TheSlider::new(TheId::named("Transmission"));
         transmission.set_status_text("The transmission attribute of the material.");
         transmission.set_value(TheValue::Float(project.material.spec_trans));
         text_layout.add_pair("Transmission".to_string(), Box::new(transmission));
+
+        let mut ior = TheSlider::new(TheId::named("IOR"));
+        ior.set_status_text("The index of refraction attribute of the material.");
+        ior.set_value(TheValue::Float(project.material.ior));
+        text_layout.add_pair("IOR".to_string(), Box::new(ior));
+
+        let mut emission = TheSlider::new(TheId::named("Emission"));
+        emission.set_range(TheValue::RangeF32(0.0..=10.0));
+        emission.set_status_text("The index of refraction attribute of the material.");
+        emission.set_value(TheValue::Float(project.material.emission.x));
+        text_layout.add_pair("Emission".to_string(), Box::new(emission));
 
         material_canvas.set_layout(text_layout);
         material_canvas.top_is_expanding = false;
@@ -142,36 +188,77 @@ impl Sidebar {
                 redraw = true;
             }
             TheEvent::ValueChanged(id, value) => {
-                if id.name == "Metallic" {
+                if id.name == "Color Picker" {
+                    if let TheValue::ColorObject(v) = value {
+                        let c = v.to_vec3f();
+                        project.material.rgb = rust_pathtracer::prelude::F3::new(c.x, c.y, c.z);
+                        self.send_material(project.material.clone());
+                    }
+                }
+                else if id.name == "Anistotropic" {
+                    if let TheValue::Float(anisotropic) = value {
+                        project.material.anisotropic = *anisotropic;
+                        self.send_material(project.material.clone());
+                    }
+                }
+                else if id.name == "Metallic" {
                     if let TheValue::Float(metallic) = value {
                         project.material.metallic = *metallic;
-
-                        if let Some(renderer_command) = &self.renderer_command {
-                            renderer_command
-                                .send(RendererMessage::Material(project.material.clone()))
-                                .unwrap();
-                        }
+                        self.send_material(project.material.clone());
                     }
-                } else if id.name == "Roughness" {
+                }
+                else if id.name == "Roughness" {
                     if let TheValue::Float(roughness) = value {
                         project.material.roughness = *roughness;
-
-                        if let Some(renderer_command) = &self.renderer_command {
-                            renderer_command
-                                .send(RendererMessage::Material(project.material.clone()))
-                                .unwrap();
-                        }
+                        self.send_material(project.material.clone());
+                    }
+                }
+                else if id.name == "Subsurface" {
+                    if let TheValue::Float(subsurface) = value {
+                        project.material.subsurface = *subsurface;
+                        self.send_material(project.material.clone());
+                    }
+                }
+                else if id.name == "Sheen" {
+                    if let TheValue::Float(sheen) = value {
+                        project.material.sheen = *sheen;
+                        self.send_material(project.material.clone());
+                    }
+                }
+                else if id.name == "Sheen Tint" {
+                    if let TheValue::Float(sheen_tint) = value {
+                        project.material.sheen_tint = *sheen_tint;
+                        self.send_material(project.material.clone());
+                    }
+                }
+                else if id.name == "Clearcoat" {
+                    if let TheValue::Float(clearcoat) = value {
+                        project.material.clearcoat = *clearcoat;
+                        self.send_material(project.material.clone());
+                    }
+                }
+                else if id.name == "Clearcoat Gloss" {
+                    if let TheValue::Float(clearcoat_gloss) = value {
+                        project.material.clearcoat_gloss = *clearcoat_gloss;
+                        self.send_material(project.material.clone());
                     }
                 }
                 if id.name == "Transmission" {
                     if let TheValue::Float(transmission) = value {
                         project.material.spec_trans = *transmission;
-
-                        if let Some(renderer_command) = &self.renderer_command {
-                            renderer_command
-                                .send(RendererMessage::Material(project.material.clone()))
-                                .unwrap();
-                        }
+                        self.send_material(project.material.clone());
+                    }
+                }
+                if id.name == "IOR" {
+                    if let TheValue::Float(ior) = value {
+                        project.material.ior = *ior;
+                        self.send_material(project.material.clone());
+                    }
+                }
+                if id.name == "Emission" {
+                    if let TheValue::Float(emission) = value {
+                        project.material.emission = F3::new(*emission * project.material.rgb.x, *emission * project.material.rgb.y, *emission * project.material.rgb.z);
+                        self.send_material(project.material.clone());
                     }
                 }
             }
@@ -181,5 +268,14 @@ impl Sidebar {
             _ => {}
         }
         redraw
+    }
+
+    // Sends the given material to the renderer.
+    fn send_material(&mut self, material: Material) {
+        if let Some(renderer_command) = &self.renderer_command {
+            renderer_command
+                .send(RendererMessage::Material(material))
+                .unwrap();
+        }
     }
 }

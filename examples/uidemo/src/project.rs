@@ -16,9 +16,11 @@ impl Default for Project {
 impl Project {
     pub fn new() -> Self {
         let mut material = Material::new();
-        material.roughness = 0.04;
-        material.metallic = 1.0;
-
+        material.rgb = F3::new(1.0, 0.186, 0.0);
+        material.metallic = 0.0;
+        material.clearcoat = 1.0;
+        material.clearcoat_gloss = 1.0;
+        material.roughness = 0.1;
         Self { material }
     }
 }

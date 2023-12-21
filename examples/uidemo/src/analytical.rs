@@ -17,9 +17,12 @@ impl Scene for AnalyticalScene {
             F3::new(em, em, em),
         )];
 
+        let mut camera = Pinhole::new();
+        camera.set(F3::new(0.0, 0.3, 3.0), F3::new(0.0, 0.2, 0.0));
+
         Self {
             lights,
-            pinhole: Box::new(Pinhole::new()),
+            pinhole: Box::new(camera),
             material: Material::new(),
         }
     }
@@ -40,35 +43,6 @@ impl Scene for AnalyticalScene {
         let mut dist = F::MAX;
         let mut hit = false;
 
-        //let mut center = F3::new(-1.1, 0.0, 0.0);
-
-        /*
-        if let Some(d) = self.sphere(ray, center, 1.0) {
-            let hp = ray.at(&d);
-            let normal = normalize(&(hp - center));
-
-            state.hit_dist = d;
-            state.normal = normal;
-
-            // state.material.rgb = PTF3::new(1.0,0.4, 0.0);
-            // state.material.clearcoat = 1.0;
-            // state.material.clearcoat_gloss = 1.0;
-            //state.material.roughness = 1.0;
-
-            state.material.rgb = F3::new_x(1.0); //PTF3::new(0.815, 0.418501512, 0.00180012);
-            state.material.roughness = 0.05;
-            state.material.metallic = 1.0;
-            //state.material.spec_trans = 1.0;
-
-            // state.material.rgb = PTF3::new(1.0,1.0, 1.0);
-            // state.material.spec_trans = 1.0;
-            // state.material.roughness = 0.01;
-            // state.material.ior = 1.45;
-
-            hit = true;
-            dist = d;
-        }*/
-
         let center = F3::new(0.0, 0.3, 0.0);
 
         if let Some(d) = self.sphere(ray, center, 1.3) {
@@ -80,23 +54,6 @@ impl Scene for AnalyticalScene {
                 state.normal = normal;
 
                 state.material = self.material.clone();
-                // state.material.rgb = F3::new(1.0, 1.0, 1.0);
-                // state.material.rgb = F3::new(1.0, 0.186, 0.0);
-                // state.material.clearcoat = 1.0;
-                // state.material.clearcoat_gloss = 1.0;
-                // state.material.roughness = 0.1;
-
-                //state.material.roughness = 0.05;
-                // state.material.metallic = 1.0;
-
-                // state.material.rgb = F3::new(0.9,0.9, 0.9);
-                // state.material.roughness = 0.2;
-                // state.material.metallic = 1.0;
-
-                // state.material.rgb = F3::new(0.9,0.6, 0.2);
-                // state.material.spec_trans = 1.0;
-                // state.material.roughness = 0.06;
-                // state.material.ior = 1.45;
 
                 hit = true;
                 dist = d;
@@ -139,10 +96,6 @@ impl Scene for AnalyticalScene {
 
     /// Any hit
     fn any_hit(&self, ray: &Ray, _max_dist: F) -> bool {
-        //if let Some(_d) = self.sphere(ray, F3::new(-1.1, 0.0, 0.0), 1.0) {
-        //    return true;
-        //}
-
         if let Some(_d) = self.sphere(ray, F3::new(0.0, 0.3, 0.0), 1.3) {
             return true;
         }
