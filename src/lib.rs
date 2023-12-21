@@ -40,6 +40,8 @@ pub enum TheKeyCode {
 
 pub mod prelude {
 
+    pub use serde::{Deserialize, Serialize};
+
     pub use maths_rs::prelude::*;
     pub use rustc_hash::*;
     pub use uuid::Uuid;
