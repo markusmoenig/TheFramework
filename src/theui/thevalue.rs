@@ -91,7 +91,6 @@ impl TheValue {
         }
     }
 
-
     pub fn to_color(&self) -> Option<TheColor> {
         match self {
             ColorObject(v) => Some(v.clone()),

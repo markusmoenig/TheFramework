@@ -4,6 +4,7 @@ use super::thecodenode::TheCodeNodeData;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum TheCodeAtom {
+    Assignment(String),
     Value(TheValue),
     Add,
     Multiply,
@@ -21,6 +22,12 @@ pub enum TheCodeAtom {
 }
 
 impl TheCodeAtom {
+    pub fn uneven_slot(&self) -> bool {
+        matches!(self, TheCodeAtom::Assignment(_name))
+            || matches!(self, TheCodeAtom::Add)
+            || matches!(self, TheCodeAtom::Multiply)
+    }
+
     pub fn can_assign(&self) -> bool {
         matches!(self, TheCodeAtom::LocalSet(_name))
     }
@@ -35,6 +42,13 @@ impl TheCodeAtom {
 
     pub fn to_node(&self, ctx: &mut TheCompilerContext) -> TheCodeNode {
         match self {
+            TheCodeAtom::Assignment(_op) => {
+                let call: TheCodeNodeCall =
+                    |_stack: &mut Vec<TheValue>,
+                     _data: &mut TheCodeNodeData,
+                     _sandbox: &mut TheCodeSandbox| {};
+                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
+            }
             TheCodeAtom::FuncDef(_name) => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
@@ -267,6 +281,7 @@ impl TheCodeAtom {
 
     pub fn to_kind(&self) -> TheCodeAtomKind {
         match self {
+            TheCodeAtom::Assignment(_op) => TheCodeAtomKind::Equal,
             TheCodeAtom::FuncDef(_name) => TheCodeAtomKind::Fn,
             TheCodeAtom::FuncArg(_name) => TheCodeAtomKind::Identifier,
             TheCodeAtom::FuncCall(_name) => TheCodeAtomKind::Identifier,
@@ -286,6 +301,7 @@ impl TheCodeAtom {
 
     pub fn describe(&self) -> String {
         match self {
+            TheCodeAtom::Assignment(op) => op.clone(),
             TheCodeAtom::FuncDef(name) => name.clone(),
             TheCodeAtom::FuncArg(name) => name.clone(),
             TheCodeAtom::FuncCall(name) => name.clone(),
@@ -305,6 +321,7 @@ impl TheCodeAtom {
 
     pub fn help(&self) -> String {
         match self {
+            TheCodeAtom::Assignment(name) => format!("Assignment ({}).", name),
             TheCodeAtom::FuncDef(name) => format!("Function definition ({}).", name),
             TheCodeAtom::FuncArg(name) => format!("Function argument ({}).", name),
             TheCodeAtom::FuncCall(name) => format!(

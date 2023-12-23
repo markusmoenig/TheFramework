@@ -4,7 +4,7 @@ use crate::prelude::*;
 #[derive(Clone, Debug)]
 pub struct TheCodeModule {
     pub name: String,
-    pub uuid: Uuid,
+    pub id: Uuid,
     pub functions: FxHashMap<String, TheCodeFunction>,
 }
 
@@ -18,7 +18,7 @@ impl TheCodeModule {
     pub fn new() -> Self {
         Self {
             name: "Unnamed".to_string(),
-            uuid: Uuid::new_v4(),
+            id: Uuid::new_v4(),
             functions: FxHashMap::default(),
         }
     }
@@ -43,7 +43,7 @@ impl TheCodeModule {
         if let Some(main) = self.functions.get_mut(&"main".to_string()) {
             let clone = main.clone();
 
-            sandbox.push_current_module(self.uuid);
+            sandbox.push_current_module(self.id);
             sandbox.call_stack.push(clone);
 
             main.execute(sandbox);

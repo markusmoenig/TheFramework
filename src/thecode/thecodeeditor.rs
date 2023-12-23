@@ -355,14 +355,17 @@ impl TheCodeEditor {
     /// Create an atom for the given name.
     pub fn create_atom(&self, name: &str) -> TheCodeAtom {
         match name {
+            "Assignment" => TheCodeAtom::Assignment("=".to_string()),
             "Function" => TheCodeAtom::FuncDef("Name".to_string()),
             "Function Argument" => TheCodeAtom::FuncArg("Name".to_string()),
             "Function Call" => TheCodeAtom::FuncCall("Name".to_string()),
             "Return" => TheCodeAtom::Return,
             "Local Get" => TheCodeAtom::LocalGet("Name".to_string()),
             "Local Set" => TheCodeAtom::LocalSet("Name".to_string()),
-            "Integer" => TheCodeAtom::Value(TheValue::Int(1)),
-            "Float" => TheCodeAtom::Value(TheValue::Float(1.0)),
+            "Integer" => TheCodeAtom::Value(TheValue::Int(0)),
+            "Float" => TheCodeAtom::Value(TheValue::Float(0.0)),
+            "Float2" => TheCodeAtom::Value(TheValue::Float2(vec2f(0.0, 0.0))),
+            "Float3" => TheCodeAtom::Value(TheValue::Float3(vec3f(0.0, 0.0, 0.0))),
             "Add" => TheCodeAtom::Add,
             "Multiply" => TheCodeAtom::Multiply,
             _ => TheCodeAtom::EndOfCode,
@@ -379,6 +382,11 @@ impl TheCodeEditor {
 
         let mut code_layout = TheListLayout::new(TheId::named("Code List"));
         code_layout.limiter_mut().set_max_width(150);
+
+        let mut item = TheListItem::new(TheId::named("Code List Item"));
+        item.set_text("Assignment".to_string());
+        item.set_associated_layout(code_layout.id().clone());
+        code_layout.add_item(item, ctx);
 
         let mut item = TheListItem::new(TheId::named("Code List Item"));
         item.set_text("Function".to_string());
@@ -417,6 +425,16 @@ impl TheCodeEditor {
 
         let mut item = TheListItem::new(TheId::named("Code List Item"));
         item.set_text("Float".to_string());
+        item.set_associated_layout(code_layout.id().clone());
+        code_layout.add_item(item, ctx);
+
+        let mut item = TheListItem::new(TheId::named("Code List Item"));
+        item.set_text("Float2".to_string());
+        item.set_associated_layout(code_layout.id().clone());
+        code_layout.add_item(item, ctx);
+
+        let mut item = TheListItem::new(TheId::named("Code List Item"));
+        item.set_text("Float3".to_string());
         item.set_associated_layout(code_layout.id().clone());
         code_layout.add_item(item, ctx);
 

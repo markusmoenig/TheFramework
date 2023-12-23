@@ -42,6 +42,7 @@ pub enum TheEvent {
     TileSelectionChanged(TheId),
     TileEditorClicked(TheId, Vec2i),
     TileEditorHoverChanged(TheId, Vec2i),
+    TileEditorDrop(TheId, Vec2i, TheDrop),
 
     #[cfg(feature = "code")]
     CodeEditorSelectionChanged(TheId, Option<(u16, u16)>),

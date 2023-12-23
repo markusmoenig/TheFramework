@@ -29,7 +29,8 @@ pub trait TheTheme: Send {
 /// The
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum TheThemeColors {
-    Error,
+    Green,
+    Red,
 
     DefaultWidgetBorder,
     SelectedWidgetBorder,

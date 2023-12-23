@@ -53,6 +53,11 @@ impl TheCodeGrid {
         }
     }
 
+    /// Insert a code atom into the grid.
+    pub fn insert_atom(&mut self, pos: (u16, u16), atom: TheCodeAtom) {
+        self.code.insert(pos, atom);
+    }
+
     /// Returns the max xy values in the grid
     pub fn max_xy(&self) -> Option<(u16, u16)> {
         let mut max_x = None;

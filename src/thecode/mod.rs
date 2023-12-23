@@ -22,10 +22,6 @@ pub mod prelude {
     pub use crate::thecode::thecodemodule::TheCodeModule;
     pub use crate::thecode::thecodenode::{TheCodeNode, TheCodeNodeCall};
     pub use crate::thecode::thecodeobject::TheCodeObject;
-    pub use crate::thecode::thecodesandbox::TheCodeSandbox;
+    pub use crate::thecode::thecodesandbox::{TheCodeSandbox, TheDebugModule};
     pub use crate::thecode::thecompiler::{TheCompiler, TheCompilerContext, TheCompilerError};
 }
-
-pub struct TheReturnCode {}
-//    fn new() -> Self
-//}

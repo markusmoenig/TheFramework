@@ -25,6 +25,7 @@ pub struct TheRGBAView {
     selection_color: RGBA,
     hover_color: Option<RGBA>,
     hover: Option<(i32, i32)>,
+    drop: Option<(i32, i32)>,
 
     hscrollbar: TheId,
     vscrollbar: TheId,
@@ -63,6 +64,7 @@ impl TheWidget for TheRGBAView {
             selection_color: [255, 255, 255, 180],
             hover_color: None,
             hover: None,
+            drop: None,
 
             hscrollbar: TheId::empty(),
             vscrollbar: TheId::empty(),
@@ -156,9 +158,13 @@ impl TheWidget for TheRGBAView {
                     redraw = true;
                 }
             }
+            TheEvent::MouseUp(_id) => {
+                self.drop = None;
+            }
             TheEvent::LostHover(_id) => {
                 if self.hover.is_some() {
                     self.hover = None;
+                    self.drop = None;
                     redraw = true;
                 }
             }
@@ -217,6 +223,28 @@ impl TheWidget for TheRGBAView {
                     }
                     redraw = true;
                 }
+            }
+            TheEvent::DropPreview(coord, _drop) => {
+                if self.mode == TheRGBAViewMode::TileEditor {
+                    let loc = self.get_grid_location(*coord);
+                    if loc != self.drop {
+                        self.drop = loc;
+                        redraw = true;
+                    }
+                }
+            }
+            TheEvent::Drop(coord, drop) => {
+                if self.mode == TheRGBAViewMode::TileEditor {
+                    if let Some(loc) = self.get_grid_location(*coord) {
+                        ctx.ui.send(TheEvent::TileEditorDrop(
+                            self.id.clone(),
+                            vec2i(loc.0, loc.1),
+                            drop.clone(),
+                        ));
+                    }
+                }
+                self.drop = None;
+                redraw = true;
             }
             TheEvent::MouseWheel(delta) => {
                 let d = vec2i(
@@ -361,7 +389,16 @@ impl TheWidget for TheRGBAView {
 
                     let mut copy = true;
                     if let Some(grid) = self.grid {
-                        if self.selected.contains(&(src_x / grid, src_y / grid)) {
+                        // Drop Preview
+                        if self.mode == TheRGBAViewMode::TileEditor
+                            && self.drop == Some((src_x / grid, src_y / grid))
+                        {
+                            target.pixels_mut()[target_index..target_index + 4]
+                                .copy_from_slice(&WHITE);
+                            copy = false;
+                        }
+                        // Selected
+                        else if self.selected.contains(&(src_x / grid, src_y / grid)) {
                             let s = self.buffer.pixels();
                             let c = &[
                                 s[src_index],
@@ -376,7 +413,9 @@ impl TheWidget for TheRGBAView {
                             );
                             target.pixels_mut()[target_index..target_index + 4].copy_from_slice(&m);
                             copy = false;
-                        } else if let Some(hover_color) = self.hover_color {
+                        }
+                        // Hover
+                        else if let Some(hover_color) = self.hover_color {
                             if self.hover == Some((src_x / grid, src_y / grid)) {
                                 let s = self.buffer.pixels();
                                 let c = &[
@@ -445,6 +484,8 @@ impl TheWidget for TheRGBAView {
 }
 
 pub trait TheRGBAViewTrait: TheWidget {
+    fn get_grid_location(&self, coord: Vec2i) -> Option<(i32, i32)>;
+
     fn buffer(&self) -> &TheRGBABuffer;
     fn buffer_mut(&mut self) -> &mut TheRGBABuffer;
     fn set_buffer(&mut self, buffer: TheRGBABuffer);
@@ -471,6 +512,46 @@ pub trait TheRGBAViewTrait: TheWidget {
 }
 
 impl TheRGBAViewTrait for TheRGBAView {
+    fn get_grid_location(&self, coord: Vec2i) -> Option<(i32, i32)> {
+        if let Some(grid) = self.grid {
+            let centered_offset_x =
+                if (self.zoom * self.buffer.dim().width as f32) < self.dim.width as f32 {
+                    (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32) / 2.0
+                } else {
+                    0.0
+                };
+            let centered_offset_y =
+                if (self.zoom * self.buffer.dim().height as f32) < self.dim.height as f32 {
+                    (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32) / 2.0
+                } else {
+                    0.0
+                };
+
+            let source_x = ((coord.x as f32 - centered_offset_x) / self.zoom
+                + self.scroll_offset.x as f32)
+                .round() as i32;
+            let source_y = ((coord.y as f32 - centered_offset_y) / self.zoom
+                + self.scroll_offset.y as f32)
+                .round() as i32;
+
+            if source_x >= 0
+                && source_x < self.buffer.dim().width
+                && source_y >= 0
+                && source_y < self.buffer.dim().height
+            {
+                let grid_x = source_x / grid;
+                let grid_y = source_y / grid;
+
+                if grid_x * grid < self.buffer.dim().width
+                    && grid_y * grid < self.buffer.dim().height
+                {
+                    return Some((grid_x, grid_y));
+                }
+            }
+        }
+        None
+    }
+
     fn buffer(&self) -> &TheRGBABuffer {
         &self.buffer
     }

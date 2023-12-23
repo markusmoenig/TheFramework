@@ -1,4 +1,4 @@
-use crate::{prelude::*, thecode::thecodesandbox::TheDebugModule};
+use crate::prelude::*;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum TheRGBAViewMode {
@@ -27,6 +27,7 @@ pub struct TheCodeView {
     selected: Option<(u16, u16)>,
     hover: Option<(u16, u16)>,
     drop: Option<(u16, u16)>,
+    drop_atom: Option<TheCodeAtom>,
 
     mouse_down_pos: Vec2i,
 
@@ -68,6 +69,7 @@ impl TheWidget for TheCodeView {
             selected: None,
             hover: None,
             drop: None,
+            drop_atom: None,
 
             mouse_down_pos: Vec2i::zero(),
 
@@ -125,6 +127,7 @@ impl TheWidget for TheCodeView {
                     if c != self.drop {
                         self.drop = c;
                         redraw = true;
+                        self.drop_atom = Some(TheCodeAtom::from_json(&drop.data));
                         self.code_is_dirty = true;
                     }
                 }
@@ -134,19 +137,29 @@ impl TheWidget for TheCodeView {
                     self.selected = self.get_code_grid_offset(*coord);
                     if let Some(c) = self.get_code_grid_offset(*coord) {
                         let atom = TheCodeAtom::from_json(&drop.data);
-                        self.codegrid.code.insert(c, atom);
-                        redraw = true;
-                        self.code_is_dirty = true;
-                        ctx.ui.send(TheEvent::CodeEditorChanged(
-                            self.id.clone(),
-                            self.codegrid.clone(),
-                        ));
+
+                        if let Some((x, y)) = &self.selected {
+                            if (x % 2 == 1 || y % 2 == 1) && atom.uneven_slot()
+                                || x % 2 == 0 && y % 2 == 0 && !atom.uneven_slot()
+                            {
+                                self.codegrid.code.insert(c, atom);
+                                redraw = true;
+                                self.code_is_dirty = true;
+                                ctx.ui.send(TheEvent::CodeEditorChanged(
+                                    self.id.clone(),
+                                    self.codegrid.clone(),
+                                ));
+                            }
+                        }
+                        self.drop = None;
+                        self.drop_atom = None;
                     }
                 }
             }
             TheEvent::MouseUp(_coord) => {
                 if self.drop.is_some() {
                     self.drop = None;
+                    self.drop_atom = None;
                     redraw = true;
                     self.code_is_dirty = true;
                 }
@@ -342,7 +355,8 @@ impl TheWidget for TheCodeView {
             let dark: [u8; 4] = *style.theme().color(CodeGridDark);
             let selected = *style.theme().color(CodeGridSelected);
             let text_color = *style.theme().color(CodeGridText);
-            let error = *style.theme().color(Error);
+            let ok = *style.theme().color(Green);
+            let error = *style.theme().color(Red);
             let mut hover = *style.theme().color(CodeGridHover);
             hover[3] = 80;
 
@@ -362,391 +376,461 @@ impl TheWidget for TheCodeView {
                 (v as f32 * zoom) as usize
             }
 
-            for y in 0..grid_y {
-                for x in 0..grid_x {
-                    let rect = (
-                        (x * grid_size as u16) as usize,
-                        (y * grid_size as u16) as usize,
-                        grid_size as usize,
-                        grid_size as usize,
-                    );
+            for even in 0..2 {
+                for y in 0..grid_y {
+                    for x in 0..grid_x {
+                        let mut rect = (
+                            (x / 2 * grid_size as u16) as usize,
+                            (y / 2 * grid_size as u16) as usize,
+                            grid_size as usize,
+                            grid_size as usize,
+                        );
 
-                    if Some((x, y)) == self.hover {
-                        ctx.draw
-                            .blend_rect(self.buffer.pixels_mut(), &rect, stride, &hover);
-                    }
-
-                    let crect = (rect.0 + 2, rect.1 + 2, rect.2 - 4, rect.3 - 4);
-
-                    let mut color = if Some((x, y)) == self.selected {
-                        selected
-                    } else {
-                        normal
-                    };
-
-                    if let Some(message) = self.codegrid.messages.get(&(x, y)) {
-                        if message.message_type == TheCodeGridMessageType::Error {
-                            color = error;
+                        if (x % 2 == 1 || y % 2 == 1) && even == 0 {
+                            continue;
                         }
-                    }
 
-                    if let Some(atom) = self.codegrid.code.get(&(x, y)) {
-                        match atom {
-                            TheCodeAtom::FuncDef(name) => {
-                                ctx.draw.rounded_rect_with_border(
-                                    self.buffer.pixels_mut(),
-                                    &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
-                                    stride,
-                                    &color,
-                                    &(0.0, 0.0, 0.0, rounding),
-                                    &border_color,
-                                    border_size,
-                                );
-
-                                if let Some(font) = &ctx.ui.font {
-                                    ctx.draw.text_rect_blend(
-                                        self.buffer.pixels_mut(),
-                                        &crect,
-                                        stride,
-                                        font,
-                                        font_size,
-                                        name,
-                                        &text_color,
-                                        TheHorizontalAlign::Center,
-                                        TheVerticalAlign::Center,
-                                    );
-                                }
-
-                                ctx.draw.rect(
-                                    self.buffer.pixels_mut(),
-                                    &(
-                                        crect.0 + crect.2 - zoom_const(3, zoom),
-                                        crect.1 + crect.3 / 2 - zoom_const(1, zoom),
-                                        zoom_const(8, zoom),
-                                        zoom_const(2, zoom),
-                                    ),
-                                    stride,
-                                    &dark,
-                                );
-
-                                ctx.draw.rect(
-                                    self.buffer.pixels_mut(),
-                                    &(
-                                        crect.0 + crect.2 / 2 - zoom_const(1, zoom),
-                                        crect.1 + crect.3 - zoom_const(2, zoom),
-                                        zoom_const(2, zoom),
-                                        zoom_const(8, zoom),
-                                    ),
-                                    stride,
-                                    &dark,
-                                );
-                            }
-                            TheCodeAtom::FuncArg(name) => {
-                                ctx.draw.rounded_rect_with_border(
-                                    self.buffer.pixels_mut(),
-                                    &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
-                                    stride,
-                                    &color,
-                                    &(0.0, 0.0, 0.0, 0.0),
-                                    &border_color,
-                                    border_size,
-                                );
-
-                                if let Some(font) = &ctx.ui.font {
-                                    ctx.draw.text_rect_blend(
-                                        self.buffer.pixels_mut(),
-                                        &crect,
-                                        stride,
-                                        font,
-                                        font_size,
-                                        name,
-                                        &text_color,
-                                        TheHorizontalAlign::Center,
-                                        TheVerticalAlign::Center,
-                                    );
-                                }
-
-                                ctx.draw.rect(
-                                    self.buffer.pixels_mut(),
-                                    &(
-                                        crect.0 + crect.2 - zoom_const(3, zoom),
-                                        crect.1 + crect.3 / 2 - zoom_const(1, zoom),
-                                        zoom_const(8, zoom),
-                                        zoom_const(2, zoom),
-                                    ),
-                                    stride,
-                                    &dark,
-                                );
-                            }
-                            TheCodeAtom::FuncCall(name) => {
-                                ctx.draw.rounded_rect_with_border(
-                                    self.buffer.pixels_mut(),
-                                    &(
-                                        crect.0 + 2,
-                                        crect.1 + (crect.3 - (crect.3 as f32 * 0.6) as usize) / 2,
-                                        crect.2 - 4,
-                                        (crect.3 as f32 * 0.6) as usize,
-                                    ),
-                                    stride,
-                                    &color,
-                                    &(rounding, rounding, rounding, rounding),
-                                    &border_color,
-                                    border_size,
-                                );
-
-                                if let Some(font) = &ctx.ui.font {
-                                    ctx.draw.text_rect_blend(
-                                        self.buffer.pixels_mut(),
-                                        &crect,
-                                        stride,
-                                        font,
-                                        font_size,
-                                        name,
-                                        &text_color,
-                                        TheHorizontalAlign::Center,
-                                        TheVerticalAlign::Center,
-                                    );
-                                }
-
-                                ctx.draw.rect(
-                                    self.buffer.pixels_mut(),
-                                    &(
-                                        crect.0 + crect.2 - zoom_const(3, zoom),
-                                        crect.1 + crect.3 / 2 - zoom_const(1, zoom),
-                                        zoom_const(8, zoom),
-                                        zoom_const(2, zoom),
-                                    ),
-                                    stride,
-                                    &dark,
-                                );
-
-                                ctx.draw.rect(
-                                    self.buffer.pixels_mut(),
-                                    &(
-                                        crect.0 + crect.2 / 2 - zoom_const(1, zoom),
-                                        crect.1 + crect.3 - zoom_const(14, zoom),
-                                        zoom_const(2, zoom),
-                                        zoom_const(20, zoom),
-                                    ),
-                                    stride,
-                                    &dark,
-                                );
-                            }
-                            TheCodeAtom::LocalGet(name) => {
-                                ctx.draw.rounded_rect_with_border(
-                                    self.buffer.pixels_mut(),
-                                    &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
-                                    stride,
-                                    &color,
-                                    &(rounding, rounding, rounding, rounding),
-                                    &border_color,
-                                    border_size,
-                                );
-
-                                if let Some(font) = &ctx.ui.font {
-                                    ctx.draw.text_rect_blend(
-                                        self.buffer.pixels_mut(),
-                                        &crect,
-                                        stride,
-                                        font,
-                                        font_size,
-                                        name,
-                                        &text_color,
-                                        TheHorizontalAlign::Center,
-                                        TheVerticalAlign::Center,
-                                    );
-                                }
-
-                                ctx.draw.rect(
-                                    self.buffer.pixels_mut(),
-                                    &(
-                                        crect.0 + crect.2 - zoom_const(3, zoom),
-                                        crect.1 + crect.3 / 2 - zoom_const(1, zoom),
-                                        zoom_const(8, zoom),
-                                        zoom_const(2, zoom),
-                                    ),
-                                    stride,
-                                    &dark,
-                                );
-                            }
-                            TheCodeAtom::LocalSet(name) => {
-                                ctx.draw.rounded_rect_with_border(
-                                    self.buffer.pixels_mut(),
-                                    &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
-                                    stride,
-                                    &color,
-                                    &(0.0, 0.0, rounding, rounding),
-                                    &border_color,
-                                    border_size,
-                                );
-
-                                if let Some(font) = &ctx.ui.font {
-                                    ctx.draw.text_rect_blend(
-                                        self.buffer.pixels_mut(),
-                                        &crect,
-                                        stride,
-                                        font,
-                                        font_size,
-                                        name,
-                                        &text_color,
-                                        TheHorizontalAlign::Center,
-                                        TheVerticalAlign::Center,
-                                    );
-                                }
-
-                                ctx.draw.rect(
-                                    self.buffer.pixels_mut(),
-                                    &(
-                                        crect.0 + crect.2 - zoom_const(3, zoom),
-                                        crect.1 + crect.3 / 2 - zoom_const(1, zoom),
-                                        zoom_const(8, zoom),
-                                        zoom_const(2, zoom),
-                                    ),
-                                    stride,
-                                    &dark,
-                                );
-
-                                ctx.draw.rect(
-                                    self.buffer.pixels_mut(),
-                                    &(
-                                        crect.0 + crect.2 / 2 - zoom_const(1, zoom),
-                                        crect.1 + crect.3 - zoom_const(2, zoom),
-                                        zoom_const(2, zoom),
-                                        zoom_const(8, zoom),
-                                    ),
-                                    stride,
-                                    &dark,
-                                );
-                            }
-                            TheCodeAtom::Return => {
-                                ctx.draw.rounded_rect_with_border(
-                                    self.buffer.pixels_mut(),
-                                    &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
-                                    stride,
-                                    &color,
-                                    &(0.0, 0.0, rounding, 0.0),
-                                    &border_color,
-                                    border_size,
-                                );
-
-                                if let Some(font) = &ctx.ui.font {
-                                    ctx.draw.text_rect_blend(
-                                        self.buffer.pixels_mut(),
-                                        &crect,
-                                        stride,
-                                        font,
-                                        font_size,
-                                        "Return",
-                                        &text_color,
-                                        TheHorizontalAlign::Center,
-                                        TheVerticalAlign::Center,
-                                    );
-                                }
-
-                                ctx.draw.rect(
-                                    self.buffer.pixels_mut(),
-                                    &(
-                                        crect.0 + crect.2 - zoom_const(3, zoom),
-                                        crect.1 + crect.3 / 2 - zoom_const(1, zoom),
-                                        zoom_const(8, zoom),
-                                        zoom_const(2, zoom),
-                                    ),
-                                    stride,
-                                    &dark,
-                                );
-                            }
-                            TheCodeAtom::Value(value) => {
-                                ctx.draw.hexagon_with_border(
-                                    self.buffer.pixels_mut(),
-                                    &rect,
-                                    stride,
-                                    &color,
-                                    &border_color,
-                                    border_size,
-                                );
-
-                                if let Some(font) = &ctx.ui.font {
-                                    ctx.draw.text_rect_blend(
-                                        self.buffer.pixels_mut(),
-                                        &crect,
-                                        stride,
-                                        font,
-                                        font_size,
-                                        &value.describe(),
-                                        &text_color,
-                                        TheHorizontalAlign::Center,
-                                        TheVerticalAlign::Center,
-                                    );
-                                }
-                            }
-                            TheCodeAtom::Add => {
-                                ctx.draw.rhombus_with_border(
-                                    self.buffer.pixels_mut(),
-                                    &rect,
-                                    stride,
-                                    &color,
-                                    &border_color,
-                                    border_size,
-                                );
-
-                                if let Some(font) = &ctx.ui.font {
-                                    ctx.draw.text_rect_blend(
-                                        self.buffer.pixels_mut(),
-                                        &crect,
-                                        stride,
-                                        font,
-                                        font_size,
-                                        "+",
-                                        &text_color,
-                                        TheHorizontalAlign::Center,
-                                        TheVerticalAlign::Center,
-                                    );
-                                }
-                            }
-                            TheCodeAtom::Multiply => {
-                                ctx.draw.rhombus_with_border(
-                                    self.buffer.pixels_mut(),
-                                    &rect,
-                                    stride,
-                                    &color,
-                                    &border_color,
-                                    border_size,
-                                );
-
-                                if let Some(font) = &ctx.ui.font {
-                                    ctx.draw.text_rect_blend(
-                                        self.buffer.pixels_mut(),
-                                        &crect,
-                                        stride,
-                                        font,
-                                        font_size,
-                                        "*",
-                                        &text_color,
-                                        TheHorizontalAlign::Center,
-                                        TheVerticalAlign::Center,
-                                    );
-                                }
-                            }
-                            _ => {}
+                        if (x % 2 == 0 && y % 2 == 0) && even == 1 {
+                            continue;
                         }
-                        if let Some(v) = self.debug_module.values.get(&(x, y)) {
-                            if let Some(font) = &ctx.ui.font {
-                                ctx.draw.text_rect_blend(
-                                    self.buffer.pixels_mut(),
-                                    &(crect.0, crect.1, crect.2, crect.3 - zoom_const(5, zoom)),
-                                    stride,
-                                    font,
-                                    font_size,
-                                    &v.describe(),
-                                    &WHITE,
-                                    TheHorizontalAlign::Center,
-                                    TheVerticalAlign::Bottom,
-                                );
+
+                        if x % 2 == 1 {
+                            rect.0 += rect.2 - grid_size as usize / 4;
+                            rect.1 += grid_size as usize / 4;
+                            rect.2 /= 2;
+                            rect.3 /= 2;
+                        }
+
+                        if y % 2 == 1 {
+                            rect.0 += grid_size as usize / 4;
+                            rect.1 += rect.3 - grid_size as usize / 4;
+                            rect.2 /= 2;
+                            rect.3 /= 2;
+                        }
+
+                        if Some((x, y)) == self.drop {
+                            if let Some(drop_atom) = &self.drop_atom {
+                                if (x % 2 == 1 || y % 2 == 1) && drop_atom.uneven_slot()
+                                    || x % 2 == 0 && y % 2 == 0 && !drop_atom.uneven_slot()
+                                {
+                                    ctx.draw.rect_outline(
+                                        self.buffer.pixels_mut(),
+                                        &rect,
+                                        stride,
+                                        &ok,
+                                    );
+                                } else {
+                                    ctx.draw.rect_outline(
+                                        self.buffer.pixels_mut(),
+                                        &rect,
+                                        stride,
+                                        &error,
+                                    );
+                                }
+                            }
+                        } else if Some((x, y)) == self.hover {
+                            ctx.draw
+                                .blend_rect(self.buffer.pixels_mut(), &rect, stride, &hover);
+                        }
+
+                        let crect = (rect.0 + 2, rect.1 + 2, rect.2 - 4, rect.3 - 4);
+
+                        let mut color = if Some((x, y)) == self.selected {
+                            selected
+                        } else {
+                            normal
+                        };
+
+                        if let Some(message) = self.codegrid.messages.get(&(x, y)) {
+                            if message.message_type == TheCodeGridMessageType::Error {
+                                color = error;
+                                if !self.codegrid.code.contains_key(&(x, y)) {
+                                    ctx.draw.rect(
+                                        self.buffer.pixels_mut(),
+                                        &rect,
+                                        stride,
+                                        &error,
+                                    );
+                                }
                             }
                         }
-                    } else if Some((x, y)) == self.selected {
-                        ctx.draw
-                            .rect_outline(self.buffer.pixels_mut(), &rect, stride, &selected);
+
+                        if let Some(atom) = self.codegrid.code.get(&(x, y)) {
+                            match atom {
+                                TheCodeAtom::Assignment(name) => {
+                                    ctx.draw.rounded_rect_with_border(
+                                        self.buffer.pixels_mut(),
+                                        &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
+                                        stride,
+                                        &color,
+                                        &(0.0, 0.0, 0.0, 0.0),
+                                        &border_color,
+                                        border_size,
+                                    );
+
+                                    if let Some(font) = &ctx.ui.font {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &crect,
+                                            stride,
+                                            font,
+                                            font_size,
+                                            name,
+                                            &text_color,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Center,
+                                        );
+                                    }
+                                }
+                                TheCodeAtom::FuncDef(name) => {
+                                    ctx.draw.rounded_rect_with_border(
+                                        self.buffer.pixels_mut(),
+                                        &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
+                                        stride,
+                                        &color,
+                                        &(0.0, 0.0, 0.0, rounding),
+                                        &border_color,
+                                        border_size,
+                                    );
+
+                                    if let Some(font) = &ctx.ui.font {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &crect,
+                                            stride,
+                                            font,
+                                            font_size,
+                                            name,
+                                            &text_color,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Center,
+                                        );
+                                    }
+
+                                    ctx.draw.rect(
+                                        self.buffer.pixels_mut(),
+                                        &(
+                                            crect.0 + crect.2 - zoom_const(3, zoom),
+                                            crect.1 + crect.3 / 2 - zoom_const(1, zoom),
+                                            zoom_const(8, zoom),
+                                            zoom_const(2, zoom),
+                                        ),
+                                        stride,
+                                        &dark,
+                                    );
+
+                                    ctx.draw.rect(
+                                        self.buffer.pixels_mut(),
+                                        &(
+                                            crect.0 + crect.2 / 2 - zoom_const(1, zoom),
+                                            crect.1 + crect.3 - zoom_const(2, zoom),
+                                            zoom_const(2, zoom),
+                                            zoom_const(8, zoom),
+                                        ),
+                                        stride,
+                                        &dark,
+                                    );
+                                }
+                                TheCodeAtom::FuncArg(name) => {
+                                    ctx.draw.rounded_rect_with_border(
+                                        self.buffer.pixels_mut(),
+                                        &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
+                                        stride,
+                                        &color,
+                                        &(0.0, 0.0, 0.0, 0.0),
+                                        &border_color,
+                                        border_size,
+                                    );
+
+                                    if let Some(font) = &ctx.ui.font {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &crect,
+                                            stride,
+                                            font,
+                                            font_size,
+                                            name,
+                                            &text_color,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Center,
+                                        );
+                                    }
+
+                                    ctx.draw.rect(
+                                        self.buffer.pixels_mut(),
+                                        &(
+                                            crect.0 + crect.2 - zoom_const(3, zoom),
+                                            crect.1 + crect.3 / 2 - zoom_const(1, zoom),
+                                            zoom_const(8, zoom),
+                                            zoom_const(2, zoom),
+                                        ),
+                                        stride,
+                                        &dark,
+                                    );
+                                }
+                                TheCodeAtom::FuncCall(name) => {
+                                    ctx.draw.rounded_rect_with_border(
+                                        self.buffer.pixels_mut(),
+                                        &(
+                                            crect.0 + 2,
+                                            crect.1
+                                                + (crect.3 - (crect.3 as f32 * 0.6) as usize) / 2,
+                                            crect.2 - 4,
+                                            (crect.3 as f32 * 0.6) as usize,
+                                        ),
+                                        stride,
+                                        &color,
+                                        &(rounding, rounding, rounding, rounding),
+                                        &border_color,
+                                        border_size,
+                                    );
+
+                                    if let Some(font) = &ctx.ui.font {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &crect,
+                                            stride,
+                                            font,
+                                            font_size,
+                                            name,
+                                            &text_color,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Center,
+                                        );
+                                    }
+
+                                    ctx.draw.rect(
+                                        self.buffer.pixels_mut(),
+                                        &(
+                                            crect.0 + crect.2 - zoom_const(3, zoom),
+                                            crect.1 + crect.3 / 2 - zoom_const(1, zoom),
+                                            zoom_const(8, zoom),
+                                            zoom_const(2, zoom),
+                                        ),
+                                        stride,
+                                        &dark,
+                                    );
+
+                                    ctx.draw.rect(
+                                        self.buffer.pixels_mut(),
+                                        &(
+                                            crect.0 + crect.2 / 2 - zoom_const(1, zoom),
+                                            crect.1 + crect.3 - zoom_const(14, zoom),
+                                            zoom_const(2, zoom),
+                                            zoom_const(20, zoom),
+                                        ),
+                                        stride,
+                                        &dark,
+                                    );
+                                }
+                                TheCodeAtom::LocalGet(name) => {
+                                    ctx.draw.rounded_rect_with_border(
+                                        self.buffer.pixels_mut(),
+                                        &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
+                                        stride,
+                                        &color,
+                                        &(rounding, rounding, rounding, rounding),
+                                        &border_color,
+                                        border_size,
+                                    );
+
+                                    if let Some(font) = &ctx.ui.font {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &crect,
+                                            stride,
+                                            font,
+                                            font_size,
+                                            name,
+                                            &text_color,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Center,
+                                        );
+                                    }
+
+                                    ctx.draw.rect(
+                                        self.buffer.pixels_mut(),
+                                        &(
+                                            crect.0 + crect.2 - zoom_const(3, zoom),
+                                            crect.1 + crect.3 / 2 - zoom_const(1, zoom),
+                                            zoom_const(8, zoom),
+                                            zoom_const(2, zoom),
+                                        ),
+                                        stride,
+                                        &dark,
+                                    );
+                                }
+                                TheCodeAtom::LocalSet(name) => {
+                                    ctx.draw.rounded_rect_with_border(
+                                        self.buffer.pixels_mut(),
+                                        &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
+                                        stride,
+                                        &color,
+                                        &(0.0, 0.0, rounding, rounding),
+                                        &border_color,
+                                        border_size,
+                                    );
+
+                                    if let Some(font) = &ctx.ui.font {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &crect,
+                                            stride,
+                                            font,
+                                            font_size,
+                                            name,
+                                            &text_color,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Center,
+                                        );
+                                    }
+
+                                    ctx.draw.rect(
+                                        self.buffer.pixels_mut(),
+                                        &(
+                                            crect.0 + crect.2 / 2 - zoom_const(1, zoom),
+                                            crect.1 + crect.3 - zoom_const(2, zoom),
+                                            zoom_const(2, zoom),
+                                            zoom_const(8, zoom),
+                                        ),
+                                        stride,
+                                        &dark,
+                                    );
+                                }
+                                TheCodeAtom::Return => {
+                                    ctx.draw.rounded_rect_with_border(
+                                        self.buffer.pixels_mut(),
+                                        &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
+                                        stride,
+                                        &color,
+                                        &(0.0, 0.0, rounding, 0.0),
+                                        &border_color,
+                                        border_size,
+                                    );
+
+                                    if let Some(font) = &ctx.ui.font {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &crect,
+                                            stride,
+                                            font,
+                                            font_size,
+                                            "Return",
+                                            &text_color,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Center,
+                                        );
+                                    }
+
+                                    ctx.draw.rect(
+                                        self.buffer.pixels_mut(),
+                                        &(
+                                            crect.0 + crect.2 - zoom_const(3, zoom),
+                                            crect.1 + crect.3 / 2 - zoom_const(1, zoom),
+                                            zoom_const(8, zoom),
+                                            zoom_const(2, zoom),
+                                        ),
+                                        stride,
+                                        &dark,
+                                    );
+                                }
+                                TheCodeAtom::Value(value) => {
+                                    ctx.draw.hexagon_with_border(
+                                        self.buffer.pixels_mut(),
+                                        &rect,
+                                        stride,
+                                        &color,
+                                        &border_color,
+                                        border_size,
+                                    );
+
+                                    if let Some(font) = &ctx.ui.font {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &crect,
+                                            stride,
+                                            font,
+                                            font_size,
+                                            &value.describe(),
+                                            &text_color,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Center,
+                                        );
+                                    }
+                                }
+                                TheCodeAtom::Add => {
+                                    ctx.draw.rhombus_with_border(
+                                        self.buffer.pixels_mut(),
+                                        &crect,
+                                        stride,
+                                        &color,
+                                        &border_color,
+                                        border_size,
+                                    );
+
+                                    if let Some(font) = &ctx.ui.font {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &crect,
+                                            stride,
+                                            font,
+                                            font_size,
+                                            "+",
+                                            &text_color,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Center,
+                                        );
+                                    }
+                                }
+                                TheCodeAtom::Multiply => {
+                                    ctx.draw.rhombus_with_border(
+                                        self.buffer.pixels_mut(),
+                                        &crect,
+                                        stride,
+                                        &color,
+                                        &border_color,
+                                        border_size,
+                                    );
+
+                                    if let Some(font) = &ctx.ui.font {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &crect,
+                                            stride,
+                                            font,
+                                            font_size,
+                                            "*",
+                                            &text_color,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Center,
+                                        );
+                                    }
+                                }
+                                _ => {}
+                            }
+                            if let Some(v) = self.debug_module.values.get(&(x, y)) {
+                                if let Some(font) = &ctx.ui.font {
+                                    ctx.draw.text_rect_blend(
+                                        self.buffer.pixels_mut(),
+                                        &(crect.0, crect.1, crect.2, crect.3 - zoom_const(5, zoom)),
+                                        stride,
+                                        font,
+                                        font_size,
+                                        &v.describe(),
+                                        &WHITE,
+                                        TheHorizontalAlign::Center,
+                                        TheVerticalAlign::Bottom,
+                                    );
+                                }
+                            }
+                        } else if Some((x, y)) == self.selected && self.drop_atom.is_none() {
+                            ctx.draw.rect_outline(
+                                self.buffer.pixels_mut(),
+                                &rect,
+                                stride,
+                                &selected,
+                            );
+                        }
                     }
                 }
             }
@@ -1013,18 +1097,53 @@ impl TheCodeViewTrait for TheCodeView {
             .round() as i32;
 
         if source_x >= 0
-            && source_x < self.buffer.dim().width
+            //&& source_x < self.buffer.dim().width
             && source_y >= 0
-            && source_y < self.buffer.dim().height
+        //&& source_y < self.buffer.dim().height
         {
-            let grid_x = source_x / grid_size;
-            let grid_y = source_y / grid_size;
+            let quarter_grid_size = grid_size / 4;
 
-            if grid_x * grid_size < self.buffer.dim().width
-                && grid_y * grid_size < self.buffer.dim().height
+            let mut grid_x = source_x / grid_size;
+            let mut grid_y = source_y / grid_size;
+
+            let grid_off_x = source_x % grid_size;
+            let grid_off_y = source_y % grid_size;
+
+            // Check x coordinate
+            if grid_off_x > (grid_size - quarter_grid_size)
+                && grid_off_y > (grid_size / 2 - quarter_grid_size)
+                && grid_off_y < (grid_size / 2 + quarter_grid_size)
             {
-                return Some((grid_x as u16, grid_y as u16));
+                grid_x = grid_x * 2 + 1;
+            } else if (source_x % grid_size) < (quarter_grid_size)
+                && grid_off_y > (grid_size / 2 - quarter_grid_size)
+                && grid_off_y < (grid_size / 2 + quarter_grid_size)
+            {
+                grid_x = grid_x * 2 - 1;
+            } else {
+                grid_x *= 2;
             }
+
+            // Check y coordinate
+            if grid_off_y > (grid_size - quarter_grid_size)
+                && grid_off_x > (grid_size / 2 - quarter_grid_size)
+                && grid_off_x < (grid_size / 2 + quarter_grid_size)
+            {
+                grid_y = grid_y * 2 + 1;
+            } else if (source_y % grid_size) < (quarter_grid_size)
+                && grid_off_x > (grid_size / 2 - quarter_grid_size)
+                && grid_off_x < (grid_size / 2 + quarter_grid_size)
+            {
+                grid_y = grid_y * 2 - 1;
+            } else {
+                grid_y *= 2;
+            }
+
+            //if grid_x * grid_size < self.buffer.dim().width
+            //     && grid_y * grid_size < self.buffer.dim().height
+            // {
+            return Some((grid_x as u16, grid_y as u16));
+            // }
         }
         None
     }

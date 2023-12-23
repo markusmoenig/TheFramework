@@ -231,6 +231,20 @@ impl TheCompiler {
                 self.advance();
                 let var = self.ctx.previous.clone();
                 let location = self.ctx.current_location;
+
+                match &self.ctx.current {
+                    TheCodeAtom::Assignment(_op) => {
+                        self.advance();
+                    }
+                    _ => {
+                        self.error_at(
+                            (self.ctx.previous_location.0 + 1, self.ctx.previous_location.1),
+                            "Expected assignment operator.",
+                        );
+                        return;
+                    }
+                }
+
                 self.var_declaration();
                 self.ctx.node_location = location;
                 let node = var.to_node(&mut self.ctx);
@@ -446,12 +460,17 @@ impl TheCompiler {
         self.ctx.current.to_kind() == kind
     }
 
-    /// Create an error
+    /// Create an error at the current parser location.
     fn error_at_current(&mut self, message: &str) {
         self.ctx.error = Some(TheCompilerError::new(
             self.ctx.current_location,
             message.to_string(),
         ));
+    }
+
+    /// Create an error at the given parser location.
+    fn error_at(&mut self, location: (u16, u16), message: &str) {
+        self.ctx.error = Some(TheCompilerError::new(location, message.to_string()));
     }
     /*
     /// Error at the current token

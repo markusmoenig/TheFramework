@@ -87,14 +87,20 @@ impl TheWidget for TheColorPicker {
             TheEvent::MouseDragged(coord) => {
                 self.calc_color(*coord, false);
                 if self.continuous {
-                    ctx.ui.send(TheEvent::ValueChanged(self.id.clone(), TheValue::ColorObject(TheColor::from_vec3f(self.color))));
+                    ctx.ui.send(TheEvent::ValueChanged(
+                        self.id.clone(),
+                        TheValue::ColorObject(TheColor::from_vec3f(self.color)),
+                    ));
                 }
                 self.is_dirty = true;
                 redraw = true;
             }
             TheEvent::MouseUp(coord) => {
                 self.calc_color(*coord, false);
-                ctx.ui.send(TheEvent::ValueChanged(self.id.clone(), TheValue::ColorObject(TheColor::from_vec3f(self.color))));
+                ctx.ui.send(TheEvent::ValueChanged(
+                    self.id.clone(),
+                    TheValue::ColorObject(TheColor::from_vec3f(self.color)),
+                ));
                 self.is_dirty = true;
                 redraw = true;
             }

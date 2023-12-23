@@ -1,6 +1,6 @@
 use crate::prelude::*;
-use std::sync::mpsc;
 use rust_pathtracer::prelude::*;
+use std::sync::mpsc;
 
 pub struct Sidebar {
     stack_layout_id: TheId,
@@ -73,7 +73,11 @@ impl Sidebar {
         text_layout.limiter_mut().set_max_width(width);
 
         let mut color_picker = TheColorPicker::new(TheId::named("Color Picker"));
-        color_picker.set_color(vec3f(project.material.rgb.x, project.material.rgb.y, project.material.rgb.z));
+        color_picker.set_color(vec3f(
+            project.material.rgb.x,
+            project.material.rgb.y,
+            project.material.rgb.z,
+        ));
         text_layout.add_pair("".to_string(), Box::new(color_picker));
 
         let mut anisotropic = TheSlider::new(TheId::named("Anisotropic"));
@@ -195,50 +199,42 @@ impl Sidebar {
                         project.material.rgb = rust_pathtracer::prelude::F3::new(c.x, c.y, c.z);
                         self.send_material(project.material.clone());
                     }
-                }
-                else if id.name == "Anistotropic" {
+                } else if id.name == "Anistotropic" {
                     if let TheValue::Float(anisotropic) = value {
                         project.material.anisotropic = *anisotropic;
                         self.send_material(project.material.clone());
                     }
-                }
-                else if id.name == "Metallic" {
+                } else if id.name == "Metallic" {
                     if let TheValue::Float(metallic) = value {
                         project.material.metallic = *metallic;
                         self.send_material(project.material.clone());
                     }
-                }
-                else if id.name == "Roughness" {
+                } else if id.name == "Roughness" {
                     if let TheValue::Float(roughness) = value {
                         project.material.roughness = *roughness;
                         self.send_material(project.material.clone());
                     }
-                }
-                else if id.name == "Subsurface" {
+                } else if id.name == "Subsurface" {
                     if let TheValue::Float(subsurface) = value {
                         project.material.subsurface = *subsurface;
                         self.send_material(project.material.clone());
                     }
-                }
-                else if id.name == "Sheen" {
+                } else if id.name == "Sheen" {
                     if let TheValue::Float(sheen) = value {
                         project.material.sheen = *sheen;
                         self.send_material(project.material.clone());
                     }
-                }
-                else if id.name == "Sheen Tint" {
+                } else if id.name == "Sheen Tint" {
                     if let TheValue::Float(sheen_tint) = value {
                         project.material.sheen_tint = *sheen_tint;
                         self.send_material(project.material.clone());
                     }
-                }
-                else if id.name == "Clearcoat" {
+                } else if id.name == "Clearcoat" {
                     if let TheValue::Float(clearcoat) = value {
                         project.material.clearcoat = *clearcoat;
                         self.send_material(project.material.clone());
                     }
-                }
-                else if id.name == "Clearcoat Gloss" {
+                } else if id.name == "Clearcoat Gloss" {
                     if let TheValue::Float(clearcoat_gloss) = value {
                         project.material.clearcoat_gloss = *clearcoat_gloss;
                         self.send_material(project.material.clone());
@@ -258,7 +254,11 @@ impl Sidebar {
                 }
                 if id.name == "Emission" {
                     if let TheValue::Float(emission) = value {
-                        project.material.emission = F3::new(*emission * project.material.rgb.x, *emission * project.material.rgb.y, *emission * project.material.rgb.z);
+                        project.material.emission = F3::new(
+                            *emission * project.material.rgb.x,
+                            *emission * project.material.rgb.y,
+                            *emission * project.material.rgb.z,
+                        );
                         self.send_material(project.material.clone());
                     }
                 }

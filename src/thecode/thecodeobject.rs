@@ -2,6 +2,8 @@ use crate::prelude::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct TheCodeObject {
+    pub id: Uuid,
+    pub module_id: Uuid,
     pub values: FxHashMap<String, TheValue>,
 }
 
@@ -14,6 +16,8 @@ impl Default for TheCodeObject {
 impl TheCodeObject {
     pub fn new() -> Self {
         Self {
+            id: Uuid::new_v4(),
+            module_id: Uuid::new_v4(),
             values: FxHashMap::default(),
         }
     }

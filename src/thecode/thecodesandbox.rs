@@ -1,29 +1,26 @@
 use crate::prelude::*;
 
-pub type TheGetVarCall = fn(object_name: String, var_name: String) -> Option<TheValue>;
-pub type TheSetVarCall = fn(object_name: String, var_name: String, value: TheValue);
-pub type TheFnCall = fn(args: Vec<TheValue>) -> Option<TheValue>;
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TheCodeSandbox {
-    /// The function used to retrieve an object value.
-    #[serde(skip)]
-    pub get_var: Option<TheGetVarCall>,
-    /// The function used to set an object value.
-    #[serde(skip)]
-    pub set_var: Option<TheSetVarCall>,
-    /// The modules with callable codegrid functions.
+    /// The modules with callable codegrid functions. These make up the behavior of an entity.
     #[serde(skip)]
     pub modules: FxHashMap<Uuid, TheCodeModule>,
     /// The global external functions added by the host.
     #[serde(skip)]
     pub globals: FxHashMap<String, TheCodeNode>,
 
-    pub objects: FxHashMap<String, TheCodeObject>,
+    /// The objects with values. These make up the state of an entity.
+    pub objects: FxHashMap<Uuid, TheCodeObject>,
 
+    /// Debug switch.
     pub debug_mode: bool,
 
     // Runtimes
+
+    /// Redirects object aliases (like Self, Target etc.) to a given Uuid.
+    #[serde(skip)]
+    pub redirects: FxHashMap<String, Uuid>,
+
     /// Function return value.
     #[serde(skip)]
     pub func_rc: Option<TheValue>,
@@ -50,15 +47,13 @@ impl Default for TheCodeSandbox {
 impl TheCodeSandbox {
     pub fn new() -> Self {
         Self {
-            get_var: None,
-            set_var: None,
-
             objects: FxHashMap::default(),
             modules: FxHashMap::default(),
             globals: FxHashMap::default(),
 
             debug_mode: false,
 
+            redirects: FxHashMap::default(),
             func_rc: None,
             module_stack: vec![],
             call_stack: vec![],
@@ -81,12 +76,12 @@ impl TheCodeSandbox {
 
     /// Insert a module into the environment.
     pub fn insert_module(&mut self, module: TheCodeModule) {
-        self.modules.insert(module.uuid, module);
+        self.modules.insert(module.id, module);
     }
 
-    /// Insert an object into the environment.
-    pub fn insert_object(&mut self, name: String, function: TheCodeObject) {
-        self.objects.insert(name, function);
+    /// Add an object into the sandbox.
+    pub fn add_object(&mut self, object: TheCodeObject) {
+        self.objects.insert(object.id, object);
     }
 
     /// Get a clone of the function from the environment.

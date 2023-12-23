@@ -4,7 +4,7 @@ use crate::prelude::*;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TheCodeBundle {
     pub name: String,
-    pub uuid: Uuid,
+    pub id: Uuid,
     pub grids: FxHashMap<Uuid, TheCodeGrid>,
 }
 
@@ -22,7 +22,7 @@ impl TheCodeBundle {
 
         Self {
             name: "Unnamed".to_string(),
-            uuid: Uuid::new_v4(),
+            id: Uuid::new_v4(),
             grids,
         }
     }
