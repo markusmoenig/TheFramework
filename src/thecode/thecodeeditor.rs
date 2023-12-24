@@ -211,13 +211,29 @@ impl TheCodeEditor {
                             self.set_selected_atom(ui, TheCodeAtom::LocalGet(name));
                         }
                     }
-                } else if id.name == "Atom Local Set" {
+                }
+
+                else if id.name == "Atom Object Set Object" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
-                            self.set_selected_atom(ui, TheCodeAtom::LocalSet(name));
+                            if let Some(TheCodeAtom::ObjectSet(_object, variable)) = self.get_selected_atom(ui)  {
+                                self.set_selected_atom(ui, TheCodeAtom::ObjectSet(name, variable));
+                            }
                         }
                     }
-                } else if id.name == "Atom Integer" {
+                }
+
+                else if id.name == "Atom Object Set Variable" {
+                    if let Some(name) = value.to_string() {
+                        if !name.is_empty() {
+                            if let Some(TheCodeAtom::ObjectSet(object, _variable)) = self.get_selected_atom(ui)  {
+                                self.set_selected_atom(ui, TheCodeAtom::ObjectSet(object, name));
+                            }
+                        }
+                    }
+                }
+
+                else if id.name == "Atom Integer" {
                     if let Some(v) = value.to_i32() {
                         self.start_undo(ui);
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Int(v)));
@@ -356,12 +372,14 @@ impl TheCodeEditor {
     pub fn create_atom(&self, name: &str) -> TheCodeAtom {
         match name {
             "Assignment" => TheCodeAtom::Assignment("=".to_string()),
-            "Function" => TheCodeAtom::FuncDef("Name".to_string()),
-            "Function Argument" => TheCodeAtom::FuncArg("Name".to_string()),
-            "Function Call" => TheCodeAtom::FuncCall("Name".to_string()),
+            "Function" => TheCodeAtom::FuncDef("name".to_string()),
+            "Function Argument" => TheCodeAtom::FuncArg("name".to_string()),
+            "Function Call" => TheCodeAtom::FuncCall("name".to_string()),
             "Return" => TheCodeAtom::Return,
-            "Local Get" => TheCodeAtom::LocalGet("Name".to_string()),
-            "Local Set" => TheCodeAtom::LocalSet("Name".to_string()),
+            "Local Get" => TheCodeAtom::LocalGet("name".to_string()),
+            "Local Set" => TheCodeAtom::LocalSet("name".to_string()),
+            "Object Get" => TheCodeAtom::ObjectGet("self".to_string(), "name".to_string()),
+            "Object Set" => TheCodeAtom::ObjectSet("self".to_string(), "name".to_string()),
             "Integer" => TheCodeAtom::Value(TheValue::Int(0)),
             "Float" => TheCodeAtom::Value(TheValue::Float(0.0)),
             "Float2" => TheCodeAtom::Value(TheValue::Float2(vec2f(0.0, 0.0))),
@@ -415,6 +433,16 @@ impl TheCodeEditor {
 
         let mut item = TheListItem::new(TheId::named("Code List Item"));
         item.set_text("Local Set".to_string());
+        item.set_associated_layout(code_layout.id().clone());
+        code_layout.add_item(item, ctx);
+
+        let mut item = TheListItem::new(TheId::named("Code List Item"));
+        item.set_text("Object Get".to_string());
+        item.set_associated_layout(code_layout.id().clone());
+        code_layout.add_item(item, ctx);
+
+        let mut item = TheListItem::new(TheId::named("Code List Item"));
+        item.set_text("Object Set".to_string());
         item.set_associated_layout(code_layout.id().clone());
         code_layout.add_item(item, ctx);
 

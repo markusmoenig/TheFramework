@@ -19,7 +19,7 @@ pub struct TheCodeSandbox {
 
     /// Redirects object aliases (like Self, Target etc.) to a given Uuid.
     #[serde(skip)]
-    pub redirects: FxHashMap<String, Uuid>,
+    pub aliases: FxHashMap<String, Uuid>,
 
     /// Function return value.
     #[serde(skip)]
@@ -53,7 +53,8 @@ impl TheCodeSandbox {
 
             debug_mode: false,
 
-            redirects: FxHashMap::default(),
+            aliases: FxHashMap::default(),
+
             func_rc: None,
             module_stack: vec![],
             call_stack: vec![],
@@ -63,6 +64,7 @@ impl TheCodeSandbox {
 
     /// Clear the runtime states.
     pub fn clear_runtime_states(&mut self) {
+        self.aliases = FxHashMap::default();
         self.func_rc = None;
         self.module_stack = vec![];
         self.call_stack = vec![];
@@ -111,6 +113,26 @@ impl TheCodeSandbox {
         if let Some(function) = self.call_stack.last() {
             if let Some(var) = function.get_local(name) {
                 return Some(var);
+            }
+        }
+        None
+    }
+
+    /// Returns a reference to the aliased object.
+    pub fn get_object(&self, name: &String) -> Option<&TheCodeObject> {
+        if let Some(id) = self.aliases.get(name) {
+            if let Some(object) = self.objects.get(id) {
+                return Some(object)
+            }
+        }
+        None
+    }
+
+    /// Returns a mutable reference to the aliased object.
+    pub fn get_object_mut(&mut self, name: &String) -> Option<&mut TheCodeObject> {
+        if let Some(id) = self.aliases.get(name) {
+            if let Some(object) = self.objects.get_mut(id) {
+                return Some(object)
             }
         }
         None

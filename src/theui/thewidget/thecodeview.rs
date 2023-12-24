@@ -697,6 +697,57 @@ impl TheWidget for TheCodeView {
                                         &dark,
                                     );
                                 }
+                                TheCodeAtom::ObjectSet(object, variable) => {
+                                    ctx.draw.rounded_rect_with_border(
+                                        self.buffer.pixels_mut(),
+                                        &(crect.0 + 2, crect.1 + 2, crect.2 - 4, crect.3 - 4),
+                                        stride,
+                                        &color,
+                                        &(0.0, 0.0, rounding, rounding),
+                                        &border_color,
+                                        border_size,
+                                    );
+
+                                    if let Some(font) = &ctx.ui.font {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &(crect.0, crect.1 + 4, crect.2, crect.3 - 8),
+                                            stride,
+                                            font,
+                                            font_size,
+                                            object,
+                                            &text_color,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Top,
+                                        );
+                                    }
+
+                                    if let Some(font) = &ctx.ui.font {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &crect,
+                                            stride,
+                                            font,
+                                            font_size,
+                                            variable,
+                                            &text_color,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Center,
+                                        );
+                                    }
+
+                                    ctx.draw.rect(
+                                        self.buffer.pixels_mut(),
+                                        &(
+                                            crect.0 + crect.2 / 2 - zoom_const(1, zoom),
+                                            crect.1 + crect.3 - zoom_const(2, zoom),
+                                            zoom_const(2, zoom),
+                                            zoom_const(8, zoom),
+                                        ),
+                                        stride,
+                                        &dark,
+                                    );
+                                }
                                 TheCodeAtom::Return => {
                                     ctx.draw.rounded_rect_with_border(
                                         self.buffer.pixels_mut(),

@@ -10,6 +10,8 @@ pub enum TheCodeAtom {
     Multiply,
     LocalGet(String),
     LocalSet(String),
+    ObjectGet(String, String),
+    ObjectSet(String, String),
     FuncDef(String),
     FuncCall(String),
     FuncArg(String),
@@ -196,6 +198,93 @@ impl TheCodeAtom {
                     ),
                 )
             }
+            TheCodeAtom::ObjectGet(object, name) => {
+                let call: TheCodeNodeCall =
+                    |stack: &mut Vec<TheValue>,
+                     data: &mut TheCodeNodeData,
+                     sandbox: &mut TheCodeSandbox| {
+                        if let Some(object) = sandbox.get_object(&data.values[0].to_string().unwrap()) {
+                            if let Some(v) =
+                                object.get(&data.values[1].to_string().unwrap())
+                            {
+                                stack.push(v.clone());
+                            } else {
+                                println!(
+                                    "Runtime error: Unknown object variable {}.",
+                                    &data.values[1].to_string().unwrap()
+                                );
+                            }
+                        } else {
+                            println!(
+                                "Runtime error: Unknown object {}.",
+                                &data.values[0].to_string().unwrap()
+                            );
+                        }
+                    };
+
+                if ctx.error.is_none() {
+                    let mut error = true;
+                    if let Some(local) = ctx.local.last_mut() {
+                        if let Some(local) = local.get(&name.clone()) {
+                            ctx.stack.push(local.clone());
+                            error = false;
+                        }
+                    }
+                    if error {
+                        ctx.error = Some(TheCompilerError::new(
+                            ctx.current_location,
+                            format!("Unknown local variable {}.", name),
+                        ));
+                    }
+                }
+                TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location_values(
+                        ctx.current_location,
+                        vec![TheValue::Text(object.clone()), TheValue::Text(name.clone())],
+                    ),
+                )
+            }
+            TheCodeAtom::ObjectSet(object, name) => {
+                let call: TheCodeNodeCall =
+                    |stack: &mut Vec<TheValue>,
+                     data: &mut TheCodeNodeData,
+                     sandbox: &mut TheCodeSandbox| {
+                        let mut debug_value: Option<TheValue> = None;
+
+                        let debug_mode = sandbox.debug_mode;
+                        if let Some(object) = sandbox.get_object_mut(&data.values[0].to_string().unwrap()) {
+                            let v = stack.pop().unwrap();
+                            if debug_mode{
+                                debug_value = Some(v.clone());
+                            }
+                            object.set(data.values[1].to_string().unwrap(), v);
+                        }
+
+                        if let Some(debug_value) = debug_value {
+                            sandbox.set_debug_value(data.location, debug_value);
+                        }
+                    };
+
+                if ctx.error.is_none() {
+                    if ctx.stack.is_empty() {
+                        ctx.error = Some(TheCompilerError::new(
+                            ctx.current_location,
+                            "Nothing to assign to local variable.".to_string(),
+                        ));
+                    } else if let Some(local) = ctx.local.last_mut() {
+                        local.set(name.clone(), ctx.stack.pop().unwrap());
+                    }
+                }
+
+                TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location_values(
+                        ctx.node_location,
+                        vec![TheValue::Text(object.clone()), TheValue::Text(name.clone())],
+                    ),
+                )
+            }
             TheCodeAtom::Value(value) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
@@ -288,6 +377,8 @@ impl TheCodeAtom {
             TheCodeAtom::Return => TheCodeAtomKind::Return,
             TheCodeAtom::LocalGet(_name) => TheCodeAtomKind::Identifier,
             TheCodeAtom::LocalSet(_name) => TheCodeAtomKind::Identifier,
+            TheCodeAtom::ObjectGet(_object, _name) => TheCodeAtomKind::Identifier,
+            TheCodeAtom::ObjectSet(_object, _name) => TheCodeAtomKind::Identifier,
             TheCodeAtom::Value(_value) => TheCodeAtomKind::Number,
             TheCodeAtom::Add => TheCodeAtomKind::Plus,
             TheCodeAtom::Multiply => TheCodeAtomKind::Star,
@@ -306,8 +397,10 @@ impl TheCodeAtom {
             TheCodeAtom::FuncArg(name) => name.clone(),
             TheCodeAtom::FuncCall(name) => name.clone(),
             TheCodeAtom::Return => "Return".to_string(),
-            TheCodeAtom::LocalGet(name) => name.clone(), //"name".to_string(),
-            TheCodeAtom::LocalSet(name) => name.clone(), //"name".to_string(),
+            TheCodeAtom::LocalGet(name) => name.clone(),
+            TheCodeAtom::LocalSet(name) => name.clone(),
+            TheCodeAtom::ObjectGet(object, name) => format!("{}.{}", object, name),
+            TheCodeAtom::ObjectSet(object, name) => format!("{}.{}", object, name),
             TheCodeAtom::Value(value) => value.describe(),
             TheCodeAtom::Add => "+".to_string(),
             TheCodeAtom::Multiply => "*".to_string(),
@@ -331,6 +424,8 @@ impl TheCodeAtom {
             TheCodeAtom::Return => "Return from a function. Optionally with a value.".to_string(),
             TheCodeAtom::LocalGet(name) => format!("Get the value of a local variable ({}).", name),
             TheCodeAtom::LocalSet(name) => format!("Set a value to a local variable ({}).", name),
+            TheCodeAtom::ObjectGet(object, name) => format!("Get the value of an object variable ({}.{}).", object, name),
+            TheCodeAtom::ObjectSet(object, name) => format!("Set a value to an object variable ({}.{}).", object, name),
             TheCodeAtom::Value(value) => match value {
                 TheValue::Bool(_v) => format!("Boolean constant ({}).", self.describe()),
                 TheValue::CodeObject(_v) => "An Object.".to_string(),
@@ -404,6 +499,23 @@ impl TheCodeAtom {
                 let mut text = TheText::new(TheId::empty());
                 text.set_text("Variable Name:".to_string());
                 let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Local Set"));
+                name_edit.set_text(name.clone());
+                name_edit.set_needs_redraw(true);
+                layout.add_widget(Box::new(text));
+                layout.add_widget(Box::new(name_edit));
+            }
+            TheCodeAtom::ObjectSet(object, name) => {
+                let mut text = TheText::new(TheId::empty());
+                text.set_text("Object Name:".to_string());
+                let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Object Set Object"));
+                name_edit.set_text(object.clone());
+                name_edit.set_needs_redraw(true);
+                layout.add_widget(Box::new(text));
+                layout.add_widget(Box::new(name_edit));
+
+                let mut text = TheText::new(TheId::empty());
+                text.set_text("Variable Name:".to_string());
+                let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Object Set Variable"));
                 name_edit.set_text(name.clone());
                 name_edit.set_needs_redraw(true);
                 layout.add_widget(Box::new(text));

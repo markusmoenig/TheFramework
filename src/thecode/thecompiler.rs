@@ -3,7 +3,7 @@ use crate::prelude::*;
 // Some code taken from https://github.com/ceronman/loxido/blob/master/src/compiler.rs
 // Licensed under the MIT license of Manuel Cerón.
 
-#[derive(PartialOrd, PartialEq, Copy, Clone)]
+#[derive(PartialOrd, PartialEq, Copy, Clone, Debug)]
 enum ThePrecedence {
     None,
     Assignment, // =
@@ -38,7 +38,7 @@ impl ThePrecedence {
 
 type ParseFn = fn(&mut TheCompiler, can_assign: bool) -> ();
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 struct TheParseRule {
     prefix: Option<ParseFn>,
     infix: Option<ParseFn>,
@@ -139,6 +139,7 @@ impl TheCompilerContext {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct TheCompiler {
     rules: FxHashMap<TheCodeAtomKind, TheParseRule>,
     grid: TheCodeGrid,
@@ -245,7 +246,30 @@ impl TheCompiler {
                     }
                 }
 
-                self.var_declaration();
+                self.expression();
+                self.ctx.node_location = location;
+                let node = var.to_node(&mut self.ctx);
+                self.ctx.get_current_function().add_node(node);
+            }
+            TheCodeAtom::ObjectSet(_object, _name) => {
+                self.advance();
+                let var = self.ctx.previous.clone();
+                let location = self.ctx.current_location;
+
+                match &self.ctx.current {
+                    TheCodeAtom::Assignment(_op) => {
+                        self.advance();
+                    }
+                    _ => {
+                        self.error_at(
+                            (self.ctx.previous_location.0 + 1, self.ctx.previous_location.1),
+                            "Expected assignment operator.",
+                        );
+                        return;
+                    }
+                }
+
+                self.expression();
                 self.ctx.node_location = location;
                 let node = var.to_node(&mut self.ctx);
                 self.ctx.get_current_function().add_node(node);
@@ -254,10 +278,6 @@ impl TheCompiler {
                 self.statement();
             }
         }
-    }
-
-    fn var_declaration(&mut self) {
-        self.expression();
     }
 
     fn statement(&mut self) {

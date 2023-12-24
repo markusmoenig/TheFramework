@@ -10,10 +10,12 @@ pub mod thecodenode;
 pub mod thecodeobject;
 pub mod thecodesandbox;
 pub mod thecompiler;
+pub mod thecodepackage;
 
 pub mod prelude {
     pub use crate::thecode::thecodeatom::{TheCodeAtom, TheCodeAtomKind};
     pub use crate::thecode::thecodebundle::TheCodeBundle;
+    pub use crate::thecode::thecodepackage::TheCodePackage;
     pub use crate::thecode::thecodeeditor::TheCodeEditor;
     pub use crate::thecode::thecodefunction::TheCodeFunction;
     pub use crate::thecode::thecodegrid::{
