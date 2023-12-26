@@ -16,7 +16,6 @@ pub struct TheCodeSandbox {
     pub debug_mode: bool,
 
     // Runtimes
-
     /// Redirects object aliases (like Self, Target etc.) to a given Uuid.
     #[serde(skip)]
     pub aliases: FxHashMap<String, Uuid>,
@@ -122,7 +121,7 @@ impl TheCodeSandbox {
     pub fn get_object(&self, name: &String) -> Option<&TheCodeObject> {
         if let Some(id) = self.aliases.get(name) {
             if let Some(object) = self.objects.get(id) {
-                return Some(object)
+                return Some(object);
             }
         }
         None
@@ -132,7 +131,7 @@ impl TheCodeSandbox {
     pub fn get_object_mut(&mut self, name: &String) -> Option<&mut TheCodeObject> {
         if let Some(id) = self.aliases.get(name) {
             if let Some(object) = self.objects.get_mut(id) {
-                return Some(object)
+                return Some(object);
             }
         }
         None

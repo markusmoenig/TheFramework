@@ -16,6 +16,8 @@ pub enum TheValue {
     Float3(Vec3f),
     Int4(Vec4i),
     Float4(Vec4f),
+    Position(Vec3f),
+    Tile(String, Uuid),
     KeyCode(TheKeyCode),
     RangeI32(RangeInclusive<i32>),
     RangeF32(RangeInclusive<f32>),
@@ -124,6 +126,8 @@ impl TheValue {
             Float3(v) => format!("Float3: {:?}", v),
             Int4(v) => format!("Int4: {:?}", v),
             Float4(v) => format!("Float4: {:?}", v),
+            Position(v) => format!("Position: {:?}", v),
+            Tile(v, _id) => format!("Tile: {:?}", v),
             Char(c) => c.to_string(),
             #[cfg(feature = "code")]
             CodeObject(_) => "Object".to_string(),

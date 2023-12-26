@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 /// TheCodeBundle is a collections of codegrids which make up the behavior of an entity.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub struct TheCodeBundle {
     pub name: String,
     pub id: Uuid,

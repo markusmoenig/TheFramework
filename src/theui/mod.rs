@@ -5,6 +5,7 @@ pub mod thedrop;
 pub mod theid;
 pub mod thelayout;
 pub mod thergbabuffer;
+pub mod thesdf;
 pub mod thesizelimiter;
 pub mod thestyle;
 pub mod thetheme;
@@ -86,6 +87,7 @@ pub mod prelude {
     pub use crate::theui::thetheme::{TheTheme, TheThemeColors, TheThemeColors::*};
 
     pub use crate::theui::thelayout::prelude::*;
+    pub use crate::theui::thesdf::*;
     pub use crate::theui::thewidget::prelude::*;
     pub use crate::theui::thewidget::TheWidget;
 

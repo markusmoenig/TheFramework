@@ -203,10 +203,10 @@ impl TheCodeAtom {
                     |stack: &mut Vec<TheValue>,
                      data: &mut TheCodeNodeData,
                      sandbox: &mut TheCodeSandbox| {
-                        if let Some(object) = sandbox.get_object(&data.values[0].to_string().unwrap()) {
-                            if let Some(v) =
-                                object.get(&data.values[1].to_string().unwrap())
-                            {
+                        if let Some(object) =
+                            sandbox.get_object(&data.values[0].to_string().unwrap())
+                        {
+                            if let Some(v) = object.get(&data.values[1].to_string().unwrap()) {
                                 stack.push(v.clone());
                             } else {
                                 println!(
@@ -253,9 +253,11 @@ impl TheCodeAtom {
                         let mut debug_value: Option<TheValue> = None;
 
                         let debug_mode = sandbox.debug_mode;
-                        if let Some(object) = sandbox.get_object_mut(&data.values[0].to_string().unwrap()) {
+                        if let Some(object) =
+                            sandbox.get_object_mut(&data.values[0].to_string().unwrap())
+                        {
                             let v = stack.pop().unwrap();
-                            if debug_mode{
+                            if debug_mode {
                                 debug_value = Some(v.clone());
                             }
                             object.set(data.values[1].to_string().unwrap(), v);
@@ -424,8 +426,12 @@ impl TheCodeAtom {
             TheCodeAtom::Return => "Return from a function. Optionally with a value.".to_string(),
             TheCodeAtom::LocalGet(name) => format!("Get the value of a local variable ({}).", name),
             TheCodeAtom::LocalSet(name) => format!("Set a value to a local variable ({}).", name),
-            TheCodeAtom::ObjectGet(object, name) => format!("Get the value of an object variable ({}.{}).", object, name),
-            TheCodeAtom::ObjectSet(object, name) => format!("Set a value to an object variable ({}.{}).", object, name),
+            TheCodeAtom::ObjectGet(object, name) => {
+                format!("Get the value of an object variable ({}.{}).", object, name)
+            }
+            TheCodeAtom::ObjectSet(object, name) => {
+                format!("Set a value to an object variable ({}.{}).", object, name)
+            }
             TheCodeAtom::Value(value) => match value {
                 TheValue::Bool(_v) => format!("Boolean constant ({}).", self.describe()),
                 TheValue::CodeObject(_v) => "An Object.".to_string(),
@@ -439,6 +445,8 @@ impl TheCodeAtom {
                 TheValue::Float3(v) => format!("Float3 constant ({}).", v),
                 TheValue::Int4(v) => format!("Int4 constant ({}).", v),
                 TheValue::Float4(v) => format!("Float4 constant ({}).", v),
+                TheValue::Position(v) => format!("Position ({}).", v),
+                TheValue::Tile(name, _id) => format!("Tile ({}).", name),
                 TheValue::KeyCode(_v) => "Key Code value.".to_string(),
                 TheValue::RangeI32(_v) => "Range value.".to_string(),
                 TheValue::RangeF32(_v) => "Range value.".to_string(),

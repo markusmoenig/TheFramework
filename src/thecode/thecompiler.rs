@@ -239,7 +239,10 @@ impl TheCompiler {
                     }
                     _ => {
                         self.error_at(
-                            (self.ctx.previous_location.0 + 1, self.ctx.previous_location.1),
+                            (
+                                self.ctx.previous_location.0 + 1,
+                                self.ctx.previous_location.1,
+                            ),
                             "Expected assignment operator.",
                         );
                         return;
@@ -262,7 +265,10 @@ impl TheCompiler {
                     }
                     _ => {
                         self.error_at(
-                            (self.ctx.previous_location.0 + 1, self.ctx.previous_location.1),
+                            (
+                                self.ctx.previous_location.0 + 1,
+                                self.ctx.previous_location.1,
+                            ),
                             "Expected assignment operator.",
                         );
                         return;

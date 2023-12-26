@@ -445,12 +445,8 @@ impl TheWidget for TheCodeView {
                             if message.message_type == TheCodeGridMessageType::Error {
                                 color = error;
                                 if !self.codegrid.code.contains_key(&(x, y)) {
-                                    ctx.draw.rect(
-                                        self.buffer.pixels_mut(),
-                                        &rect,
-                                        stride,
-                                        &error,
-                                    );
+                                    ctx.draw
+                                        .rect(self.buffer.pixels_mut(), &rect, stride, &error);
                                 }
                             }
                         }

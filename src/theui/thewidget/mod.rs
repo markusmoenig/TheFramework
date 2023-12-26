@@ -25,6 +25,7 @@ pub mod thetabbar;
 pub mod thetext;
 // pub mod thetextedit;
 pub mod thecolorpicker;
+pub mod thesdfview;
 pub mod thetextlineedit;
 pub mod thetoolbar;
 pub mod thetoolbarbutton;
@@ -74,6 +75,7 @@ pub mod prelude {
     pub use crate::theui::thewidget::thestatusbar::{TheStatusbar, TheStatusbarTrait};
     pub use crate::theui::thewidget::thetabbar::{TheTabbar, TheTabbarTrait};
     // pub use crate::theui::thewidget::thetextedit::{TheTextEdit, TheTextEditTrait};
+    pub use crate::theui::thewidget::thesdfview::{TheSDFView, TheSDFViewTrait};
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
     pub use crate::theui::thewidget::thetraybar::TheTraybar;
     pub use crate::theui::thewidget::thetraybarbutton::{TheTraybarButton, TheTraybarButtonTrait};

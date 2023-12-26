@@ -211,29 +211,27 @@ impl TheCodeEditor {
                             self.set_selected_atom(ui, TheCodeAtom::LocalGet(name));
                         }
                     }
-                }
-
-                else if id.name == "Atom Object Set Object" {
+                } else if id.name == "Atom Object Set Object" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
-                            if let Some(TheCodeAtom::ObjectSet(_object, variable)) = self.get_selected_atom(ui)  {
+                            if let Some(TheCodeAtom::ObjectSet(_object, variable)) =
+                                self.get_selected_atom(ui)
+                            {
                                 self.set_selected_atom(ui, TheCodeAtom::ObjectSet(name, variable));
                             }
                         }
                     }
-                }
-
-                else if id.name == "Atom Object Set Variable" {
+                } else if id.name == "Atom Object Set Variable" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
-                            if let Some(TheCodeAtom::ObjectSet(object, _variable)) = self.get_selected_atom(ui)  {
+                            if let Some(TheCodeAtom::ObjectSet(object, _variable)) =
+                                self.get_selected_atom(ui)
+                            {
                                 self.set_selected_atom(ui, TheCodeAtom::ObjectSet(object, name));
                             }
                         }
                     }
-                }
-
-                else if id.name == "Atom Integer" {
+                } else if id.name == "Atom Integer" {
                     if let Some(v) = value.to_i32() {
                         self.start_undo(ui);
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Int(v)));
