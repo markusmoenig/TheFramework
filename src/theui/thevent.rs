@@ -44,12 +44,16 @@ pub enum TheEvent {
     TileEditorHoverChanged(TheId, Vec2i),
     TileEditorDrop(TheId, Vec2i, TheDrop),
 
+    // CodeEditor
     #[cfg(feature = "code")]
     CodeEditorSelectionChanged(TheId, Option<(u16, u16)>),
     #[cfg(feature = "code")]
     CodeEditorChanged(TheId, TheCodeGrid),
     #[cfg(feature = "code")]
     CodeBundleChanged(TheCodeBundle),
+
+    // SDF
+    SDFIndexChanged(TheId, u32),
 
     // Show the given context menu at the given coordinates
     ShowContextMenu(TheId, Vec2i),

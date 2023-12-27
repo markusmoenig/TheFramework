@@ -1,7 +1,7 @@
 pub use crate::prelude::*;
 use std::ops::{Index, IndexMut};
 
-/// Holds a given color value and offers several import and export methods.
+/// Holds a normalized color value and offers several import and export methods.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct TheColor {
     pub r: f32,
@@ -204,6 +204,16 @@ impl TheColor {
         }
 
         vec3f(h, clamp(s, 0.0, 1.0), clamp(l, 0.0, 1.0))
+    }
+
+    /// Returns a new color as a mix between self and other.
+    pub fn mix(&self, other: &TheColor, v: f32) -> TheColor {
+        TheColor::new(
+            (1.0 - v) * self.r + other.r * v,
+            (1.0 - v) * self.g + other.g * v,
+            (1.0 - v) * self.b + other.b * v,
+            (1.0 - v) * self.a + other.a * v,
+        )
     }
 }
 

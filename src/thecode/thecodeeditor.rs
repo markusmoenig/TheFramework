@@ -50,6 +50,11 @@ impl TheCodeEditor {
                     redraw = true;
                 }
             }*/
+            TheEvent::SDFIndexChanged(_id, index) => {
+                if let Some(code_list) = ui.get_list_layout("Code List") {
+                    self.get_code_list_items(*index, code_list, ctx)
+                }
+            }
             TheEvent::DragStarted(id, text, offset) => {
                 if id.name == "Code List Item" {
                     if let Some(atom) = Some(self.create_atom(text.as_str())) {
@@ -398,81 +403,7 @@ impl TheCodeEditor {
 
         let mut code_layout = TheListLayout::new(TheId::named("Code List"));
         code_layout.limiter_mut().set_max_width(150);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Assignment".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Function".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Function Argument".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Function Call".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Return".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Local Get".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Local Set".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Object Get".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Object Set".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Integer".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Float".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Float2".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Float3".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Add".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
-
-        let mut item = TheListItem::new(TheId::named("Code List Item"));
-        item.set_text("Multiply".to_string());
-        item.set_associated_layout(code_layout.id().clone());
-        code_layout.add_item(item, ctx);
+        self.get_code_list_items(0, &mut code_layout, ctx);
 
         code_layout.select_first_item(ctx);
         list_canvas.set_layout(code_layout);
@@ -482,89 +413,41 @@ impl TheCodeEditor {
         let mut list_toolbar_canvas = TheCanvas::new();
 
         let mut toolbar_hlayout = TheHLayout::new(TheId::empty());
-
-        let icon_color = [85, 81, 85, 255];
-        let icon_border_color = [174, 174, 174, 255];
-
-        let mut syntax_icon = TheTraybarButton::new(TheId::named("Code List Control"));
-        syntax_icon.set_status_text("Show all keywords.");
-        syntax_icon.limiter_mut().set_max_size(vec2i(24, 24));
-        let mut buffer = TheRGBABuffer::new(TheDim::new(0, 0, 22, 22));
-        buffer.pixels_mut().fill(0);
-        let icon_stride = buffer.stride();
-        let icon_rect = buffer.dim().to_buffer_utuple();
-        ctx.draw.circle_with_border(
-            buffer.pixels_mut(),
-            &icon_rect,
-            icon_stride,
-            &icon_border_color,
-            10.5,
-            &icon_border_color,
-            0.0,
-        );
-        syntax_icon.set_icon(buffer);
-        toolbar_hlayout.add_widget(Box::new(syntax_icon));
-
-        let mut values_icon = TheTraybarButton::new(TheId::named("Code List Types"));
-        values_icon.set_status_text("Show all value types.");
-        values_icon.limiter_mut().set_max_size(vec2i(24, 24));
-        buffer = TheRGBABuffer::new(TheDim::new(0, 0, 22, 22));
-        buffer.pixels_mut().fill(0);
-        let icon_stride = buffer.stride();
-        let icon_rect = buffer.dim().to_buffer_utuple();
-        ctx.draw.hexagon_with_border(
-            buffer.pixels_mut(),
-            &icon_rect,
-            icon_stride,
-            &icon_color,
-            &icon_border_color,
-            0.0,
-        );
-        values_icon.set_icon(buffer);
-        toolbar_hlayout.add_widget(Box::new(values_icon));
-
-        let mut operators_icon = TheTraybarButton::new(TheId::named("Code List Operators"));
-        operators_icon.set_status_text("Show all operators.");
-        operators_icon.limiter_mut().set_max_size(vec2i(24, 24));
-        buffer = TheRGBABuffer::new(TheDim::new(0, 0, 22, 22));
-        buffer.pixels_mut().fill(0);
-        let icon_stride = buffer.stride();
-        let icon_rect = buffer.dim().to_buffer_utuple();
-        ctx.draw.rhombus_with_border(
-            buffer.pixels_mut(),
-            &icon_rect,
-            icon_stride,
-            &icon_color,
-            &icon_border_color,
-            0.0,
-        );
-        operators_icon.set_icon(buffer);
-        toolbar_hlayout.add_widget(Box::new(operators_icon));
-
-        let mut functions_icon = TheTraybarButton::new(TheId::named("Code List Functions"));
-        functions_icon.set_status_text("Show all available functions.");
-        functions_icon.limiter_mut().set_max_size(vec2i(24, 24));
-        buffer = TheRGBABuffer::new(TheDim::new(0, 0, 22, 22));
-        buffer.pixels_mut().fill(0);
-        let icon_stride = buffer.stride();
-        let mut icon_rect = buffer.dim().to_buffer_utuple();
-        icon_rect.1 += 4;
-        icon_rect.3 -= 6;
-        ctx.draw.rounded_rect_with_border(
-            buffer.pixels_mut(),
-            &icon_rect,
-            icon_stride,
-            &icon_color,
-            &(5.0, 5.0, 5.0, 5.0),
-            &icon_border_color,
-            0.0,
-        );
-        functions_icon.set_icon(buffer);
-        toolbar_hlayout.add_widget(Box::new(functions_icon));
-
+        toolbar_hlayout.set_margin(vec4i(2, 2, 2, 2));
         toolbar_hlayout.set_background_color(None);
-        toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
-        toolbar_hlayout.set_padding(10);
+        toolbar_hlayout.set_mode(TheHLayoutMode::SizeBased);
+
+        let mut sdf_view = TheSDFView::new(TheId::named("Code List SDF View"));
+
+        let mut sdf_canvas = TheSDFCanvas::new();
+        sdf_canvas.background = crate::thecolor::TheColor::from_u8_array([118, 118, 118, 255]);
+        sdf_canvas.selected = Some(0);
+        sdf_canvas.add(
+            TheSDF::Circle(TheDim::new(5, 2, 20, 20)),
+            ThePattern::Solid(crate::thecolor::TheColor::from_u8(74, 74, 74, 255)),
+        );
+        sdf_view.set_status(0, "Show all keywords.".to_string());
+
+        sdf_canvas.add(
+            TheSDF::Hexagon(TheDim::new(65, 2, 20, 20)),
+            ThePattern::Solid(crate::thecolor::TheColor::from_u8(74, 74, 74, 255)),
+        );
+        sdf_view.set_status(1, "Show all value types.".to_string());
+
+        sdf_canvas.add(
+            TheSDF::Rhombus(TheDim::new(125, 2, 20, 20)),
+            ThePattern::Solid(crate::thecolor::TheColor::from_u8(74, 74, 74, 255)),
+        );
+        sdf_view.set_status(2, "Show all operators.".to_string());
+
+        sdf_canvas.add(
+            TheSDF::RoundedRect(TheDim::new(185, 2, 20, 20), (5.0, 5.0, 5.0, 5.0)),
+            ThePattern::Solid(crate::thecolor::TheColor::from_u8(74, 74, 74, 255)),
+        );
+        sdf_view.set_status(3, "Show all available functions.".to_string());
+
+        sdf_view.set_canvas(sdf_canvas);
+        toolbar_hlayout.add_widget(Box::new(sdf_view));
         list_toolbar_canvas.set_layout(toolbar_hlayout);
         list_toolbar_canvas.set_widget(TheTraybar::new(TheId::empty()));
         list_canvas.set_top(list_toolbar_canvas);
@@ -574,7 +457,6 @@ impl TheCodeEditor {
         let mut toolbar_hlayout = TheHLayout::new(TheId::named("Code Top Toolbar"));
         toolbar_hlayout.set_background_color(None);
         toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
-        //toolbar_hlayout.limiter_mut().set_max_height(27);
         top_toolbar_canvas.set_layout(toolbar_hlayout);
         top_toolbar_canvas.set_widget(TheTraybar::new(TheId::empty()));
 
@@ -695,6 +577,90 @@ impl TheCodeEditor {
         canvas.set_bottom(toolbar_canvas);
 
         canvas
+    }
+
+    pub fn get_code_list_items(&self, index: u32, code_layout: &mut dyn TheListLayoutTrait, ctx: &mut TheContext) {
+        code_layout.clear();
+        if index == 0 {
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Assignment".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Function".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Function Argument".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Function Call".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Return".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Local Get".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Local Set".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Object Get".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Object Set".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+        }
+
+        if index == 0 || index == 1 {
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Integer".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Float".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Float2".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Float3".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+        }
+
+        if index == 0 || index == 2 {
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Add".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Multiply".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+        }
     }
 
     /// Returns the bundle

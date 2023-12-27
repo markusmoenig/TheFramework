@@ -87,6 +87,8 @@ pub mod prelude {
     pub use crate::theui::thetheme::{TheTheme, TheThemeColors, TheThemeColors::*};
 
     pub use crate::theui::thelayout::prelude::*;
+    pub use crate::theui::thesdf::thepattern::ThePattern;
+    pub use crate::theui::thesdf::thesdfcanvas::TheSDFCanvas;
     pub use crate::theui::thesdf::*;
     pub use crate::theui::thewidget::prelude::*;
     pub use crate::theui::thewidget::TheWidget;

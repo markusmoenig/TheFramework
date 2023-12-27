@@ -7,17 +7,15 @@ pub struct TheSDFView {
 
     is_disabled: bool,
 
-    icon_name: String,
-    icon: Option<TheRGBABuffer>,
-    icon_offset: Vec2i,
-
-    status: Option<String>,
+    status_text: FxHashMap<usize, String>,
 
     text: String,
     text_size: f32,
 
     dim: TheDim,
     is_dirty: bool,
+
+    canvas: TheSDFCanvas,
 }
 
 impl TheWidget for TheSDFView {
@@ -25,19 +23,14 @@ impl TheWidget for TheSDFView {
     where
         Self: Sized,
     {
-        let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(20, 20));
+        let limiter = TheSizeLimiter::new();
 
         Self {
             id,
             limiter,
             state: TheWidgetState::None,
 
-            icon_name: "".to_string(),
-            icon_offset: vec2i(0, 0),
-            icon: None,
-
-            status: None,
+            status_text: FxHashMap::default(),
 
             text: "".to_string(),
             text_size: 13.0,
@@ -45,6 +38,8 @@ impl TheWidget for TheSDFView {
             dim: TheDim::zero(),
             is_dirty: false,
             is_disabled: false,
+
+            canvas: TheSDFCanvas::new(),
         }
     }
 
@@ -53,12 +48,7 @@ impl TheWidget for TheSDFView {
     }
 
     fn status_text(&self) -> Option<String> {
-        self.status.clone()
-    }
-
-    /// Sets the status text for the widget.
-    fn set_status_text(&mut self, text: &str) {
-        self.status = Some(text.to_string());
+        Some("".to_string())
     }
 
     #[allow(clippy::single_match)]
@@ -69,22 +59,53 @@ impl TheWidget for TheSDFView {
         let mut redraw = false;
         //println!("event ({}): {:?}", self.id.name, event);
         match event {
-            TheEvent::MouseDown(_coord) => {
+            TheEvent::MouseDown(coord) => {
                 if self.state != TheWidgetState::Clicked {
-                    //self.state = TheWidgetState::Clicked;
+                    self.state = TheWidgetState::Clicked;
                     ctx.ui.set_focus(self.id());
                     ctx.ui
                         .send_widget_state_changed(self.id(), TheWidgetState::Clicked);
                 }
-                self.is_dirty = true;
-                redraw = true;
+                if let Some(index) = self.canvas.index_at(vec2f(coord.x as f32, coord.y as f32)) {
+                    if Some(index) != self.canvas.selected {
+                        self.canvas.selected = Some(index);
+                        self.is_dirty = true;
+                        redraw = true;
+                        ctx.ui
+                            .send(TheEvent::SDFIndexChanged(self.id.clone(), index as u32));
+                    }
+                }
             }
-            TheEvent::Hover(_coord) => {
+            TheEvent::Hover(coord) => {
                 if self.state != TheWidgetState::Clicked && !self.id().equals(&ctx.ui.hover) {
                     self.is_dirty = true;
                     ctx.ui.set_hover(self.id());
                     redraw = true;
                 }
+                if let Some(index) = self.canvas.index_at(vec2f(coord.x as f32, coord.y as f32)) {
+                    if Some(index) != self.canvas.hover {
+                        self.canvas.hover = Some(index);
+                        self.is_dirty = true;
+                        redraw = true;
+                        if let Some(status) = self.status_text.get(&index) {
+                            ctx.ui
+                                .send(TheEvent::SetStatusText(self.id.clone(), status.clone()));
+                        }
+                    }
+                } else if self.canvas.hover.is_some() {
+                    self.canvas.hover = None;
+                    self.is_dirty = true;
+                    redraw = true;
+                    ctx.ui
+                        .send(TheEvent::SetStatusText(self.id.clone(), "".to_string()));
+                }
+            }
+            TheEvent::LostHover(_coord) => {
+                self.canvas.hover = None;
+                self.is_dirty = true;
+                redraw = true;
+                ctx.ui
+                    .send(TheEvent::SetStatusText(self.id.clone(), "".to_string()));
             }
             TheEvent::MouseUp(_coord) => {
                 if self.state == TheWidgetState::Clicked {
@@ -168,138 +189,17 @@ impl TheWidget for TheSDFView {
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
-        style: &mut Box<dyn TheStyle>,
-        ctx: &mut TheContext,
+        _style: &mut Box<dyn TheStyle>,
+        _ctx: &mut TheContext,
     ) {
-        let stride = buffer.stride();
-        let mut shrinker: TheDimShrinker = TheDimShrinker::zero();
-
         if !self.dim().is_valid() {
             return;
         }
 
-        if self.is_disabled {
-            ctx.draw.rect_outline_border(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                style.theme().color(TraybarButtonDisabledBorder),
-                1,
-            );
+        let mut b = TheRGBABuffer::new(TheDim::new(0, 0, self.dim.width, self.dim.height));
 
-            shrinker.shrink(1);
-
-            ctx.draw.rect(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                style.theme().color(TraybarButtonDisabledBackground),
-            );
-        }
-
-        if !self.is_disabled
-            && self.state == TheWidgetState::None
-            && !self.id().equals(&ctx.ui.hover)
-        {
-            ctx.draw.rect_outline_border(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                style.theme().color(TraybarButtonNormalBorder),
-                1,
-            );
-
-            shrinker.shrink(1);
-
-            ctx.draw.rect(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                style.theme().color(TraybarButtonNormal),
-            );
-        }
-
-        if !self.is_disabled && self.state != TheWidgetState::None
-            || self.id().equals(&ctx.ui.hover)
-        {
-            if self.state == TheWidgetState::Clicked {
-                ctx.draw.rect_outline_border(
-                    buffer.pixels_mut(),
-                    &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                    stride,
-                    style.theme().color(TraybarButtonClickedBorder),
-                    1,
-                );
-
-                shrinker.shrink(1);
-
-                ctx.draw.rect(
-                    buffer.pixels_mut(),
-                    &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                    stride,
-                    style.theme().color(TraybarButtonClicked),
-                );
-            } else if self.id().equals(&ctx.ui.hover) {
-                ctx.draw.rect_outline_border(
-                    buffer.pixels_mut(),
-                    &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                    stride,
-                    style.theme().color(TraybarButtonHover),
-                    1,
-                );
-
-                shrinker.shrink(1);
-
-                ctx.draw.rect(
-                    buffer.pixels_mut(),
-                    &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                    stride,
-                    style.theme().color(TraybarButtonHoverBorder),
-                );
-            }
-        }
-
-        if let Some(icon) = &self.icon {
-            let utuple = self.dim.to_buffer_shrunk_utuple(&shrinker);
-            let r = (
-                ((utuple.0 + (utuple.2 - icon.dim().width as usize) / 2) as i32
-                    + self.icon_offset.x) as usize,
-                ((utuple.1 + (utuple.3 - icon.dim().height as usize) / 2) as i32
-                    + self.icon_offset.y) as usize,
-                icon.dim().width as usize,
-                icon.dim().height as usize,
-            );
-            ctx.draw
-                .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
-        } else if let Some(icon) = ctx.ui.icon(&self.icon_name) {
-            let utuple = self.dim.to_buffer_shrunk_utuple(&shrinker);
-            let r = (
-                ((utuple.0 + (utuple.2 - icon.dim().width as usize) / 2) as i32
-                    + self.icon_offset.x) as usize,
-                ((utuple.1 + (utuple.3 - icon.dim().height as usize) / 2) as i32
-                    + self.icon_offset.y) as usize,
-                icon.dim().width as usize,
-                icon.dim().height as usize,
-            );
-            ctx.draw
-                .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
-        }
-
-        if !self.text.is_empty() {
-            if let Some(font) = &ctx.ui.font {
-                ctx.draw.text_rect_blend(
-                    buffer.pixels_mut(),
-                    &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                    stride,
-                    font,
-                    self.text_size,
-                    &self.text,
-                    &WHITE,
-                    TheHorizontalAlign::Center,
-                    TheVerticalAlign::Center,
-                );
-            }
-        }
+        self.canvas.render(&mut b);
+        buffer.copy_into(self.dim.buffer_x, self.dim.buffer_y, &b);
 
         self.is_dirty = false;
     }
@@ -310,23 +210,15 @@ impl TheWidget for TheSDFView {
 }
 
 pub trait TheSDFViewTrait {
-    fn set_icon_name(&mut self, text: String);
-    fn set_icon_offset(&mut self, offset: Vec2i);
-    fn set_text(&mut self, text: String);
-    fn set_icon(&mut self, icon: TheRGBABuffer);
+    fn set_canvas(&mut self, canvas: TheSDFCanvas);
+    fn set_status(&mut self, index: usize, text: String);
 }
 
 impl TheSDFViewTrait for TheSDFView {
-    fn set_icon_name(&mut self, text: String) {
-        self.icon_name = text;
+    fn set_canvas(&mut self, canvas: TheSDFCanvas) {
+        self.canvas = canvas;
     }
-    fn set_icon(&mut self, icon: TheRGBABuffer) {
-        self.icon = Some(icon);
-    }
-    fn set_icon_offset(&mut self, offset: Vec2i) {
-        self.icon_offset = offset;
-    }
-    fn set_text(&mut self, text: String) {
-        self.text = text;
+    fn set_status(&mut self, index: usize, text: String) {
+        self.status_text.insert(index, text);
     }
 }

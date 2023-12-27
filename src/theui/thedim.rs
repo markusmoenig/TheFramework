@@ -89,6 +89,19 @@ impl TheDim {
             (self.height - shrinker.bottom) as usize,
         )
     }
+
+    /// Returns the center of the buffer.
+    pub fn center(&self) -> Vec2f {
+        Vec2f::new(
+            (self.x + self.width) as f32 / 2.0,
+            (self.y + self.height) as f32 / 2.0,
+        )
+    }
+
+    /// Return the radius of the dimension.
+    pub fn radius(&self) -> f32 {
+        min(self.width, self.height) as f32 / 2.0
+    }
 }
 
 /// Shrink content of TheDim, used in styles to provide a way to implement custom sized borders for widgets.
