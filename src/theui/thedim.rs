@@ -39,6 +39,17 @@ impl TheDim {
         }
     }
 
+    pub fn sized(width: i32, height: i32) -> Self {
+        Self {
+            x: 0,
+            y: 0,
+            width,
+            height,
+            buffer_x: 0,
+            buffer_y: 0,
+        }
+    }
+
     /// Sets the offset relative to the canvas buffer.
     pub fn set_buffer_offset(&mut self, buffer_x: i32, buffer_y: i32) {
         self.buffer_x = buffer_x;
@@ -93,8 +104,8 @@ impl TheDim {
     /// Returns the center of the buffer.
     pub fn center(&self) -> Vec2f {
         Vec2f::new(
-            (self.x + self.width) as f32 / 2.0,
-            (self.y + self.height) as f32 / 2.0,
+            self.x as f32 + self.width as f32 / 2.0,
+            self.y as f32 + self.height as f32 / 2.0,
         )
     }
 

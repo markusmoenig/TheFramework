@@ -96,4 +96,17 @@ impl TheSDFCanvas {
             None
         }
     }
+
+    /// Clear the canvas.
+    pub fn clear(&mut self) {
+        self.sdfs.clear();
+        self.patterns.clear();
+        self.selected = None;
+        self.hover = None;
+    }
+
+    /// Returns true if the canvas is empty.
+    pub fn is_empty(&self) -> bool {
+        self.sdfs.is_empty()
+    }
 }

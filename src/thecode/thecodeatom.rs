@@ -370,6 +370,20 @@ impl TheCodeAtom {
         }
     }
 
+    pub fn to_sdf(&self, dim: TheDim, zoom: f32) -> TheSDF {
+        match self {
+            Self::Value(_) => TheSDF::Hexagon(dim),
+            Self::Add | &Self::Multiply => {
+                TheSDF::RoundedRect(dim, (0.0, 0.0, 0.0, 0.0))
+                //TheSDF::Rhombus(dim)
+            }
+            Self::ObjectSet(_, _) | &Self::LocalSet(_) => {
+                TheSDF::RoundedRect(dim, (0.0, 0.0, 10.0 * zoom, 10.0 * zoom))
+            }
+            _ => TheSDF::RoundedRect(dim, (0.0, 0.0, 0.0, 0.0)),
+        }
+    }
+
     pub fn to_kind(&self) -> TheCodeAtomKind {
         match self {
             TheCodeAtom::Assignment(_op) => TheCodeAtomKind::Equal,
@@ -403,7 +417,10 @@ impl TheCodeAtom {
             TheCodeAtom::LocalSet(name) => name.clone(),
             TheCodeAtom::ObjectGet(object, name) => format!("{}.{}", object, name),
             TheCodeAtom::ObjectSet(object, name) => format!("{}.{}", object, name),
-            TheCodeAtom::Value(value) => value.describe(),
+            TheCodeAtom::Value(value) => match value {
+                TheValue::Tile(name, _id) => name.clone(),
+                _ => value.describe(),
+            },
             TheCodeAtom::Add => "+".to_string(),
             TheCodeAtom::Multiply => "*".to_string(),
             TheCodeAtom::EndOfExpression => ";".to_string(),
@@ -469,7 +486,7 @@ impl TheCodeAtom {
         match self {
             TheCodeAtom::FuncDef(name) => {
                 let mut text = TheText::new(TheId::empty());
-                text.set_text("Function Name:".to_string());
+                text.set_text("Function Name".to_string());
                 let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Func Def"));
                 name_edit.set_text(name.clone());
                 name_edit.set_needs_redraw(true);
@@ -478,7 +495,7 @@ impl TheCodeAtom {
             }
             TheCodeAtom::FuncArg(name) => {
                 let mut text = TheText::new(TheId::empty());
-                text.set_text("Argument Name:".to_string());
+                text.set_text("Argument Name".to_string());
                 let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Func Arg"));
                 name_edit.set_text(name.clone());
                 name_edit.set_needs_redraw(true);
@@ -487,7 +504,7 @@ impl TheCodeAtom {
             }
             TheCodeAtom::FuncCall(name) => {
                 let mut text = TheText::new(TheId::empty());
-                text.set_text("Function Name:".to_string());
+                text.set_text("Function Name".to_string());
                 let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Func Call"));
                 name_edit.set_text(name.clone());
                 name_edit.set_needs_redraw(true);
@@ -496,7 +513,7 @@ impl TheCodeAtom {
             }
             TheCodeAtom::LocalGet(name) => {
                 let mut text = TheText::new(TheId::empty());
-                text.set_text("Variable Name:".to_string());
+                text.set_text("Variable Name".to_string());
                 let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Local Get"));
                 name_edit.set_text(name.clone());
                 name_edit.set_needs_redraw(true);
@@ -505,7 +522,7 @@ impl TheCodeAtom {
             }
             TheCodeAtom::LocalSet(name) => {
                 let mut text = TheText::new(TheId::empty());
-                text.set_text("Variable Name:".to_string());
+                text.set_text("Variable Name".to_string());
                 let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Local Set"));
                 name_edit.set_text(name.clone());
                 name_edit.set_needs_redraw(true);
@@ -514,7 +531,7 @@ impl TheCodeAtom {
             }
             TheCodeAtom::ObjectSet(object, name) => {
                 let mut text = TheText::new(TheId::empty());
-                text.set_text("Object Name:".to_string());
+                text.set_text("Object Name".to_string());
                 let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Object Set Object"));
                 name_edit.set_text(object.clone());
                 name_edit.set_needs_redraw(true);
@@ -522,7 +539,7 @@ impl TheCodeAtom {
                 layout.add_widget(Box::new(name_edit));
 
                 let mut text = TheText::new(TheId::empty());
-                text.set_text("Variable Name:".to_string());
+                text.set_text("Variable Name".to_string());
                 let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Object Set Variable"));
                 name_edit.set_text(name.clone());
                 name_edit.set_needs_redraw(true);
@@ -531,8 +548,10 @@ impl TheCodeAtom {
             }
             TheCodeAtom::Value(value) => {
                 let mut text = TheText::new(TheId::empty());
-                text.set_text("Integer:".to_string());
-                let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Integer"));
+                text.set_text(value.to_kind());
+                let mut name_edit = TheTextLineEdit::new(TheId::named(
+                    format!("Atom {}", value.to_kind()).as_str(),
+                ));
                 name_edit.set_text(value.describe());
                 name_edit.set_needs_redraw(true);
                 layout.add_widget(Box::new(text));

@@ -242,7 +242,23 @@ impl TheCodeEditor {
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Int(v)));
                         self.finish_undo(ui, ctx);
                     }
+                } else if id.name == "Atom Float" {
+                    if let Some(v) = value.to_f32() {
+                        self.start_undo(ui);
+                        self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Float(v)));
+                        self.finish_undo(ui, ctx);
+                    }
+                } else if id.name == "Atom Tile" {
+                    if let Some(name) = value.to_string() {
+                        self.start_undo(ui);
+                        self.set_selected_atom(
+                            ui,
+                            TheCodeAtom::Value(TheValue::Tile(name, Uuid::nil())),
+                        );
+                        self.finish_undo(ui, ctx);
+                    }
                 }
+
                 redraw = true;
             }
             _ => {}
@@ -349,7 +365,13 @@ impl TheCodeEditor {
         let mut undo = self.undo.take().unwrap();
         undo.set_redo_data(self.get_codegrid_json(ui));
 
+        let grid = self.get_codegrid(ui).clone();
+        self.bundle.insert_grid(grid);
+
         ctx.ui.undo_stack.add(undo);
+
+        ctx.ui
+            .send(TheEvent::CodeBundleChanged(self.bundle.clone()));
     }
 
     /// Get the codegrid as json
@@ -385,8 +407,10 @@ impl TheCodeEditor {
             "Object Set" => TheCodeAtom::ObjectSet("self".to_string(), "name".to_string()),
             "Integer" => TheCodeAtom::Value(TheValue::Int(0)),
             "Float" => TheCodeAtom::Value(TheValue::Float(0.0)),
+            "Tile" => TheCodeAtom::Value(TheValue::Tile("Name".into(), Uuid::nil())),
             "Float2" => TheCodeAtom::Value(TheValue::Float2(vec2f(0.0, 0.0))),
             "Float3" => TheCodeAtom::Value(TheValue::Float3(vec3f(0.0, 0.0, 0.0))),
+            "Position" => TheCodeAtom::Value(TheValue::Position(vec3f(0.0, 0.0, 0.0))),
             "Add" => TheCodeAtom::Add,
             "Multiply" => TheCodeAtom::Multiply,
             _ => TheCodeAtom::EndOfCode,
@@ -429,19 +453,19 @@ impl TheCodeEditor {
         sdf_view.set_status(0, "Show all keywords.".to_string());
 
         sdf_canvas.add(
-            TheSDF::Hexagon(TheDim::new(65, 2, 20, 20)),
+            TheSDF::Hexagon(TheDim::new(40, 2, 20, 20)),
             ThePattern::Solid(crate::thecolor::TheColor::from_u8(74, 74, 74, 255)),
         );
         sdf_view.set_status(1, "Show all value types.".to_string());
 
         sdf_canvas.add(
-            TheSDF::Rhombus(TheDim::new(125, 2, 20, 20)),
+            TheSDF::Rhombus(TheDim::new(75, 2, 20, 20)),
             ThePattern::Solid(crate::thecolor::TheColor::from_u8(74, 74, 74, 255)),
         );
         sdf_view.set_status(2, "Show all operators.".to_string());
 
         sdf_canvas.add(
-            TheSDF::RoundedRect(TheDim::new(185, 2, 20, 20), (5.0, 5.0, 5.0, 5.0)),
+            TheSDF::RoundedRect(TheDim::new(110, 2, 20, 20), (5.0, 5.0, 5.0, 5.0)),
             ThePattern::Solid(crate::thecolor::TheColor::from_u8(74, 74, 74, 255)),
         );
         sdf_view.set_status(3, "Show all available functions.".to_string());
@@ -579,7 +603,12 @@ impl TheCodeEditor {
         canvas
     }
 
-    pub fn get_code_list_items(&self, index: u32, code_layout: &mut dyn TheListLayoutTrait, ctx: &mut TheContext) {
+    pub fn get_code_list_items(
+        &self,
+        index: u32,
+        code_layout: &mut dyn TheListLayoutTrait,
+        ctx: &mut TheContext,
+    ) {
         code_layout.clear();
         if index == 0 {
             let mut item = TheListItem::new(TheId::named("Code List Item"));
@@ -640,14 +669,19 @@ impl TheCodeEditor {
             code_layout.add_item(item, ctx);
 
             let mut item = TheListItem::new(TheId::named("Code List Item"));
-            item.set_text("Float2".to_string());
+            item.set_text("Tile".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
-            item.set_text("Float3".to_string());
-            item.set_associated_layout(code_layout.id().clone());
-            code_layout.add_item(item, ctx);
+            // let mut item = TheListItem::new(TheId::named("Code List Item"));
+            // item.set_text("Float2".to_string());
+            // item.set_associated_layout(code_layout.id().clone());
+            // code_layout.add_item(item, ctx);
+
+            // let mut item = TheListItem::new(TheId::named("Code List Item"));
+            // item.set_text("Float3".to_string());
+            // item.set_associated_layout(code_layout.id().clone());
+            // code_layout.add_item(item, ctx);
         }
 
         if index == 0 || index == 2 {

@@ -189,10 +189,6 @@ impl TheTrait for CodeEditor {
                                     }
 
                                     self.editor.set_grid_status_message(ui, ctx);
-                                    println!(
-                                        "Size of MyEnum: {} bytes",
-                                        std::mem::size_of::<TheEvent>()
-                                    );
                                 }
                             }
                         } else {

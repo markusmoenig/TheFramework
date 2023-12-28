@@ -27,6 +27,11 @@ impl TheCodeObject {
         self.values.get(name)
     }
 
+    /// Get a value in the object mut.
+    pub fn get_mut(&mut self, name: &String) -> Option<&mut TheValue> {
+        self.values.get_mut(name)
+    }
+
     /// Set a value in the object.
     pub fn set(&mut self, name: String, value: TheValue) {
         self.values.insert(name, value);

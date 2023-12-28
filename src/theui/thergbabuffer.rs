@@ -327,6 +327,7 @@ impl IndexMut<usize> for TheRGBARegionSequence {
 #[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]
 pub struct TheRGBATile {
     pub id: Uuid,
+    pub name: String,
     pub buffer: Vec<TheRGBABuffer>,
     pub role: u8,
     pub blocking: bool,
@@ -343,6 +344,7 @@ impl TheRGBATile {
     pub fn new() -> Self {
         Self {
             id: Uuid::new_v4(),
+            name: String::default(),
             buffer: vec![],
             role: 0,
             blocking: false,
@@ -352,6 +354,7 @@ impl TheRGBATile {
     pub fn buffer(buffer: TheRGBABuffer) -> Self {
         Self {
             id: Uuid::new_v4(),
+            name: String::default(),
             buffer: vec![buffer],
             role: 0,
             blocking: false,

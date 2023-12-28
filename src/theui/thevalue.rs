@@ -61,6 +61,7 @@ impl TheValue {
     pub fn to_string(&self) -> Option<String> {
         match self {
             Text(v) => Some(v.clone()),
+            Tile(name, _id) => Some(name.clone()),
             _ => None,
         }
     }
@@ -101,6 +102,32 @@ impl TheValue {
     }
 
     /// Returns a description of the value as string.
+    pub fn to_kind(&self) -> String {
+        match self {
+            Empty => "Empty".to_string(),
+            Bool(_v) => "Bool".to_string(),
+            Float(_v) => "Float".to_string(),
+            Int(_i) => "Integer".to_string(),
+            Text(_s) => "Text".to_string(),
+            Int2(v) => format!("Int2: {:?}", v),
+            Float2(v) => format!("Float22: {:?}", v),
+            Int3(v) => format!("Int3: {:?}", v),
+            Float3(v) => format!("Float3: {:?}", v),
+            Int4(v) => format!("Int4: {:?}", v),
+            Float4(v) => format!("Float4: {:?}", v),
+            Position(v) => format!("Position: {:?}", v),
+            Tile(_v, _id) => "Tile".to_string(),
+            Char(c) => c.to_string(),
+            #[cfg(feature = "code")]
+            CodeObject(_) => "Object".to_string(),
+            KeyCode(k) => format!("KeyCode: {:?}", k),
+            RangeI32(r) => format!("RangeI32: {:?}", r),
+            RangeF32(r) => format!("RangeF32: {:?}", r),
+            ColorObject(c) => format!("Color: {:?}", c),
+        }
+    }
+
+    /// Returns a description of the value as string.
     pub fn describe(&self) -> String {
         match self {
             Empty => "Empty".to_string(),
@@ -127,7 +154,7 @@ impl TheValue {
             Int4(v) => format!("Int4: {:?}", v),
             Float4(v) => format!("Float4: {:?}", v),
             Position(v) => format!("Position: {:?}", v),
-            Tile(v, _id) => format!("Tile: {:?}", v),
+            Tile(v, _id) => v.clone(),
             Char(c) => c.to_string(),
             #[cfg(feature = "code")]
             CodeObject(_) => "Object".to_string(),

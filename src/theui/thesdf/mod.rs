@@ -71,7 +71,12 @@ impl TheSDF {
             Hexagon(dim) => format!("Hexagon: {:?} {}", dim.center(), dim.radius()),
             Rhombus(dim) => format!("Hexagon: {:?} {}", dim.center(), dim.radius()),
             RoundedRect(dim, rounding) => {
-                format!("RoundedRect: {:?} {} {:?}", dim.center(), dim.radius(), rounding)
+                format!(
+                    "RoundedRect: {:?} {} {:?}",
+                    dim.center(),
+                    dim.radius(),
+                    rounding
+                )
             }
         }
     }
