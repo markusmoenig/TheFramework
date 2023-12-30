@@ -15,6 +15,10 @@ pub struct TheTextLineEdit {
     dim: TheDim,
     is_dirty: bool,
     embedded: bool,
+
+    range: Option<TheValue>,
+
+    layout_id: Option<TheId>,
 }
 
 impl TheWidget for TheTextLineEdit {
@@ -42,6 +46,10 @@ impl TheWidget for TheTextLineEdit {
             is_dirty: false,
 
             embedded: false,
+
+            range: None,
+
+            layout_id: None,
         }
     }
 
@@ -215,23 +223,66 @@ impl TheWidget for TheTextLineEdit {
                         self.is_dirty = true;
                         redraw = true;
                     } else if key == TheKeyCode::Return && self.text != self.original {
-                        ctx.ui.send_widget_value_changed(
-                            self.id(),
-                            TheValue::Text(self.text.clone()),
-                        );
+                        if let Some(layout_id) = &self.layout_id {
+                            ctx.ui.send(TheEvent::RedirectWidgetValueToLayout(
+                                layout_id.clone(),
+                                self.id().clone(),
+                                self.value(),
+                            ));
+                        } else {
+                            ctx.ui.send_widget_value_changed(self.id(), self.value());
+                        }
                         self.original = self.text.clone();
                     }
                 }
             }
             TheEvent::LostFocus(_id) => {
                 if self.text != self.original {
-                    ctx.ui
-                        .send_widget_value_changed(self.id(), TheValue::Text(self.text.clone()));
+                    if let Some(layout_id) = &self.layout_id {
+                        ctx.ui.send(TheEvent::RedirectWidgetValueToLayout(
+                            layout_id.clone(),
+                            self.id().clone(),
+                            self.value(),
+                        ));
+                    } else {
+                        ctx.ui.send_widget_value_changed(self.id(), self.value());
+                    }
                 }
             }
             _ => {}
         }
         redraw
+    }
+
+    fn value(&self) -> TheValue {
+        if let Some(range) = &self.range {
+            if let Some(range_f32) = range.to_range_f32() {
+                if let Ok(value) = self.text.parse::<f32>() {
+                    if range_f32.contains(&value) {
+                        return TheValue::Float(value);
+                    }
+                }
+                let original = self.original.clone();
+                if let Ok(value) = original.parse::<f32>() {
+                    if range_f32.contains(&value) {
+                        return TheValue::Float(value);
+                    }
+                }
+            } else if let Some(range_i32) = range.to_range_i32() {
+                if let Ok(value) = self.text.parse::<i32>() {
+                    if range_i32.contains(&value) {
+                        return TheValue::Int(value);
+                    }
+                }
+                let original = self.original.clone();
+                if let Ok(value) = original.parse::<i32>() {
+                    if range_i32.contains(&value) {
+                        return TheValue::Int(value);
+                    }
+                }
+            }
+        }
+        TheValue::Text(self.text.clone())
     }
 
     fn set_value(&mut self, value: TheValue) {
@@ -335,6 +386,8 @@ pub trait TheTextLineEditTrait: TheWidget {
     fn set_text(&mut self, text: String);
     fn set_font_size(&mut self, font_size: f32);
     fn set_embedded(&mut self, embedded: bool);
+    fn set_range(&mut self, range: TheValue);
+    fn set_associated_layout(&mut self, id: TheId);
 }
 
 impl TheTextLineEditTrait for TheTextLineEdit {
@@ -351,5 +404,14 @@ impl TheTextLineEditTrait for TheTextLineEdit {
     }
     fn set_embedded(&mut self, embedded: bool) {
         self.embedded = embedded;
+    }
+    fn set_range(&mut self, range: TheValue) {
+        if Some(range.clone()) != self.range {
+            self.range = Some(range);
+            self.is_dirty = true;
+        }
+    }
+    fn set_associated_layout(&mut self, layout_id: TheId) {
+        self.layout_id = Some(layout_id);
     }
 }

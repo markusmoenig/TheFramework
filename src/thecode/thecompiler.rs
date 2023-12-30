@@ -208,6 +208,7 @@ impl TheCompiler {
                 self.ctx.module.insert_function(f.name.clone(), f);
             }
 
+            self.ctx.module.codegrid_id = grid.uuid;
             Ok(self.ctx.module.clone())
         }
     }
@@ -335,6 +336,10 @@ impl TheCompiler {
     fn variable(&mut self, _can_assing: bool) {
         match self.ctx.previous.clone() {
             TheCodeAtom::LocalGet(_name) => {
+                let node = self.ctx.previous.clone().to_node(&mut self.ctx);
+                self.ctx.get_current_function().add_node(node);
+            }
+            TheCodeAtom::ObjectGet(_, _) => {
                 let node = self.ctx.previous.clone().to_node(&mut self.ctx);
                 self.ctx.get_current_function().add_node(node);
             }

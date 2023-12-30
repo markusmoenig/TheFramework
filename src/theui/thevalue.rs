@@ -101,6 +101,45 @@ impl TheValue {
         }
     }
 
+    /// Add a value to another value. Returns None if the values are not compatible.
+    pub fn add(&self, other: &TheValue) -> Option<TheValue> {
+        if let TheValue::Int(a) = self {
+            match other {
+                TheValue::Int(b) => Some(TheValue::Int(a + b)),
+                TheValue::Float(b) => Some(TheValue::Float(*a as f32 + b)),
+                _ => None,
+            }
+        } else if let TheValue::Float(a) = self {
+            match other {
+                TheValue::Int(b) => Some(TheValue::Float(a + *b as f32)),
+                TheValue::Float(b) => Some(TheValue::Float(a + b)),
+                _ => None,
+            }
+        } else if let TheValue::Position(a) = self {
+            match other {
+                TheValue::Int(b) => Some(TheValue::Position(vec3f(a.x + *b as f32, a.y, a.z))),
+                TheValue::Int2(b) => Some(TheValue::Position(vec3f(
+                    a.x + b.x as f32,
+                    a.y + b.y as f32,
+                    a.z,
+                ))),
+                TheValue::Int3(b) => Some(TheValue::Position(vec3f(
+                    a.x + b.x as f32,
+                    a.y + b.y as f32,
+                    a.z + b.z as f32,
+                ))),
+                TheValue::Float(b) => Some(TheValue::Position(vec3f(a.x + *b, a.y, a.z))),
+                TheValue::Float2(b) => Some(TheValue::Position(vec3f(a.x + b.x, a.y + b.y, a.z))),
+                TheValue::Float3(b) => {
+                    Some(TheValue::Position(vec3f(a.x + b.x, a.y + b.y, a.z + b.z)))
+                }
+                _ => None,
+            }
+        } else {
+            None
+        }
+    }
+
     /// Returns a description of the value as string.
     pub fn to_kind(&self) -> String {
         match self {
@@ -147,14 +186,14 @@ impl TheValue {
             }
             Int(i) => i.to_string(),
             Text(s) => s.clone(),
-            Int2(v) => format!("Int2: {:?}", v),
-            Float2(v) => format!("Float22: {:?}", v),
-            Int3(v) => format!("Int3: {:?}", v),
-            Float3(v) => format!("Float3: {:?}", v),
-            Int4(v) => format!("Int4: {:?}", v),
-            Float4(v) => format!("Float4: {:?}", v),
-            Position(v) => format!("Position: {:?}", v),
-            Tile(v, _id) => v.clone(),
+            Int2(v) => format!("({}, {})", v.x, v.y),
+            Float2(v) => format!("({}, {})", v.x, v.y),
+            Int3(v) => format!("({}, {}, {})", v.x, v.y, v.z),
+            Float3(v) => format!("({}, {}, {})", v.x, v.y, v.z),
+            Int4(v) => format!("({}, {}, {}, {})", v.x, v.y, v.z, v.w),
+            Float4(v) => format!("({}, {}, {}, {})", v.x, v.y, v.z, v.w),
+            Position(v) => format!("({}, {})", v.x, v.y),
+            Tile(name, _id) => name.clone(),
             Char(c) => c.to_string(),
             #[cfg(feature = "code")]
             CodeObject(_) => "Object".to_string(),

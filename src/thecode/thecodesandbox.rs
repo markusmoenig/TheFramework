@@ -28,6 +28,10 @@ pub struct TheCodeSandbox {
     #[serde(skip)]
     pub module_stack: Vec<Uuid>,
 
+    /// The call stack of the codegrid source of the module.
+    #[serde(skip)]
+    pub codegrid_stack: Vec<Uuid>,
+
     /// The call stack of functions.
     #[serde(skip)]
     pub call_stack: Vec<TheCodeFunction>,
@@ -57,6 +61,7 @@ impl TheCodeSandbox {
             func_rc: None,
             module_stack: vec![],
             call_stack: vec![],
+            codegrid_stack: vec![],
             debug_modules: FxHashMap::default(),
         }
     }
@@ -67,6 +72,7 @@ impl TheCodeSandbox {
         self.func_rc = None;
         self.module_stack = vec![];
         self.call_stack = vec![];
+        self.codegrid_stack = vec![];
         self.debug_modules = FxHashMap::default();
     }
 
@@ -138,8 +144,9 @@ impl TheCodeSandbox {
     }
 
     /// Pushes the current module to the module stack.
-    pub fn push_current_module(&mut self, module_id: Uuid) {
+    pub fn push_current_module(&mut self, module_id: Uuid, codegrid_id: Uuid) {
         self.module_stack.push(module_id);
+        self.codegrid_stack.push(codegrid_id);
         self.debug_modules.entry(module_id).or_default();
     }
 
@@ -159,6 +166,20 @@ impl TheCodeSandbox {
         } else {
             TheDebugModule::new()
         }
+    }
+
+    /// Returns the debug values for a given entity id.
+    pub fn get_codegrid_debug_module(&self, entity_id: Uuid) -> TheDebugModule {
+        for (index, id) in self.codegrid_stack.iter().enumerate() {
+            if *id == entity_id {
+                if let Some(module_id) = self.module_stack.get(index) {
+                    if let Some(dv) = self.debug_modules.get(module_id) {
+                        return dv.clone();
+                    }
+                }
+            }
+        }
+        TheDebugModule::new()
     }
 }
 

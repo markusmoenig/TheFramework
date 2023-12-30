@@ -222,21 +222,22 @@ impl TheCodeAtom {
                         }
                     };
 
-                if ctx.error.is_none() {
-                    let mut error = true;
-                    if let Some(local) = ctx.local.last_mut() {
-                        if let Some(local) = local.get(&name.clone()) {
-                            ctx.stack.push(local.clone());
-                            error = false;
-                        }
-                    }
-                    if error {
-                        ctx.error = Some(TheCompilerError::new(
-                            ctx.current_location,
-                            format!("Unknown local variable {}.", name),
-                        ));
-                    }
-                }
+                ctx.stack.push(TheValue::Int(0));
+                // if ctx.error.is_none() {
+                //     let mut error = true;
+                //     if let Some(local) = ctx.local.last_mut() {
+                //         if let Some(local) = local.get(&name.clone()) {
+                //             ctx.stack.push(local.clone());
+                //             error = false;
+                //         }
+                //     }
+                //     if error {
+                //         ctx.error = Some(TheCompilerError::new(
+                //             ctx.current_location,
+                //             format!("Unknown local variable {}.", name),
+                //         ));
+                //     }
+                // }
                 TheCodeNode::new(
                     call,
                     TheCodeNodeData::location_values(
@@ -256,11 +257,14 @@ impl TheCodeAtom {
                         if let Some(object) =
                             sandbox.get_object_mut(&data.values[0].to_string().unwrap())
                         {
-                            let v = stack.pop().unwrap();
-                            if debug_mode {
-                                debug_value = Some(v.clone());
+                            if let Some(v) = stack.pop() {
+                                if debug_mode {
+                                    debug_value = Some(v.clone());
+                                }
+                                object.set(data.values[1].to_string().unwrap(), v);
+                            } else {
+                                println!("Runtime error: Object Set. Stack is empty.",);
                             }
-                            object.set(data.values[1].to_string().unwrap(), v);
                         }
 
                         if let Some(debug_value) = debug_value {
@@ -307,9 +311,16 @@ impl TheCodeAtom {
                     |stack: &mut Vec<TheValue>,
                      _data: &mut TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {
-                        let a = stack.pop().unwrap().to_i32().unwrap();
-                        let b = stack.pop().unwrap().to_i32().unwrap();
-                        stack.push(TheValue::Int(a + b));
+                        if let Some(b) = stack.pop() {
+                            if let Some(a) = stack.pop() {
+                                println!("t {:?} {:?}", a, b);
+                                if let Some(result) = TheValue::add(&a, &b) {
+                                    stack.push(result);
+                                } else {
+                                    println!("Runtime error: Add. Invalid types.");
+                                }
+                            }
+                        }
                     };
 
                 if ctx.error.is_none() && ctx.stack.len() < 2 {
@@ -529,6 +540,23 @@ impl TheCodeAtom {
                 layout.add_widget(Box::new(text));
                 layout.add_widget(Box::new(name_edit));
             }
+            TheCodeAtom::ObjectGet(object, name) => {
+                let mut text = TheText::new(TheId::empty());
+                text.set_text("Object Name".to_string());
+                let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Object Get Object"));
+                name_edit.set_text(object.clone());
+                name_edit.set_needs_redraw(true);
+                layout.add_widget(Box::new(text));
+                layout.add_widget(Box::new(name_edit));
+
+                let mut text = TheText::new(TheId::empty());
+                text.set_text("Variable Name".to_string());
+                let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Object Get Variable"));
+                name_edit.set_text(name.clone());
+                name_edit.set_needs_redraw(true);
+                layout.add_widget(Box::new(text));
+                layout.add_widget(Box::new(name_edit));
+            }
             TheCodeAtom::ObjectSet(object, name) => {
                 let mut text = TheText::new(TheId::empty());
                 text.set_text("Object Name".to_string());
@@ -546,17 +574,37 @@ impl TheCodeAtom {
                 layout.add_widget(Box::new(text));
                 layout.add_widget(Box::new(name_edit));
             }
-            TheCodeAtom::Value(value) => {
-                let mut text = TheText::new(TheId::empty());
-                text.set_text(value.to_kind());
-                let mut name_edit = TheTextLineEdit::new(TheId::named(
-                    format!("Atom {}", value.to_kind()).as_str(),
-                ));
-                name_edit.set_text(value.describe());
-                name_edit.set_needs_redraw(true);
-                layout.add_widget(Box::new(text));
-                layout.add_widget(Box::new(name_edit));
-            }
+            TheCodeAtom::Value(value) => match value {
+                TheValue::Position(v) => {
+                    create_float2_widgets(layout, TheId::named("Atom Position"), vec2f(v.x, v.y));
+                }
+                TheValue::Int(v) => {
+                    let mut text = TheText::new(TheId::empty());
+                    text.set_text(value.to_kind());
+                    let mut name_edit = TheTextLineEdit::new(TheId::named(
+                        format!("Atom {}", value.to_kind()).as_str(),
+                    ));
+                    name_edit.set_range(TheValue::RangeI32(core::ops::RangeInclusive::new(
+                        std::i32::MIN,
+                        std::i32::MAX,
+                    )));
+                    name_edit.set_text(v.to_string());
+                    name_edit.set_needs_redraw(true);
+                    layout.add_widget(Box::new(text));
+                    layout.add_widget(Box::new(name_edit));
+                }
+                _ => {
+                    let mut text = TheText::new(TheId::empty());
+                    text.set_text(value.to_kind());
+                    let mut name_edit = TheTextLineEdit::new(TheId::named(
+                        format!("Atom {}", value.to_kind()).as_str(),
+                    ));
+                    name_edit.set_text(value.describe());
+                    name_edit.set_needs_redraw(true);
+                    layout.add_widget(Box::new(text));
+                    layout.add_widget(Box::new(name_edit));
+                }
+            },
             _ => {}
         };
     }

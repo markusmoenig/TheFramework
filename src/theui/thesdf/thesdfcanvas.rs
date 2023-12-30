@@ -4,6 +4,7 @@ use rayon::prelude::*;
 pub struct TheSDFCanvas {
     pub background: crate::thecolor::TheColor,
     pub highlight: crate::thecolor::TheColor,
+    pub hover_highlight: crate::thecolor::TheColor,
 
     pub selected: Option<usize>,
     pub hover: Option<usize>,
@@ -29,6 +30,7 @@ impl TheSDFCanvas {
 
             background: TheColor::black(),
             highlight: TheColor::white(),
+            hover_highlight: TheColor::white(),
         }
     }
 
@@ -56,14 +58,54 @@ impl TheSDFCanvas {
                     let y = height - (i / width) as i32 - 1;
 
                     let mut color = self.background.clone();
+                    let mut distance = std::f32::MAX;
+
+                    let p = vec2f(x as f32, y as f32);
+                    let mut i: Option<usize> = None;
 
                     for (index, sdf) in self.sdfs.iter().enumerate() {
-                        let p = vec2f(x as f32, y as f32);
                         let d = sdf.distance(p);
 
-                        let c = self.patterns[index].get_color(p, &d, self.highlight(index));
-                        color = color.mix(&c, self.fill_mask(d));
+                        if d < distance {
+                            // let c1 = self.patterns[index].get_color(
+                            //     p,
+                            //     &d,
+                            //     &color,
+                            //     self.highlight(index),
+                            // );
+
+                            // if i.is_some() {
+                            //     //let cx = (x as f32 /*- width as f32 / 2.0*/) / width as f32;
+                            //     //color = color.mix(&c1, cx);
+                            //     let k = 50.0;
+                            //     let h = clamp( 0.5 + 0.5*(distance-d)/k, 0.0, 1.0 );
+                            // } else {
+                            //     color = c1;
+                            // }
+
+                            i = Some(index);
+                            distance = d;
+                        }
                     }
+
+                    if let Some(index) = i {
+                        color = self.patterns[index].get_color(
+                            p,
+                            &distance,
+                            &color,
+                            self.highlight(index),
+                        );
+                    }
+
+                    // if let Some(index) = self.selected {
+                    //     let d = self.sdfs[index].distance(p);
+                    //     color = self.patterns[index].get_color(
+                    //         p,
+                    //         &d,
+                    //         &color,
+                    //         self.highlight(index),
+                    //     );
+                    // }
 
                     pixel.copy_from_slice(&color.to_u8_array());
                 }
@@ -81,17 +123,13 @@ impl TheSDFCanvas {
         None
     }
 
-    /// Returns the fill mask for the given distance.
-    #[inline(always)]
-    fn fill_mask(&self, dist: f32) -> f32 {
-        (-dist).clamp(0.0, 1.0)
-    }
-
     /// Returns the selected color if the given sdf index is highlighted.
     #[inline(always)]
     fn highlight(&self, index: usize) -> Option<&TheColor> {
-        if self.selected == Some(index) || self.hover == Some(index) {
+        if self.selected == Some(index) {
             Some(&self.highlight)
+        } else if self.hover == Some(index) {
+            Some(&self.hover_highlight)
         } else {
             None
         }

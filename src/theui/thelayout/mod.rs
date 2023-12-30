@@ -95,6 +95,14 @@ pub trait TheLayout: Send {
 
     fn widgets(&mut self) -> &mut Vec<Box<dyn TheWidget>>;
 
+    fn redirected_widget_value(
+        &mut self,
+        widget_id: &TheId,
+        value: &TheValue,
+        ctx: &mut TheContext,
+    ) {
+    }
+
     /// Draw the widget in the given style
     fn draw(
         &mut self,

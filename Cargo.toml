@@ -1,6 +1,6 @@
 [package]
 name = "theframework"
-version = "0.1.9"
+version = "0.1.10"
 edition = "2021"
 description = "A cross platform application UI framework."
 license = "MIT"

@@ -74,6 +74,7 @@ impl TheTheme for TheDarkTheme {
         colors.insert(ListLayoutBackground, [82, 82, 82, 255]);
         colors.insert(ListItemNormal, [174, 174, 174, 255]);
         colors.insert(ListItemSelected, [187, 122, 208, 255]);
+        colors.insert(ListItemSelectedNoFocus, [208, 208, 208, 255]);
         colors.insert(ListItemHover, [237, 237, 237, 255]);
         colors.insert(ListItemText, [85, 81, 85, 255]);
         colors.insert(ListItemIconBorder, [139, 139, 139, 255]);

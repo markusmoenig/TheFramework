@@ -10,6 +10,7 @@ pub mod thesizelimiter;
 pub mod thestyle;
 pub mod thetheme;
 pub mod theuicontext;
+pub mod theuiglobals;
 pub mod theundo;
 pub mod thevalue;
 pub mod thevent;
@@ -95,6 +96,7 @@ pub mod prelude {
 
     pub use crate::theui::thecontextmenu::*;
     pub use crate::theui::thedrop::*;
+    pub use crate::theui::theuiglobals::*;
     pub use crate::theui::theundo::*;
 }
 
@@ -197,6 +199,11 @@ impl TheUI {
                 }
 
                 match event {
+                    TheEvent::RedirectWidgetValueToLayout(layout_id, widget_id, value) => {
+                        if let Some(layout) = self.canvas.get_layout(None, Some(&layout_id.uuid)) {
+                            layout.redirected_widget_value(&widget_id, &value, ctx);
+                        }
+                    }
                     TheEvent::DragStartedWithNoImage(drop) => {
                         let mut drop = drop.clone();
                         self.style.create_drop_image(&mut drop, ctx);

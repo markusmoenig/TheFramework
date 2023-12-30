@@ -88,6 +88,7 @@ pub enum TheThemeColors {
     ListLayoutBackground,
     ListItemNormal,
     ListItemSelected,
+    ListItemSelectedNoFocus,
     ListItemHover,
     ListItemText,
     ListItemIconBorder,

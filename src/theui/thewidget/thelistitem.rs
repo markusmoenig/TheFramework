@@ -60,7 +60,7 @@ impl TheWidget for TheListItem {
                     .send(TheEvent::ShowContextMenu(self.id().clone(), *coord));
             }
             TheEvent::MouseDown(_coord) => {
-                if self.state != TheWidgetState::Selected {
+                if self.state != TheWidgetState::Selected || !self.id().equals(&ctx.ui.focus) {
                     self.is_dirty = true;
                     self.state = TheWidgetState::Selected;
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
@@ -168,7 +168,11 @@ impl TheWidget for TheListItem {
         }
 
         let mut color = if self.state == TheWidgetState::Selected {
-            style.theme().color(ListItemSelected)
+            if !self.id().equals(&ctx.ui.focus) {
+                style.theme().color(ListItemSelectedNoFocus)
+            } else {
+                style.theme().color(ListItemSelected)
+            }
         } else {
             style.theme().color(ListItemNormal)
         };

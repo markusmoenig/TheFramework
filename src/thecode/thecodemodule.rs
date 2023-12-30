@@ -5,6 +5,8 @@ use crate::prelude::*;
 pub struct TheCodeModule {
     pub name: String,
     pub id: Uuid,
+    /// The id of the codegrid that was used to compile this module.
+    pub codegrid_id: Uuid,
     pub functions: FxHashMap<String, TheCodeFunction>,
 }
 
@@ -19,6 +21,7 @@ impl TheCodeModule {
         Self {
             name: "Unnamed".to_string(),
             id: Uuid::new_v4(),
+            codegrid_id: Uuid::nil(),
             functions: FxHashMap::default(),
         }
     }
@@ -43,7 +46,7 @@ impl TheCodeModule {
         if let Some(main) = self.functions.get_mut(&"main".to_string()) {
             let clone = main.clone();
 
-            sandbox.push_current_module(self.id);
+            sandbox.push_current_module(self.id, self.codegrid_id);
             sandbox.call_stack.push(clone);
 
             main.execute(sandbox);

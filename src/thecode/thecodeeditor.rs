@@ -213,7 +213,33 @@ impl TheCodeEditor {
                 } else if id.name == "Atom Local Get" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
+                            self.start_undo(ui);
                             self.set_selected_atom(ui, TheCodeAtom::LocalGet(name));
+                            self.finish_undo(ui, ctx);
+                        }
+                    }
+                } else if id.name == "Atom Object Get Object" {
+                    if let Some(name) = value.to_string() {
+                        if !name.is_empty() {
+                            if let Some(TheCodeAtom::ObjectGet(_object, variable)) =
+                                self.get_selected_atom(ui)
+                            {
+                                self.start_undo(ui);
+                                self.set_selected_atom(ui, TheCodeAtom::ObjectGet(name, variable));
+                                self.finish_undo(ui, ctx);
+                            }
+                        }
+                    }
+                } else if id.name == "Atom Object Get Variable" {
+                    if let Some(name) = value.to_string() {
+                        if !name.is_empty() {
+                            if let Some(TheCodeAtom::ObjectGet(object, _variable)) =
+                                self.get_selected_atom(ui)
+                            {
+                                self.start_undo(ui);
+                                self.set_selected_atom(ui, TheCodeAtom::ObjectGet(object, name));
+                                self.finish_undo(ui, ctx);
+                            }
                         }
                     }
                 } else if id.name == "Atom Object Set Object" {
@@ -222,7 +248,9 @@ impl TheCodeEditor {
                             if let Some(TheCodeAtom::ObjectSet(_object, variable)) =
                                 self.get_selected_atom(ui)
                             {
+                                self.start_undo(ui);
                                 self.set_selected_atom(ui, TheCodeAtom::ObjectSet(name, variable));
+                                self.finish_undo(ui, ctx);
                             }
                         }
                     }
@@ -232,7 +260,9 @@ impl TheCodeEditor {
                             if let Some(TheCodeAtom::ObjectSet(object, _variable)) =
                                 self.get_selected_atom(ui)
                             {
+                                self.start_undo(ui);
                                 self.set_selected_atom(ui, TheCodeAtom::ObjectSet(object, name));
+                                self.finish_undo(ui, ctx);
                             }
                         }
                     }
@@ -257,6 +287,21 @@ impl TheCodeEditor {
                         );
                         self.finish_undo(ui, ctx);
                     }
+                } else if id.name == "Atom Text" {
+                    if let Some(name) = value.to_string() {
+                        self.start_undo(ui);
+                        self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Text(name)));
+                        self.finish_undo(ui, ctx);
+                    }
+                } else if id.name == "Atom Position" {
+                    if let Some(v) = value.to_vec2f() {
+                        self.start_undo(ui);
+                        self.set_selected_atom(
+                            ui,
+                            TheCodeAtom::Value(TheValue::Position(vec3f(v.x, v.y, 0.0))),
+                        );
+                        self.finish_undo(ui, ctx);
+                    }
                 }
 
                 redraw = true;
@@ -277,11 +322,39 @@ impl TheCodeEditor {
         TheCodeGrid::new()
     }
 
+    /// Gets the codegrid from the editor
+    pub fn get_codegrid_id(&mut self, ui: &mut TheUI) -> Uuid {
+        if let Some(layout) = ui.get_code_layout("Code Editor") {
+            if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                return code_view.codegrid().uuid;
+            }
+        }
+        Uuid::nil()
+    }
+
     /// Sets the codegrid to the editor
     pub fn set_codegrid(&mut self, codegrid: TheCodeGrid, ui: &mut TheUI) {
         if let Some(layout) = ui.get_code_layout("Code Editor") {
             if let Some(code_view) = layout.code_view_mut().as_code_view() {
                 code_view.set_codegrid(codegrid);
+            }
+        }
+    }
+
+    /// Sets the debug module to the editor.
+    pub fn set_debug_module(&mut self, debug_module: TheDebugModule, ui: &mut TheUI) {
+        if let Some(layout) = ui.get_code_layout("Code Editor") {
+            if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                code_view.set_debug_module(debug_module);
+            }
+        }
+    }
+
+    /// Clears the debug module of the editor.
+    pub fn clear_debug_module(&mut self, ui: &mut TheUI) {
+        if let Some(layout) = ui.get_code_layout("Code Editor") {
+            if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                code_view.set_debug_module(TheDebugModule::new());
             }
         }
     }
@@ -670,6 +743,11 @@ impl TheCodeEditor {
 
             let mut item = TheListItem::new(TheId::named("Code List Item"));
             item.set_text("Tile".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            item.set_text("Position".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 

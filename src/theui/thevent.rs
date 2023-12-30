@@ -33,6 +33,8 @@ pub enum TheEvent {
     GainedHover(TheId),
     LostHover(TheId),
 
+    RedirectWidgetValueToLayout(TheId, TheId, TheValue),
+
     SetStatusText(TheId, String),
 
     // Tabbar, Groupbutton

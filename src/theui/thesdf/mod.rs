@@ -19,7 +19,7 @@ impl TheSDF {
             Circle(dim) => length(p - dim.center()) - dim.radius(),
             Hexagon(dim) => {
                 let mut pp = abs(p - dim.center());
-                let r = dim.radius();
+                let r = dim.radius() - dim.radius() / 8.0;
 
                 let k = vec3f(-0.866_025_4, 0.5, 0.577_350_26);
                 pp -= 2.0 * min(dot(k.xy(), pp), 0.0) * k.xy();

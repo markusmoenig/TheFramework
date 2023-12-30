@@ -49,27 +49,26 @@ impl Default for TheUIContext {
 impl TheUIContext {
     pub fn new() -> Self {
         let mut font: Option<Font> = None;
-        let code_font: Option<Font> = None;
+        let mut code_font: Option<Font> = None;
         let mut icons: FxHashMap<String, TheRGBABuffer> = FxHashMap::default();
 
         for file in Embedded::iter() {
             let name = file.as_ref();
 
-            /*else if name.starts_with("fonts/Source") {
-                if let Some(font_bytes) = Embedded::get(name) {
-                    if let Ok(f) =
-                        Font::from_bytes(font_bytes.data, fontdue::FontSettings::default())
-                    {
-                        code_font = Some(f);
-                    }
-                }
-            } */
             if name.starts_with("fonts/Roboto-Bold") {
                 if let Some(font_bytes) = Embedded::get(name) {
                     if let Ok(f) =
                         Font::from_bytes(font_bytes.data, fontdue::FontSettings::default())
                     {
                         font = Some(f);
+                    }
+                }
+            } else if name.starts_with("fonts/Source") {
+                if let Some(font_bytes) = Embedded::get(name) {
+                    if let Ok(f) =
+                        Font::from_bytes(font_bytes.data, fontdue::FontSettings::default())
+                    {
+                        code_font = Some(f);
                     }
                 }
             } else if name.starts_with("icons/") {

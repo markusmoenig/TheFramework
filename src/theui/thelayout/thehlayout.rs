@@ -22,6 +22,8 @@ pub struct TheHLayout {
     padding: i32,
 
     background: Option<TheThemeColors>,
+
+    redirect_as: Option<TheId>,
 }
 
 impl TheLayout for TheHLayout {
@@ -42,6 +44,8 @@ impl TheLayout for TheHLayout {
             padding: 5,
 
             background: Some(DefaultWidgetBackground),
+
+            redirect_as: None,
         }
     }
 
@@ -162,6 +166,36 @@ impl TheLayout for TheHLayout {
         &mut self.limiter
     }
 
+    fn redirected_widget_value(
+        &mut self,
+        widget_id: &TheId,
+        value: &TheValue,
+        ctx: &mut TheContext,
+    ) {
+        //println!("redirected_widget_value: {:?}", widget_id);
+        if let Some(id) = &self.redirect_as {
+            if widget_id.name == "Float2 X" {
+                if let Some(v) = value.to_f32() {
+                    if let Some(y) = self.widgets[3].value().to_f32() {
+                        ctx.ui.send(TheEvent::ValueChanged(
+                            id.clone(),
+                            TheValue::Float2(vec2f(v, y)),
+                        ));
+                    }
+                }
+            } else if widget_id.name == "Float2 Y" {
+                if let Some(v) = value.to_f32() {
+                    if let Some(x) = self.widgets[1].value().to_f32() {
+                        ctx.ui.send(TheEvent::ValueChanged(
+                            id.clone(),
+                            TheValue::Float2(vec2f(x, v)),
+                        ));
+                    }
+                }
+            }
+        }
+    }
+
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
@@ -197,6 +231,8 @@ pub trait TheHLayoutTrait: TheLayout {
     fn set_mode(&mut self, mode: TheHLayoutMode);
     /// Clear the layout.
     fn clear(&mut self);
+    /// Set the redirection id.
+    fn set_redirect_as(&mut self, id: TheId);
 }
 
 impl TheHLayoutTrait for TheHLayout {
@@ -208,5 +244,8 @@ impl TheHLayoutTrait for TheHLayout {
     }
     fn clear(&mut self) {
         self.widgets = vec![];
+    }
+    fn set_redirect_as(&mut self, id: TheId) {
+        self.redirect_as = Some(id);
     }
 }

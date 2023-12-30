@@ -59,7 +59,7 @@ impl TheWidget for TheCodeView {
             buffer: TheRGBABuffer::empty(),
 
             codegrid: TheCodeGrid::new(),
-            grid_size: 60,
+            grid_size: 70,
 
             debug_module: TheDebugModule::new(),
 
@@ -352,19 +352,20 @@ impl TheWidget for TheCodeView {
             let grid_y = 10;
 
             let normal: [u8; 4] = *style.theme().color(CodeGridNormal);
-            //let dark: [u8; 4] = *style.theme().color(CodeGridDark);
+            let dark: [u8; 4] = *style.theme().color(CodeGridDark);
             let selected = *style.theme().color(CodeGridSelected);
             let text_color = *style.theme().color(CodeGridText);
             let ok = *style.theme().color(Green);
             let error = *style.theme().color(Red);
-            let hover = *style.theme().color(CodeGridHover);
+            let mut hover = *style.theme().color(CodeGridHover);
+            hover[3] = 200;
 
             let utuple = self.buffer.dim().to_buffer_utuple();
             ctx.draw
                 .rect(self.buffer.pixels_mut(), &utuple, stride, &background);
 
-            //let border_color = dark;
-            let font_size = 12.0_f32 * self.zoom;
+            // let border_color = dark;
+            let font_size = 13.0_f32 * self.zoom;
 
             let grid_size = ceil(self.grid_size as f32 * self.zoom) as i32;
             //let rounding = 10.0 * self.zoom;
@@ -377,24 +378,43 @@ impl TheWidget for TheCodeView {
 
             let mut canvas = TheSDFCanvas::new();
             canvas.background = crate::thecolor::TheColor::from_u8_array(background);
+            canvas.highlight = crate::thecolor::TheColor::from_u8_array(selected);
+            canvas.hover_highlight =
+                crate::thecolor::TheColor::from_u8_array(*style.theme().color(CodeGridHover));
 
-            let pattern_normal =
-                ThePattern::Solid(crate::thecolor::TheColor::from_u8_array(normal));
+            let pattern_normal = ThePattern::SolidWithBorder(
+                crate::thecolor::TheColor::from_u8_array(normal),
+                crate::thecolor::TheColor::from_u8_array(dark),
+                1.5 * zoom,
+            );
 
-            let pattern_selected =
-                ThePattern::Solid(crate::thecolor::TheColor::from_u8_array(selected));
+            // let pattern_selected = ThePattern::SolidWithBorder(
+            //     crate::thecolor::TheColor::from_u8_array(selected),
+            //     crate::thecolor::TheColor::from_u8_array(dark),
+            //     1.5 * zoom,
+            // );
 
-            let pattern_hover = ThePattern::Solid(crate::thecolor::TheColor::from_u8_array(hover));
+            // let pattern_hover = ThePattern::SolidWithBorder(
+            //     crate::thecolor::TheColor::from_u8_array(hover),
+            //     crate::thecolor::TheColor::from_u8_array(dark),
+            //     1.5 * zoom,
+            // );
 
-            let get_pattern = |x: u16, y: u16| -> ThePattern {
-                if Some((x, y)) == self.selected {
-                    pattern_selected.clone()
-                } else if Some((x, y)) == self.hover {
-                    pattern_hover.clone()
-                } else {
-                    pattern_normal.clone()
-                }
-            };
+            // fn check_selection(x: u16, y: u16, canvas: &mut TheSDFCanvas) {
+            //     // if Some((x, y)) == self.selected {
+            //     //     pattern_selected.clone()
+            //     // } else if Some((x, y)) == self.hover {
+            //     //     pattern_hover.clone()
+            //     // } else {
+            //     //     pattern_normal.clone()
+            //     // }
+
+            //     if Some((x, y)) == self.selected {
+            //         canvas.selected = Some(canvas.sdfs.len());
+            //     } else if Some((x, y)) == self.hover {
+            //         canvas.hover = Some(canvas.sdfs.len());
+            //     }
+            // };
 
             for y in 0..grid_y {
                 for x in 0..grid_x {
@@ -410,11 +430,19 @@ impl TheWidget for TheCodeView {
                     );
 
                     canvas.clear();
+                    canvas.selected = None;
+
                     let dim = TheDim::sized(grid_size, grid_size);
 
                     if let Some(atom) = self.codegrid.code.get(&(x, y)) {
                         let sdf = atom.to_sdf(dim, zoom);
-                        canvas.add(sdf, get_pattern(x, y));
+                        canvas.add(sdf, pattern_normal.clone());
+
+                        if Some((x, y)) == self.selected {
+                            canvas.selected = Some(0);
+                        } else if Some((x, y)) == self.hover {
+                            canvas.hover = Some(0);
+                        }
                     }
 
                     if let Some(atom) = self.codegrid.code.get(&(x - 1, y)) {
@@ -426,7 +454,13 @@ impl TheWidget for TheCodeView {
                         );
 
                         let sdf = atom.to_sdf(dim, zoom);
-                        canvas.add(sdf, get_pattern(x - 1, y));
+                        canvas.add(sdf, pattern_normal.clone());
+
+                        if Some((x - 1, y)) == self.selected {
+                            canvas.selected = Some(canvas.sdfs.len() - 1);
+                        } else if Some((x - 1, y)) == self.hover {
+                            canvas.hover = Some(canvas.sdfs.len() - 1);
+                        }
                     }
 
                     if let Some(atom) = self.codegrid.code.get(&(x + 1, y)) {
@@ -438,7 +472,13 @@ impl TheWidget for TheCodeView {
                         );
 
                         let sdf = atom.to_sdf(dim, zoom);
-                        canvas.add(sdf, get_pattern(x + 1, y));
+                        canvas.add(sdf, pattern_normal.clone());
+
+                        if Some((x + 1, y)) == self.selected {
+                            canvas.selected = Some(canvas.sdfs.len() - 1);
+                        } else if Some((x + 1, y)) == self.hover {
+                            canvas.hover = Some(canvas.sdfs.len() - 1);
+                        }
                     }
 
                     if !canvas.is_empty() {
@@ -517,7 +557,7 @@ impl TheWidget for TheCodeView {
                                 | TheCodeAtom::ObjectSet(object, var) => {
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
-                                        &(rect.0, rect.1 + 4, rect.2, rect.3 - 8),
+                                        &(rect.0, rect.1 + 8, rect.2, rect.3 - 16),
                                         stride,
                                         font,
                                         font_size,
