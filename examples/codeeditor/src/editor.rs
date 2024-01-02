@@ -169,11 +169,12 @@ impl TheTrait for CodeEditor {
                                             "test",
                                             TheCodeNode::new(
                                                 |_, data, _| {
-                                                    println!("inside test");
+                                                    println!("inside test {:?}", data.location);
                                                     if let Some(i) = data.values[0].to_i32() {
                                                         println!("i: {:?}", i);
                                                         data.values[0] = TheValue::Int(i + 1);
                                                     }
+                                                    TheCodeNodeCallResult::Continue
                                                 },
                                                 TheCodeNodeData::values(vec![TheValue::Int(0)]),
                                             ),

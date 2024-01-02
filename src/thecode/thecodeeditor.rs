@@ -51,12 +51,12 @@ impl TheCodeEditor {
                 }
             }*/
             TheEvent::SDFIndexChanged(_id, index) => {
-                if let Some(code_list) = ui.get_list_layout("Code List") {
+                if let Some(code_list) = ui.get_list_layout("Code Editor Code List") {
                     self.get_code_list_items(*index, code_list, ctx)
                 }
             }
             TheEvent::DragStarted(id, text, offset) => {
-                if id.name == "Code List Item" {
+                if id.name == "Code Editor Code List Item" {
                     if let Some(atom) = Some(self.create_atom(text.as_str())) {
                         let mut drop = TheDrop::new(TheId::named("Code Editor Atom"));
                         drop.set_data(atom.to_json());
@@ -93,7 +93,7 @@ impl TheCodeEditor {
                 redraw = true;
             }
             TheEvent::StateChanged(id, state) => {
-                if id.name == "Code List Item" {
+                if id.name == "Code Editor Code List Item" {
                     self.code_list_selection = Some(id.clone());
                 } else if id.name == "CodeGrid List Add" {
                     if *state == TheWidgetState::Clicked {
@@ -207,7 +207,9 @@ impl TheCodeEditor {
                 } else if id.name == "Atom Func Call" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
+                            self.start_undo(ui);
                             self.set_selected_atom(ui, TheCodeAtom::FuncCall(name));
+                            self.finish_undo(ui, ctx);
                         }
                     }
                 } else if id.name == "Atom Local Get" {
@@ -474,6 +476,7 @@ impl TheCodeEditor {
             "Function Argument" => TheCodeAtom::FuncArg("name".to_string()),
             "Function Call" => TheCodeAtom::FuncCall("name".to_string()),
             "Return" => TheCodeAtom::Return,
+            "Pulse" => TheCodeAtom::Pulse,
             "Local Get" => TheCodeAtom::LocalGet("name".to_string()),
             "Local Set" => TheCodeAtom::LocalSet("name".to_string()),
             "Object Get" => TheCodeAtom::ObjectGet("self".to_string(), "name".to_string()),
@@ -498,7 +501,7 @@ impl TheCodeEditor {
 
         let mut list_canvas: TheCanvas = TheCanvas::new();
 
-        let mut code_layout = TheListLayout::new(TheId::named("Code List"));
+        let mut code_layout = TheListLayout::new(TheId::named("Code Editor Code List"));
         code_layout.limiter_mut().set_max_width(150);
         self.get_code_list_items(0, &mut code_layout, ctx);
 
@@ -684,91 +687,96 @@ impl TheCodeEditor {
     ) {
         code_layout.clear();
         if index == 0 {
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Assignment".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Function".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Function Argument".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Function Call".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Return".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Local Get".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Local Set".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Object Get".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Object Set".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("Pulse".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
         }
 
         if index == 0 || index == 1 {
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Integer".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Float".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Tile".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Position".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
-            // let mut item = TheListItem::new(TheId::named("Code List Item"));
+            // let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             // item.set_text("Float2".to_string());
             // item.set_associated_layout(code_layout.id().clone());
             // code_layout.add_item(item, ctx);
 
-            // let mut item = TheListItem::new(TheId::named("Code List Item"));
+            // let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             // item.set_text("Float3".to_string());
             // item.set_associated_layout(code_layout.id().clone());
             // code_layout.add_item(item, ctx);
         }
 
         if index == 0 || index == 2 {
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Add".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
-            let mut item = TheListItem::new(TheId::named("Code List Item"));
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Multiply".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);

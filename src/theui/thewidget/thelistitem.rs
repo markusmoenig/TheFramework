@@ -17,6 +17,7 @@ pub struct TheListItem {
     icon: Option<TheRGBABuffer>,
 
     layout_id: TheId,
+    scroll_offset: i32,
 }
 
 impl TheWidget for TheListItem {
@@ -44,6 +45,7 @@ impl TheWidget for TheListItem {
             icon: None,
 
             layout_id: TheId::empty(),
+            scroll_offset: 0,
         }
     }
 
@@ -59,7 +61,7 @@ impl TheWidget for TheListItem {
                 ctx.ui
                     .send(TheEvent::ShowContextMenu(self.id().clone(), *coord));
             }
-            TheEvent::MouseDown(_coord) => {
+            TheEvent::MouseDown(coord) => {
                 if self.state != TheWidgetState::Selected || !self.id().equals(&ctx.ui.focus) {
                     self.is_dirty = true;
                     self.state = TheWidgetState::Selected;
@@ -70,16 +72,18 @@ impl TheWidget for TheListItem {
                     ));
                     redraw = true;
                 }
+                self.mouse_down_pos = vec2i(coord.x, coord.y + self.scroll_offset);
                 ctx.ui.set_focus(self.id());
             }
             TheEvent::MouseDragged(coord) => {
+                let coord = vec2i(coord.x, coord.y + self.scroll_offset);
                 if ctx.ui.drop.is_none()
-                    && distance(Vec2f::from(self.mouse_down_pos), Vec2f::from(*coord)) >= 5.0
+                    && distance(Vec2f::from(self.mouse_down_pos), Vec2f::from(coord)) >= 5.0
                 {
                     ctx.ui.send(TheEvent::DragStarted(
                         self.id().clone(),
                         self.text.clone(),
-                        *coord,
+                        coord,
                     ));
                 }
             }
@@ -290,6 +294,7 @@ pub trait TheListItemTrait {
     fn set_associated_layout(&mut self, id: TheId);
     fn set_size(&mut self, size: i32);
     fn set_icon(&mut self, icon: TheRGBABuffer);
+    fn set_scroll_offset(&mut self, offset: i32);
 }
 
 impl TheListItemTrait for TheListItem {
@@ -310,5 +315,8 @@ impl TheListItemTrait for TheListItem {
     }
     fn set_icon(&mut self, icon: TheRGBABuffer) {
         self.icon = Some(icon);
+    }
+    fn set_scroll_offset(&mut self, offset: i32) {
+        self.scroll_offset = offset;
     }
 }

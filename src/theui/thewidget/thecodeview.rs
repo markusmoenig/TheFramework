@@ -149,6 +149,10 @@ impl TheWidget for TheCodeView {
                                     self.id.clone(),
                                     self.codegrid.clone(),
                                 ));
+                                ctx.ui.send(TheEvent::CodeEditorSelectionChanged(
+                                    self.id().clone(),
+                                    self.selected,
+                                ));
                             }
                         }
                         self.drop = None;
@@ -244,6 +248,15 @@ impl TheWidget for TheCodeView {
                 );
                 ctx.ui.send(TheEvent::ScrollBy(self.hscrollbar.clone(), d));
                 ctx.ui.send(TheEvent::ScrollBy(self.vscrollbar.clone(), d));
+            }
+            TheEvent::LostHover(_id) => {
+                if self.hover.is_some() {
+                    self.hover = None;
+                    self.drop = None;
+                    redraw = true;
+                    self.is_dirty = true;
+                    self.code_is_dirty = true;
+                }
             }
             _ => {}
         }
@@ -442,6 +455,11 @@ impl TheWidget for TheCodeView {
                             canvas.selected = Some(0);
                         } else if Some((x, y)) == self.hover {
                             canvas.hover = Some(0);
+                        }
+                        if let Some(message) = self.codegrid.messages.get(&(x, y)) {
+                            if message.message_type == TheCodeGridMessageType::Error {
+                                canvas.error = Some(0);
+                            }
                         }
                     }
 

@@ -21,7 +21,7 @@ pub mod prelude {
         TheCodeGrid, TheCodeGridMessage, TheCodeGridMessageType,
     };
     pub use crate::thecode::thecodemodule::TheCodeModule;
-    pub use crate::thecode::thecodenode::{TheCodeNode, TheCodeNodeCall};
+    pub use crate::thecode::thecodenode::*;
     pub use crate::thecode::thecodeobject::TheCodeObject;
     pub use crate::thecode::thecodepackage::TheCodePackage;
     pub use crate::thecode::thecodesandbox::{TheCodeSandbox, TheDebugModule};

@@ -2,6 +2,10 @@ use crate::prelude::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TheCodeSandbox {
+
+    /// The id of the sandbox.
+    pub id: Uuid,
+
     /// The modules with callable codegrid functions. These make up the behavior of an entity.
     #[serde(skip)]
     pub modules: FxHashMap<Uuid, TheCodeModule>,
@@ -50,6 +54,9 @@ impl Default for TheCodeSandbox {
 impl TheCodeSandbox {
     pub fn new() -> Self {
         Self {
+
+            id: Uuid::new_v4(),
+
             objects: FxHashMap::default(),
             modules: FxHashMap::default(),
             globals: FxHashMap::default(),
@@ -102,10 +109,11 @@ impl TheCodeSandbox {
     }
 
     // /// Call a global, external function provided by the host.
-    pub fn call_global(&mut self, stack: &mut Vec<TheValue>, name: &String) {
+    pub fn call_global(&mut self, location: (u16, u16), stack: &mut Vec<TheValue>, name: &String) {
         // Temporarily remove the node from the map
         if let Some(mut node) = self.globals.remove(name) {
             // Call the function with a mutable reference to node.data
+            node.data.location = location;
             (node.call)(stack, &mut node.data, self);
 
             // Reinsert the node back into the map
@@ -136,6 +144,16 @@ impl TheCodeSandbox {
     /// Returns a mutable reference to the aliased object.
     pub fn get_object_mut(&mut self, name: &String) -> Option<&mut TheCodeObject> {
         if let Some(id) = self.aliases.get(name) {
+            if let Some(object) = self.objects.get_mut(id) {
+                return Some(object);
+            }
+        }
+        None
+    }
+
+    /// Returns a mutable reference to the current object with an alias of "self".
+    pub fn get_self_mut(&mut self) -> Option<&mut TheCodeObject> {
+        if let Some(id) = self.aliases.get("self") {
             if let Some(object) = self.objects.get_mut(id) {
                 return Some(object);
             }

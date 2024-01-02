@@ -65,12 +65,17 @@ impl TheCodeFunction {
     }
 
     /// Execute the function
-    pub fn execute(&mut self, sandbox: &mut TheCodeSandbox) {
+    pub fn execute(&mut self, sandbox: &mut TheCodeSandbox) -> Vec<TheValue> {
         let mut stack: Vec<TheValue> = Vec::with_capacity(10);
 
         for n in &mut self.nodes {
             //println!("{:?}", stack);
-            (n.call)(&mut stack, &mut n.data, sandbox);
+            let rc = (n.call)(&mut stack, &mut n.data, sandbox);
+            if rc == TheCodeNodeCallResult::Break {
+                break;
+            }
         }
+
+        stack
     }
 }

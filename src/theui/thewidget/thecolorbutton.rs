@@ -5,6 +5,8 @@ pub struct TheColorButton {
     limiter: TheSizeLimiter,
     state: TheWidgetState,
 
+    status: Option<String>,
+
     dim: TheDim,
     color: RGBA,
     is_dirty: bool,
@@ -22,6 +24,8 @@ impl TheWidget for TheColorButton {
             limiter,
             state: TheWidgetState::None,
 
+            status: None,
+
             dim: TheDim::zero(),
             color: WHITE,
             is_dirty: false,
@@ -30,6 +34,14 @@ impl TheWidget for TheColorButton {
 
     fn id(&self) -> &TheId {
         &self.id
+    }
+
+    fn status_text(&self) -> Option<String> {
+        self.status.clone()
+    }
+
+    fn set_status_text(&mut self, text: &str) {
+        self.status = Some(text.to_string());
     }
 
     #[allow(clippy::single_match)]
@@ -47,6 +59,13 @@ impl TheWidget for TheColorButton {
                 }
                 self.is_dirty = true;
                 redraw = true;
+            }
+            TheEvent::Hover(_coord) => {
+                if !self.id().equals(&ctx.ui.hover) {
+                    self.is_dirty = true;
+                    ctx.ui.set_hover(self.id());
+                    redraw = true;
+                }
             }
             _ => {}
         }
@@ -87,6 +106,10 @@ impl TheWidget for TheColorButton {
 
     fn set_needs_redraw(&mut self, redraw: bool) {
         self.is_dirty = redraw;
+    }
+
+    fn supports_hover(&mut self) -> bool {
+        true
     }
 
     fn draw(

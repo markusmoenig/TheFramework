@@ -3,6 +3,7 @@ use crate::prelude::*;
 pub struct TheTextLineEdit {
     id: TheId,
     limiter: TheSizeLimiter,
+    status: Option<String>,
 
     is_disabled: bool,
 
@@ -19,6 +20,7 @@ pub struct TheTextLineEdit {
     range: Option<TheValue>,
 
     layout_id: Option<TheId>,
+    continuous: bool,
 }
 
 impl TheWidget for TheTextLineEdit {
@@ -33,6 +35,7 @@ impl TheWidget for TheTextLineEdit {
         Self {
             id,
             limiter,
+            status: None,
 
             is_disabled: false,
 
@@ -50,11 +53,20 @@ impl TheWidget for TheTextLineEdit {
             range: None,
 
             layout_id: None,
+            continuous: false,
         }
     }
 
     fn id(&self) -> &TheId {
         &self.id
+    }
+
+    fn status_text(&self) -> Option<String> {
+        self.status.clone()
+    }
+
+    fn set_status_text(&mut self, text: &str) {
+        self.status = Some(text.to_string());
     }
 
     fn disabled(&self) -> bool {
@@ -97,6 +109,10 @@ impl TheWidget for TheTextLineEdit {
 
     fn set_needs_redraw(&mut self, redraw: bool) {
         self.is_dirty = redraw;
+    }
+
+    fn supports_hover(&mut self) -> bool {
+        true
     }
 
     #[allow(clippy::single_match)]
@@ -191,6 +207,18 @@ impl TheWidget for TheTextLineEdit {
                             redraw = true;
                         }
                     }
+
+                    if self.continuous {
+                        if let Some(layout_id) = &self.layout_id {
+                            ctx.ui.send(TheEvent::RedirectWidgetValueToLayout(
+                                layout_id.clone(),
+                                self.id().clone(),
+                                self.value(),
+                            ));
+                        } else {
+                            ctx.ui.send_widget_value_changed(self.id(), self.value());
+                        }
+                    }
                 }
             }
             TheEvent::KeyCodeDown(key_code) => {
@@ -234,6 +262,18 @@ impl TheWidget for TheTextLineEdit {
                         }
                         self.original = self.text.clone();
                     }
+
+                    if self.continuous {
+                        if let Some(layout_id) = &self.layout_id {
+                            ctx.ui.send(TheEvent::RedirectWidgetValueToLayout(
+                                layout_id.clone(),
+                                self.id().clone(),
+                                self.value(),
+                            ));
+                        } else {
+                            ctx.ui.send_widget_value_changed(self.id(), self.value());
+                        }
+                    }
                 }
             }
             TheEvent::LostFocus(_id) => {
@@ -247,6 +287,11 @@ impl TheWidget for TheTextLineEdit {
                     } else {
                         ctx.ui.send_widget_value_changed(self.id(), self.value());
                     }
+                }
+            }
+            TheEvent::Hover(_coord) => {
+                if !self.id().equals(&ctx.ui.hover) {
+                    ctx.ui.set_hover(self.id());
                 }
             }
             _ => {}
@@ -388,6 +433,7 @@ pub trait TheTextLineEditTrait: TheWidget {
     fn set_embedded(&mut self, embedded: bool);
     fn set_range(&mut self, range: TheValue);
     fn set_associated_layout(&mut self, id: TheId);
+    fn set_continuous(&mut self, continuous: bool);
 }
 
 impl TheTextLineEditTrait for TheTextLineEdit {
@@ -413,5 +459,8 @@ impl TheTextLineEditTrait for TheTextLineEdit {
     }
     fn set_associated_layout(&mut self, layout_id: TheId) {
         self.layout_id = Some(layout_id);
+    }
+    fn set_continuous(&mut self, continuous: bool) {
+        self.continuous = continuous;
     }
 }

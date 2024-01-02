@@ -66,6 +66,9 @@ pub mod prelude {
 
     pub use crate::theui::theid::TheId;
 
+    #[cfg(feature = "code")]
+    pub use crate::thecode::prelude::*;
+
     pub use crate::theui::thecanvas::*;
     pub use crate::theui::thedim::*;
     pub use crate::theui::thergbabuffer::{

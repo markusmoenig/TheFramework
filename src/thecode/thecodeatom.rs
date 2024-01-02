@@ -15,6 +15,7 @@ pub enum TheCodeAtom {
     FuncDef(String),
     FuncCall(String),
     FuncArg(String),
+    Pulse,
     Return,
     EndOfExpression,
     EndOfCode,
@@ -44,26 +45,79 @@ impl TheCodeAtom {
 
     pub fn to_node(&self, ctx: &mut TheCompilerContext) -> TheCodeNode {
         match self {
+            // Generates a pulse gate.
+            TheCodeAtom::Pulse => {
+                let call: TheCodeNodeCall =
+                    |_stack: &mut Vec<TheValue>,
+                     data: &mut TheCodeNodeData,
+                     sandbox: &mut TheCodeSandbox| {
+                        let count = data.values[0].to_i32().unwrap();
+                        let max_value = data.values[1].to_i32().unwrap();
+                        if count < max_value {
+                            data.values[0] = TheValue::Int(count + 1);
+                            if sandbox.debug_mode {
+                                sandbox.set_debug_value(data.location, TheValue::Text(format!("{} / {}", count + 1, max_value)));
+                            }
+                            TheCodeNodeCallResult::Break
+                        } else {
+                            if sandbox.debug_mode {
+                                sandbox.set_debug_value(data.location, TheValue::Text(format!("{} / {}", count + 1, max_value)));
+                            }
+                            data.values[0] = TheValue::Int(0);
+                            if let Some(v) = data.sub_functions[0].execute(sandbox).pop() {
+                                data.values[1] = v;
+                            }
+                            TheCodeNodeCallResult::Continue
+                        }
+                    };
+
+                let mut node = TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location_values(
+                        ctx.node_location,
+                        vec![TheValue::Int(0), TheValue::Int(4)],
+                    ),
+                );
+
+
+                if let Some(mut function) = ctx.remove_function() {
+                    let mut sandbox = TheCodeSandbox::new();
+                    if let Some(v) = function.execute(&mut sandbox).pop() {
+                        if let TheValue::Int(_) = v {
+                            node.data.values[1] = v;
+                        }
+                    }
+                    node.data.sub_functions.push(function);
+                }
+
+                node
+            }
             TheCodeAtom::Assignment(_op) => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
                      _data: &mut TheCodeNodeData,
-                     _sandbox: &mut TheCodeSandbox| {};
-                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
+                     _sandbox: &mut TheCodeSandbox| {
+                        TheCodeNodeCallResult::Continue
+                    };
+                TheCodeNode::new(call, TheCodeNodeData::location(ctx.node_location))
             }
             TheCodeAtom::FuncDef(_name) => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
                      _data: &mut TheCodeNodeData,
-                     _sandbox: &mut TheCodeSandbox| {};
-                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
+                     _sandbox: &mut TheCodeSandbox| {
+                        TheCodeNodeCallResult::Continue
+                    };
+                TheCodeNode::new(call, TheCodeNodeData::location(ctx.node_location))
             }
             TheCodeAtom::FuncArg(_name) => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
                      _data: &mut TheCodeNodeData,
-                     _sandbox: &mut TheCodeSandbox| {};
-                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
+                     _sandbox: &mut TheCodeSandbox| {
+                        TheCodeNodeCallResult::Continue
+                    };
+                TheCodeNode::new(call, TheCodeNodeData::location(ctx.node_location))
             }
             TheCodeAtom::Return => {
                 // This is only called if the function has a return value.
@@ -72,8 +126,9 @@ impl TheCodeAtom {
                      _data: &mut TheCodeNodeData,
                      sandbox: &mut TheCodeSandbox| {
                         sandbox.func_rc = stack.pop();
+                        TheCodeNodeCallResult::Continue
                     };
-                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
+                TheCodeNode::new(call, TheCodeNodeData::location(ctx.node_location))
             }
             TheCodeAtom::FuncCall(name) => {
                 let call: TheCodeNodeCall =
@@ -103,14 +158,15 @@ impl TheCodeAtom {
                                 }
                                 sandbox.call_stack.pop();
                             } else {
-                                sandbox.call_global(stack, &data.values[0].to_string().unwrap())
+                                sandbox.call_global(data.location, stack, &data.values[0].to_string().unwrap())
                             }
                         }
+                        TheCodeNodeCallResult::Continue
                     };
                 TheCodeNode::new(
                     call,
                     TheCodeNodeData::location_values(
-                        ctx.current_location,
+                        ctx.node_location,
                         vec![TheValue::Text(name.clone())],
                     ),
                 )
@@ -132,6 +188,7 @@ impl TheCodeAtom {
                                 );
                             }
                         }
+                        TheCodeNodeCallResult::Continue
                     };
 
                 if ctx.error.is_none() {
@@ -144,7 +201,7 @@ impl TheCodeAtom {
                     }
                     if error {
                         ctx.error = Some(TheCompilerError::new(
-                            ctx.current_location,
+                            ctx.node_location,
                             format!("Unknown local variable {}.", name),
                         ));
                     }
@@ -152,7 +209,7 @@ impl TheCodeAtom {
                 TheCodeNode::new(
                     call,
                     TheCodeNodeData::location_values(
-                        ctx.current_location,
+                        ctx.node_location,
                         vec![TheValue::Text(name.clone())],
                     ),
                 )
@@ -177,12 +234,14 @@ impl TheCodeAtom {
                         if let Some(debug_value) = debug_value {
                             sandbox.set_debug_value(data.location, debug_value);
                         }
+
+                        TheCodeNodeCallResult::Continue
                     };
 
                 if ctx.error.is_none() {
                     if ctx.stack.is_empty() {
                         ctx.error = Some(TheCompilerError::new(
-                            ctx.current_location,
+                            ctx.node_location,
                             "Nothing to assign to local variable.".to_string(),
                         ));
                     } else if let Some(local) = ctx.local.last_mut() {
@@ -220,6 +279,7 @@ impl TheCodeAtom {
                                 &data.values[0].to_string().unwrap()
                             );
                         }
+                        TheCodeNodeCallResult::Continue
                     };
 
                 ctx.stack.push(TheValue::Int(0));
@@ -241,7 +301,7 @@ impl TheCodeAtom {
                 TheCodeNode::new(
                     call,
                     TheCodeNodeData::location_values(
-                        ctx.current_location,
+                        ctx.node_location,
                         vec![TheValue::Text(object.clone()), TheValue::Text(name.clone())],
                     ),
                 )
@@ -270,12 +330,13 @@ impl TheCodeAtom {
                         if let Some(debug_value) = debug_value {
                             sandbox.set_debug_value(data.location, debug_value);
                         }
+                        TheCodeNodeCallResult::Continue
                     };
 
                 if ctx.error.is_none() {
                     if ctx.stack.is_empty() {
                         ctx.error = Some(TheCompilerError::new(
-                            ctx.current_location,
+                            ctx.node_location,
                             "Nothing to assign to local variable.".to_string(),
                         ));
                     } else if let Some(local) = ctx.local.last_mut() {
@@ -297,13 +358,14 @@ impl TheCodeAtom {
                      data: &mut TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {
                         stack.push(data.values[0].clone());
+                        TheCodeNodeCallResult::Continue
                     };
 
                 ctx.stack.push(value.clone());
 
                 TheCodeNode::new(
                     call,
-                    TheCodeNodeData::location_values(ctx.current_location, vec![value.clone()]),
+                    TheCodeNodeData::location_values(ctx.node_location, vec![value.clone()]),
                 )
             }
             TheCodeAtom::Add => {
@@ -321,16 +383,17 @@ impl TheCodeAtom {
                                 }
                             }
                         }
+                        TheCodeNodeCallResult::Continue
                     };
 
                 if ctx.error.is_none() && ctx.stack.len() < 2 {
                     ctx.error = Some(TheCompilerError::new(
-                        ctx.current_location,
+                        ctx.node_location,
                         format!("Invalid stack for Add ({})", ctx.stack.len()),
                     ));
                 }
 
-                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
+                TheCodeNode::new(call, TheCodeNodeData::location(ctx.node_location))
             }
             TheCodeAtom::Multiply => {
                 let call: TheCodeNodeCall =
@@ -340,11 +403,12 @@ impl TheCodeAtom {
                         let a = stack.pop().unwrap().to_i32().unwrap();
                         let b = stack.pop().unwrap().to_i32().unwrap();
                         stack.push(TheValue::Int(a * b));
+                        TheCodeNodeCallResult::Continue
                     };
 
                 if ctx.error.is_none() && ctx.stack.len() < 2 {
                     ctx.error = Some(TheCompilerError::new(
-                        ctx.current_location,
+                        ctx.node_location,
                         format!("Invalid stack for Multiply ({})", ctx.stack.len()),
                     ));
                 }
@@ -354,28 +418,36 @@ impl TheCodeAtom {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
                      _data: &mut TheCodeNodeData,
-                     _sandbox: &mut TheCodeSandbox| {};
+                     _sandbox: &mut TheCodeSandbox| {
+                        TheCodeNodeCallResult::Continue
+                    };
                 TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
             TheCodeAtom::Switch => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
                      _data: &mut TheCodeNodeData,
-                     _sandbox: &mut TheCodeSandbox| {};
+                     _sandbox: &mut TheCodeSandbox| {
+                        TheCodeNodeCallResult::Continue
+                    };
                 TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
             TheCodeAtom::CaseCondition => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
                      _data: &mut TheCodeNodeData,
-                     _sandbox: &mut TheCodeSandbox| {};
+                     _sandbox: &mut TheCodeSandbox| {
+                        TheCodeNodeCallResult::Continue
+                    };
                 TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
             TheCodeAtom::CaseBody => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
                      _data: &mut TheCodeNodeData,
-                     _sandbox: &mut TheCodeSandbox| {};
+                     _sandbox: &mut TheCodeSandbox| {
+                        TheCodeNodeCallResult::Continue
+                    };
                 TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
         }
@@ -401,6 +473,7 @@ impl TheCodeAtom {
             TheCodeAtom::FuncDef(_name) => TheCodeAtomKind::Fn,
             TheCodeAtom::FuncArg(_name) => TheCodeAtomKind::Identifier,
             TheCodeAtom::FuncCall(_name) => TheCodeAtomKind::Identifier,
+            TheCodeAtom::Pulse => TheCodeAtomKind::Identifier,
             TheCodeAtom::Return => TheCodeAtomKind::Return,
             TheCodeAtom::LocalGet(_name) => TheCodeAtomKind::Identifier,
             TheCodeAtom::LocalSet(_name) => TheCodeAtomKind::Identifier,
@@ -423,6 +496,7 @@ impl TheCodeAtom {
             TheCodeAtom::FuncDef(name) => name.clone(),
             TheCodeAtom::FuncArg(name) => name.clone(),
             TheCodeAtom::FuncCall(name) => name.clone(),
+            TheCodeAtom::Pulse => "Pulse".to_string(),
             TheCodeAtom::Return => "Return".to_string(),
             TheCodeAtom::LocalGet(name) => name.clone(),
             TheCodeAtom::LocalSet(name) => name.clone(),
@@ -451,6 +525,7 @@ impl TheCodeAtom {
                 "Function call ({}). Values below will be passed as arguments.",
                 name
             ),
+            TheCodeAtom::Pulse => "A pulsing gate. Counts up to the gate value.".to_string(),
             TheCodeAtom::Return => "Return from a function. Optionally with a value.".to_string(),
             TheCodeAtom::LocalGet(name) => format!("Get the value of a local variable ({}).", name),
             TheCodeAtom::LocalSet(name) => format!("Set a value to a local variable ({}).", name),

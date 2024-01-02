@@ -232,7 +232,7 @@ impl TheCompiler {
             TheCodeAtom::LocalSet(_name) => {
                 self.advance();
                 let var = self.ctx.previous.clone();
-                let location = self.ctx.current_location;
+                let location = self.ctx.previous_location;
 
                 match &self.ctx.current {
                     TheCodeAtom::Assignment(_op) => {
@@ -258,7 +258,7 @@ impl TheCompiler {
             TheCodeAtom::ObjectSet(_object, _name) => {
                 self.advance();
                 let var = self.ctx.previous.clone();
-                let location = self.ctx.current_location;
+                let location = self.ctx.previous_location;
 
                 match &self.ctx.current {
                     TheCodeAtom::Assignment(_op) => {
@@ -279,6 +279,35 @@ impl TheCompiler {
                 self.expression();
                 self.ctx.node_location = location;
                 let node = var.to_node(&mut self.ctx);
+                self.ctx.get_current_function().add_node(node);
+            }
+            TheCodeAtom::Pulse => {
+                self.advance();
+                let pulse = self.ctx.previous.clone();
+                let location: (u16, u16) = self.ctx.previous_location;
+
+                match &self.ctx.current {
+                    TheCodeAtom::Assignment(_op) => {
+                        self.advance();
+                    }
+                    _ => {
+                        self.error_at(
+                            (
+                                self.ctx.previous_location.0 + 1,
+                                self.ctx.previous_location.1,
+                            ),
+                            "Expected assignment operator.",
+                        );
+                        return;
+                    }
+                }
+
+                let func = TheCodeFunction::default();
+                self.ctx.add_function(func);
+
+                self.expression();
+                self.ctx.node_location = location;
+                let node = pulse.to_node(&mut self.ctx);
                 self.ctx.get_current_function().add_node(node);
             }
             _ => {
@@ -312,6 +341,7 @@ impl TheCompiler {
                 }
             }
             TheCodeAtom::FuncCall(_name) => {
+                self.ctx.node_location = self.ctx.current_location;
                 let node = self.ctx.current.clone().to_node(&mut self.ctx);
                 self.ctx.get_current_function().add_node(node);
                 self.advance();
@@ -455,27 +485,13 @@ impl TheCompiler {
     fn advance(&mut self) {
         self.ctx.previous = self.ctx.current.clone();
 
+        self.ctx.current = self.grid.get_next(false);
+
         if let Some(location) = self.grid.current_pos {
-            self.ctx.previous_location = self.ctx.current_location;
             self.ctx.current_location = location;
         }
 
-        self.ctx.current = self.grid.get_next(false);
-        //println!("{:?} : {:?}", self.grid.current_pos, self.ctx.current);
-
-        /*
-        loop {
-            self.parser.current = if self.code.is_empty() {
-                TheCodeAtom::Stop
-            } else {
-                self.code.remove(0)
-            };
-
-            if self.parser.current.to_kind() != TheCodeAtomKind::Error {
-                break;
-            }
-            //self.error_at_current(self.parser.current.lexeme.clone().as_str());
-        }*/
+        println!("{:?} : {:?}", self.grid.current_pos, self.ctx.current);
     }
 
     fn matches(&mut self, kind: TheCodeAtomKind) -> bool {

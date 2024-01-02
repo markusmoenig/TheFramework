@@ -5,9 +5,11 @@ pub struct TheSDFCanvas {
     pub background: crate::thecolor::TheColor,
     pub highlight: crate::thecolor::TheColor,
     pub hover_highlight: crate::thecolor::TheColor,
+    pub error_highlight: crate::thecolor::TheColor,
 
     pub selected: Option<usize>,
     pub hover: Option<usize>,
+    pub error: Option<usize>,
 
     pub sdfs: Vec<TheSDF>,
     pub patterns: Vec<ThePattern>,
@@ -27,10 +29,12 @@ impl TheSDFCanvas {
 
             selected: None,
             hover: None,
+            error: None,
 
             background: TheColor::black(),
             highlight: TheColor::white(),
             hover_highlight: TheColor::white(),
+            error_highlight: crate::thecolor::TheColor::from_u8_array([209, 42, 42, 255]),
         }
     }
 
@@ -126,7 +130,9 @@ impl TheSDFCanvas {
     /// Returns the selected color if the given sdf index is highlighted.
     #[inline(always)]
     fn highlight(&self, index: usize) -> Option<&TheColor> {
-        if self.selected == Some(index) {
+        if self.error == Some(index) {
+            Some(&self.error_highlight)
+        } else if self.selected == Some(index) {
             Some(&self.highlight)
         } else if self.hover == Some(index) {
             Some(&self.hover_highlight)
