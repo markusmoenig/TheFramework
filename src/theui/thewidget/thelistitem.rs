@@ -15,6 +15,7 @@ pub struct TheListItem {
     mouse_down_pos: Vec2i,
 
     icon: Option<TheRGBABuffer>,
+    status: Option<String>,
 
     layout_id: TheId,
     scroll_offset: i32,
@@ -43,6 +44,7 @@ impl TheWidget for TheListItem {
             mouse_down_pos: Vec2i::zero(),
 
             icon: None,
+            status: None,
 
             layout_id: TheId::empty(),
             scroll_offset: 0,
@@ -159,6 +161,14 @@ impl TheWidget for TheListItem {
             }
             _ => {}
         }
+    }
+
+    fn status_text(&self) -> Option<String> {
+        self.status.clone()
+    }
+
+    fn set_status_text(&mut self, text: &str) {
+        self.status = Some(text.to_string());
     }
 
     fn draw(

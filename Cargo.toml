@@ -1,6 +1,6 @@
 [package]
 name = "theframework"
-version = "0.1.11"
+version = "0.1.12"
 edition = "2021"
 description = "A cross platform application UI framework."
 license = "MIT"
@@ -18,7 +18,7 @@ winit = { version = "0.28.7", optional = true }
 winit_input_helper = { version = "0.14.1", optional = true }
 therenderer = { version = "0.1.1", optional = true }
 # therenderer = { path = "../therenderer", optional = true }
-rust-embed = { version = "8.0.0", default-features = true, features = ["include-exclude"] }
+rust-embed = { version = "8", default-features = true, features = ["include-exclude"] }
 png = "0.17.8"
 rustc-hash = "1.1.0"
 rfd = { version = "0.12", optional = true }

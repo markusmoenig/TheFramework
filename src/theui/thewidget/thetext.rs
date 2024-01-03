@@ -38,10 +38,6 @@ impl TheWidget for TheText {
         &self.id
     }
 
-    // fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
-    //     false
-    // }
-
     fn dim(&self) -> &TheDim {
         &self.dim
     }
@@ -67,6 +63,12 @@ impl TheWidget for TheText {
 
     fn needs_redraw(&mut self) -> bool {
         self.is_dirty
+    }
+
+    fn set_value(&mut self, value: TheValue) {
+        if let TheValue::Text(value) = value {
+            self.set_text(value);
+        }
     }
 
     fn calculate_size(&mut self, ctx: &mut TheContext) {

@@ -5,6 +5,7 @@ use crate::prelude::*;
 pub struct TheCodeBundle {
     pub name: String,
     pub id: Uuid,
+    pub selected_grid_id: Option<Uuid>,
     pub grids: FxHashMap<Uuid, TheCodeGrid>,
 }
 
@@ -23,13 +24,14 @@ impl TheCodeBundle {
         Self {
             name: "Unnamed".to_string(),
             id: Uuid::new_v4(),
+            selected_grid_id: None,
             grids,
         }
     }
 
     /// Insert a codegrid into the bundle.
     pub fn insert_grid(&mut self, grid: TheCodeGrid) {
-        self.grids.insert(grid.uuid, grid);
+        self.grids.insert(grid.id, grid);
     }
 
     /// Get a grid from the module.

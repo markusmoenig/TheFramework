@@ -14,6 +14,7 @@ pub enum TheCodeAtom {
     ObjectSet(String, String),
     FuncDef(String),
     FuncCall(String),
+    ExternalCall(String, String),
     FuncArg(String),
     Pulse,
     Return,
@@ -56,12 +57,18 @@ impl TheCodeAtom {
                         if count < max_value {
                             data.values[0] = TheValue::Int(count + 1);
                             if sandbox.debug_mode {
-                                sandbox.set_debug_value(data.location, TheValue::Text(format!("{} / {}", count + 1, max_value)));
+                                sandbox.set_debug_value(
+                                    data.location,
+                                    TheValue::Text(format!("{} / {}", count + 1, max_value)),
+                                );
                             }
                             TheCodeNodeCallResult::Break
                         } else {
                             if sandbox.debug_mode {
-                                sandbox.set_debug_value(data.location, TheValue::Text(format!("{} / {}", count + 1, max_value)));
+                                sandbox.set_debug_value(
+                                    data.location,
+                                    TheValue::Text(format!("{} / {}", count + 1, max_value)),
+                                );
                             }
                             data.values[0] = TheValue::Int(0);
                             if let Some(v) = data.sub_functions[0].execute(sandbox).pop() {
@@ -78,7 +85,6 @@ impl TheCodeAtom {
                         vec![TheValue::Int(0), TheValue::Int(4)],
                     ),
                 );
-
 
                 if let Some(mut function) = ctx.remove_function() {
                     let mut sandbox = TheCodeSandbox::new();
@@ -130,7 +136,7 @@ impl TheCodeAtom {
                     };
                 TheCodeNode::new(call, TheCodeNodeData::location(ctx.node_location))
             }
-            TheCodeAtom::FuncCall(name) => {
+            TheCodeAtom::FuncCall(name) | TheCodeAtom::ExternalCall(name, _) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
                      data: &mut TheCodeNodeData,
@@ -158,7 +164,11 @@ impl TheCodeAtom {
                                 }
                                 sandbox.call_stack.pop();
                             } else {
-                                sandbox.call_global(data.location, stack, &data.values[0].to_string().unwrap())
+                                sandbox.call_global(
+                                    data.location,
+                                    stack,
+                                    &data.values[0].to_string().unwrap(),
+                                )
                             }
                         }
                         TheCodeNodeCallResult::Continue
@@ -460,8 +470,11 @@ impl TheCodeAtom {
                 TheSDF::RoundedRect(dim, (0.0, 0.0, 0.0, 0.0))
                 //TheSDF::Rhombus(dim)
             }
-            Self::ObjectSet(_, _) | &Self::LocalSet(_) => {
+            Self::ObjectSet(_, _) | Self::LocalSet(_) | Self::Pulse => {
                 TheSDF::RoundedRect(dim, (0.0, 0.0, 10.0 * zoom, 10.0 * zoom))
+            }
+            Self::FuncCall(_) | Self::ExternalCall(_, _) => {
+                TheSDF::RoundedRect(dim, (10.0 * zoom, 10.0 * zoom, 10.0 * zoom, 10.0 * zoom))
             }
             _ => TheSDF::RoundedRect(dim, (0.0, 0.0, 0.0, 0.0)),
         }
@@ -473,6 +486,7 @@ impl TheCodeAtom {
             TheCodeAtom::FuncDef(_name) => TheCodeAtomKind::Fn,
             TheCodeAtom::FuncArg(_name) => TheCodeAtomKind::Identifier,
             TheCodeAtom::FuncCall(_name) => TheCodeAtomKind::Identifier,
+            TheCodeAtom::ExternalCall(_, _) => TheCodeAtomKind::Identifier,
             TheCodeAtom::Pulse => TheCodeAtomKind::Identifier,
             TheCodeAtom::Return => TheCodeAtomKind::Return,
             TheCodeAtom::LocalGet(_name) => TheCodeAtomKind::Identifier,
@@ -496,6 +510,7 @@ impl TheCodeAtom {
             TheCodeAtom::FuncDef(name) => name.clone(),
             TheCodeAtom::FuncArg(name) => name.clone(),
             TheCodeAtom::FuncCall(name) => name.clone(),
+            TheCodeAtom::ExternalCall(name, _) => name.clone(),
             TheCodeAtom::Pulse => "Pulse".to_string(),
             TheCodeAtom::Return => "Return".to_string(),
             TheCodeAtom::LocalGet(name) => name.clone(),
@@ -525,6 +540,7 @@ impl TheCodeAtom {
                 "Function call ({}). Values below will be passed as arguments.",
                 name
             ),
+            TheCodeAtom::ExternalCall(_, description) => description.clone(),
             TheCodeAtom::Pulse => "A pulsing gate. Counts up to the gate value.".to_string(),
             TheCodeAtom::Return => "Return from a function. Optionally with a value.".to_string(),
             TheCodeAtom::LocalGet(name) => format!("Get the value of a local variable ({}).", name),

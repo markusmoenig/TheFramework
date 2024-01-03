@@ -52,7 +52,7 @@ pub enum TheEvent {
     #[cfg(feature = "code")]
     CodeEditorChanged(TheId, TheCodeGrid),
     #[cfg(feature = "code")]
-    CodeBundleChanged(TheCodeBundle),
+    CodeBundleChanged(TheCodeBundle, bool),
 
     // SDF
     SDFIndexChanged(TheId, u32),

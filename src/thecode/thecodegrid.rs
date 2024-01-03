@@ -23,7 +23,7 @@ impl TheCodeGridMessage {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct TheCodeGrid {
-    pub uuid: Uuid,
+    pub id: Uuid,
     pub name: String,
 
     #[serde(with = "vectorize")]
@@ -43,7 +43,7 @@ impl Default for TheCodeGrid {
 impl TheCodeGrid {
     pub fn new() -> Self {
         Self {
-            uuid: Uuid::new_v4(),
+            id: Uuid::new_v4(),
             name: "Unnamed".to_string(),
 
             code: FxHashMap::default(),

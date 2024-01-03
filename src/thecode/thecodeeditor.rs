@@ -1,11 +1,24 @@
 use crate::prelude::*;
 
+pub struct TheExternalCode {
+    name: String,
+    description: String,
+}
+
+impl TheExternalCode {
+    pub fn new(name: String, description: String) -> Self {
+        Self { name, description }
+    }
+}
+
 pub struct TheCodeEditor {
     code_list_selection: Option<TheId>,
     grid_selection: Option<(u16, u16)>,
 
     codegrid_selection: Option<TheId>,
     bundle: TheCodeBundle,
+
+    externals: Vec<TheExternalCode>,
 
     undo: Option<TheUndo>,
 }
@@ -25,8 +38,15 @@ impl TheCodeEditor {
 
             bundle: TheCodeBundle::new(),
 
+            externals: vec![],
+
             undo: None,
         }
+    }
+
+    /// Add an external function to the code.
+    pub fn add_external(&mut self, external: TheExternalCode) {
+        self.externals.push(external);
     }
 
     pub fn handle_event(&mut self, event: &TheEvent, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
@@ -80,16 +100,20 @@ impl TheCodeEditor {
             //     self.set_grid_status_message(ui, ctx);
             //     redraw = true;
             // }
+            TheEvent::CodeBundleChanged(_, edit_state) => {
+                if *edit_state {
+                    self.set_compiled(false, ui, ctx);
+                }
+            }
             TheEvent::CodeEditorChanged(_id, codegrid) => {
                 self.bundle.insert_grid(codegrid.clone());
                 ctx.ui
-                    .send(TheEvent::CodeBundleChanged(self.bundle.clone()));
+                    .send(TheEvent::CodeBundleChanged(self.bundle.clone(), true));
             }
             TheEvent::CodeEditorSelectionChanged(_id, selection) => {
                 self.grid_selection = *selection;
 
                 self.set_grid_selection_ui(ui, ctx);
-                self.set_grid_status_message(ui, ctx);
                 redraw = true;
             }
             TheEvent::StateChanged(id, state) => {
@@ -101,7 +125,7 @@ impl TheCodeEditor {
                         self.bundle.insert_grid(codegrid.clone());
 
                         if let Some(code_list) = ui.get_list_layout("CodeGrid List") {
-                            let item_id = TheId::named_with_id("CodeGrid List Item", codegrid.uuid);
+                            let item_id = TheId::named_with_id("CodeGrid List Item", codegrid.id);
                             let mut item = TheListItem::new(item_id.clone());
                             item.set_text(codegrid.name.clone());
                             item.set_associated_layout(code_list.id().clone());
@@ -117,11 +141,10 @@ impl TheCodeEditor {
                         ui.set_widget_disabled_state("CodeGrid List Remove", ctx, false);
 
                         ctx.ui
-                            .send(TheEvent::CodeBundleChanged(self.bundle.clone()));
+                            .send(TheEvent::CodeBundleChanged(self.bundle.clone(), true));
 
                         self.set_codegrid(codegrid.clone(), ui);
                         self.set_grid_selection_ui(ui, ctx);
-                        self.set_grid_status_message(ui, ctx);
                     }
                 } else if id.name == "CodeGrid List Remove" {
                     if *state == TheWidgetState::Clicked {
@@ -141,10 +164,9 @@ impl TheCodeEditor {
                             self.codegrid_selection = None;
 
                             ctx.ui
-                                .send(TheEvent::CodeBundleChanged(self.bundle.clone()));
+                                .send(TheEvent::CodeBundleChanged(self.bundle.clone(), true));
 
                             self.set_grid_selection_ui(ui, ctx);
-                            self.set_grid_status_message(ui, ctx);
                         }
                     }
                 } else if id.name == "CodeGrid List Item" && *state == TheWidgetState::Selected {
@@ -159,7 +181,12 @@ impl TheCodeEditor {
 
                         self.set_codegrid(codegrid.clone(), ui);
                         self.set_grid_selection_ui(ui, ctx);
-                        self.set_grid_status_message(ui, ctx);
+
+                        // We send the update to remember the current selection
+
+                        self.bundle.selected_grid_id = Some(id.uuid);
+                        ctx.ui
+                            .send(TheEvent::CodeBundleChanged(self.bundle.clone(), false));
                     }
                 }
 
@@ -328,7 +355,7 @@ impl TheCodeEditor {
     pub fn get_codegrid_id(&mut self, ui: &mut TheUI) -> Uuid {
         if let Some(layout) = ui.get_code_layout("Code Editor") {
             if let Some(code_view) = layout.code_view_mut().as_code_view() {
-                return code_view.codegrid().uuid;
+                return code_view.codegrid().id;
             }
         }
         Uuid::nil()
@@ -403,27 +430,6 @@ impl TheCodeEditor {
         }
     }
 
-    /// Set grid status message
-    pub fn set_grid_status_message(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
-        let mut message: Option<TheCodeGridMessage> = None;
-        if let Some(grid_selection) = self.grid_selection {
-            if let Some(layout) = ui.get_code_layout("Code Editor") {
-                if let Some(code_view) = layout.code_view_mut().as_code_view() {
-                    message = code_view.codegrid().message(grid_selection);
-                }
-            }
-        }
-
-        if let Some(text) = ui.get_text("Code Grid Status") {
-            if let Some(message) = message {
-                text.set_text(message.message);
-            } else {
-                text.set_text("".to_string());
-            }
-            ctx.ui.relayout = true;
-        }
-    }
-
     /// Start undo by setting the undo data.
     pub fn start_undo(&mut self, ui: &mut TheUI) {
         let mut undo = TheUndo::new(TheId::named("Code Editor"));
@@ -446,7 +452,7 @@ impl TheCodeEditor {
         ctx.ui.undo_stack.add(undo);
 
         ctx.ui
-            .send(TheEvent::CodeBundleChanged(self.bundle.clone()));
+            .send(TheEvent::CodeBundleChanged(self.bundle.clone(), true));
     }
 
     /// Get the codegrid as json
@@ -466,6 +472,35 @@ impl TheCodeEditor {
                 code_view.set_codegrid(TheCodeGrid::from_json(json.as_str()));
             }
         }
+    }
+
+    /// Set the codegrid from json
+    pub fn compiled(&self, ui: &mut TheUI) -> bool {
+        if let Some(layout) = ui.get_code_layout("Code Editor") {
+            if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                return code_view.compiled();
+            }
+        }
+        false
+    }
+
+    /// Set the compilation state from json
+    pub fn set_compiled(&self, compiled: bool, ui: &mut TheUI, ctx: &mut TheContext) {
+        if let Some(layout) = ui.get_code_layout("Code Editor") {
+            if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                code_view.set_compiled(compiled);
+            }
+        }
+
+        if let Some(widget) = ui.get_widget("Code Grid Status") {
+            if !compiled {
+                widget.set_value(TheValue::Text("Uncompiled".to_string()));
+            } else {
+                widget.set_value(TheValue::Text("".to_string()));
+            }
+        }
+
+        ui.relayout_layout("Code Bottom Toolbar Layout", ctx);
     }
 
     /// Create an atom for the given name.
@@ -489,7 +524,15 @@ impl TheCodeEditor {
             "Position" => TheCodeAtom::Value(TheValue::Position(vec3f(0.0, 0.0, 0.0))),
             "Add" => TheCodeAtom::Add,
             "Multiply" => TheCodeAtom::Multiply,
-            _ => TheCodeAtom::EndOfCode,
+            _ => {
+                for e in &self.externals {
+                    if e.name == name {
+                        return TheCodeAtom::ExternalCall(e.name.clone(), e.description.clone());
+                    }
+                }
+
+                TheCodeAtom::EndOfCode
+            }
         }
     }
 
@@ -581,7 +624,7 @@ impl TheCodeEditor {
         let divider1 = TheHDivider::new(TheId::empty());
         let divider2 = TheHDivider::new(TheId::empty());
 
-        let mut toolbar_hlayout = TheHLayout::new(TheId::empty());
+        let mut toolbar_hlayout = TheHLayout::new(TheId::named("Code Bottom Toolbar Layout"));
         toolbar_hlayout.set_background_color(None);
         toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
         toolbar_hlayout.add_widget(Box::new(compile_button));
@@ -638,14 +681,21 @@ impl TheCodeEditor {
         for key in &keys {
             if let Some(grid) = self.bundle.grids.get(key) {
                 let mut item =
-                    TheListItem::new(TheId::named_with_id("CodeGrid List Item", grid.uuid));
+                    TheListItem::new(TheId::named_with_id("CodeGrid List Item", grid.id));
                 item.set_text(grid.name.clone());
                 item.set_associated_layout(code_layout.id().clone());
                 code_layout.add_item(item, ctx);
             }
         }
 
-        code_layout.select_first_item(ctx);
+        if let Some(id) = self.bundle.selected_grid_id {
+            if !code_layout.select_item(id, ctx) {
+                code_layout.select_first_item(ctx);
+            }
+        } else {
+            code_layout.select_first_item(ctx);
+        }
+
         list_canvas.set_layout(code_layout);
 
         canvas.set_center(list_canvas);
@@ -780,6 +830,16 @@ impl TheCodeEditor {
             item.set_text("Multiply".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
+        }
+
+        if index == 0 || index == 3 {
+            for e in &self.externals {
+                let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+                item.set_text(e.name.clone());
+                item.set_status_text(e.description.clone().as_str());
+                item.set_associated_layout(code_layout.id().clone());
+                code_layout.add_item(item, ctx);
+            }
         }
     }
 

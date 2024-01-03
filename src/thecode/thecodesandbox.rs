@@ -2,7 +2,6 @@ use crate::prelude::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TheCodeSandbox {
-
     /// The id of the sandbox.
     pub id: Uuid,
 
@@ -54,7 +53,6 @@ impl Default for TheCodeSandbox {
 impl TheCodeSandbox {
     pub fn new() -> Self {
         Self {
-
             id: Uuid::new_v4(),
 
             objects: FxHashMap::default(),

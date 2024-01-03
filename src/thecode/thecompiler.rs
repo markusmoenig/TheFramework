@@ -208,7 +208,7 @@ impl TheCompiler {
                 self.ctx.module.insert_function(f.name.clone(), f);
             }
 
-            self.ctx.module.codegrid_id = grid.uuid;
+            self.ctx.module.codegrid_id = grid.id;
             Ok(self.ctx.module.clone())
         }
     }
@@ -340,7 +340,7 @@ impl TheCompiler {
                     self.error_at_current("Unexpected 'Return' code.")
                 }
             }
-            TheCodeAtom::FuncCall(_name) => {
+            TheCodeAtom::FuncCall(_) | TheCodeAtom::ExternalCall(_, _) => {
                 self.ctx.node_location = self.ctx.current_location;
                 let node = self.ctx.current.clone().to_node(&mut self.ctx);
                 self.ctx.get_current_function().add_node(node);
@@ -373,9 +373,9 @@ impl TheCompiler {
                 let node = self.ctx.previous.clone().to_node(&mut self.ctx);
                 self.ctx.get_current_function().add_node(node);
             }
-            TheCodeAtom::FuncCall(_name) => {
+            TheCodeAtom::FuncCall(_) | TheCodeAtom::ExternalCall(_, _) => {
                 let node = self.ctx.previous.clone().to_node(&mut self.ctx);
-                println!("FuncCall {:?}", self.ctx.current_location);
+                //println!("FuncCall {:?}", self.ctx.current_location);
 
                 let arg_loc = (self.ctx.current_location.0, self.ctx.current_location.1 + 1);
 
@@ -411,10 +411,6 @@ impl TheCompiler {
     fn number(&mut self, _can_assign: bool) {
         let node = self.ctx.previous.clone().to_node(&mut self.ctx);
         self.ctx.get_current_function().add_node(node);
-        println!(
-            "{:?} : Number {:?}",
-            self.ctx.current_location, self.ctx.previous
-        );
     }
 
     fn binary(&mut self, _can_assign: bool) {
@@ -446,7 +442,6 @@ impl TheCompiler {
     }
 
     fn get_rule(&self, kind: TheCodeAtomKind) -> TheParseRule {
-        //println!("get_rule {:?}", kind);
         self.rules.get(&kind).cloned().unwrap()
     }
 
@@ -491,7 +486,7 @@ impl TheCompiler {
             self.ctx.current_location = location;
         }
 
-        println!("{:?} : {:?}", self.grid.current_pos, self.ctx.current);
+        //println!("{:?} : {:?}", self.grid.current_pos, self.ctx.current);
     }
 
     fn matches(&mut self, kind: TheCodeAtomKind) -> bool {

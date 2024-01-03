@@ -116,6 +116,11 @@ impl TheUIContext {
         }
     }
 
+    /// Adds an icon to the library.
+    pub fn add_icon(&mut self, name: String, icon: TheRGBABuffer) {
+        self.icons.insert(name, icon);
+    }
+
     /// Returns an icon of the given name from the embedded style icons
     pub fn icon(&self, name: &str) -> Option<&TheRGBABuffer> {
         if let Some(icon) = self.icons.get(&name.to_string()) {

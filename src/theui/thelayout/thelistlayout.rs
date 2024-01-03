@@ -268,6 +268,8 @@ pub trait TheListLayoutTrait: TheLayout {
     fn set_item_size(&mut self, item_size: i32);
     /// Selects the first item (and sends events)
     fn select_first_item(&mut self, ctx: &mut TheContext);
+    /// Selects the item of the given uuid.
+    fn select_item(&mut self, uuid: Uuid, ctx: &mut TheContext) -> bool;
 }
 
 impl TheListLayoutTrait for TheListLayout {
@@ -292,6 +294,19 @@ impl TheListLayoutTrait for TheListLayout {
             ctx.ui
                 .send_widget_state_changed(self.widgets[0].id(), TheWidgetState::Selected);
         }
+    }
+
+    fn select_item(&mut self, uuid: Uuid, ctx: &mut TheContext) -> bool {
+        self.deselect_all();
+        for w in &mut self.widgets {
+            if w.id().uuid == uuid {
+                w.set_state(TheWidgetState::Selected);
+                ctx.ui
+                    .send_widget_state_changed(w.id(), TheWidgetState::Selected);
+                return true;
+            }
+        }
+        false
     }
 
     fn clear(&mut self) {

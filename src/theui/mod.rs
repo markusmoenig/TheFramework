@@ -561,6 +561,13 @@ impl TheUI {
         self.canvas.get_layout(Some(&name.to_string()), None)
     }
 
+    /// Relayouts the given layout.
+    pub fn relayout_layout(&mut self, name: &str, ctx: &mut TheContext ) {
+        if let Some(l) = self.canvas.get_layout(Some(&name.to_string()), None) {
+            l.relayout(ctx);
+        }
+    }
+
     /// Gets a given TheListLayout by name
     pub fn get_list_layout(&mut self, name: &str) -> Option<&mut dyn TheListLayoutTrait> {
         if let Some(text_line_edit) = self.canvas.get_layout(Some(&name.to_string()), None) {
