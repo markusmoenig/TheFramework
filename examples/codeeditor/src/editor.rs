@@ -188,8 +188,6 @@ impl TheTrait for CodeEditor {
                                     } else {
                                         code_view.set_debug_module(TheDebugModule::new());
                                     }
-
-                                    self.editor.set_grid_status_message(ui, ctx);
                                 }
                             }
                         } else {
@@ -204,7 +202,6 @@ impl TheTrait for CodeEditor {
                                 if id.name == "Code Editor" {
                                     self.editor.set_codegrid_json(json, ui);
                                     self.editor.set_grid_selection_ui(ui, ctx);
-                                    self.editor.set_grid_status_message(ui, ctx);
                                 }
                                 redraw = true;
                             }

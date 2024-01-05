@@ -229,6 +229,15 @@ impl TheUI {
                                     ctx.ui.relayout = true;
                                 }
                             }
+                        } else if let Some(layout) = self.canvas.get_layout(Some(&id.name), None) {
+                            if let Some(stack) = layout.as_stack_layout() {
+                                if stack.index() != index {
+                                    stack.set_index(index);
+                                    self.is_dirty = true;
+                                    ctx.ui.redraw_all = true;
+                                    ctx.ui.relayout = true;
+                                }
+                            }
                         }
                     }
                     TheEvent::StateChanged(id, state) => {
@@ -562,7 +571,7 @@ impl TheUI {
     }
 
     /// Relayouts the given layout.
-    pub fn relayout_layout(&mut self, name: &str, ctx: &mut TheContext ) {
+    pub fn relayout_layout(&mut self, name: &str, ctx: &mut TheContext) {
         if let Some(l) = self.canvas.get_layout(Some(&name.to_string()), None) {
             l.relayout(ctx);
         }

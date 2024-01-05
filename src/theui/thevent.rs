@@ -42,9 +42,12 @@ pub enum TheEvent {
 
     // Tile / Code Editor
     TileSelectionChanged(TheId),
+    TilePicked(TheId, Vec2i),
     TileEditorClicked(TheId, Vec2i),
+    TileEditorDragged(TheId, Vec2i),
     TileEditorHoverChanged(TheId, Vec2i),
     TileEditorDrop(TheId, Vec2i, TheDrop),
+    TileEditorDelete(TheId, FxHashSet<(i32, i32)>),
 
     // CodeEditor
     #[cfg(feature = "code")]
@@ -67,4 +70,7 @@ pub enum TheEvent {
     // Utility
     FileRequesterResult(TheId, Vec<std::path::PathBuf>),
     ImageDecodeResult(TheId, String, TheRGBABuffer),
+
+    // Custom event for applications.
+    Custom(TheId, TheValue),
 }

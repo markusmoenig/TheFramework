@@ -5,6 +5,7 @@ pub enum TheRGBAViewMode {
     Display,
     TileSelection,
     TileEditor,
+    TilePicker,
 }
 
 pub struct TheRGBAView {
@@ -26,6 +27,8 @@ pub struct TheRGBAView {
     hover_color: Option<RGBA>,
     hover: Option<(i32, i32)>,
     drop: Option<(i32, i32)>,
+
+    last_loc: (i32, i32),
 
     hscrollbar: TheId,
     vscrollbar: TheId,
@@ -66,6 +69,8 @@ impl TheWidget for TheRGBAView {
             hover: None,
             drop: None,
 
+            last_loc: (0, 0),
+
             hscrollbar: TheId::empty(),
             vscrollbar: TheId::empty(),
             wheel_scale: -0.4,
@@ -102,56 +107,66 @@ impl TheWidget for TheRGBAView {
                 }
 
                 if self.mode != TheRGBAViewMode::Display {
-                    if let Some(grid) = self.grid {
-                        let centered_offset_x = if (self.zoom * self.buffer.dim().width as f32)
-                            < self.dim.width as f32
-                        {
-                            (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32)
-                                / 2.0
-                        } else {
-                            0.0
-                        };
-                        let centered_offset_y = if (self.zoom * self.buffer.dim().height as f32)
-                            < self.dim.height as f32
-                        {
-                            (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32)
-                                / 2.0
-                        } else {
-                            0.0
-                        };
+                    if let Some(loc) = self.get_grid_location(*coord) {
+                        self.last_loc = loc;
+                        if self.mode == TheRGBAViewMode::TileSelection {
+                            if self.selected.contains(&(loc.0, loc.1)) {
+                                self.selected.remove(&(loc.0, loc.1));
+                            } else {
+                                self.selected.insert((loc.0, loc.1));
+                            }
+                            ctx.ui.send(TheEvent::TileSelectionChanged(self.id.clone()));
+                        } else if self.mode == TheRGBAViewMode::TilePicker {
+                            self.selected.clear();
+                            self.selected.insert((loc.0, loc.1));
+                            ctx.ui
+                                .send(TheEvent::TilePicked(self.id.clone(), vec2i(loc.0, loc.1)));
+                        } else if self.mode == TheRGBAViewMode::TileEditor {
+                            ctx.ui.send(TheEvent::TileEditorClicked(
+                                self.id.clone(),
+                                vec2i(loc.0, loc.1),
+                            ));
+                        }
+                    }
+                    redraw = true;
+                }
+            }
+            TheEvent::MouseDragged(coord) => {
+                if self.state != TheWidgetState::Selected {
+                    self.is_dirty = true;
+                    self.state = TheWidgetState::Selected;
+                    ctx.ui.send_widget_state_changed(self.id(), self.state);
+                    ctx.ui.send(TheEvent::NewListItemSelected(
+                        self.id().clone(),
+                        self.layout_id.clone(),
+                    ));
+                    ctx.ui.set_focus(self.id());
+                    redraw = true;
+                }
 
-                        let source_x = ((coord.x as f32 - centered_offset_x) / self.zoom
-                            + self.scroll_offset.x as f32)
-                            .round() as i32;
-                        let source_y = ((coord.y as f32 - centered_offset_y) / self.zoom
-                            + self.scroll_offset.y as f32)
-                            .round() as i32;
-
-                        if source_x >= 0
-                            && source_x < self.buffer.dim().width
-                            && source_y >= 0
-                            && source_y < self.buffer.dim().height
-                        {
-                            let grid_x = source_x / grid;
-                            let grid_y = source_y / grid;
-
-                            if grid_x * grid < self.buffer.dim().width
-                                && grid_y * grid < self.buffer.dim().height
-                            {
-                                //println!("{} {}", grid_x, grid_y);
-                                if self.mode == TheRGBAViewMode::TileSelection {
-                                    if self.selected.contains(&(grid_x, grid_y)) {
-                                        self.selected.remove(&(grid_x, grid_y));
-                                    } else {
-                                        self.selected.insert((grid_x, grid_y));
-                                    }
-                                    ctx.ui.send(TheEvent::TileSelectionChanged(self.id.clone()));
-                                } else if self.mode == TheRGBAViewMode::TileEditor {
-                                    ctx.ui.send(TheEvent::TileEditorClicked(
-                                        self.id.clone(),
-                                        vec2i(grid_x, grid_y),
-                                    ));
+                if self.mode != TheRGBAViewMode::Display {
+                    if let Some(loc) = self.get_grid_location(*coord) {
+                        if loc != self.last_loc {
+                            self.last_loc = loc;
+                            if self.mode == TheRGBAViewMode::TileSelection {
+                                if self.selected.contains(&(loc.0, loc.1)) {
+                                    self.selected.remove(&(loc.0, loc.1));
+                                } else {
+                                    self.selected.insert((loc.0, loc.1));
                                 }
+                                ctx.ui.send(TheEvent::TileSelectionChanged(self.id.clone()));
+                            } else if self.mode == TheRGBAViewMode::TilePicker {
+                                self.selected.clear();
+                                self.selected.insert((loc.0, loc.1));
+                                ctx.ui.send(TheEvent::TilePicked(
+                                    self.id.clone(),
+                                    vec2i(loc.0, loc.1),
+                                ));
+                            } else if self.mode == TheRGBAViewMode::TileEditor {
+                                ctx.ui.send(TheEvent::TileEditorDragged(
+                                    self.id.clone(),
+                                    vec2i(loc.0, loc.1),
+                                ));
                             }
                         }
                     }
@@ -175,7 +190,10 @@ impl TheWidget for TheRGBAView {
                     redraw = true;
                 }
 
-                if self.mode == TheRGBAViewMode::TileEditor && self.hover_color.is_some() {
+                if (self.mode == TheRGBAViewMode::TileEditor
+                    || self.mode == TheRGBAViewMode::TilePicker)
+                    && self.hover_color.is_some()
+                {
                     if let Some(grid) = self.grid {
                         let centered_offset_x = if (self.zoom * self.buffer.dim().width as f32)
                             < self.dim.width as f32
@@ -248,11 +266,16 @@ impl TheWidget for TheRGBAView {
             }
             TheEvent::MouseWheel(delta) => {
                 let d = vec2i(
-                    (delta.x as f32 * self.wheel_scale) as i32,
-                    (delta.y as f32 * self.wheel_scale) as i32,
+                    (delta.x as f32 * self.wheel_scale / self.zoom) as i32,
+                    (delta.y as f32 * self.wheel_scale / self.zoom) as i32,
                 );
                 ctx.ui.send(TheEvent::ScrollBy(self.hscrollbar.clone(), d));
                 ctx.ui.send(TheEvent::ScrollBy(self.vscrollbar.clone(), d));
+            }
+            TheEvent::KeyCodeDown(TheValue::KeyCode(TheKeyCode::Delete)) => {
+                if !self.selected.is_empty() && (self.mode == TheRGBAViewMode::TileEditor || self.mode == TheRGBAViewMode::TilePicker) {
+                    ctx.ui.send(TheEvent::TileEditorDelete(self.id.clone(), self.selected.clone()));
+                }
             }
             _ => {}
         }

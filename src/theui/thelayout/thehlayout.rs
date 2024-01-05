@@ -22,6 +22,7 @@ pub struct TheHLayout {
     padding: i32,
 
     background: Option<TheThemeColors>,
+    reverse_index: Option<i32>,
 
     redirect_as: Option<TheId>,
 }
@@ -44,6 +45,7 @@ impl TheLayout for TheHLayout {
             padding: 5,
 
             background: Some(DefaultWidgetBackground),
+            reverse_index: None,
 
             redirect_as: None,
         }
@@ -97,11 +99,17 @@ impl TheLayout for TheHLayout {
 
             if !self.widgets.is_empty() {
                 let mut x: i32 = self.margin.x;
+
+                let mut to_go = self.widgets.len();
+                if let Some(split_index) = self.reverse_index {
+                    to_go -= split_index as usize;
+                }
+
                 if self.mode == TheHLayoutMode::ContentBased {
-                    for w in &mut self.widgets {
-                        w.calculate_size(ctx);
-                        let width = w.limiter().get_width(dim.width);
-                        let height = w.limiter().get_height(dim.height);
+                    for i in 0..to_go {
+                        self.widgets[i].calculate_size(ctx);
+                        let width = self.widgets[i].limiter().get_width(dim.width);
+                        let height = self.widgets[i].limiter().get_height(dim.height);
 
                         // Limit to visible area
                         if x + width > dim.width {
@@ -112,7 +120,7 @@ impl TheLayout for TheHLayout {
                         if self.dim.height > self.margin.y + self.margin.w {
                             let mut off =
                                 (self.dim.height - self.margin.y - self.margin.w - height) / 2;
-                            if w.as_text().is_some() {
+                            if self.widgets[i].as_text().is_some() {
                                 off -= 1;
                             }
                             if y + off + height < self.dim.height {
@@ -120,10 +128,52 @@ impl TheLayout for TheHLayout {
                             }
                         }
 
-                        w.set_dim(TheDim::new(dim.x + x, dim.y + y, width, height));
-                        w.dim_mut()
+                        self.widgets[i].set_dim(TheDim::new(dim.x + x, dim.y + y, width, height));
+                        self.widgets[i]
+                            .dim_mut()
                             .set_buffer_offset(self.dim.buffer_x + x, self.dim.buffer_y + y);
                         x += width + self.padding;
+                    }
+
+                    if let Some(reverse) = self.reverse_index {
+                        let mut x: i32 = self.dim.x + self.dim.width - self.margin.z;
+
+                        for i in 0..reverse {
+                            let i = self.widgets.len() - 1 - i as usize;
+
+                            self.widgets[i].calculate_size(ctx);
+                            let width = self.widgets[i].limiter().get_width(dim.width);
+                            let height = self.widgets[i].limiter().get_height(dim.height);
+
+                            x -= width;
+                            // Limit to visible area
+                            if x + width > dim.width {
+                                break;
+                            }
+
+                            let mut y = self.margin.y;
+                            if self.dim.height > self.margin.y + self.margin.w {
+                                let mut off =
+                                    (self.dim.height - self.margin.y - self.margin.w - height) / 2;
+                                if self.widgets[i].as_text().is_some() {
+                                    off -= 1;
+                                }
+                                if y + off + height < self.dim.height {
+                                    y += off;
+                                }
+                            }
+
+                            self.widgets[i].set_dim(TheDim::new(
+                                dim.x + x,
+                                dim.y + y,
+                                width,
+                                height,
+                            ));
+                            self.widgets[i]
+                                .dim_mut()
+                                .set_buffer_offset(self.dim.buffer_x + x, self.dim.buffer_y + y);
+                            x -= self.padding;
+                        }
                     }
                 } else if self.mode == TheHLayoutMode::SizeBased {
                     let count = self.widgets.len() as i32;
@@ -233,6 +283,8 @@ pub trait TheHLayoutTrait: TheLayout {
     fn clear(&mut self);
     /// Set the redirection id.
     fn set_redirect_as(&mut self, id: TheId);
+    /// Set the left / right alinment split index
+    fn set_reverse_index(&mut self, reverse_index: Option<i32>);
 }
 
 impl TheHLayoutTrait for TheHLayout {
@@ -247,5 +299,8 @@ impl TheHLayoutTrait for TheHLayout {
     }
     fn set_redirect_as(&mut self, id: TheId) {
         self.redirect_as = Some(id);
+    }
+    fn set_reverse_index(&mut self, reverse_index: Option<i32>) {
+        self.reverse_index = reverse_index;
     }
 }

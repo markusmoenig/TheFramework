@@ -313,7 +313,7 @@ impl TheLayout for TheRGBALayout {
 }
 
 /// TheRGBALayout specific functions.
-pub trait TheRGBALayoutTrait {
+pub trait TheRGBALayoutTrait: TheLayout {
     /// Set the buffer to be displayed.
     fn set_buffer(&mut self, buffer: TheRGBABuffer);
     /// Get the current scroll offset for the scrollbars.

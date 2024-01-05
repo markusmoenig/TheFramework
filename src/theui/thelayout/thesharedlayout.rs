@@ -70,6 +70,10 @@ impl TheLayout for TheSharedLayout {
     }
 
     fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+        if self.canvas.len() < 2 {
+            return None;
+        }
+
         if self.mode == TheSharedLayoutMode::Left {
             return self.canvas[0].get_widget_at_coord(coord);
         } else if self.mode == TheSharedLayoutMode::Right {
@@ -89,6 +93,10 @@ impl TheLayout for TheSharedLayout {
         name: Option<&String>,
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheWidget>> {
+        if self.canvas.len() < 2 {
+            return None;
+        }
+
         if self.mode == TheSharedLayoutMode::Left {
             return self.canvas[0].get_widget(name, uuid);
         } else if self.mode == TheSharedLayoutMode::Right {
@@ -108,6 +116,9 @@ impl TheLayout for TheSharedLayout {
         name: Option<&String>,
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheLayout>> {
+        if self.canvas.len() < 2 {
+            return None;
+        }
         if self.mode == TheSharedLayoutMode::Left {
             return self.canvas[0].get_layout(name, uuid);
         } else if self.mode == TheSharedLayoutMode::Right {
@@ -133,6 +144,10 @@ impl TheLayout for TheSharedLayout {
     fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {
         if self.dim != dim || ctx.ui.relayout {
             self.dim = dim;
+
+            if self.canvas.len() < 2 {
+                return;
+            }
 
             if self.mode == TheSharedLayoutMode::Left {
                 self.canvas[0].set_dim(dim, ctx);
@@ -167,6 +182,10 @@ impl TheLayout for TheSharedLayout {
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
+        if self.canvas.len() < 2 {
+            return;
+        }
+
         if let Some(background) = self.background {
             let stride = buffer.stride();
 

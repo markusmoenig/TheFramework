@@ -8,6 +8,8 @@ pub struct TheSlider {
     value: TheValue,
     original: TheValue,
 
+    default_value: TheValue,
+
     text_width: i32,
 
     status: Option<String>,
@@ -35,6 +37,8 @@ impl TheWidget for TheSlider {
 
             value: TheValue::Float(0.0),
             original: TheValue::Float(0.0),
+
+            default_value: TheValue::Float(1.0),
 
             text_width: 50,
 
@@ -110,7 +114,8 @@ impl TheWidget for TheSlider {
 
     fn set_value(&mut self, value: TheValue) {
         if value != self.value {
-            self.value = value;
+            self.value = value.clone();
+            self.default_value = value;
             self.is_dirty = true;
         }
     }
@@ -129,7 +134,11 @@ impl TheWidget for TheSlider {
 
                 ctx.ui.set_focus(self.id());
 
-                if let Some(range_f32) = self.range.to_range_f32() {
+                if coord.x > self.dim.width - self.text_width + 5 {
+                    self.value = self.default_value.clone();
+                    ctx.ui
+                        .send_widget_value_changed(self.id(), self.value.clone());
+                } else if let Some(range_f32) = self.range.to_range_f32() {
                     let d = abs(range_f32.end() - range_f32.start())
                         * (coord.x as f32 / (self.dim.width - self.text_width) as f32)
                             .clamp(0.0, 1.0);
@@ -146,7 +155,8 @@ impl TheWidget for TheSlider {
                 redraw = true;
             }
             TheEvent::MouseDragged(coord) => {
-                if let Some(range_f32) = self.range.to_range_f32() {
+                if coord.x > self.dim.width - self.text_width + 5 {
+                } else if let Some(range_f32) = self.range.to_range_f32() {
                     let d = abs(range_f32.end() - range_f32.start())
                         * (coord.x as f32 / (self.dim.width - self.text_width) as f32)
                             .clamp(0.0, 1.0);
