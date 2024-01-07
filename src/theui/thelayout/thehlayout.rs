@@ -136,7 +136,7 @@ impl TheLayout for TheHLayout {
                     }
 
                     if let Some(reverse) = self.reverse_index {
-                        let mut x: i32 = self.dim.x + self.dim.width - self.margin.z;
+                        let mut x: i32 = self.dim.width - self.margin.z;
 
                         for i in 0..reverse {
                             let i = self.widgets.len() - 1 - i as usize;

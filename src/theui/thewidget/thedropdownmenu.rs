@@ -3,6 +3,7 @@ use crate::prelude::*;
 pub struct TheDropdownMenu {
     id: TheId,
     limiter: TheSizeLimiter,
+    status: Option<String>,
 
     state: TheWidgetState,
 
@@ -26,6 +27,7 @@ impl TheWidget for TheDropdownMenu {
         Self {
             id,
             limiter,
+            status: None,
 
             state: TheWidgetState::None,
 
@@ -40,6 +42,14 @@ impl TheWidget for TheDropdownMenu {
 
     fn id(&self) -> &TheId {
         &self.id
+    }
+
+    fn status_text(&self) -> Option<String> {
+        self.status.clone()
+    }
+
+    fn set_status_text(&mut self, text: &str) {
+        self.status = Some(text.to_string());
     }
 
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
@@ -78,9 +88,8 @@ impl TheWidget for TheDropdownMenu {
                     ctx.ui.clear_overlay();
 
                     if self.selected != self.original {
-                        let text = self.options[self.selected as usize].clone();
                         ctx.ui
-                            .send_widget_value_changed(self.id(), TheValue::Text(text));
+                            .send_widget_value_changed(self.id(), TheValue::Int(self.selected));
                     }
                 }
                 redraw = true;
@@ -298,6 +307,7 @@ impl TheWidget for TheDropdownMenu {
 
 pub trait TheDropdownMenuTrait {
     fn add_option(&mut self, option: String);
+    fn selected_text(&self) -> String;
     fn selected_index(&self) -> usize;
 }
 
@@ -307,5 +317,8 @@ impl TheDropdownMenuTrait for TheDropdownMenu {
     }
     fn selected_index(&self) -> usize {
         self.selected as usize
+    }
+    fn selected_text(&self) -> String {
+        self.options[self.selected as usize].clone()
     }
 }

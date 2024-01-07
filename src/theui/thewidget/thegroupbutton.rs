@@ -5,8 +5,9 @@ pub struct TheGroupButton {
     limiter: TheSizeLimiter,
     state: TheWidgetState,
 
-    texts: Vec<String>,
-    icons: Vec<Option<TheRGBABuffer>>,
+    text: Vec<String>,
+    status_text: Vec<Option<String>>,
+    icon: Vec<Option<String>>,
 
     hover_index: Option<usize>,
     selected_index: Option<usize>,
@@ -31,8 +32,10 @@ impl TheWidget for TheGroupButton {
             limiter,
             state: TheWidgetState::None,
 
-            texts: vec![],
-            icons: vec![],
+            text: vec![],
+            status_text: vec![],
+
+            icon: vec![],
 
             hover_index: None,
             selected_index: Some(0),
@@ -73,8 +76,16 @@ impl TheWidget for TheGroupButton {
                     redraw = true;
                 }
                 let index = coord.x as usize / (self.item_width + 1);
-                if Some(index) != self.hover_index && Some(index) != self.selected_index {
-                    self.hover_index = Some(index);
+                if let Some(text) = self.status_text[index].clone() {
+                    ctx.ui
+                        .send(TheEvent::SetStatusText(self.id.clone(), text.clone()));
+                }
+                if Some(index) != self.hover_index {
+                    if Some(index) != self.selected_index {
+                        self.hover_index = Some(index);
+                    } else {
+                        self.hover_index = None;
+                    }
                     redraw = true;
                     self.is_dirty = true;
                 }
@@ -90,9 +101,9 @@ impl TheWidget for TheGroupButton {
     }
 
     fn calculate_size(&mut self, _ctx: &mut TheContext) {
-        let mut width = self.texts.len() * self.item_width;
-        if !self.texts.is_empty() {
-            width += self.texts.len() - 1;
+        let mut width = self.text.len() * self.item_width;
+        if !self.text.is_empty() {
+            width += self.text.len() - 1;
         }
         self.limiter.set_max_width(width as i32);
     }
@@ -165,11 +176,11 @@ impl TheWidget for TheGroupButton {
 
         //style.draw_widget_border(buffer, self, &mut shrinker, ctx);
 
-        let total = self.texts.len() as i32;
+        let total = self.text.len() as i32;
 
         let mut x = 0;
 
-        for (index, text) in self.texts.iter().enumerate() {
+        for (index, text) in self.text.iter().enumerate() {
             let border;
             let bg;
 
@@ -248,16 +259,38 @@ impl TheWidget for TheGroupButton {
                 );
             }
 
+            let mut has_icon = false;
+            let mut offset = 0;
+
+            if let Some(icon_name) = self.icon[index].clone() {
+                if let Some(icon) = ctx.ui.icon(&icon_name) {
+                    let r = (
+                        ut.0 + x + 5,
+                        ((ut.1 + (20 - icon.dim().height as usize) / 2) as i32) as usize,
+                        icon.dim().width as usize,
+                        icon.dim().height as usize,
+                    );
+                    ctx.draw
+                        .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
+                    has_icon = true;
+                    offset = icon.dim().width as usize + 5 + 2;
+                }
+            }
+
             if let Some(font) = &ctx.ui.font {
                 ctx.draw.text_rect_blend(
                     buffer.pixels_mut(),
-                    &(ut.0 + x + 1, ut.1 + 1, self.item_width - 2, 18),
+                    &(ut.0 + x + offset + 1, ut.1 + 1, self.item_width - 2, 18),
                     stride,
                     font,
                     12.5,
                     text,
                     &WHITE,
-                    TheHorizontalAlign::Center,
+                    if has_icon {
+                        TheHorizontalAlign::Left
+                    } else {
+                        TheHorizontalAlign::Center
+                    },
                     TheVerticalAlign::Center,
                 );
             }
@@ -282,13 +315,26 @@ impl TheWidget for TheGroupButton {
 
 pub trait TheGroupButtonTrait {
     fn add_text(&mut self, text: String);
+    fn add_text_status(&mut self, text: String, status: String);
+    fn add_text_status_icon(&mut self, text: String, status: String, icon: String);
     fn set_item_width(&mut self, width: usize);
 }
 
 impl TheGroupButtonTrait for TheGroupButton {
     fn add_text(&mut self, text: String) {
-        self.texts.push(text);
-        self.icons.push(None);
+        self.text.push(text);
+        self.status_text.push(None);
+        self.icon.push(None);
+    }
+    fn add_text_status(&mut self, text: String, status: String) {
+        self.text.push(text);
+        self.status_text.push(Some(status));
+        self.icon.push(None);
+    }
+    fn add_text_status_icon(&mut self, text: String, status: String, icon: String) {
+        self.text.push(text);
+        self.status_text.push(Some(status));
+        self.icon.push(Some(icon));
     }
     fn set_item_width(&mut self, width: usize) {
         self.item_width = width;

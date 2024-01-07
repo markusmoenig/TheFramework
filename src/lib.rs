@@ -62,6 +62,6 @@ pub mod prelude {
     #[cfg(feature = "ui")]
     pub use crate::theui::prelude::*;
 
-    #[cfg(feature = "code")]
-    pub use crate::thecode::prelude::*;
+    //#[cfg(feature = "code")]
+    //pub use crate::thecode::prelude::*;
 }

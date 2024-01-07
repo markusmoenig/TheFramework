@@ -14,6 +14,8 @@ pub struct TheIconView {
 
     border_color: Option<RGBA>,
 
+    alpha_mode: bool,
+
     dim: TheDim,
 }
 
@@ -39,6 +41,7 @@ impl TheWidget for TheIconView {
 
             border_color: None,
 
+            alpha_mode: true,
             dim: TheDim::zero(),
         }
     }
@@ -104,21 +107,40 @@ impl TheWidget for TheIconView {
         let utuple = self.dim.to_buffer_utuple();
 
         if !self.tile.buffer.is_empty() {
-            ctx.draw.blend_scale_chunk(
-                buffer.pixels_mut(),
-                &(
-                    utuple.0,
-                    utuple.1,
-                    self.dim.width as usize,
-                    self.dim.height as usize,
-                ),
-                stride,
-                self.tile.buffer[self.index].pixels(),
-                &(
-                    self.tile.buffer[0].dim().width as usize,
-                    self.tile.buffer[0].dim().height as usize,
-                ),
-            );
+            if self.alpha_mode {
+                ctx.draw.blend_scale_chunk(
+                    buffer.pixels_mut(),
+                    &(
+                        utuple.0,
+                        utuple.1,
+                        self.dim.width as usize,
+                        self.dim.height as usize,
+                    ),
+                    stride,
+                    self.tile.buffer[self.index].pixels(),
+                    &(
+                        self.tile.buffer[0].dim().width as usize,
+                        self.tile.buffer[0].dim().height as usize,
+                    ),
+                );
+            } else {
+                ctx.draw.scale_chunk(
+                    buffer.pixels_mut(),
+                    &(
+                        utuple.0,
+                        utuple.1,
+                        self.dim.width as usize,
+                        self.dim.height as usize,
+                    ),
+                    stride,
+                    self.tile.buffer[self.index].pixels(),
+                    &(
+                        self.tile.buffer[0].dim().width as usize,
+                        self.tile.buffer[0].dim().height as usize,
+                    ),
+                    1.0
+                );
+            }
         }
 
         if let Some(text) = &self.text {
@@ -163,6 +185,8 @@ pub trait TheIconViewTrait {
     fn set_text(&mut self, text: Option<String>);
     /// Set the text size.
     fn set_text_size(&mut self, text_size: f32);
+    /// Set the alpha blending.
+    fn set_alpha_mode(&mut self, alpha_mode: bool);
 }
 
 impl TheIconViewTrait for TheIconView {
@@ -195,5 +219,8 @@ impl TheIconViewTrait for TheIconView {
     fn set_text_size(&mut self, text_size: f32) {
         self.text_size = text_size;
         self.is_dirty = true;
+    }
+    fn set_alpha_mode(&mut self, alpha_mode: bool) {
+        self.alpha_mode = alpha_mode;
     }
 }

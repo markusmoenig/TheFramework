@@ -102,9 +102,10 @@ impl TheWidget for TheRGBAView {
                         self.id().clone(),
                         self.layout_id.clone(),
                     ));
-                    ctx.ui.set_focus(self.id());
                     redraw = true;
                 }
+
+                ctx.ui.set_focus(self.id());
 
                 if self.mode != TheRGBAViewMode::Display {
                     if let Some(loc) = self.get_grid_location(*coord) {
@@ -273,8 +274,20 @@ impl TheWidget for TheRGBAView {
                 ctx.ui.send(TheEvent::ScrollBy(self.vscrollbar.clone(), d));
             }
             TheEvent::KeyCodeDown(TheValue::KeyCode(TheKeyCode::Delete)) => {
-                if !self.selected.is_empty() && (self.mode == TheRGBAViewMode::TileEditor || self.mode == TheRGBAViewMode::TilePicker) {
-                    ctx.ui.send(TheEvent::TileEditorDelete(self.id.clone(), self.selected.clone()));
+                if !self.selected.is_empty() && self.mode == TheRGBAViewMode::TilePicker {
+                    ctx.ui.send(TheEvent::TileEditorDelete(
+                        self.id.clone(),
+                        self.selected.clone(),
+                    ));
+                }
+                if self.hover.is_some() && self.mode == TheRGBAViewMode::TileEditor {
+                    let mut selected = self.selected.clone();
+                    selected.clear();
+                    selected.insert(self.hover.unwrap());
+                    ctx.ui.send(TheEvent::TileEditorDelete(
+                        self.id.clone(),
+                        selected.clone(),
+                    ));
                 }
             }
             _ => {}

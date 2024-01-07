@@ -335,6 +335,11 @@ impl TheCodeAtom {
                             } else {
                                 println!("Runtime error: Object Set. Stack is empty.",);
                             }
+                        } else {
+                            println!(
+                                "Runtime error: Object Set. Unknown object {}.",
+                                data.values[0].to_string().unwrap()
+                            );
                         }
 
                         if let Some(debug_value) = debug_value {

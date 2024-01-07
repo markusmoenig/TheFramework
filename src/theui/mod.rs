@@ -94,7 +94,6 @@ pub mod prelude {
     pub use crate::theui::thesdf::thepattern::ThePattern;
     pub use crate::theui::thesdf::thesdfcanvas::TheSDFCanvas;
     pub use crate::theui::thesdf::*;
-    pub use crate::theui::thewidget::prelude::*;
     pub use crate::theui::thewidget::TheWidget;
 
     pub use crate::theui::thecontextmenu::*;

@@ -69,15 +69,10 @@ impl TheLayout for TheTabLayout {
         name: Option<&String>,
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheLayout>> {
-        let mut index = 0;
-        if let Some(tabbar) = self.tabbar.as_tabbar() {
-            if let Some(i) = tabbar.selection_index() {
-                index = i as usize;
+        for canvas in &mut self.canvas {
+            if let Some(layout) = canvas.get_layout(name, uuid) {
+                return Some(layout);
             }
-        }
-
-        if index < self.canvas.len() {
-            return self.canvas[index].get_layout(name, uuid);
         }
 
         None
@@ -96,15 +91,10 @@ impl TheLayout for TheTabLayout {
             return None;
         }
 
-        let mut index = 0;
-        if let Some(tabbar) = self.tabbar.as_tabbar() {
-            if let Some(i) = tabbar.selection_index() {
-                index = i as usize;
+        for canvas in &mut self.canvas {
+            if let Some(widget) = canvas.get_widget(name, uuid) {
+                return Some(widget);
             }
-        }
-
-        if index < self.canvas.len() {
-            return self.canvas[index].get_widget(name, uuid);
         }
 
         None
