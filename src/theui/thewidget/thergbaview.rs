@@ -39,6 +39,8 @@ pub struct TheRGBAView {
     dim: TheDim,
     is_dirty: bool,
 
+    accumulated_wheel_delta: Vec2f,
+
     layout_id: TheId,
 }
 
@@ -79,6 +81,8 @@ impl TheWidget for TheRGBAView {
 
             dim: TheDim::zero(),
             is_dirty: true,
+
+            accumulated_wheel_delta: Vec2f::zero(),
 
             layout_id: TheId::empty(),
         }
@@ -214,11 +218,11 @@ impl TheWidget for TheRGBAView {
                         };
 
                         let source_x = ((coord.x as f32 - centered_offset_x) / self.zoom
-                            + self.scroll_offset.x as f32)
-                            .round() as i32;
+                            + self.scroll_offset.x as f32 / self.zoom)
+                            .floor() as i32;
                         let source_y = ((coord.y as f32 - centered_offset_y) / self.zoom
-                            + self.scroll_offset.y as f32)
-                            .round() as i32;
+                            + self.scroll_offset.y as f32 / self.zoom)
+                            .floor() as i32;
 
                         if source_x >= 0
                             && source_x < self.buffer.dim().width
@@ -266,12 +270,29 @@ impl TheWidget for TheRGBAView {
                 redraw = true;
             }
             TheEvent::MouseWheel(delta) => {
-                let d = vec2i(
-                    (delta.x as f32 * self.wheel_scale / self.zoom) as i32,
-                    (delta.y as f32 * self.wheel_scale / self.zoom) as i32,
-                );
-                ctx.ui.send(TheEvent::ScrollBy(self.hscrollbar.clone(), d));
-                ctx.ui.send(TheEvent::ScrollBy(self.vscrollbar.clone(), d));
+                let scale_factor =  self.wheel_scale  * 1.0 / (self.zoom.powf(0.5));
+
+                let aspect_ratio = self.buffer.dim().width as f32 / self.buffer.dim().height as f32;
+
+                let scale_x = if aspect_ratio > 1.0 { 1.0 / aspect_ratio } else { 1.0 };
+                let scale_y = if aspect_ratio < 1.0 { aspect_ratio } else { 1.0 };
+
+                // Update accumulated deltas
+                self.accumulated_wheel_delta.x += delta.x as f32 * scale_factor * scale_x;
+                self.accumulated_wheel_delta.y += delta.y as f32 * scale_factor * scale_y;
+
+                let minimum_delta_threshold = 2.0;
+
+                // Check if accumulated deltas exceed the threshold
+                if self.accumulated_wheel_delta.x.abs() > minimum_delta_threshold || self.accumulated_wheel_delta.y.abs() > minimum_delta_threshold {
+                    // Convert accumulated deltas to integer and reset
+                    let d = vec2i(self.accumulated_wheel_delta.x as i32, self.accumulated_wheel_delta.y as i32);
+                    self.accumulated_wheel_delta = Vec2f::zero();
+
+                    // Send scroll events
+                    ctx.ui.send(TheEvent::ScrollBy(self.hscrollbar.clone(), d));
+                    ctx.ui.send(TheEvent::ScrollBy(self.vscrollbar.clone(), d));
+                }
             }
             TheEvent::KeyCodeDown(TheValue::KeyCode(TheKeyCode::Delete)) => {
                 if !self.selected.is_empty() && self.mode == TheRGBAViewMode::TilePicker {
@@ -529,6 +550,7 @@ pub trait TheRGBAViewTrait: TheWidget {
     fn zoom(&self) -> f32;
     fn set_zoom(&mut self, zoom: f32);
     fn set_scroll_offset(&mut self, offset: Vec2i);
+    fn grid(&self) -> Option<i32>;
     fn set_grid(&mut self, grid: Option<i32>);
     fn set_grid_color(&mut self, color: RGBA);
     fn set_selection_color(&mut self, color: RGBA);
@@ -564,10 +586,10 @@ impl TheRGBAViewTrait for TheRGBAView {
                 };
 
             let source_x = ((coord.x as f32 - centered_offset_x) / self.zoom
-                + self.scroll_offset.x as f32)
+                + self.scroll_offset.x as f32 / self.zoom)
                 .round() as i32;
             let source_y = ((coord.y as f32 - centered_offset_y) / self.zoom
-                + self.scroll_offset.y as f32)
+                + self.scroll_offset.y as f32 / self.zoom)
                 .round() as i32;
 
             if source_x >= 0
@@ -610,12 +632,16 @@ impl TheRGBAViewTrait for TheRGBAView {
     }
     fn set_zoom(&mut self, zoom: f32) {
         self.zoom = zoom;
+        self.is_dirty = true;
     }
     fn set_scroll_offset(&mut self, offset: Vec2i) {
         self.scroll_offset = offset;
     }
     fn set_associated_layout(&mut self, layout_id: TheId) {
         self.layout_id = layout_id;
+    }
+    fn grid(&self) -> Option<i32> {
+        self.grid
     }
     fn set_grid(&mut self, grid: Option<i32>) {
         self.grid = grid;

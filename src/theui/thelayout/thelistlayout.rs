@@ -270,6 +270,8 @@ pub trait TheListLayoutTrait: TheLayout {
     fn select_first_item(&mut self, ctx: &mut TheContext);
     /// Selects the item of the given uuid.
     fn select_item(&mut self, uuid: Uuid, ctx: &mut TheContext) -> bool;
+    /// Scroll by the given amount.
+    fn scroll_by(&mut self, delta: Vec2i);
 }
 
 impl TheListLayoutTrait for TheListLayout {
@@ -337,5 +339,10 @@ impl TheListLayoutTrait for TheListLayout {
     fn set_item_size(&mut self, item_size: i32) {
         self.item_size = item_size;
         self.is_dirty = true;
+    }
+    fn scroll_by(&mut self, delta: Vec2i) {
+        if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+            scroll_bar.scroll_by(((delta.y as f32) * -1.0) as i32);
+        }
     }
 }

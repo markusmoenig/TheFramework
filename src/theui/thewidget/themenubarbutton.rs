@@ -196,6 +196,10 @@ impl TheWidget for TheMenubarButton {
         self.is_dirty = false;
     }
 
+    fn as_menubar_button(&mut self) -> Option<&mut dyn TheMenubarButtonTrait> {
+        Some(self)
+    }
+
     fn as_any(&mut self) -> &mut dyn std::any::Any {
         self
     }
@@ -209,6 +213,7 @@ pub trait TheMenubarButtonTrait {
 impl TheMenubarButtonTrait for TheMenubarButton {
     fn set_icon_name(&mut self, text: String) {
         self.icon_name = text;
+        self.is_dirty = true;
     }
     fn set_icon_offset(&mut self, offset: Vec2i) {
         self.icon_offset = offset;

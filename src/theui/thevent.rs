@@ -66,6 +66,7 @@ pub enum TheEvent {
     // These events define layout states.
     SetStackIndex(TheId, usize),
     NewListItemSelected(TheId, TheId),
+    ScrollLayout(TheId, Vec2i),
 
     // Utility
     FileRequesterResult(TheId, Vec<std::path::PathBuf>),

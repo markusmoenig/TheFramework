@@ -254,6 +254,11 @@ pub trait TheWidget: Send {
         None
     }
 
+    /// Attempts to cast to TheMenubarButtonTrait. Only valid for TheMenubarButton.
+    fn as_menubar_button(&mut self) -> Option<&mut dyn TheMenubarButtonTrait> {
+        None
+    }
+
     /// Attempts to cast to TheCodeViewTrait. Only valid for TheCodeView.
     #[cfg(feature = "code")]
     fn as_code_view(&mut self) -> Option<&mut dyn TheCodeViewTrait> {

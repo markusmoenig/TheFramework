@@ -240,7 +240,7 @@ impl TheLayout for TheRGBALayout {
             return;
         }
 
-        let mut scroll_offset = vec2i(0, 0);
+        let mut scroll_offset: Vec2<i32> = vec2i(0, 0);
 
         if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
             scroll_offset.y = scroll_bar.scroll_offset();
@@ -322,6 +322,12 @@ pub trait TheRGBALayoutTrait: TheLayout {
     fn set_scroll_offset(&mut self, offset: Vec2i);
     /// Returns a mutable reference to the underlying TheRGBAView.
     fn rgba_view_mut(&mut self) -> &mut Box<dyn TheWidget>;
+    /// Adjust to a new zoom level.
+    fn set_zoom(&mut self, zoom: f32);
+    /// Scroll to a specific coordinate in pixel coordinates.
+    fn scroll_to(&mut self, coord: Vec2i);
+    /// Scroll to a specific coordinate in grid coordinates.
+    fn scroll_to_grid(&mut self, coord: Vec2i);
 }
 
 impl TheRGBALayoutTrait for TheRGBALayout {
@@ -350,5 +356,44 @@ impl TheRGBALayoutTrait for TheRGBALayout {
     }
     fn rgba_view_mut(&mut self) -> &mut Box<dyn TheWidget> {
         &mut self.rgba_view
+    }
+    fn set_zoom(&mut self, zoom: f32) {
+        if let Some(rgba) = self.rgba_view.as_rgba_view() {
+            let old_zoom = rgba.zoom();
+
+            if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+                scroll_bar.adjust_to_new_zoom_level(zoom, old_zoom);
+            }
+
+            if let Some(scroll_bar) = self.horizontal_scrollbar.as_horizontal_scrollbar() {
+                scroll_bar.adjust_to_new_zoom_level(zoom, old_zoom);
+            }
+
+            rgba.set_zoom(zoom)
+        }
+    }
+
+    fn scroll_to(&mut self, coord: Vec2i) {
+        if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+            scroll_bar.scroll_to(coord.y);
+        }
+
+        if let Some(scroll_bar) = self.horizontal_scrollbar.as_horizontal_scrollbar() {
+            scroll_bar.scroll_to(coord.x);
+        }
+    }
+
+    fn scroll_to_grid(&mut self, coord: Vec2i) {
+        if let Some(rgba) = self.rgba_view.as_rgba_view() {
+            if let Some(grid) = rgba.grid() {
+                if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+                    scroll_bar.scroll_to(coord.y * grid);
+                }
+
+                if let Some(scroll_bar) = self.horizontal_scrollbar.as_horizontal_scrollbar() {
+                    scroll_bar.scroll_to(coord.x * grid);
+                }
+            }
+        }
     }
 }

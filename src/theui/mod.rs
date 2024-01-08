@@ -218,6 +218,14 @@ impl TheUI {
                             }
                         }
                     }
+                    TheEvent::ScrollLayout(layout_id, delta) => {
+                        if let Some(layout) = self.canvas.get_layout(None, Some(&layout_id.uuid)) {
+                            if let Some(list) = layout.as_list_layout() {
+                                list.scroll_by(delta);
+                                self.is_dirty = true;
+                            }
+                        }
+                    }
                     TheEvent::SetStackIndex(id, index) => {
                         if let Some(layout) = self.canvas.get_layout(None, Some(&id.uuid)) {
                             if let Some(stack) = layout.as_stack_layout() {

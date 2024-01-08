@@ -96,6 +96,12 @@ impl TheWidget for TheListItem {
                     redraw = true;
                 }
             }
+            TheEvent::MouseWheel(delta) => {
+                ctx.ui
+                    .send(TheEvent::ScrollLayout(self.layout_id.clone(), *delta));
+                ctx.ui
+                    .send(TheEvent::ScrollLayout(self.layout_id.clone(), *delta));
+            }
             _ => {}
         }
         redraw

@@ -333,6 +333,40 @@ pub trait TheHorizontalScrollbarTrait {
             .min(self.total_width() - self.viewport_width());
         self.set_scroll_offset(clamped_offset);
     }
+
+    /// Adjust the scroll offset and total width based on a new zoom level.
+    fn adjust_to_new_zoom_level(&mut self, new_zoom_level: f32, last_zoom_level: f32) {
+        // Calculate the middle point of the currently visible content.
+        let middle_point = (self.scroll_offset() + self.viewport_width() / 2) as f32 / last_zoom_level;
+
+        // Calculate the new total width based on the new zoom level.
+        let base_total_width = self.total_width() as f32 / last_zoom_level;
+        let new_total_width = (base_total_width * new_zoom_level).round() as i32;
+
+        // Calculate the new scroll offset so that the middle point remains visible.
+        let new_scroll_offset = (middle_point * new_zoom_level - self.viewport_width() as f32 / 2.0).round() as i32;
+
+        // Clamp the new scroll offset to ensure it is within bounds.
+        let clamped_new_scroll_offset = new_scroll_offset.min(new_total_width - self.viewport_width()).max(0);
+
+        // Set the new total width and scroll offset.
+        self.set_total_width(new_total_width);
+        self.set_scroll_offset(clamped_new_scroll_offset);
+    }
+
+    /// Scrolls to center the specified offset within the total width.
+    fn scroll_to(&mut self, offset: i32) {
+        let viewport_half_width = self.viewport_width() / 2;
+        let new_scroll_offset = offset - viewport_half_width;
+
+        // Clamp the new scroll offset to ensure it doesn't go out of bounds.
+        let clamped_scroll_offset = new_scroll_offset
+            .max(0)
+            .min(self.total_width() - self.viewport_width());
+
+        // Set the new scroll offset.
+        self.set_scroll_offset(clamped_scroll_offset);
+    }
 }
 
 impl TheHorizontalScrollbarTrait for TheHorizontalScrollbar {

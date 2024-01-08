@@ -198,30 +198,42 @@ impl TheWidget for TheVerticalScrollbar {
             scroll_bar_height = self.dim.height;
         }
 
+        let safe_utuple = self.dim.to_buffer_utuple();
+
         if scroll_bar_height >= 5 {
             if let Some(icon) = ctx.ui.icon(&(icon_name.clone() + "top")) {
                 let r = (
-                    utuple.0,
-                    utuple.1 + offset,
+                    utuple.0 as isize,
+                    (utuple.1 + offset) as isize,
                     icon.dim().width as usize,
                     icon.dim().height as usize,
                 );
-                ctx.draw
-                    .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
+                ctx.draw.blend_slice_safe(
+                    buffer.pixels_mut(),
+                    icon.pixels(),
+                    &r,
+                    stride,
+                    &safe_utuple,
+                );
             }
         }
 
         if scroll_bar_height > 10 {
             if let Some(icon) = ctx.ui.icon(&(icon_name.clone() + "middle")) {
                 let mut r = (
-                    utuple.0,
-                    utuple.1 + offset + 5,
+                    utuple.0 as isize,
+                    (utuple.1 + offset + 5) as isize,
                     icon.dim().width as usize,
                     icon.dim().height as usize,
                 );
                 for _ in 0..scroll_bar_height - 10 {
-                    ctx.draw
-                        .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
+                    ctx.draw.blend_slice_safe(
+                        buffer.pixels_mut(),
+                        icon.pixels(),
+                        &r,
+                        stride,
+                        &safe_utuple,
+                    );
                     r.1 += 1;
                 }
             }
@@ -230,13 +242,13 @@ impl TheWidget for TheVerticalScrollbar {
         if scroll_bar_height >= 10 {
             if let Some(icon) = ctx.ui.icon(&(icon_name + "bottom")) {
                 let r = (
-                    utuple.0,
-                    utuple.1 + offset + scroll_bar_height as usize - 5,
+                    utuple.0 as isize,
+                    (utuple.1 + offset + scroll_bar_height as usize - 5) as isize,
                     icon.dim().width as usize,
                     icon.dim().height as usize,
                 );
                 ctx.draw
-                    .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
+                    .blend_slice_safe(buffer.pixels_mut(), icon.pixels(), &r, stride, &safe_utuple);
             }
         }
 
@@ -332,6 +344,40 @@ pub trait TheVerticalScrollbarTrait {
             .max(0)
             .min(self.total_height() - self.viewport_height());
         self.set_scroll_offset(clamped_offset);
+    }
+
+    /// Adjust the scroll offset and total height based on a new zoom level.
+    fn adjust_to_new_zoom_level(&mut self, new_zoom_level: f32, last_zoom_level: f32) {
+        // Calculate the middle point of the currently visible content.
+        let middle_point = (self.scroll_offset() + self.viewport_height() / 2) as f32 / last_zoom_level;
+
+        // Calculate the new total height based on the new zoom level.
+        let base_total_height = self.total_height() as f32 / last_zoom_level;
+        let new_total_height = (base_total_height * new_zoom_level).round() as i32;
+
+        // Calculate the new scroll offset so that the middle point remains visible.
+        let new_scroll_offset = (middle_point * new_zoom_level - self.viewport_height() as f32 / 2.0).round() as i32;
+
+        // Clamp the new scroll offset to ensure it is within bounds.
+        let clamped_new_scroll_offset = new_scroll_offset.min(new_total_height - self.viewport_height()).max(0);
+
+        // Set the new total height and scroll offset.
+        self.set_total_height(new_total_height);
+        self.set_scroll_offset(clamped_new_scroll_offset);
+    }
+
+    /// Scrolls to center the specified offset within the total height.
+    fn scroll_to(&mut self, offset: i32) {
+        let viewport_half_height = self.viewport_height() / 2;
+        let new_scroll_offset = offset - viewport_half_height;
+
+        // Clamp the new scroll offset to ensure it doesn't go out of bounds.
+        let clamped_scroll_offset = new_scroll_offset
+            .max(0)
+            .min(self.total_height() - self.viewport_height());
+
+        // Set the new scroll offset.
+        self.set_scroll_offset(clamped_scroll_offset);
     }
 }
 
