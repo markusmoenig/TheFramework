@@ -590,7 +590,7 @@ impl TheWidget for TheCodeView {
                                     );
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
-                                        &rect,
+                                        &(rect.0 + 4, rect.1, rect.2 - 8, rect.3),
                                         stride,
                                         font,
                                         font_size,
@@ -600,10 +600,23 @@ impl TheWidget for TheCodeView {
                                         TheVerticalAlign::Center,
                                     );
                                 }
+                                TheCodeAtom::ExternalCall(_,_) => {
+                                    ctx.draw.text_rect_blend(
+                                        self.buffer.pixels_mut(),
+                                        &(rect.0 + 2, rect.1, rect.2 - 4, rect.3),
+                                        stride,
+                                        font,
+                                        font_size,
+                                        &atom.describe(),
+                                        &text_color,
+                                        TheHorizontalAlign::Center,
+                                        TheVerticalAlign::Center,
+                                    );
+                                }
                                 _ => {
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
-                                        &rect,
+                                        &(rect.0 + 4, rect.1, rect.2 - 8, rect.3),
                                         stride,
                                         font,
                                         font_size,

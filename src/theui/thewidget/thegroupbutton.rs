@@ -314,10 +314,16 @@ impl TheWidget for TheGroupButton {
 }
 
 pub trait TheGroupButtonTrait {
+    /// Add a new text based item.
     fn add_text(&mut self, text: String);
+    /// Add a new text based item with an associated status text.
     fn add_text_status(&mut self, text: String, status: String);
+    /// Add a new text based item with an associated status text and an icon.
     fn add_text_status_icon(&mut self, text: String, status: String, icon: String);
+    /// Set the width of each itme.
     fn set_item_width(&mut self, width: usize);
+    /// Set the selected index.
+    fn set_selected_index(&mut self, index: i32);
 }
 
 impl TheGroupButtonTrait for TheGroupButton {
@@ -338,5 +344,9 @@ impl TheGroupButtonTrait for TheGroupButton {
     }
     fn set_item_width(&mut self, width: usize) {
         self.item_width = width;
+    }
+    fn set_selected_index(&mut self, index: i32) {
+        self.selected_index = Some(index as usize);
+        self.is_dirty = true;
     }
 }

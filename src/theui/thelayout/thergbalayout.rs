@@ -374,24 +374,30 @@ impl TheRGBALayoutTrait for TheRGBALayout {
     }
 
     fn scroll_to(&mut self, coord: Vec2i) {
-        if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
-            scroll_bar.scroll_to(coord.y);
-        }
+        if let Some(rgba) = self.rgba_view.as_rgba_view() {
+            let zoom = rgba.zoom();
 
-        if let Some(scroll_bar) = self.horizontal_scrollbar.as_horizontal_scrollbar() {
-            scroll_bar.scroll_to(coord.x);
+            if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+                scroll_bar.scroll_to(((coord.y as f32) * zoom) as i32);
+            }
+
+            if let Some(scroll_bar) = self.horizontal_scrollbar.as_horizontal_scrollbar() {
+                scroll_bar.scroll_to(((coord.x as f32) * zoom) as i32);
+            }
         }
     }
 
     fn scroll_to_grid(&mut self, coord: Vec2i) {
         if let Some(rgba) = self.rgba_view.as_rgba_view() {
+            let zoom = rgba.zoom();
+
             if let Some(grid) = rgba.grid() {
                 if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
-                    scroll_bar.scroll_to(coord.y * grid);
+                    scroll_bar.scroll_to(((coord.y * grid) as f32 * zoom) as i32);
                 }
 
                 if let Some(scroll_bar) = self.horizontal_scrollbar.as_horizontal_scrollbar() {
-                    scroll_bar.scroll_to(coord.x * grid);
+                    scroll_bar.scroll_to(((coord.x * grid) as f32 * zoom) as i32);
                 }
             }
         }

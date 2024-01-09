@@ -172,6 +172,7 @@ impl TheWidget for TheRGBAView {
                                     self.id.clone(),
                                     vec2i(loc.0, loc.1),
                                 ));
+                                self.hover = Some((loc.0, loc.1));
                             }
                         }
                     }

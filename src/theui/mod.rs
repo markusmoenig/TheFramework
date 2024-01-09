@@ -556,6 +556,14 @@ impl TheUI {
         None
     }
 
+    /// Gets a given group button by name
+    pub fn get_group_button(&mut self, name: &str) -> Option<&mut dyn TheGroupButtonTrait> {
+        if let Some(text) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            return text.as_group_button();
+        }
+        None
+    }
+
     /// Gets a given statusbar by name
     pub fn get_statusbar(&mut self, name: &str) -> Option<&mut dyn TheStatusbarTrait> {
         if let Some(text) = self.canvas.get_widget(Some(&name.to_string()), None) {
