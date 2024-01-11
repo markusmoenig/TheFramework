@@ -31,10 +31,6 @@ The **code** option adds a unique and powerful visual scripting system to TheFra
 * Easy-to-use via drag and drop.
 * Very fast as it compiles to native closures.
 
-### Option: renderer
-
-A fast state-based 2D renderer supporting varuous shapes and text. The development of the *renderer* option is currently on hold to focus on the *ui* first.
-
 ### Current Backends
 
 * *Desktops* via [pixels](https://github.com/parasyte/pixels) and [winit](https://github.com/rust-windowing/winit). This is the default backend.

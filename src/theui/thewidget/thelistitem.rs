@@ -19,6 +19,8 @@ pub struct TheListItem {
 
     layout_id: TheId,
     scroll_offset: i32,
+
+    values: Vec<(i32, TheValue)>,
 }
 
 impl TheWidget for TheListItem {
@@ -48,6 +50,8 @@ impl TheWidget for TheListItem {
 
             layout_id: TheId::empty(),
             scroll_offset: 0,
+
+            values: Vec::new(),
         }
     }
 
@@ -203,7 +207,6 @@ impl TheWidget for TheListItem {
 
         let stride = buffer.stride();
         let mut shrinker = TheDimShrinker::zero();
-        //shrinker.shrink_by(0, 0, 0, 0);
 
         ctx.draw.rect_outline_border(
             buffer.pixels_mut(),
@@ -275,12 +278,19 @@ impl TheWidget for TheListItem {
                 }
             }
         } else {
+            let mut right_width = 5;
+            for v in self.values.iter() {
+                right_width += v.0;
+            }
+
             shrinker.shrink_by(9, 0, 0, 0);
+            let mut rect: (usize, usize, usize, usize) =
+                self.dim.to_buffer_shrunk_utuple(&shrinker);
 
             if let Some(font) = &ctx.ui.font {
                 ctx.draw.text_rect_blend(
                     buffer.pixels_mut(),
-                    &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                    &(rect.0, rect.1, rect.2 - right_width as usize, rect.3),
                     stride,
                     font,
                     13.0,
@@ -289,6 +299,47 @@ impl TheWidget for TheListItem {
                     TheHorizontalAlign::Left,
                     TheVerticalAlign::Center,
                 );
+
+                rect.0 += rect.2 - right_width as usize;
+
+                for (width, value) in self.values.iter() {
+                    ctx.draw.rect(
+                        buffer.pixels_mut(),
+                        &(rect.0, rect.1 - 1, 1, rect.3 + 2),
+                        stride,
+                        style.theme().color(ListLayoutBackground),
+                    );
+
+                    #[allow(clippy::single_match)]
+                    match value {
+                        TheValue::Text(text) => {
+                            ctx.draw.text_rect_blend(
+                                buffer.pixels_mut(),
+                                &(rect.0 + 9, rect.1, *width as usize - 10, rect.3),
+                                stride,
+                                font,
+                                13.0,
+                                text,
+                                style.theme().color(ListItemText),
+                                TheHorizontalAlign::Left,
+                                TheVerticalAlign::Center,
+                            );
+                        }
+                        _ => {
+                                ctx.draw.text_rect_blend(
+                                    buffer.pixels_mut(),
+                                    &(rect.0 + 9, rect.1, *width as usize - 10, rect.3),
+                                    stride,
+                                    font,
+                                    13.0,
+                                    &value.describe(),
+                                    style.theme().color(ListItemText),
+                                    TheHorizontalAlign::Left,
+                                    TheVerticalAlign::Center,
+                                );
+                        }
+                    }
+                }
             }
         }
 
@@ -311,6 +362,7 @@ pub trait TheListItemTrait {
     fn set_size(&mut self, size: i32);
     fn set_icon(&mut self, icon: TheRGBABuffer);
     fn set_scroll_offset(&mut self, offset: i32);
+    fn add_value_column(&mut self, width: i32, value: TheValue);
 }
 
 impl TheListItemTrait for TheListItem {
@@ -334,5 +386,8 @@ impl TheListItemTrait for TheListItem {
     }
     fn set_scroll_offset(&mut self, offset: i32) {
         self.scroll_offset = offset;
+    }
+    fn add_value_column(&mut self, width: i32, value: TheValue) {
+        self.values.push((width, value));
     }
 }

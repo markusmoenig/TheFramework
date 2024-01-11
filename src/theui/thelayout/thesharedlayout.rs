@@ -25,6 +25,7 @@ pub struct TheSharedLayout {
     widgets: Vec<Box<dyn TheWidget>>,
 
     background: Option<TheThemeColors>,
+    ratio: f32,
 }
 
 impl TheLayout for TheSharedLayout {
@@ -46,6 +47,7 @@ impl TheLayout for TheSharedLayout {
             padding: 5,
 
             background: Some(DefaultWidgetBackground),
+            ratio: 0.5,
         }
     }
 
@@ -154,12 +156,20 @@ impl TheLayout for TheSharedLayout {
             } else if self.mode == TheSharedLayoutMode::Right {
                 self.canvas[1].set_dim(dim, ctx);
             } else {
-                self.canvas[0].set_dim(TheDim::new(dim.x, dim.y, dim.width / 2, dim.height), ctx);
+                self.canvas[0].set_dim(
+                    TheDim::new(
+                        dim.x,
+                        dim.y,
+                        (dim.width as f32 * self.ratio) as i32,
+                        dim.height,
+                    ),
+                    ctx,
+                );
                 self.canvas[1].set_dim(
                     TheDim::new(
-                        dim.x + dim.width / 2 + 1,
+                        dim.x + (dim.width as f32 * self.ratio) as i32 + 1,
                         dim.y,
-                        dim.width / 2 - 1,
+                        (dim.width - (dim.width as f32 * self.ratio) as i32) - 1,
                         dim.height,
                     ),
                     ctx,
@@ -223,7 +233,7 @@ impl TheLayout for TheSharedLayout {
 
             self.canvas[1].draw(style, ctx);
             buffer.copy_into(
-                self.dim.buffer_x + self.dim.width / 2 + 1,
+                self.dim.buffer_x + (self.dim.width as f32 * self.ratio) as i32 + 1,
                 self.dim.buffer_y,
                 self.canvas[1].buffer(),
             );
@@ -236,11 +246,13 @@ impl TheLayout for TheSharedLayout {
 }
 
 /// TheHLayout specific functions.
-pub trait TheSharedLayoutTrait {
+pub trait TheSharedLayoutTrait: TheLayout {
     /// Add a canvas.
     fn add_canvas(&mut self, canvas: TheCanvas);
     /// Set the layout mode.
     fn set_mode(&mut self, mode: TheSharedLayoutMode);
+    // Se the shared ratio. Default is 0.5.
+    fn set_shared_ratio(&mut self, ratio: f32);
 }
 
 impl TheSharedLayoutTrait for TheSharedLayout {
@@ -249,5 +261,8 @@ impl TheSharedLayoutTrait for TheSharedLayout {
     }
     fn set_mode(&mut self, mode: TheSharedLayoutMode) {
         self.mode = mode;
+    }
+    fn set_shared_ratio(&mut self, ratio: f32) {
+        self.ratio = ratio;
     }
 }

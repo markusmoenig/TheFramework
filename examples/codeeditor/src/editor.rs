@@ -182,10 +182,12 @@ impl TheTrait for CodeEditor {
 
                                         sandbox.insert_module(module.clone());
                                         module.execute(&mut sandbox);
+                                        code_view.set_compiled(true);
                                         code_view.set_debug_module(
                                             sandbox.get_module_debug_module(module.id),
                                         );
                                     } else {
+                                        code_view.set_compiled(false);
                                         code_view.set_debug_module(TheDebugModule::new());
                                     }
                                 }

@@ -247,8 +247,13 @@ impl TheWidget for TheVerticalScrollbar {
                     icon.dim().width as usize,
                     icon.dim().height as usize,
                 );
-                ctx.draw
-                    .blend_slice_safe(buffer.pixels_mut(), icon.pixels(), &r, stride, &safe_utuple);
+                ctx.draw.blend_slice_safe(
+                    buffer.pixels_mut(),
+                    icon.pixels(),
+                    &r,
+                    stride,
+                    &safe_utuple,
+                );
             }
         }
 
@@ -349,17 +354,21 @@ pub trait TheVerticalScrollbarTrait {
     /// Adjust the scroll offset and total height based on a new zoom level.
     fn adjust_to_new_zoom_level(&mut self, new_zoom_level: f32, last_zoom_level: f32) {
         // Calculate the middle point of the currently visible content.
-        let middle_point = (self.scroll_offset() + self.viewport_height() / 2) as f32 / last_zoom_level;
+        let middle_point =
+            (self.scroll_offset() + self.viewport_height() / 2) as f32 / last_zoom_level;
 
         // Calculate the new total height based on the new zoom level.
         let base_total_height = self.total_height() as f32 / last_zoom_level;
         let new_total_height = (base_total_height * new_zoom_level).round() as i32;
 
         // Calculate the new scroll offset so that the middle point remains visible.
-        let new_scroll_offset = (middle_point * new_zoom_level - self.viewport_height() as f32 / 2.0).round() as i32;
+        let new_scroll_offset =
+            (middle_point * new_zoom_level - self.viewport_height() as f32 / 2.0).round() as i32;
 
         // Clamp the new scroll offset to ensure it is within bounds.
-        let clamped_new_scroll_offset = new_scroll_offset.min(new_total_height - self.viewport_height()).max(0);
+        let clamped_new_scroll_offset = new_scroll_offset
+            .min(new_total_height - self.viewport_height())
+            .max(0);
 
         // Set the new total height and scroll offset.
         self.set_total_height(new_total_height);

@@ -77,6 +77,8 @@ impl TheCodeGrid {
     /// Returns the next TheCodeAtom in the grid.
     pub fn get_next(&mut self, peek: bool) -> TheCodeAtom {
         if let Some(max_pos) = self.max_xy() {
+            //println!("get_next current: {:?}, max_pos: {:?}",  self.current_pos, max_pos);
+
             if let Some((mut x, mut y)) = self.current_pos {
                 // Check if we're at or beyond the maximum position
                 if x == max_pos.0 && y == max_pos.1 {
@@ -110,11 +112,15 @@ impl TheCodeGrid {
                 //}
             } else {
                 // Start from the first position if current_pos is None
-                if let Some(atom) = self.code.get(&(0, 0)) {
-                    if !peek {
-                        self.current_pos = Some((0, 0));
+                let mut start_y = 0;
+                while start_y <= max_pos.1 {
+                    if let Some(atom) = self.code.get(&(0, start_y)) {
+                        if !peek {
+                            self.current_pos = Some((0, start_y));
+                        }
+                        return atom.clone();
                     }
-                    return atom.clone();
+                    start_y += 1;
                 }
             }
         }
@@ -180,7 +186,7 @@ impl TheCodeGrid {
         for ((x, y), atom) in self.code.drain() {
             if y > start_pos.1 || (y == start_pos.1 && x >= start_pos.0) {
                 // Shift all elements below and including the start position one line down
-                new_code.insert((x, y + 1), atom);
+                new_code.insert((x, y + 2), atom);
             } else {
                 // Keep elements above the start position unchanged
                 new_code.insert((x, y), atom);
@@ -196,22 +202,27 @@ impl TheCodeGrid {
 
         let mut new_code = FxHashMap::default();
         let is_start_of_line = x == 0;
-        let previous_line_empty = is_start_of_line && self.is_line_empty(y - 1);
+        let previous_line_empty =
+            is_start_of_line && self.is_line_empty(y - 2) && self.is_line_empty(y - 1);
 
-        if is_start_of_line && previous_line_empty && y > 0 {
+        if is_start_of_line && previous_line_empty && y > 1 {
             // If at the start of the line and the line above is empty, shift the entire line up
             for ((cx, cy), atom) in self.code.drain() {
                 if cy == y {
-                    new_code.insert((cx, cy - 1), atom);
+                    new_code.insert((cx, cy - 2), atom);
                 } else if cy != y {
                     new_code.insert((cx, cy), atom);
                 }
             }
             // Set the new cursor position to the beginning of the moved up line
             self.code = new_code;
-            return (0, y - 1);
+            return (0, y - 2);
         }
 
+        self.code.remove(&pos);
+        pos
+
+        /*
         for ((cx, cy), atom) in self.code.drain() {
             if cy < y || (cy == y && cx < x) {
                 new_code.insert((cx, cy), atom);
@@ -222,20 +233,18 @@ impl TheCodeGrid {
             } else {
                 new_code.insert((cx, cy), atom);
             }
-        }
-
-        self.code = new_code;
+        }*/
 
         // Determine the new position for other cases
-        if is_start_of_line {
-            if previous_line_empty {
-                (0, y - 1)
-            } else {
-                pos
-            }
-        } else {
-            (x, y)
-        }
+        // if is_start_of_line {
+        //     if previous_line_empty {
+        //         (0, y - 2)
+        //     } else {
+        //         pos
+        //     }
+        // } else {
+        //     (x, y)
+        // }
     }
 
     /// Moves the items on the line of the given position one position to the right.

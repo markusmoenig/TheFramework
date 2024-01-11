@@ -247,6 +247,14 @@ impl TheCodeEditor {
                             self.finish_undo(ui, ctx);
                         }
                     }
+                } else if id.name == "Atom Local Set" {
+                    if let Some(name) = value.to_string() {
+                        if !name.is_empty() {
+                            self.start_undo(ui);
+                            self.set_selected_atom(ui, TheCodeAtom::LocalSet(name));
+                            self.finish_undo(ui, ctx);
+                        }
+                    }
                 } else if id.name == "Atom Object Get Object" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
@@ -507,6 +515,7 @@ impl TheCodeEditor {
     pub fn create_atom(&self, name: &str) -> TheCodeAtom {
         match name {
             "Assignment" => TheCodeAtom::Assignment("=".to_string()),
+            "Comparison" => TheCodeAtom::Comparison("==".to_string()),
             "Function" => TheCodeAtom::FuncDef("name".to_string()),
             "Function Argument" => TheCodeAtom::FuncArg("name".to_string()),
             "Function Call" => TheCodeAtom::FuncCall("name".to_string()),
@@ -658,6 +667,8 @@ impl TheCodeEditor {
         ctx: &mut TheContext,
         width: i32,
     ) -> TheCanvas {
+
+        ctx.ui.relayout = true;
         self.bundle = bundle;
 
         let mut canvas: TheCanvas = TheCanvas::new();
@@ -739,6 +750,11 @@ impl TheCodeEditor {
         if index == 0 {
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Assignment".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("Comparison".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 

@@ -82,6 +82,8 @@ pub struct TheCompilerContext {
     pub current_location: (u16, u16),
     pub node_location: (u16, u16),
 
+    pub blocks: Vec<TheCodeNode>,
+
     pub current: TheCodeAtom,
     pub previous: TheCodeAtom,
 
@@ -103,6 +105,8 @@ impl TheCompilerContext {
         Self {
             stack: vec![],
             local: vec![TheCodeObject::default()],
+
+            blocks: vec![],
 
             previous_location: (0, 0),
             current_location: (0, 0),
@@ -189,7 +193,54 @@ impl TheCompiler {
         self.advance();
 
         while !self.matches(TheCodeAtomKind::Eof) && self.ctx.error.is_none() {
+            if self.ctx.current_location.1 % 2 == 1 {
+                self.advance();
+                continue;
+            }
+
+            let indent = self.ctx.blocks.len();
+            if indent > 0
+                && self.ctx.current_location.0 == 0
+                && self.ctx.current_location.1 > self.ctx.previous_location.1
+            {
+                // We are at the start of a new line, check if we have a block to close.
+                #[allow(clippy::collapsible_if)]
+                for has_code_index in 0..indent {
+                    if self
+                        .grid
+                        .code
+                        .contains_key(&(has_code_index as u16, self.ctx.current_location.1))
+                    {
+                        if has_code_index % 2 == 0 {
+                            if has_code_index / 2 == indent - 1 {
+                                // Closing the block.
+                                if let Some(function) = self.ctx.remove_function() {
+                                    if let Some(mut node) = self.ctx.blocks.pop() {
+                                        node.data.sub_functions.push(function);
+                                        self.ctx.get_current_function().add_node(node);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                //println!("previous {:?} current {:?}", self.ctx.previous_location, self.ctx.current_location);
+            }
+
             self.declaration();
+        }
+
+        let indent = self.ctx.blocks.len();
+        if indent == 1 {
+            if let Some(function) = self.ctx.remove_function() {
+                if let Some(mut node) = self.ctx.blocks.pop() {
+                    node.data.sub_functions.push(function);
+                    self.ctx.get_current_function().add_node(node);
+                }
+            } else {
+                // TODO ERROR MESSAGE: Too many open blocks at the end of the code.
+            }
         }
 
         if let Some(error) = &self.ctx.error {
@@ -214,6 +265,8 @@ impl TheCompiler {
     }
 
     fn declaration(&mut self) {
+        //println!("declaration {:?}", self.ctx.current);
+
         match self.ctx.current.clone() {
             TheCodeAtom::FuncDef(name) => {
                 self.advance();
@@ -307,6 +360,7 @@ impl TheCompiler {
 
                 self.expression();
                 self.ctx.node_location = location;
+                // Write the pulse function which will take the current function as a sub.
                 let node = pulse.to_node(&mut self.ctx);
                 self.ctx.get_current_function().add_node(node);
             }
@@ -345,6 +399,51 @@ impl TheCompiler {
                 let node = self.ctx.current.clone().to_node(&mut self.ctx);
                 self.ctx.get_current_function().add_node(node);
                 self.advance();
+            }
+            TheCodeAtom::Value(value) => {
+                self.advance();
+                let comparison; // = TheCodeAtom::Comparison("==".to_string());
+                let location: (u16, u16) = self.ctx.previous_location;
+
+                match &self.ctx.current.clone() {
+                    TheCodeAtom::Comparison(op) => {
+                        // Write the value to the stack if the next operation is a comparison
+                        let node = self.ctx.previous.clone().to_node(&mut self.ctx);
+                        self.ctx.get_current_function().add_node(node);
+
+                        comparison = TheCodeAtom::Comparison(op.clone());
+                        self.advance();
+                    }
+                    _ => {
+                        self.error_at(
+                            (
+                                self.ctx.previous_location.0 + 1,
+                                self.ctx.previous_location.1,
+                            ),
+                            "Expected comparison operator.",
+                        );
+                        return;
+                    }
+                }
+
+                // Load the condition value
+
+                let func = TheCodeFunction::default();
+                self.ctx.add_function(func);
+
+                self.expression();
+                self.ctx.node_location = location;
+                // Write the comparison function which will take the current function as a sub.
+                let mut node = comparison.to_node(&mut self.ctx);
+                node.data.values[0] = value;
+
+                println!("condition start");
+
+                let func = TheCodeFunction::default();
+                self.ctx.add_function(func);
+
+                // We indent one
+                self.ctx.blocks.push(node);
             }
             TheCodeAtom::EndOfExpression => {
                 self.advance();
@@ -479,6 +578,7 @@ impl TheCompiler {
     /// Advance one token
     fn advance(&mut self) {
         self.ctx.previous = self.ctx.current.clone();
+        self.ctx.previous_location = self.ctx.current_location;
 
         self.ctx.current = self.grid.get_next(false);
 
@@ -486,7 +586,7 @@ impl TheCompiler {
             self.ctx.current_location = location;
         }
 
-        //println!("{:?} : {:?}", self.grid.current_pos, self.ctx.current);
+        //println!("({:?} : {:?}), ({:?} : {:?})", self.ctx.previous, self.ctx.previous_location, self.grid.current_pos, self.ctx.current);
     }
 
     fn matches(&mut self, kind: TheCodeAtomKind) -> bool {

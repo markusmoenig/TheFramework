@@ -171,7 +171,7 @@ impl TheLayout for TheCodeLayout {
             let mut zoom: f32 = 1.0;
 
             if let Some(code_view) = self.code_view.as_code_view() {
-                code_view.adjust_buffer_to_grid();
+                _ = code_view.adjust_buffer_to_grid();
                 buffer_dim = *code_view.buffer().dim();
                 zoom = code_view.zoom();
             }

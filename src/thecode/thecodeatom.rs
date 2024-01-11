@@ -5,6 +5,7 @@ use super::thecodenode::TheCodeNodeData;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum TheCodeAtom {
     Assignment(String),
+    Comparison(String),
     Value(TheValue),
     Add,
     Multiply,
@@ -20,20 +21,20 @@ pub enum TheCodeAtom {
     Return,
     EndOfExpression,
     EndOfCode,
-    Switch,
-    CaseCondition,
-    CaseBody,
 }
 
 impl TheCodeAtom {
     pub fn uneven_slot(&self) -> bool {
-        matches!(self, TheCodeAtom::Assignment(_name))
+        matches!(self, TheCodeAtom::Assignment(_))
+            || matches!(self, TheCodeAtom::Comparison(_))
             || matches!(self, TheCodeAtom::Add)
             || matches!(self, TheCodeAtom::Multiply)
     }
 
     pub fn can_assign(&self) -> bool {
-        matches!(self, TheCodeAtom::LocalSet(_name))
+        matches!(self, TheCodeAtom::LocalSet(_))
+            || matches!(self, TheCodeAtom::ObjectSet(_, _))
+            || matches!(self, TheCodeAtom::Pulse)
     }
 
     pub fn from_json(json: &str) -> Self {
@@ -46,6 +47,43 @@ impl TheCodeAtom {
 
     pub fn to_node(&self, ctx: &mut TheCompilerContext) -> TheCodeNode {
         match self {
+            TheCodeAtom::Comparison(_) => {
+                let call: TheCodeNodeCall =
+                    |_stack: &mut Vec<TheValue>,
+                     data: &mut TheCodeNodeData,
+                     sandbox: &mut TheCodeSandbox| {
+                        if let Some(f) = data.sub_functions.first_mut() {
+                            if let Some(v) = f.execute(sandbox).pop() {
+                                if data.values[0] == v {
+                                    println!("yes");
+                                    if data.sub_functions.len() > 1 {
+                                        _ = data.sub_functions[1].execute(sandbox).pop();
+                                    }
+                                }
+
+                                println!("Comparison: left {:?}, right: {:?}", data.values[0], v);
+                            }
+                        }
+
+                        TheCodeNodeCallResult::Continue
+                    };
+
+                let mut node = TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location_values(ctx.node_location, vec![TheValue::Int(0)]),
+                );
+
+                if let Some(function) = ctx.remove_function() {
+                    // let mut sandbox = TheCodeSandbox::new();
+                    // if let Some(v) = function.execute(&mut sandbox).pop() {
+                    //     println!("{:?}", v);//
+                    //     node.data.values[1] = v;
+                    // }
+                    node.data.sub_functions.push(function);
+                }
+
+                node
+            }
             // Generates a pulse gate.
             TheCodeAtom::Pulse => {
                 let call: TheCodeNodeCall =
@@ -98,7 +136,7 @@ impl TheCodeAtom {
 
                 node
             }
-            TheCodeAtom::Assignment(_op) => {
+            TheCodeAtom::Assignment(_) => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
                      _data: &mut TheCodeNodeData,
@@ -390,7 +428,6 @@ impl TheCodeAtom {
                      _sandbox: &mut TheCodeSandbox| {
                         if let Some(b) = stack.pop() {
                             if let Some(a) = stack.pop() {
-                                println!("t {:?} {:?}", a, b);
                                 if let Some(result) = TheValue::add(&a, &b) {
                                     stack.push(result);
                                 } else {
@@ -438,33 +475,6 @@ impl TheCodeAtom {
                     };
                 TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
             }
-            TheCodeAtom::Switch => {
-                let call: TheCodeNodeCall =
-                    |_stack: &mut Vec<TheValue>,
-                     _data: &mut TheCodeNodeData,
-                     _sandbox: &mut TheCodeSandbox| {
-                        TheCodeNodeCallResult::Continue
-                    };
-                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
-            }
-            TheCodeAtom::CaseCondition => {
-                let call: TheCodeNodeCall =
-                    |_stack: &mut Vec<TheValue>,
-                     _data: &mut TheCodeNodeData,
-                     _sandbox: &mut TheCodeSandbox| {
-                        TheCodeNodeCallResult::Continue
-                    };
-                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
-            }
-            TheCodeAtom::CaseBody => {
-                let call: TheCodeNodeCall =
-                    |_stack: &mut Vec<TheValue>,
-                     _data: &mut TheCodeNodeData,
-                     _sandbox: &mut TheCodeSandbox| {
-                        TheCodeNodeCallResult::Continue
-                    };
-                TheCodeNode::new(call, TheCodeNodeData::location(ctx.current_location))
-            }
         }
     }
 
@@ -485,9 +495,18 @@ impl TheCodeAtom {
         }
     }
 
+    pub fn to_color(&self) -> [u8; 4] {
+        match self {
+            Self::ObjectSet(_, _) => [36, 61, 92, 255],
+            //[87, 112, 143, 255]
+            _ => [174, 174, 174, 255],
+        }
+    }
+
     pub fn to_kind(&self) -> TheCodeAtomKind {
         match self {
             TheCodeAtom::Assignment(_op) => TheCodeAtomKind::Equal,
+            TheCodeAtom::Comparison(_op) => TheCodeAtomKind::Equal,
             TheCodeAtom::FuncDef(_name) => TheCodeAtomKind::Fn,
             TheCodeAtom::FuncArg(_name) => TheCodeAtomKind::Identifier,
             TheCodeAtom::FuncCall(_name) => TheCodeAtomKind::Identifier,
@@ -503,15 +522,13 @@ impl TheCodeAtom {
             TheCodeAtom::Multiply => TheCodeAtomKind::Star,
             TheCodeAtom::EndOfExpression => TheCodeAtomKind::Semicolon,
             TheCodeAtom::EndOfCode => TheCodeAtomKind::Eof,
-            TheCodeAtom::Switch => TheCodeAtomKind::If,
-            TheCodeAtom::CaseCondition => TheCodeAtomKind::If,
-            TheCodeAtom::CaseBody => TheCodeAtomKind::If,
         }
     }
 
     pub fn describe(&self) -> String {
         match self {
             TheCodeAtom::Assignment(op) => op.clone(),
+            TheCodeAtom::Comparison(op) => op.clone(),
             TheCodeAtom::FuncDef(name) => name.clone(),
             TheCodeAtom::FuncArg(name) => name.clone(),
             TheCodeAtom::FuncCall(name) => name.clone(),
@@ -530,15 +547,13 @@ impl TheCodeAtom {
             TheCodeAtom::Multiply => "*".to_string(),
             TheCodeAtom::EndOfExpression => ";".to_string(),
             TheCodeAtom::EndOfCode => "Stop".to_string(),
-            TheCodeAtom::Switch => "Switch".to_string(),
-            TheCodeAtom::CaseCondition => "Case".to_string(),
-            TheCodeAtom::CaseBody => ":".to_string(),
         }
     }
 
     pub fn help(&self) -> String {
         match self {
             TheCodeAtom::Assignment(name) => format!("Assignment ({}).", name),
+            TheCodeAtom::Comparison(name) => format!("Comparison ({}).", name),
             TheCodeAtom::FuncDef(name) => format!("Function definition ({}).", name),
             TheCodeAtom::FuncArg(name) => format!("Function argument ({}).", name),
             TheCodeAtom::FuncCall(name) => format!(
@@ -581,9 +596,6 @@ impl TheCodeAtom {
             TheCodeAtom::Multiply => "Operator ('*')".to_string(),
             TheCodeAtom::EndOfExpression => ";".to_string(),
             TheCodeAtom::EndOfCode => "Stop".to_string(),
-            TheCodeAtom::Switch => "Switch statement.".to_string(),
-            TheCodeAtom::CaseCondition => "Switch 'Case' statement.".to_string(),
-            TheCodeAtom::CaseBody => "Switch 'Case' body.".to_string(),
         }
     }
 

@@ -146,6 +146,15 @@ impl TheWidget for TheCodeView {
                             if (x % 2 == 1 || y % 2 == 1) && atom.uneven_slot()
                                 || x % 2 == 0 && y % 2 == 0 && !atom.uneven_slot()
                             {
+                                if *x == 0
+                                    && atom.can_assign()
+                                    && !self.codegrid.code.contains_key(&(x + 1, *y))
+                                {
+                                    self.codegrid
+                                        .code
+                                        .insert((x + 1, *y), TheCodeAtom::Assignment("=".into()));
+                                }
+
                                 self.codegrid.code.insert(c, atom);
                                 redraw = true;
                                 self.code_is_dirty = true;
@@ -208,9 +217,10 @@ impl TheWidget for TheCodeView {
                     if code == TheKeyCode::Return {
                         if let Some(selected) = &mut self.selected {
                             self.codegrid.move_one_line_down(*selected);
-                            selected.1 += 1;
+                            selected.1 += 2;
                             self.code_is_dirty = true;
                             redraw = true;
+                            self.hover = None;
                             ctx.ui.send(TheEvent::CodeEditorChanged(
                                 self.id.clone(),
                                 self.codegrid.clone(),
@@ -226,6 +236,7 @@ impl TheWidget for TheCodeView {
                             // }
                             self.code_is_dirty = true;
                             redraw = true;
+                            self.hover = None;
                             ctx.ui.send(TheEvent::CodeEditorChanged(
                                 self.id.clone(),
                                 self.codegrid.clone(),
@@ -234,7 +245,7 @@ impl TheWidget for TheCodeView {
                     } else if code == TheKeyCode::Space {
                         if let Some(selected) = &mut self.selected {
                             self.codegrid.insert_space(*selected);
-                            selected.0 += 1;
+                            selected.0 += 2;
                             self.code_is_dirty = true;
                             redraw = true;
                             ctx.ui.send(TheEvent::CodeEditorChanged(
@@ -365,13 +376,13 @@ impl TheWidget for TheCodeView {
         let background = *style.theme().color(CodeGridBackground);
 
         if self.code_is_dirty {
-            let grid_x = 10;
-            let grid_y = 10;
+
+            let (grid_x, grid_y) = self.adjust_buffer_to_grid();
 
             let normal: [u8; 4] = *style.theme().color(CodeGridNormal);
             let dark: [u8; 4] = *style.theme().color(CodeGridDark);
             let selected = *style.theme().color(CodeGridSelected);
-            let text_color = *style.theme().color(CodeGridText);
+            let text_color = *style.theme().color(CodeGridText); //[242, 242, 242, 255];
             let ok = *style.theme().color(Green);
             let error = *style.theme().color(Red);
             let mut hover = *style.theme().color(CodeGridHover);
@@ -453,6 +464,12 @@ impl TheWidget for TheCodeView {
 
                     if let Some(atom) = self.codegrid.code.get(&(x, y)) {
                         let sdf = atom.to_sdf(dim, zoom);
+
+                        // let pattern = ThePattern::SolidWithBorder(
+                        //     crate::thecolor::TheColor::from_u8_array(atom.to_color()),
+                        //     crate::thecolor::TheColor::from_u8_array(dark),
+                        //     1.5 * zoom,
+                        // );
                         canvas.add(sdf, pattern_normal.clone());
 
                         if Some((x, y)) == self.selected {
@@ -600,7 +617,7 @@ impl TheWidget for TheCodeView {
                                         TheVerticalAlign::Center,
                                     );
                                 }
-                                TheCodeAtom::ExternalCall(_,_) => {
+                                TheCodeAtom::ExternalCall(_, _) => {
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
                                         &(rect.0 + 2, rect.1, rect.2 - 4, rect.3),
@@ -752,7 +769,7 @@ impl TheWidget for TheCodeView {
 pub trait TheCodeViewTrait: TheWidget {
     /// Adjusts the buffer size to match the size of the code grid. This ensures
     /// that the buffer is correctly sized to fit the grid layout.
-    fn adjust_buffer_to_grid(&mut self);
+    fn adjust_buffer_to_grid(&mut self) -> (u16, u16);
 
     /// Provides a reference to the RGBA buffer used by the code view.
     /// This buffer is where the code view's visual representation is drawn.
@@ -826,9 +843,20 @@ pub trait TheCodeViewTrait: TheWidget {
 }
 
 impl TheCodeViewTrait for TheCodeView {
-    fn adjust_buffer_to_grid(&mut self) {
-        let grid_x = 10;
-        let grid_y = 10;
+    fn adjust_buffer_to_grid(&mut self) -> (u16, u16){
+
+        let size = self.codegrid.max_xy();
+
+        let grid_x;
+        let grid_y;
+
+        if let Some(size) = size {
+            grid_x = size.0 as i32 + 3;
+            grid_y = size.1 as i32 + 3;
+        } else {
+            grid_x = 2;
+            grid_y = 2;
+        }
 
         let grid_size = ceil(self.grid_size as f32 * self.zoom) as i32;
 
@@ -837,6 +865,8 @@ impl TheCodeViewTrait for TheCodeView {
             let b = TheRGBABuffer::new(TheDim::new(0, 0, grid_x * grid_size, grid_y * grid_size));
             self.buffer = b;
         }
+
+        (grid_x as u16, grid_y as u16)
     }
     fn buffer(&self) -> &TheRGBABuffer {
         &self.buffer
