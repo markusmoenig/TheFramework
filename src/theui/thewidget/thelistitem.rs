@@ -326,17 +326,17 @@ impl TheWidget for TheListItem {
                             );
                         }
                         _ => {
-                                ctx.draw.text_rect_blend(
-                                    buffer.pixels_mut(),
-                                    &(rect.0 + 9, rect.1, *width as usize - 10, rect.3),
-                                    stride,
-                                    font,
-                                    13.0,
-                                    &value.describe(),
-                                    style.theme().color(ListItemText),
-                                    TheHorizontalAlign::Left,
-                                    TheVerticalAlign::Center,
-                                );
+                            ctx.draw.text_rect_blend(
+                                buffer.pixels_mut(),
+                                &(rect.0 + 9, rect.1, *width as usize - 10, rect.3),
+                                stride,
+                                font,
+                                13.0,
+                                &value.describe(),
+                                style.theme().color(ListItemText),
+                                TheHorizontalAlign::Left,
+                                TheVerticalAlign::Center,
+                            );
                         }
                     }
                 }

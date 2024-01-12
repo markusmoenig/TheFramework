@@ -56,6 +56,7 @@ impl TheApp {
                     .with_title(window_title)
                     .with_inner_size(size)
                     .with_min_inner_size(size)
+                    // .with_window_icon(window_icon()) TODO on Windows
                     .build(&event_loop)
                     .unwrap()
             } else {
@@ -64,6 +65,7 @@ impl TheApp {
                     .with_title(window_title)
                     .with_inner_size(size)
                     .with_min_inner_size(size)
+                    // .with_window_icon(window_icon()) TODO on Windows
                     .build(&event_loop)
                     .unwrap()
             }
@@ -248,8 +250,14 @@ impl TheApp {
                     DeviceEvent::MouseWheel { delta } => match delta {
                         winit::event::MouseScrollDelta::LineDelta(x, y) => {
                             //println!("mouse wheel Line Delta: ({},{})", x, y);
+
+                            #[cfg(feature = "ui")]
+                            if ui.mouse_wheel((*x as i32, *y as i32), &mut ctx) {
+                                window.request_redraw();
+                            }
+
                             if app.mouse_wheel(
-                                ((*x * 100.0) as isize, (*y * 100.0) as isize),
+                                (*x as isize, *y as isize),
                                 &mut ctx,
                             ) {
                                 window.request_redraw();

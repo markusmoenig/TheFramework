@@ -376,7 +376,6 @@ impl TheWidget for TheCodeView {
         let background = *style.theme().color(CodeGridBackground);
 
         if self.code_is_dirty {
-
             let (grid_x, grid_y) = self.adjust_buffer_to_grid();
             let stride: usize = self.buffer.stride();
 
@@ -662,12 +661,10 @@ impl TheWidget for TheCodeView {
                                 }
                             }
                         }
-                    }
-                    else if Some((x, y)) == self.selected && self.drop_atom.is_none() {
+                    } else if Some((x, y)) == self.selected && self.drop_atom.is_none() {
                         ctx.draw
                             .rect_outline(self.buffer.pixels_mut(), &rect, stride, &selected);
-                    }
-                    else if Some((x, y)) == self.hover {
+                    } else if Some((x, y)) == self.hover {
                         ctx.draw
                             .blend_rect(self.buffer.pixels_mut(), &rect, stride, &hover);
                     }
@@ -846,8 +843,7 @@ pub trait TheCodeViewTrait: TheWidget {
 }
 
 impl TheCodeViewTrait for TheCodeView {
-    fn adjust_buffer_to_grid(&mut self) -> (u16, u16){
-
+    fn adjust_buffer_to_grid(&mut self) -> (u16, u16) {
         let size = self.codegrid.max_xy();
 
         let grid_x;

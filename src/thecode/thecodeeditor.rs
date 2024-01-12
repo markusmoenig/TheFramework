@@ -668,7 +668,6 @@ impl TheCodeEditor {
         ctx: &mut TheContext,
         width: i32,
     ) -> TheCanvas {
-
         ctx.ui.relayout = true;
         self.bundle = bundle;
 
