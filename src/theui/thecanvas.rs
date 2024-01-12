@@ -136,9 +136,12 @@ impl TheCanvas {
     }
 
     /// Resize the canvas if needed
-    pub fn resize(&mut self, width: i32, height: i32, ctx: &mut TheContext) {
+    pub fn resize(&mut self, width: i32, height: i32, ctx: &mut TheContext) -> bool {
         if width != self.dim.width || height != self.dim.height {
             self.set_dim(TheDim::new(self.dim.x, self.dim.y, width, height), ctx);
+            true
+        } else {
+            false
         }
     }
 

@@ -164,7 +164,9 @@ impl TheUI {
     }
 
     pub fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {
-        self.canvas.resize(ctx.width as i32, ctx.height as i32, ctx);
+        if self.canvas.resize(ctx.width as i32, ctx.height as i32, ctx) {
+            ctx.ui.send(TheEvent::Resize);
+        }
         if ctx.ui.relayout {
             let width = self.canvas.buffer().dim().width;
             let height = self.canvas.buffer().dim().height;

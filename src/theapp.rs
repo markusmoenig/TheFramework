@@ -401,6 +401,8 @@ impl TheApp {
                     #[cfg(feature = "ui")]
                     ui.canvas
                         .set_dim(TheDim::new(0, 0, width as i32, height as i32), &mut ctx);
+                    #[cfg(feature = "ui")]
+                    ctx.ui.send(TheEvent::Resize);
 
                     window.request_redraw();
                 }

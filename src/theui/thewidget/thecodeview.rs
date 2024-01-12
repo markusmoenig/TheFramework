@@ -290,6 +290,7 @@ impl TheWidget for TheCodeView {
         if self.dim != dim {
             self.dim = dim;
             self.is_dirty = true;
+            self.code_is_dirty = true;
         }
     }
 
@@ -372,12 +373,12 @@ impl TheWidget for TheCodeView {
 
         // --- Draw the code grid into the buffer
 
-        let stride: usize = self.buffer.stride();
         let background = *style.theme().color(CodeGridBackground);
 
         if self.code_is_dirty {
 
             let (grid_x, grid_y) = self.adjust_buffer_to_grid();
+            let stride: usize = self.buffer.stride();
 
             let normal: [u8; 4] = *style.theme().color(CodeGridNormal);
             let dark: [u8; 4] = *style.theme().color(CodeGridDark);
@@ -661,10 +662,12 @@ impl TheWidget for TheCodeView {
                                 }
                             }
                         }
-                    } else if Some((x, y)) == self.selected && self.drop_atom.is_none() {
+                    }
+                    else if Some((x, y)) == self.selected && self.drop_atom.is_none() {
                         ctx.draw
                             .rect_outline(self.buffer.pixels_mut(), &rect, stride, &selected);
-                    } else if Some((x, y)) == self.hover {
+                    }
+                    else if Some((x, y)) == self.hover {
                         ctx.draw
                             .blend_rect(self.buffer.pixels_mut(), &rect, stride, &hover);
                     }
@@ -862,7 +865,9 @@ impl TheCodeViewTrait for TheCodeView {
 
         let d = self.buffer().dim();
         if d.width != grid_x * grid_size || d.height != grid_y * grid_size {
-            let b = TheRGBABuffer::new(TheDim::new(0, 0, grid_x * grid_size, grid_y * grid_size));
+            let width = grid_x * grid_size / 2 + grid_size / 2;
+            let height = grid_y * grid_size / 2 + grid_size / 2;
+            let b = TheRGBABuffer::new(TheDim::new(0, 0, width, height));
             self.buffer = b;
         }
 
@@ -928,6 +933,7 @@ impl TheCodeViewTrait for TheCodeView {
         self.codegrid.code.insert(coord, atom);
         self.code_is_dirty = true;
         self.is_dirty = true;
+        self.code_is_dirty = true;
     }
     fn get_code_grid_offset(&self, coord: Vec2i) -> Option<(u16, u16)> {
         let centered_offset_x = 0.0;

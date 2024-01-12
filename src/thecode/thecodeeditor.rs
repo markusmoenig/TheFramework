@@ -109,6 +109,7 @@ impl TheCodeEditor {
                 self.bundle.insert_grid(codegrid.clone());
                 ctx.ui
                     .send(TheEvent::CodeBundleChanged(self.bundle.clone(), true));
+                ctx.ui.relayout = true;
             }
             TheEvent::CodeEditorSelectionChanged(_id, selection) => {
                 self.grid_selection = *selection;
