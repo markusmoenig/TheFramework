@@ -54,7 +54,7 @@ impl TheTrait for CodeEditor {
                             (Some(TheValue::Text(format!("{} / {}", count, max_value))), TheValue::Bool(false)),
                         );
                     }
-                    TheCodeNodeCallResult::Break
+                    TheCodeNodeCallResult::Continue
                 } else {
                     if sandbox.debug_mode {
                         sandbox.set_debug_value(
@@ -67,6 +67,9 @@ impl TheTrait for CodeEditor {
                         if let Some(int) = stack_v.to_i32() {
                             data.values[1] = TheValue::Int(int);
                         }
+                    }
+                    if !data.sub_functions.is_empty() {
+                        _ = data.sub_functions[0].execute(sandbox).pop();
                     }
                     TheCodeNodeCallResult::Continue
                 }

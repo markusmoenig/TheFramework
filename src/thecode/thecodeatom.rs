@@ -51,14 +51,11 @@ impl TheCodeAtom {
                      sandbox: &mut TheCodeSandbox| {
                         if let Some(f) = data.sub_functions.first_mut() {
                             if let Some(v) = f.execute(sandbox).pop() {
-                                if data.values[0] == v {
-                                    println!("yes");
-                                    if data.sub_functions.len() > 1 {
-                                        _ = data.sub_functions[1].execute(sandbox).pop();
-                                    }
+                                if data.values[0] == v && data.sub_functions.len() > 1 {
+                                    _ = data.sub_functions[1].execute(sandbox).pop();
                                 }
 
-                                println!("Comparison: left {:?}, right: {:?}", data.values[0], v);
+                                //println!("Comparison: left {:?}, right: {:?}", data.values[0], v);
                             }
                         }
 

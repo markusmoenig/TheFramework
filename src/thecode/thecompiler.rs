@@ -215,14 +215,16 @@ impl TheCompiler {
             {
                 // We are at the start of a new line, check if we have a block to close.
                 #[allow(clippy::collapsible_if)]
-                for has_code_index in 0..indent {
+                for code_index in 0..=indent * 2 {
                     if self
                         .grid
                         .code
-                        .contains_key(&(has_code_index as u16, self.ctx.current_location.1))
+                        .contains_key(&(code_index as u16, self.ctx.current_location.1))
                     {
-                        if has_code_index % 2 == 0 {
-                            if has_code_index / 2 == indent - 1 {
+                        if code_index % 2 == 0 {
+                            // Amount of blocks we have to close due to the indentation.
+                            let closing = indent - code_index / 2;
+                            for _ in 0..closing {
                                 // Closing the block.
                                 if let Some(function) = self.ctx.remove_function() {
                                     if let Some(mut node) = self.ctx.blocks.pop() {
@@ -234,15 +236,14 @@ impl TheCompiler {
                         }
                     }
                 }
-
-                //println!("previous {:?} current {:?}", self.ctx.previous_location, self.ctx.current_location);
             }
 
             self.declaration();
         }
 
-        let indent = self.ctx.blocks.len();
-        if indent == 1 {
+        // Close all open blocks.
+        let mut indent = self.ctx.blocks.len();
+        while indent > 0 {
             if let Some(function) = self.ctx.remove_function() {
                 if let Some(mut node) = self.ctx.blocks.pop() {
                     node.data.sub_functions.push(function);
@@ -251,6 +252,7 @@ impl TheCompiler {
             } else {
                 // TODO ERROR MESSAGE: Too many open blocks at the end of the code.
             }
+            indent -= 1;
         }
 
         if let Some(error) = &self.ctx.error {
@@ -444,7 +446,11 @@ impl TheCompiler {
                     if let Some(call) = self.external_call.get(name) {
                         self.ctx.external_call = Some(call.clone());
                         if let Some(node) = external_call.to_node(&mut self.ctx) {
-                            self.ctx.get_current_function().add_node(node);
+                            let func = TheCodeFunction::default();
+                            self.ctx.add_function(func);
+
+                            self.ctx.blocks.push(node);
+                            //self.ctx.get_current_function().add_node(node);
                         }
                         self.ctx.external_call = None;
                     } else {
