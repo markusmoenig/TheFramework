@@ -8,9 +8,6 @@ pub struct TheCodeSandbox {
     /// The modules with callable codegrid functions. These make up the behavior of an entity.
     #[serde(skip)]
     pub modules: FxHashMap<Uuid, TheCodeModule>,
-    /// The global external functions added by the host.
-    #[serde(skip)]
-    pub globals: FxHashMap<String, TheCodeNode>,
 
     /// The objects with values. These make up the state of an entity.
     pub objects: FxHashMap<Uuid, TheCodeObject>,
@@ -57,7 +54,6 @@ impl TheCodeSandbox {
 
             objects: FxHashMap::default(),
             modules: FxHashMap::default(),
-            globals: FxHashMap::default(),
 
             debug_mode: false,
 
@@ -81,11 +77,6 @@ impl TheCodeSandbox {
         self.debug_modules = FxHashMap::default();
     }
 
-    /// Adds a globlal function to the environment.
-    pub fn add_global(&mut self, name: &str, node: TheCodeNode) {
-        self.globals.insert(name.to_string(), node);
-    }
-
     /// Insert a module into the environment.
     pub fn insert_module(&mut self, module: TheCodeModule) {
         self.modules.insert(module.id, module);
@@ -104,19 +95,6 @@ impl TheCodeSandbox {
             }
         }
         None
-    }
-
-    // /// Call a global, external function provided by the host.
-    pub fn call_global(&mut self, location: (u16, u16), stack: &mut Vec<TheValue>, name: &String) {
-        // Temporarily remove the node from the map
-        if let Some(mut node) = self.globals.remove(name) {
-            // Call the function with a mutable reference to node.data
-            node.data.location = location;
-            (node.call)(stack, &mut node.data, self);
-
-            // Reinsert the node back into the map
-            self.globals.insert(name.clone(), node);
-        }
     }
 
     /// Returns the given local variable by reversing the local stack.
@@ -166,8 +144,10 @@ impl TheCodeSandbox {
         self.debug_modules.entry(module_id).or_default();
     }
 
-    /// Sets a debug value in the current module.
-    pub fn set_debug_value(&mut self, location: (u16, u16), value: TheValue) {
+    /// Sets a debug value in the current module. An optional top value and a required bottom value.
+    /// The top value is used for optional progess debug values while the bottom value is
+    /// the actual result value for the location.
+    pub fn set_debug_value(&mut self, location: (u16, u16), value: (Option<TheValue>, TheValue)) {
         if let Some(module_id) = self.module_stack.last() {
             if let Some(debug_module) = self.debug_modules.get_mut(module_id) {
                 debug_module.values.insert(location, value);
@@ -201,7 +181,7 @@ impl TheCodeSandbox {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TheDebugModule {
-    pub values: FxHashMap<(u16, u16), TheValue>,
+    pub values: FxHashMap<(u16, u16), (Option<TheValue>, TheValue)>,
     pub executed: FxHashSet<(u16, u16)>,
 }
 

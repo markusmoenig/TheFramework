@@ -92,6 +92,7 @@ pub struct TheCompilerContext {
     pub curr_function_index: usize,
 
     pub error: Option<TheCompilerError>,
+    pub external_call: Option<(TheCodeNodeCall, Vec<TheValue>)>,
 }
 
 impl Default for TheCompilerContext {
@@ -120,6 +121,7 @@ impl TheCompilerContext {
             curr_function_index: 0,
 
             error: None,
+            external_call: None,
         }
     }
 
@@ -147,6 +149,8 @@ impl TheCompilerContext {
 pub struct TheCompiler {
     rules: FxHashMap<TheCodeAtomKind, TheParseRule>,
     grid: TheCodeGrid,
+
+    external_call: FxHashMap<String, (TheCodeNodeCall, Vec<TheValue>)>,
 
     ctx: TheCompilerContext,
 }
@@ -179,11 +183,17 @@ impl TheCompiler {
         Self {
             rules,
             grid: TheCodeGrid::default(),
-
+            external_call: FxHashMap::default(),
             ctx: TheCompilerContext::default(),
         }
     }
 
+    /// Add an external node to the compiler.
+    pub fn add_external_call(&mut self, name: String, call: TheCodeNodeCall, values: Vec<TheValue>) {
+        self.external_call.insert(name, (call, values));
+    }
+
+    /// Compile the given code grid and returns either a module or an error.
     pub fn compile(&mut self, grid: &mut TheCodeGrid) -> Result<TheCodeModule, TheCompilerError> {
         self.ctx = TheCompilerContext::default();
 
@@ -305,8 +315,9 @@ impl TheCompiler {
 
                 self.expression();
                 self.ctx.node_location = location;
-                let node = var.to_node(&mut self.ctx);
-                self.ctx.get_current_function().add_node(node);
+                if let Some(node) = var.to_node(&mut self.ctx) {
+                    self.ctx.get_current_function().add_node(node);
+                }
             }
             TheCodeAtom::ObjectSet(_object, _name) => {
                 self.advance();
@@ -331,38 +342,9 @@ impl TheCompiler {
 
                 self.expression();
                 self.ctx.node_location = location;
-                let node = var.to_node(&mut self.ctx);
-                self.ctx.get_current_function().add_node(node);
-            }
-            TheCodeAtom::Pulse => {
-                self.advance();
-                let pulse = self.ctx.previous.clone();
-                let location: (u16, u16) = self.ctx.previous_location;
-
-                match &self.ctx.current {
-                    TheCodeAtom::Assignment(_op) => {
-                        self.advance();
-                    }
-                    _ => {
-                        self.error_at(
-                            (
-                                self.ctx.previous_location.0 + 1,
-                                self.ctx.previous_location.1,
-                            ),
-                            "Expected assignment operator.",
-                        );
-                        return;
-                    }
+                if let Some(node) = var.to_node(&mut self.ctx) {
+                    self.ctx.get_current_function().add_node(node);
                 }
-
-                let func = TheCodeFunction::default();
-                self.ctx.add_function(func);
-
-                self.expression();
-                self.ctx.node_location = location;
-                // Write the pulse function which will take the current function as a sub.
-                let node = pulse.to_node(&mut self.ctx);
-                self.ctx.get_current_function().add_node(node);
             }
             _ => {
                 self.statement();
@@ -384,8 +366,9 @@ impl TheCompiler {
                     let ret = self.ctx.previous.clone();
                     self.expression();
 
-                    let node = ret.to_node(&mut self.ctx);
-                    self.ctx.get_current_function().add_node(node);
+                    if let Some(node) = ret.to_node(&mut self.ctx) {
+                        self.ctx.get_current_function().add_node(node);
+                    }
                 }
 
                 if let Some(f) = self.ctx.remove_function() {
@@ -394,35 +377,113 @@ impl TheCompiler {
                     self.error_at_current("Unexpected 'Return' code.")
                 }
             }
-            TheCodeAtom::FuncCall(_) | TheCodeAtom::ExternalCall(_, _) => {
+            TheCodeAtom::FuncCall(_) => {
                 self.ctx.node_location = self.ctx.current_location;
-                let node = self.ctx.current.clone().to_node(&mut self.ctx);
-                self.ctx.get_current_function().add_node(node);
+                if let Some(node) = self.ctx.current.clone().to_node(&mut self.ctx) {
+                    self.ctx.get_current_function().add_node(node);
+                }
                 self.advance();
+            }
+            TheCodeAtom::ExternalCall(_, _, _, arg_values, _) => {
+                self.advance();
+                let external_call = self.ctx.previous.clone();
+                let location: (u16, u16) = self.ctx.previous_location;
+                self.ctx.node_location = location;
+
+                for (index, _) in arg_values.iter().enumerate() {
+                    let off = location.0 + (index + 1) as u16 * 2;
+
+                    if !matches!(self.ctx.current, TheCodeAtom::EndOfExpression) {
+                        self.error_at(
+                            (
+                                self.ctx.current_location.0,
+                                self.ctx.current_location.1,
+                            ),
+                            "Unexpected code inside function call.",
+                        );
+                        return;
+                    }
+
+                    self.advance();
+                    //println!("off {:?} loc {:?}", off, self.ctx.current_location);
+
+                    // Check if function argument value at the right position.
+                    if self.ctx.current_location.0 != off || self.ctx.current_location.1 != location.1 {
+                        self.error_at(
+                            (
+                                off,
+                                location.1,
+                            ),
+                            "Expected value at this position.",
+                        );
+                        return;
+                    }
+
+                    match &self.ctx.current {
+                        TheCodeAtom::Value(_op) => {
+                            // Add the function argument to the stack.
+                            if let Some(node) = self.ctx.current.clone().to_node(&mut self.ctx) {
+                                self.ctx.get_current_function().add_node(node);
+                            }
+                        }
+                        _ => {
+                            self.error_at(
+                                (
+                                    self.ctx.current_location.0,
+                                    self.ctx.current_location.1,
+                                ),
+                                "Expected Value.",
+                            );
+                            return;
+                        }
+                    }
+                    self.advance();
+                }
+
+                if let TheCodeAtom::ExternalCall(name, _, _, _, _) = &external_call {
+                    if let Some(call) = self.external_call.get(name) {
+                        self.ctx.external_call = Some(call.clone());
+                        if let Some(node) = external_call.to_node(&mut self.ctx) {
+                            self.ctx.get_current_function().add_node(node);
+                        }
+                        self.ctx.external_call = None;
+                    } else {
+                        self.error_at(
+                            (
+                                location.0,
+                                location.1,
+                            ),
+                            "Unknown external call.",
+                        );
+                    }
+                }
             }
             TheCodeAtom::Value(value) => {
                 self.advance();
-                let comparison; // = TheCodeAtom::Comparison("==".to_string());
+                let mut comparison = TheCodeAtom::Comparison("==".to_string());
                 let location: (u16, u16) = self.ctx.previous_location;
 
                 match &self.ctx.current.clone() {
                     TheCodeAtom::Comparison(op) => {
                         // Write the value to the stack if the next operation is a comparison
-                        let node = self.ctx.previous.clone().to_node(&mut self.ctx);
-                        self.ctx.get_current_function().add_node(node);
+                        if let Some(node) = self.ctx.previous.clone().to_node(&mut self.ctx) {
+                            self.ctx.get_current_function().add_node(node);
+                        }
 
                         comparison = TheCodeAtom::Comparison(op.clone());
                         self.advance();
                     }
                     _ => {
-                        self.error_at(
-                            (
-                                self.ctx.previous_location.0 + 1,
-                                self.ctx.previous_location.1,
-                            ),
-                            "Expected comparison operator.",
-                        );
-                        return;
+                        if self.ctx.previous_location.0 == self.ctx.blocks.len() as u16 * 2 {
+                            self.error_at(
+                                (
+                                    self.ctx.previous_location.0 + 1,
+                                    self.ctx.previous_location.1,
+                                ),
+                                "Expected comparison operator.",
+                            );
+                            return;
+                        }
                     }
                 }
 
@@ -434,16 +495,17 @@ impl TheCompiler {
                 self.expression();
                 self.ctx.node_location = location;
                 // Write the comparison function which will take the current function as a sub.
-                let mut node = comparison.to_node(&mut self.ctx);
-                node.data.values[0] = value;
+                if let Some(mut node) = comparison.to_node(&mut self.ctx) {
+                    node.data.values[0] = value;
 
-                println!("condition start");
+                    //println!("condition start");
 
-                let func = TheCodeFunction::default();
-                self.ctx.add_function(func);
+                    let func = TheCodeFunction::default();
+                    self.ctx.add_function(func);
 
-                // We indent one
-                self.ctx.blocks.push(node);
+                    // We indent one
+                    self.ctx.blocks.push(node);
+                }
             }
             TheCodeAtom::EndOfExpression => {
                 self.advance();
@@ -465,14 +527,16 @@ impl TheCompiler {
     fn variable(&mut self, _can_assing: bool) {
         match self.ctx.previous.clone() {
             TheCodeAtom::LocalGet(_name) => {
-                let node = self.ctx.previous.clone().to_node(&mut self.ctx);
-                self.ctx.get_current_function().add_node(node);
+                if let Some(node) = self.ctx.previous.clone().to_node(&mut self.ctx) {
+                    self.ctx.get_current_function().add_node(node);
+                }
             }
             TheCodeAtom::ObjectGet(_, _) => {
-                let node = self.ctx.previous.clone().to_node(&mut self.ctx);
-                self.ctx.get_current_function().add_node(node);
+                if let Some(node) = self.ctx.previous.clone().to_node(&mut self.ctx) {
+                    self.ctx.get_current_function().add_node(node);
+                }
             }
-            TheCodeAtom::FuncCall(_) | TheCodeAtom::ExternalCall(_, _) => {
+            TheCodeAtom::FuncCall(_) | TheCodeAtom::ExternalCall(_, _, _, _, _) => {
                 let node = self.ctx.previous.clone().to_node(&mut self.ctx);
                 //println!("FuncCall {:?}", self.ctx.current_location);
 
@@ -493,13 +557,16 @@ impl TheCompiler {
                     //let node = arg0.to_node(&mut self.ctx);
                     //self.ctx.get_current_function().add_node(node);
 
-                    let arg_node = arg.clone().to_node(&mut self.ctx);
-                    self.ctx.get_current_function().add_node(arg_node);
+                    if let Some(arg_node) = arg.clone().to_node(&mut self.ctx) {
+                        self.ctx.get_current_function().add_node(arg_node);
+                    }
 
                     self.grid.code.remove(&arg_loc);
                 }
 
-                self.ctx.get_current_function().add_node(node);
+                if let Some(node) = node {
+                    self.ctx.get_current_function().add_node(node);
+                }
             }
             _ => {
                 self.error_at_current("Unknown identifier.");
@@ -508,8 +575,9 @@ impl TheCompiler {
     }
 
     fn number(&mut self, _can_assign: bool) {
-        let node = self.ctx.previous.clone().to_node(&mut self.ctx);
-        self.ctx.get_current_function().add_node(node);
+        if let Some(node) = self.ctx.previous.clone().to_node(&mut self.ctx) {
+            self.ctx.get_current_function().add_node(node);
+        }
     }
 
     fn binary(&mut self, _can_assign: bool) {
@@ -526,12 +594,14 @@ impl TheCompiler {
             // TokenType::Less => self.emit_instruction(Instruction::Less),
             // TokenType::LessEqual => self.emit_instructions(Instruction::Greater, Instruction::Not),
             TheCodeAtomKind::Plus => {
-                let node = TheCodeAtom::Add.to_node(&mut self.ctx);
-                self.ctx.get_current_function().add_node(node);
+                if let Some(node) = TheCodeAtom::Add.to_node(&mut self.ctx) {
+                    self.ctx.get_current_function().add_node(node);
+                }
             }
             TheCodeAtomKind::Star => {
-                let node = TheCodeAtom::Multiply.to_node(&mut self.ctx);
-                self.ctx.get_current_function().add_node(node);
+                if let Some(node) = TheCodeAtom::Multiply.to_node(&mut self.ctx) {
+                    self.ctx.get_current_function().add_node(node);
+                }
             }
             // TokenType::Minus => self.emit_instruction(Instruction::Subtract),
             // TokenType::Star => self.emit_instruction(Instruction::Multiply),

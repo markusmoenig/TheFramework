@@ -1,13 +1,11 @@
 use crate::prelude::*;
 use std::sync::mpsc::Receiver;
-use theframework::{
-    prelude::*,
-    thecode::{thecodenode::TheCodeNodeData, thecodesandbox::TheDebugModule},
-};
+use theframework::prelude::*;
 
 pub struct CodeEditor {
     project: Project,
     editor: TheCodeEditor,
+    compiler: TheCompiler,
     right_width: i32,
 
     event_receiver: Option<Receiver<TheEvent>>,
@@ -18,10 +16,70 @@ impl TheTrait for CodeEditor {
     where
         Self: Sized,
     {
+        let mut editor = TheCodeEditor::default();
+
+        editor.add_external(TheExternalCode::new(
+            "Pulse".to_string(),
+            "Counts up to a certain value and returns true on completion. Then restarts."
+                .to_string(),
+            vec!["Count to".to_string()],
+            vec![TheValue::Int(4)],
+            Some(TheValue::Bool(false)),
+        ));
+
+        let mut compiler = TheCompiler::default();
+        compiler.add_external_call("Pulse".to_string(),
+            |stack: &mut Vec<TheValue>,
+                data: &mut TheCodeNodeData,
+                sandbox: &mut TheCodeSandbox| {
+                let count = data.values[0].to_i32().unwrap();
+                let mut max_value = data.values[1].to_i32().unwrap();
+
+                let stack_v = stack.pop();
+
+                // If the max value is zero, this is the first call, compute it.
+                if let Some(v) = &stack_v {
+                    if max_value == 0 {
+                        if let Some(int) = v.to_i32() {
+                            max_value = int;
+                        }
+                    }
+                }
+
+                if count < max_value {
+                    data.values[0] = TheValue::Int(count + 1);
+                    if sandbox.debug_mode {
+                        sandbox.set_debug_value(
+                            data.location,
+                            (Some(TheValue::Text(format!("{} / {}", count, max_value))), TheValue::Bool(false)),
+                        );
+                    }
+                    TheCodeNodeCallResult::Break
+                } else {
+                    if sandbox.debug_mode {
+                        sandbox.set_debug_value(
+                            data.location,
+                            (Some(TheValue::Text(format!("{} / {}", count, max_value))), TheValue::Bool(true)),
+                        );
+                    }
+                    data.values[0] = TheValue::Int(0);
+                    if let Some(stack_v) = stack_v {
+                        if let Some(int) = stack_v.to_i32() {
+                            data.values[1] = TheValue::Int(int);
+                        }
+                    }
+                    TheCodeNodeCallResult::Continue
+                }
+            },
+            vec![TheValue::Int(0), TheValue::Int(0)]
+        );
+
         Self {
             project: Project::new(),
-            editor: TheCodeEditor::default(),
             right_width: 280,
+            editor,
+
+            compiler,
 
             event_receiver: None,
         }
@@ -158,27 +216,27 @@ impl TheTrait for CodeEditor {
                                 if let Some(code_view) = layout.code_view_mut().as_code_view() {
                                     let grid = code_view.codegrid_mut();
 
-                                    let mut compiler = TheCompiler::new();
-                                    let rc = compiler.compile(grid);
+                                    let rc = self.compiler.compile(grid);
 
                                     if let Ok(mut module) = rc {
                                         let mut sandbox = TheCodeSandbox::new();
                                         sandbox.debug_mode = true;
 
-                                        sandbox.add_global(
-                                            "test",
-                                            TheCodeNode::new(
-                                                |_, data, _| {
-                                                    println!("inside test {:?}", data.location);
-                                                    if let Some(i) = data.values[0].to_i32() {
-                                                        println!("i: {:?}", i);
-                                                        data.values[0] = TheValue::Int(i + 1);
-                                                    }
-                                                    TheCodeNodeCallResult::Continue
-                                                },
-                                                TheCodeNodeData::values(vec![TheValue::Int(0)]),
-                                            ),
-                                        );
+                                        // sandbox.add_global(
+                                        //     "test",
+                                        //     TheCodeNode::new(
+                                        //         |_, data, _| {
+                                        //             println!("inside test {:?}", data.location);
+                                        //             if let Some(i) = data.values[0].to_i32() {
+                                        //                 println!("i: {:?}", i);
+                                        //                 data.values[0] = TheValue::Int(i + 1);
+                                        //             }
+                                        //             TheCodeNodeCallResult::Continue
+                                        //         },
+                                        //         TheCodeNodeData::values(vec![TheValue::Int(0)]),
+                                        //     ),
+                                        //     vec![TheCodeAtom::NamedValue("Count".to_string(), TheValue::Int(4))]
+                                        // );
 
                                         sandbox.insert_module(module.clone());
                                         module.execute(&mut sandbox);

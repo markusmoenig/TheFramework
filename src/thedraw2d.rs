@@ -649,6 +649,12 @@ impl TheDraw2D {
 
             for y in 0..metrics.height {
                 for x in 0..metrics.width {
+                    // if (y + rect.1) >= rect.1
+                    //     && (y + rect.1) < (rect.1 + rect.3)
+                    //     && (x + rect.0) >= rect.0
+                    //     && (x + rect.0) < (rect.0 + rect.2)
+                    // {
+
                     let i = (x + rect.0 + glyph.x as usize) * 4
                         + (y + rect.1 + glyph.y as usize) * stride * 4;
                     let m = alphamap[x + y * metrics.width];

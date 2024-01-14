@@ -155,6 +155,17 @@ impl TheWidget for TheCodeView {
                                         .insert((x + 1, *y), TheCodeAtom::Assignment("=".into()));
                                 }
 
+                                if let TheCodeAtom::ExternalCall(_, _, _, arg_values, _) = &atom {
+                                    for (index, value) in arg_values.iter().enumerate() {
+                                        let off = x + (index + 1) as u16 * 2;
+
+                                        self.codegrid
+                                            .code
+                                            .entry((off, *y))
+                                            .or_insert_with(|| TheCodeAtom::Value(value.clone()));
+                                    }
+                                }
+
                                 self.codegrid.code.insert(c, atom);
                                 redraw = true;
                                 self.code_is_dirty = true;
@@ -444,6 +455,8 @@ impl TheWidget for TheCodeView {
             //     }
             // };
 
+            let mut func_args_hash : FxHashMap<(u16, u16), (String, bool)> = FxHashMap::default();
+
             for y in 0..grid_y {
                 for x in 0..grid_x {
                     if x % 2 == 1 || y % 2 == 1 {
@@ -462,14 +475,42 @@ impl TheWidget for TheCodeView {
 
                     let dim = TheDim::sized(grid_size, grid_size);
 
+                    // Main atom
                     if let Some(atom) = self.codegrid.code.get(&(x, y)) {
-                        let sdf = atom.to_sdf(dim, zoom);
+                        let mut sdf = atom.to_sdf(dim, zoom);
 
                         // let pattern = ThePattern::SolidWithBorder(
                         //     crate::thecolor::TheColor::from_u8_array(atom.to_color()),
                         //     crate::thecolor::TheColor::from_u8_array(dark),
                         //     1.5 * zoom,
                         // );
+
+                        // Insert the functions arguments into the hash map.
+                        if let TheCodeAtom::ExternalCall(_, _, arg_names, _, _) = &atom {
+                            if !arg_names.is_empty() {
+                                // Avoid the border
+                                let mut d = dim;
+                                d.width += 2;
+                                sdf = TheSDF::RoundedRect(d, (0.0, 0.0, 10.0 * zoom, 10.0 * zoom));
+                            }
+                            for (index, name) in arg_names.iter().enumerate() {
+                                let off = x + (index + 1) as u16 * 2;
+
+                                func_args_hash.insert((off, y), (name.clone(), index == arg_names.len() - 1));
+                            }
+                        }
+                        else if let Some((_, at_end)) = func_args_hash.get(&(x, y)) {
+                            // Avoid the border
+                            let mut d = dim;
+                            d.x -= 2;
+                            d.width += 2;
+                            if *at_end {
+                                sdf = TheSDF::RoundedRect(d, (10.0 * zoom, 10.0 * zoom, 0.0, 0.0));
+                            } else {
+                                sdf = TheSDF::RoundedRect(d, (0.0, 0.0, 0.0, 0.0));
+                            }
+                        }
+
                         canvas.add(sdf, pattern_normal.clone());
 
                         if Some((x, y)) == self.selected {
@@ -484,6 +525,7 @@ impl TheWidget for TheCodeView {
                         }
                     }
 
+                    // Minor to the left
                     if let Some(atom) = self.codegrid.code.get(&(x - 1, y)) {
                         let dim = TheDim::new(
                             -grid_size / 4,
@@ -502,6 +544,7 @@ impl TheWidget for TheCodeView {
                         }
                     }
 
+                    // Minor to the right
                     if let Some(atom) = self.codegrid.code.get(&(x + 1, y)) {
                         let dim = TheDim::new(
                             grid_size - grid_size / 4,
@@ -617,7 +660,7 @@ impl TheWidget for TheCodeView {
                                         TheVerticalAlign::Center,
                                     );
                                 }
-                                TheCodeAtom::ExternalCall(_, _) => {
+                                TheCodeAtom::ExternalCall(_, _, _, _, _) => {
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
                                         &(rect.0 + 2, rect.1, rect.2 - 4, rect.3),
@@ -645,15 +688,42 @@ impl TheWidget for TheCodeView {
                                 }
                             }
 
+                            if let Some((name, _)) = func_args_hash.get(&(x, y)) {
+                                ctx.draw.text_rect_blend(
+                                    self.buffer.pixels_mut(),
+                                    &(rect.0, rect.1, rect.2, rect.3 - zoom_const(5, zoom)),
+                                    stride,
+                                    font,
+                                    font_size,
+                                    name,
+                                    &text_color,
+                                    TheHorizontalAlign::Center,
+                                    TheVerticalAlign::Bottom,
+                                );
+                            }
+
                             if self.compiled {
                                 if let Some(v) = self.debug_module.values.get(&(x, y)) {
+                                    if let Some(top) = &v.0 {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &(rect.0, rect.1 + zoom_const(5, zoom), rect.2, rect.3 - zoom_const(10, zoom)),
+                                            stride,
+                                            font,
+                                            font_size,
+                                            &top.describe(),
+                                            &WHITE,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Top,
+                                        );
+                                    }
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
                                         &(rect.0, rect.1, rect.2, rect.3 - zoom_const(5, zoom)),
                                         stride,
                                         font,
                                         font_size,
-                                        &v.describe(),
+                                        &v.1.describe(),
                                         &WHITE,
                                         TheHorizontalAlign::Center,
                                         TheVerticalAlign::Bottom,

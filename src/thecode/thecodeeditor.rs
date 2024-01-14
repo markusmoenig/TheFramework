@@ -3,11 +3,26 @@ use crate::prelude::*;
 pub struct TheExternalCode {
     name: String,
     description: String,
+    arg_names: Vec<String>,
+    arg_values: Vec<TheValue>,
+    returns: Option<TheValue>,
 }
 
 impl TheExternalCode {
-    pub fn new(name: String, description: String) -> Self {
-        Self { name, description }
+    pub fn new(
+        name: String,
+        description: String,
+        arg_names: Vec<String>,
+        arg_values: Vec<TheValue>,
+        returns: Option<TheValue>,
+    ) -> Self {
+        Self {
+            name,
+            description,
+            arg_names,
+            arg_values,
+            returns,
+        }
     }
 }
 
@@ -521,7 +536,6 @@ impl TheCodeEditor {
             "Function Argument" => TheCodeAtom::FuncArg("name".to_string()),
             "Function Call" => TheCodeAtom::FuncCall("name".to_string()),
             "Return" => TheCodeAtom::Return,
-            "Pulse" => TheCodeAtom::Pulse,
             "Local Get" => TheCodeAtom::LocalGet("name".to_string()),
             "Local Set" => TheCodeAtom::LocalSet("name".to_string()),
             "Object Get" => TheCodeAtom::ObjectGet("self".to_string(), "name".to_string()),
@@ -537,7 +551,13 @@ impl TheCodeEditor {
             _ => {
                 for e in &self.externals {
                     if e.name == name {
-                        return TheCodeAtom::ExternalCall(e.name.clone(), e.description.clone());
+                        return TheCodeAtom::ExternalCall(
+                            e.name.clone(),
+                            e.description.clone(),
+                            e.arg_names.clone(),
+                            e.arg_values.clone(),
+                            e.returns.clone(),
+                        );
                     }
                 }
 

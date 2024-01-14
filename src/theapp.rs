@@ -256,10 +256,7 @@ impl TheApp {
                                 window.request_redraw();
                             }
 
-                            if app.mouse_wheel(
-                                (*x as isize, *y as isize),
-                                &mut ctx,
-                            ) {
+                            if app.mouse_wheel((*x as isize, *y as isize), &mut ctx) {
                                 window.request_redraw();
                                 //mouse_wheel_ongoing = true;
                             }
