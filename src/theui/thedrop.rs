@@ -8,6 +8,7 @@ pub struct TheDrop {
     pub text: String,
     pub image: TheRGBABuffer,
 
+    pub start_position: Option<Vec2i>,
     pub position: Option<Vec2i>,
     pub offset: Vec2i,
 }
@@ -20,6 +21,7 @@ impl TheDrop {
             title: String::new(),
             text: String::new(),
             image: TheRGBABuffer::empty(),
+            start_position: None,
             position: None,
             offset: Vec2i::zero(),
         }

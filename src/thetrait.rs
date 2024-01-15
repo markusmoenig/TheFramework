@@ -8,8 +8,12 @@ pub trait TheTrait {
 
     fn init(&mut self, ctx: &mut TheContext) {}
 
-    fn window_title(&mut self) -> String {
+    fn window_title(&self) -> String {
         "TheFramework based App".to_string()
+    }
+
+    fn window_icon(&self) -> Option<(Vec<u8>, u32, u32)> {
+        None
     }
 
     #[cfg(feature = "ui")]

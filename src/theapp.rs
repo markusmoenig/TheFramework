@@ -31,7 +31,7 @@ impl TheApp {
         use winit::event::KeyboardInput;
         use winit::event::{DeviceEvent, Event, WindowEvent};
         use winit::event_loop::{ControlFlow, EventLoop};
-        use winit::window::WindowBuilder;
+        use winit::window::{Icon, WindowBuilder};
         use winit_input_helper::WinitInputHelper;
 
         let width: usize = 1200;
@@ -46,6 +46,10 @@ impl TheApp {
         app.init(&mut ctx);
 
         let window_title = app.window_title();
+        let mut icon : Option<Icon> = None;
+        if let Some(window_icon) = app.window_icon() {
+            icon = Some(Icon::from_rgba(window_icon.0, window_icon.1, window_icon.2).unwrap());
+        }
 
         let event_loop = EventLoop::new();
         let mut input = WinitInputHelper::new();
@@ -56,7 +60,7 @@ impl TheApp {
                     .with_title(window_title)
                     .with_inner_size(size)
                     .with_min_inner_size(size)
-                    // .with_window_icon(window_icon()) TODO on Windows
+                    .with_window_icon(icon)
                     .build(&event_loop)
                     .unwrap()
             } else {
@@ -65,7 +69,7 @@ impl TheApp {
                     .with_title(window_title)
                     .with_inner_size(size)
                     .with_min_inner_size(size)
-                    // .with_window_icon(window_icon()) TODO on Windows
+                    .with_window_icon(icon) //TODO on Windows
                     .build(&event_loop)
                     .unwrap()
             }

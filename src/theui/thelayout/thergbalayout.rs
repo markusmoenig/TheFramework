@@ -376,12 +376,15 @@ impl TheRGBALayoutTrait for TheRGBALayout {
     fn scroll_to(&mut self, coord: Vec2i) {
         if let Some(rgba) = self.rgba_view.as_rgba_view() {
             let zoom = rgba.zoom();
+            let buffer_dim = rgba.buffer().dim();
 
             if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+                scroll_bar.set_total_height((buffer_dim.height as f32 * zoom) as i32);
                 scroll_bar.scroll_to(((coord.y as f32) * zoom) as i32);
             }
 
             if let Some(scroll_bar) = self.horizontal_scrollbar.as_horizontal_scrollbar() {
+                scroll_bar.set_total_width((buffer_dim.width as f32 * zoom) as i32);
                 scroll_bar.scroll_to(((coord.x as f32) * zoom) as i32);
             }
         }

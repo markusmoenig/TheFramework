@@ -226,7 +226,8 @@ impl TheCodeEditor {
                             }
                         }
                     }
-                } else if id.name == "Code Zoom" {
+                }
+                else if id.name == "Code Zoom" {
                     if let Some(v) = value.to_f32() {
                         if let Some(layout) = ui.get_code_layout("Code Editor") {
                             if let Some(code_view) = layout.code_view_mut().as_code_view() {
@@ -235,19 +236,22 @@ impl TheCodeEditor {
                             }
                         }
                     }
-                } else if id.name == "Atom Func Def" {
+                }
+                else if id.name == "Atom Func Def" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.set_selected_atom(ui, TheCodeAtom::FuncDef(name));
                         }
                     }
-                } else if id.name == "Atom Func Arg" {
+                }
+                else if id.name == "Atom Func Arg" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.set_selected_atom(ui, TheCodeAtom::FuncArg(name));
                         }
                     }
-                } else if id.name == "Atom Func Call" {
+                }
+                else if id.name == "Atom Func Call" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.start_undo(ui);
@@ -255,7 +259,8 @@ impl TheCodeEditor {
                             self.finish_undo(ui, ctx);
                         }
                     }
-                } else if id.name == "Atom Local Get" {
+                }
+                else if id.name == "Atom Local Get" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.start_undo(ui);
@@ -263,7 +268,8 @@ impl TheCodeEditor {
                             self.finish_undo(ui, ctx);
                         }
                     }
-                } else if id.name == "Atom Local Set" {
+                }
+                else if id.name == "Atom Local Set" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.start_undo(ui);
@@ -271,7 +277,8 @@ impl TheCodeEditor {
                             self.finish_undo(ui, ctx);
                         }
                     }
-                } else if id.name == "Atom Object Get Object" {
+                }
+                else if id.name == "Atom Object Get Object" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             if let Some(TheCodeAtom::ObjectGet(_object, variable)) =
@@ -283,7 +290,8 @@ impl TheCodeEditor {
                             }
                         }
                     }
-                } else if id.name == "Atom Object Get Variable" {
+                }
+                else if id.name == "Atom Object Get Variable" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             if let Some(TheCodeAtom::ObjectGet(object, _variable)) =
@@ -295,7 +303,8 @@ impl TheCodeEditor {
                             }
                         }
                     }
-                } else if id.name == "Atom Object Set Object" {
+                }
+                else if id.name == "Atom Object Set Object" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             if let Some(TheCodeAtom::ObjectSet(_object, variable)) =
@@ -307,7 +316,8 @@ impl TheCodeEditor {
                             }
                         }
                     }
-                } else if id.name == "Atom Object Set Variable" {
+                }
+                else if id.name == "Atom Object Set Variable" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             if let Some(TheCodeAtom::ObjectSet(object, _variable)) =
@@ -319,19 +329,22 @@ impl TheCodeEditor {
                             }
                         }
                     }
-                } else if id.name == "Atom Integer" {
+                }
+                else if id.name == "Atom Integer" {
                     if let Some(v) = value.to_i32() {
                         self.start_undo(ui);
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Int(v)));
                         self.finish_undo(ui, ctx);
                     }
-                } else if id.name == "Atom Float" {
+                }
+                else if id.name == "Atom Float" {
                     if let Some(v) = value.to_f32() {
                         self.start_undo(ui);
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Float(v)));
                         self.finish_undo(ui, ctx);
                     }
-                } else if id.name == "Atom Tile" {
+                }
+                else if id.name == "Atom Tile" {
                     if let Some(name) = value.to_string() {
                         self.start_undo(ui);
                         self.set_selected_atom(
@@ -542,6 +555,8 @@ impl TheCodeEditor {
             "Object Set" => TheCodeAtom::ObjectSet("self".to_string(), "name".to_string()),
             "Integer" => TheCodeAtom::Value(TheValue::Int(0)),
             "Float" => TheCodeAtom::Value(TheValue::Float(0.0)),
+            "Bool" => TheCodeAtom::Value(TheValue::Bool(false)),
+            "Text" => TheCodeAtom::Value(TheValue::Text("".to_string())),
             "Tile" => TheCodeAtom::Value(TheValue::Tile("Name".into(), Uuid::nil())),
             "Float2" => TheCodeAtom::Value(TheValue::Float2(vec2f(0.0, 0.0))),
             "Float3" => TheCodeAtom::Value(TheValue::Float3(vec3f(0.0, 0.0, 0.0))),
@@ -768,16 +783,7 @@ impl TheCodeEditor {
     ) {
         code_layout.clear();
         if index == 0 {
-            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
-            item.set_text("Assignment".to_string());
-            item.set_associated_layout(code_layout.id().clone());
-            code_layout.add_item(item, ctx);
-
-            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
-            item.set_text("Comparison".to_string());
-            item.set_associated_layout(code_layout.id().clone());
-            code_layout.add_item(item, ctx);
-
+            /*
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Function".to_string());
             item.set_associated_layout(code_layout.id().clone());
@@ -796,7 +802,7 @@ impl TheCodeEditor {
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Return".to_string());
             item.set_associated_layout(code_layout.id().clone());
-            code_layout.add_item(item, ctx);
+            code_layout.add_item(item, ctx);*/
 
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Local Get".to_string());
@@ -817,14 +823,9 @@ impl TheCodeEditor {
             item.set_text("Object Set".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
-
-            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
-            item.set_text("Pulse".to_string());
-            item.set_associated_layout(code_layout.id().clone());
-            code_layout.add_item(item, ctx);
         }
 
-        if index == 0 || index == 1 {
+        if index == 1 {
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Integer".to_string());
             item.set_associated_layout(code_layout.id().clone());
@@ -832,6 +833,16 @@ impl TheCodeEditor {
 
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Float".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("Bool".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("Text".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
@@ -856,7 +867,17 @@ impl TheCodeEditor {
             // code_layout.add_item(item, ctx);
         }
 
-        if index == 0 || index == 2 {
+        if index == 2 {
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("Assignment".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("Comparison".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Add".to_string());
             item.set_associated_layout(code_layout.id().clone());
@@ -868,7 +889,7 @@ impl TheCodeEditor {
             code_layout.add_item(item, ctx);
         }
 
-        if index == 0 || index == 3 {
+        if index == 3 {
             for e in &self.externals {
                 let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
                 item.set_text(e.name.clone());

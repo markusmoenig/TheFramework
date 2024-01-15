@@ -189,7 +189,12 @@ impl TheCompiler {
     }
 
     /// Add an external node to the compiler.
-    pub fn add_external_call(&mut self, name: String, call: TheCodeNodeCall, values: Vec<TheValue>) {
+    pub fn add_external_call(
+        &mut self,
+        name: String,
+        call: TheCodeNodeCall,
+        values: Vec<TheValue>,
+    ) {
         self.external_call.insert(name, (call, values));
     }
 
@@ -397,10 +402,7 @@ impl TheCompiler {
 
                     if !matches!(self.ctx.current, TheCodeAtom::EndOfExpression) {
                         self.error_at(
-                            (
-                                self.ctx.current_location.0,
-                                self.ctx.current_location.1,
-                            ),
+                            (self.ctx.current_location.0, self.ctx.current_location.1),
                             "Unexpected code inside function call.",
                         );
                         return;
@@ -410,14 +412,10 @@ impl TheCompiler {
                     //println!("off {:?} loc {:?}", off, self.ctx.current_location);
 
                     // Check if function argument value at the right position.
-                    if self.ctx.current_location.0 != off || self.ctx.current_location.1 != location.1 {
-                        self.error_at(
-                            (
-                                off,
-                                location.1,
-                            ),
-                            "Expected value at this position.",
-                        );
+                    if self.ctx.current_location.0 != off
+                        || self.ctx.current_location.1 != location.1
+                    {
+                        self.error_at((off, location.1), "Expected value at this position.");
                         return;
                     }
 
@@ -430,10 +428,7 @@ impl TheCompiler {
                         }
                         _ => {
                             self.error_at(
-                                (
-                                    self.ctx.current_location.0,
-                                    self.ctx.current_location.1,
-                                ),
+                                (self.ctx.current_location.0, self.ctx.current_location.1),
                                 "Expected Value.",
                             );
                             return;
@@ -454,13 +449,7 @@ impl TheCompiler {
                         }
                         self.ctx.external_call = None;
                     } else {
-                        self.error_at(
-                            (
-                                location.0,
-                                location.1,
-                            ),
-                            "Unknown external call.",
-                        );
+                        self.error_at((location.0, location.1), "Unknown external call.");
                     }
                 }
             }

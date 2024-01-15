@@ -119,6 +119,7 @@ impl TheWidget for TheCodeView {
                             let mut drop = TheDrop::new(TheId::named("Code Editor Atom"));
                             drop.title = atom.describe();
                             drop.set_data(atom.to_json());
+                            drop.start_position = Some(vec2i(selected.0 as i32, selected.1 as i32));
                             ctx.ui.send(TheEvent::DragStartedWithNoImage(drop));
                         }
                     }
@@ -146,8 +147,7 @@ impl TheWidget for TheCodeView {
                             if (x % 2 == 1 || y % 2 == 1) && atom.uneven_slot()
                                 || x % 2 == 0 && y % 2 == 0 && !atom.uneven_slot()
                             {
-                                if *x == 0
-                                    && atom.can_assign()
+                                if atom.can_assign()
                                     && !self.codegrid.code.contains_key(&(x + 1, *y))
                                 {
                                     self.codegrid
@@ -164,6 +164,10 @@ impl TheWidget for TheCodeView {
                                             .entry((off, *y))
                                             .or_insert_with(|| TheCodeAtom::Value(value.clone()));
                                     }
+                                }
+
+                                if let Some(sp) = drop.start_position {
+                                    self.codegrid.code.remove(&(sp.x as u16, sp.y as u16));
                                 }
 
                                 self.codegrid.code.insert(c, atom);
@@ -455,7 +459,7 @@ impl TheWidget for TheCodeView {
             //     }
             // };
 
-            let mut func_args_hash : FxHashMap<(u16, u16), (String, bool)> = FxHashMap::default();
+            let mut func_args_hash: FxHashMap<(u16, u16), (String, bool)> = FxHashMap::default();
 
             for y in 0..grid_y {
                 for x in 0..grid_x {
@@ -496,10 +500,10 @@ impl TheWidget for TheCodeView {
                             for (index, name) in arg_names.iter().enumerate() {
                                 let off = x + (index + 1) as u16 * 2;
 
-                                func_args_hash.insert((off, y), (name.clone(), index == arg_names.len() - 1));
+                                func_args_hash
+                                    .insert((off, y), (name.clone(), index == arg_names.len() - 1));
                             }
-                        }
-                        else if let Some((_, at_end)) = func_args_hash.get(&(x, y)) {
+                        } else if let Some((_, at_end)) = func_args_hash.get(&(x, y)) {
                             // Avoid the border
                             let mut d = dim;
                             d.x -= 2;
@@ -707,7 +711,12 @@ impl TheWidget for TheCodeView {
                                     if let Some(top) = &v.0 {
                                         ctx.draw.text_rect_blend(
                                             self.buffer.pixels_mut(),
-                                            &(rect.0, rect.1 + zoom_const(5, zoom), rect.2, rect.3 - zoom_const(10, zoom)),
+                                            &(
+                                                rect.0,
+                                                rect.1 + zoom_const(5, zoom),
+                                                rect.2,
+                                                rect.3 - zoom_const(10, zoom),
+                                            ),
                                             stride,
                                             font,
                                             font_size,

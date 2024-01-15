@@ -101,6 +101,16 @@ impl TheValue {
         }
     }
 
+    /// Returns the value as f32 if possible. Used for comparison.
+    pub fn as_f32(&self) -> Option<f32> {
+        match self {
+            Float(v) => Some(*v),
+            Int(v) => Some(*v as f32),
+            Bool(v) => Some(*v as i32 as f32),
+            _ => None,
+        }
+    }
+
     /// Add a value to another value. Returns None if the values are not compatible.
     pub fn add(&self, other: &TheValue) -> Option<TheValue> {
         if let TheValue::Int(a) = self {

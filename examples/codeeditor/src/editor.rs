@@ -28,10 +28,11 @@ impl TheTrait for CodeEditor {
         ));
 
         let mut compiler = TheCompiler::default();
-        compiler.add_external_call("Pulse".to_string(),
+        compiler.add_external_call(
+            "Pulse".to_string(),
             |stack: &mut Vec<TheValue>,
-                data: &mut TheCodeNodeData,
-                sandbox: &mut TheCodeSandbox| {
+             data: &mut TheCodeNodeData,
+             sandbox: &mut TheCodeSandbox| {
                 let count = data.values[0].to_i32().unwrap();
                 let mut max_value = data.values[1].to_i32().unwrap();
 
@@ -51,15 +52,22 @@ impl TheTrait for CodeEditor {
                     if sandbox.debug_mode {
                         sandbox.set_debug_value(
                             data.location,
-                            (Some(TheValue::Text(format!("{} / {}", count, max_value))), TheValue::Bool(false)),
+                            (
+                                Some(TheValue::Text(format!("{} / {}", count, max_value))),
+                                TheValue::Bool(false),
+                            ),
                         );
                     }
+                    stack.push(TheValue::Bool(false));
                     TheCodeNodeCallResult::Continue
                 } else {
                     if sandbox.debug_mode {
                         sandbox.set_debug_value(
                             data.location,
-                            (Some(TheValue::Text(format!("{} / {}", count, max_value))), TheValue::Bool(true)),
+                            (
+                                Some(TheValue::Text(format!("{} / {}", count, max_value))),
+                                TheValue::Bool(true),
+                            ),
                         );
                     }
                     data.values[0] = TheValue::Int(0);
@@ -71,10 +79,11 @@ impl TheTrait for CodeEditor {
                     if !data.sub_functions.is_empty() {
                         _ = data.sub_functions[0].execute(sandbox).pop();
                     }
+                    stack.push(TheValue::Bool(true));
                     TheCodeNodeCallResult::Continue
                 }
             },
-            vec![TheValue::Int(0), TheValue::Int(0)]
+            vec![TheValue::Int(0), TheValue::Int(0)],
         );
 
         Self {

@@ -145,15 +145,12 @@ impl TheCodeAtom {
                 if let Some(call) = &ctx.external_call {
                     Some(TheCodeNode::new(
                         call.0,
-                        TheCodeNodeData::location_values(
-                            ctx.node_location,
-                            call.1.clone(),
-                        ),
+                        TheCodeNodeData::location_values(ctx.node_location, call.1.clone()),
                     ))
                 } else {
                     None
                 }
-            },
+            }
             TheCodeAtom::FuncCall(name) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
@@ -664,6 +661,21 @@ impl TheCodeAtom {
                     name_edit.set_range(TheValue::RangeI32(core::ops::RangeInclusive::new(
                         std::i32::MIN,
                         std::i32::MAX,
+                    )));
+                    name_edit.set_text(v.to_string());
+                    name_edit.set_needs_redraw(true);
+                    layout.add_widget(Box::new(text));
+                    layout.add_widget(Box::new(name_edit));
+                }
+                TheValue::Float(v) => {
+                    let mut text = TheText::new(TheId::empty());
+                    text.set_text(value.to_kind());
+                    let mut name_edit = TheTextLineEdit::new(TheId::named(
+                        format!("Atom {}", value.to_kind()).as_str(),
+                    ));
+                    name_edit.set_range(TheValue::RangeF32(core::ops::RangeInclusive::new(
+                        std::f32::MIN,
+                        std::f32::MAX,
                     )));
                     name_edit.set_text(v.to_string());
                     name_edit.set_needs_redraw(true);

@@ -163,15 +163,20 @@ impl TheUI {
         self.statusbar_name = Some(name);
     }
 
+    pub fn relayout(&mut self,  ctx: &mut TheContext) {
+        let width = self.canvas.buffer().dim().width;
+        let height = self.canvas.buffer().dim().height;
+        self.canvas.layout(width, height, ctx);
+        ctx.ui.relayout = false;
+    }
+
     pub fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {
         if self.canvas.resize(ctx.width as i32, ctx.height as i32, ctx) {
             ctx.ui.send(TheEvent::Resize);
+            ctx.ui.relayout = true;
         }
         if ctx.ui.relayout {
-            let width = self.canvas.buffer().dim().width;
-            let height = self.canvas.buffer().dim().height;
-            self.canvas.layout(width, height, ctx);
-            ctx.ui.relayout = false;
+            self.relayout(ctx);
         }
         self.canvas.draw(&mut self.style, ctx);
         if self.dialog.is_some() {
