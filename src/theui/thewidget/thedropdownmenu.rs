@@ -5,6 +5,8 @@ pub struct TheDropdownMenu {
     limiter: TheSizeLimiter,
     status: Option<String>,
 
+    is_disabled: bool,
+
     state: TheWidgetState,
 
     options: Vec<String>,
@@ -29,6 +31,8 @@ impl TheWidget for TheDropdownMenu {
             limiter,
             status: None,
 
+            is_disabled: false,
+
             state: TheWidgetState::None,
 
             options: vec![],
@@ -52,9 +56,23 @@ impl TheWidget for TheDropdownMenu {
         self.status = Some(text.to_string());
     }
 
+    fn disabled(&self) -> bool {
+        self.is_disabled
+    }
+
+    fn set_disabled(&mut self, disabled: bool) {
+        if disabled != self.is_disabled {
+            self.is_disabled = disabled;
+            self.is_dirty = true;
+        }
+    }
+
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         // println!("event ({}): {:?}", self.widget_id.name, event);
+        if self.is_disabled {
+            return false;
+        }
         match event {
             TheEvent::MouseDown(_coord) => {
                 self.is_dirty = true;
@@ -171,11 +189,13 @@ impl TheWidget for TheDropdownMenu {
             "dark_dropdown_normal".to_string()
         };
 
-        if self.state != TheWidgetState::Clicked && self.id().equals(&ctx.ui.hover) {
-            icon_name = "dark_dropdown_hover".to_string()
-        }
-        if self.state != TheWidgetState::Clicked && self.id().equals(&ctx.ui.focus) {
-            icon_name = "dark_dropdown_focus".to_string()
+        if !self.is_disabled {
+            if self.state != TheWidgetState::Clicked && self.id().equals(&ctx.ui.hover) {
+                icon_name = "dark_dropdown_hover".to_string()
+            }
+            if self.state != TheWidgetState::Clicked && self.id().equals(&ctx.ui.focus) {
+                icon_name = "dark_dropdown_focus".to_string()
+            }
         }
 
         let text_color = if self.state == TheWidgetState::Selected {
@@ -305,9 +325,10 @@ impl TheWidget for TheDropdownMenu {
     }
 }
 
-pub trait TheDropdownMenuTrait {
+pub trait TheDropdownMenuTrait : TheWidget {
     fn add_option(&mut self, option: String);
     fn selected_text(&self) -> String;
+    fn set_selected_index(&mut self, index: i32);
     fn selected_index(&self) -> usize;
 }
 
@@ -321,4 +342,9 @@ impl TheDropdownMenuTrait for TheDropdownMenu {
     fn selected_text(&self) -> String {
         self.options[self.selected as usize].clone()
     }
+    fn set_selected_index(&mut self, index: i32) {
+        self.selected = index;
+        self.is_dirty = true;
+    }
+
 }

@@ -97,7 +97,7 @@ impl TheTrait for CodeEditor {
         }
     }
 
-    fn window_title(&mut self) -> String {
+    fn window_title(&self) -> String {
         "CodeGrid Editor".to_string()
     }
 

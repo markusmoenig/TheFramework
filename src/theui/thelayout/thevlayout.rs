@@ -23,6 +23,8 @@ pub struct TheVLayout {
 
     background: Option<TheThemeColors>,
     reverse_index: Option<i32>,
+
+    alignment: TheHorizontalAlign,
 }
 
 impl TheLayout for TheVLayout {
@@ -44,6 +46,8 @@ impl TheLayout for TheVLayout {
 
             background: Some(DefaultWidgetBackground),
             reverse_index: None,
+
+            alignment: TheHorizontalAlign::Center,
         }
     }
 
@@ -110,7 +114,7 @@ impl TheLayout for TheVLayout {
                     }
 
                     let mut x = self.margin.x;
-                    if self.dim.width > self.margin.x + self.margin.z {
+                    if self.alignment == TheHorizontalAlign::Center && self.dim.width > self.margin.x + self.margin.z {
                         let off = (self.dim.width - self.margin.x - self.margin.z - width) / 2;
                         if x + off + width < self.dim.width {
                             x += off;
@@ -204,6 +208,8 @@ pub trait TheVLayoutTrait {
     fn add_widget(&mut self, widget: Box<dyn TheWidget>);
     /// Set the top / bottom alingnment split index
     fn set_reverse_index(&mut self, reverse_index: Option<i32>);
+    /// Set the horizontal alignment.
+    fn set_alignment(&mut self, align: TheHorizontalAlign);
 }
 
 impl TheVLayoutTrait for TheVLayout {
@@ -216,4 +222,8 @@ impl TheVLayoutTrait for TheVLayout {
     fn set_reverse_index(&mut self, reverse_index: Option<i32>) {
         self.reverse_index = reverse_index;
     }
+    fn set_alignment(&mut self, align: TheHorizontalAlign) {
+        self.alignment = align;
+    }
+
 }

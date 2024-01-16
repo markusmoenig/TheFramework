@@ -24,7 +24,7 @@ impl TheTrait for UIDemo {
         }
     }
 
-    fn window_title(&mut self) -> String {
+    fn window_title(&self) -> String {
         "UIDemo".to_string()
     }
 
