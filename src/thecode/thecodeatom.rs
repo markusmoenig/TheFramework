@@ -4,15 +4,15 @@ use super::thecodenode::TheCodeNodeData;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum TheCodeAtom {
-    Assignment(String),
-    Comparison(String),
+    Assignment(TheValueAssignment),
+    Comparison(TheValueComparison),
     Value(TheValue),
     Add,
     Multiply,
     LocalGet(String),
-    LocalSet(String),
+    LocalSet(String, TheValueAssignment),
     ObjectGet(String, String),
-    ObjectSet(String, String),
+    ObjectSet(String, String, TheValueAssignment),
     FuncDef(String),
     FuncCall(String),
     ExternalCall(String, String, Vec<String>, Vec<TheValue>, Option<TheValue>),
@@ -31,7 +31,8 @@ impl TheCodeAtom {
     }
 
     pub fn can_assign(&self) -> bool {
-        matches!(self, TheCodeAtom::LocalSet(_)) || matches!(self, TheCodeAtom::ObjectSet(_, _))
+        matches!(self, TheCodeAtom::LocalSet(_, _))
+            || matches!(self, TheCodeAtom::ObjectSet(_, _, _))
     }
 
     pub fn from_json(json: &str) -> Self {
@@ -44,18 +45,62 @@ impl TheCodeAtom {
 
     pub fn to_node(&self, ctx: &mut TheCompilerContext) -> Option<TheCodeNode> {
         match self {
-            TheCodeAtom::Comparison(_) => {
+            TheCodeAtom::Comparison(op) => {
                 let call: TheCodeNodeCall =
                     |_stack: &mut Vec<TheValue>,
                      data: &mut TheCodeNodeData,
                      sandbox: &mut TheCodeSandbox| {
                         if let Some(f) = data.sub_functions.first_mut() {
-                            if let Some(v) = f.execute(sandbox).pop() {
-                                if data.values[0] == v && data.sub_functions.len() > 1 {
-                                    _ = data.sub_functions[1].execute(sandbox).pop();
-                                }
+                            if let Some(right) = f.execute(sandbox).pop() {
+                                let left = &data.values[0];
 
-                                //println!("Comparison: left {:?}, right: {:?}", data.values[0], v);
+                                //println!("Comparison: left {:?}, right: {:?}", left, right);
+
+                                if let TheValue::Comparison(op) = data.values[1] {
+                                    match op {
+                                        TheValueComparison::Equal => {
+                                            if left.is_equal(&right) && data.sub_functions.len() > 1
+                                            {
+                                                _ = data.sub_functions[1].execute(sandbox).pop();
+                                            }
+                                        }
+                                        TheValueComparison::Unequal => {
+                                            if !left.is_equal(&right)
+                                                && data.sub_functions.len() > 1
+                                            {
+                                                _ = data.sub_functions[1].execute(sandbox).pop();
+                                            }
+                                        }
+                                        TheValueComparison::GreaterThanOrEqual => {
+                                            if left.is_greater_than_or_equal(&right)
+                                                && data.sub_functions.len() > 1
+                                            {
+                                                _ = data.sub_functions[1].execute(sandbox).pop();
+                                            }
+                                        }
+                                        TheValueComparison::LessThanOrEqual => {
+                                            if left.is_less_than_or_equal(&right)
+                                                && data.sub_functions.len() > 1
+                                            {
+                                                _ = data.sub_functions[1].execute(sandbox).pop();
+                                            }
+                                        }
+                                        TheValueComparison::GreaterThan => {
+                                            if left.is_greater_than(&right)
+                                                && data.sub_functions.len() > 1
+                                            {
+                                                _ = data.sub_functions[1].execute(sandbox).pop();
+                                            }
+                                        }
+                                        TheValueComparison::LessThan => {
+                                            if left.is_less_than(&right)
+                                                && data.sub_functions.len() > 1
+                                            {
+                                                _ = data.sub_functions[1].execute(sandbox).pop();
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
 
@@ -64,7 +109,10 @@ impl TheCodeAtom {
 
                 let mut node = TheCodeNode::new(
                     call,
-                    TheCodeNodeData::location_values(ctx.node_location, vec![TheValue::Int(0)]),
+                    TheCodeNodeData::location_values(
+                        ctx.node_location,
+                        vec![TheValue::Int(0), TheValue::Comparison(*op)],
+                    ),
                 );
 
                 if let Some(function) = ctx.remove_function() {
@@ -233,7 +281,7 @@ impl TheCodeAtom {
                     ),
                 ))
             }
-            TheCodeAtom::LocalSet(name) => {
+            TheCodeAtom::LocalSet(name, op) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
                      data: &mut TheCodeNodeData,
@@ -243,10 +291,71 @@ impl TheCodeAtom {
                         if let Some(function) = sandbox.call_stack.last_mut() {
                             if let Some(local) = function.local.last_mut() {
                                 let v = stack.pop().unwrap();
-                                if sandbox.debug_mode {
-                                    debug_value = Some(v.clone());
+                                if let TheValue::Assignment(op) = data.values[1] {
+                                    match op {
+                                        TheValueAssignment::Assign => {
+                                            if sandbox.debug_mode {
+                                                debug_value = Some(v.clone());
+                                            }
+                                            local.set(data.values[0].to_string().unwrap(), v);
+                                        }
+                                        TheValueAssignment::AddAssign => {
+                                            let name = data.values[0].to_string().unwrap();
+                                            if let Some(left) = local.get(&name) {
+                                                if let Some(result) = TheValue::add(left, &v) {
+                                                    if sandbox.debug_mode {
+                                                        debug_value = Some(result.clone());
+                                                    }
+                                                    local.set(name, result);
+                                                }
+                                            }
+                                        }
+                                        TheValueAssignment::SubtractAssign => {
+                                            let name = data.values[0].to_string().unwrap();
+                                            if let Some(left) = local.get(&name) {
+                                                if let Some(result) = TheValue::sub(left, &v) {
+                                                    if sandbox.debug_mode {
+                                                        debug_value = Some(result.clone());
+                                                    }
+                                                    local.set(name, result);
+                                                }
+                                            }
+                                        }
+                                        TheValueAssignment::MultiplyAssign => {
+                                            let name = data.values[0].to_string().unwrap();
+                                            if let Some(left) = local.get(&name) {
+                                                if let Some(result) = TheValue::mul(left, &v) {
+                                                    if sandbox.debug_mode {
+                                                        debug_value = Some(result.clone());
+                                                    }
+                                                    local.set(name, result);
+                                                }
+                                            }
+                                        }
+                                        TheValueAssignment::DivideAssign => {
+                                            let name = data.values[0].to_string().unwrap();
+                                            if let Some(left) = local.get(&name) {
+                                                if let Some(result) = TheValue::div(left, &v) {
+                                                    if sandbox.debug_mode {
+                                                        debug_value = Some(result.clone());
+                                                    }
+                                                    local.set(name, result);
+                                                }
+                                            }
+                                        }
+                                        TheValueAssignment::ModulusAssign => {
+                                            let name = data.values[0].to_string().unwrap();
+                                            if let Some(left) = local.get(&name) {
+                                                if let Some(result) = TheValue::modulus(left, &v) {
+                                                    if sandbox.debug_mode {
+                                                        debug_value = Some(result.clone());
+                                                    }
+                                                    local.set(name, result);
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
-                                local.set(data.values[0].to_string().unwrap(), v);
                             }
                         }
 
@@ -272,7 +381,7 @@ impl TheCodeAtom {
                     call,
                     TheCodeNodeData::location_values(
                         ctx.node_location,
-                        vec![TheValue::Text(name.clone())],
+                        vec![TheValue::Text(name.clone()), TheValue::Assignment(*op)],
                     ),
                 ))
             }
@@ -325,7 +434,7 @@ impl TheCodeAtom {
                     ),
                 ))
             }
-            TheCodeAtom::ObjectSet(object, name) => {
+            TheCodeAtom::ObjectSet(object, name, op) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
                      data: &mut TheCodeNodeData,
@@ -340,7 +449,71 @@ impl TheCodeAtom {
                                 if debug_mode {
                                     debug_value = Some(v.clone());
                                 }
-                                object.set(data.values[1].to_string().unwrap(), v);
+                                if let TheValue::Assignment(op) = data.values[2] {
+                                    match op {
+                                        TheValueAssignment::Assign => {
+                                            if debug_mode {
+                                                debug_value = Some(v.clone());
+                                            }
+                                            object.set(data.values[1].to_string().unwrap(), v);
+                                        }
+                                        TheValueAssignment::AddAssign => {
+                                            let name = data.values[0].to_string().unwrap();
+                                            if let Some(left) = object.get(&name) {
+                                                if let Some(result) = TheValue::add(left, &v) {
+                                                    if debug_mode {
+                                                        debug_value = Some(result.clone());
+                                                    }
+                                                    object.set(name, result);
+                                                }
+                                            }
+                                        }
+                                        TheValueAssignment::SubtractAssign => {
+                                            let name = data.values[0].to_string().unwrap();
+                                            if let Some(left) = object.get(&name) {
+                                                if let Some(result) = TheValue::sub(left, &v) {
+                                                    if debug_mode {
+                                                        debug_value = Some(result.clone());
+                                                    }
+                                                    object.set(name, result);
+                                                }
+                                            }
+                                        }
+                                        TheValueAssignment::MultiplyAssign => {
+                                            let name = data.values[0].to_string().unwrap();
+                                            if let Some(left) = object.get(&name) {
+                                                if let Some(result) = TheValue::mul(left, &v) {
+                                                    if debug_mode {
+                                                        debug_value = Some(result.clone());
+                                                    }
+                                                    object.set(name, result);
+                                                }
+                                            }
+                                        }
+                                        TheValueAssignment::DivideAssign => {
+                                            let name = data.values[0].to_string().unwrap();
+                                            if let Some(left) = object.get(&name) {
+                                                if let Some(result) = TheValue::div(left, &v) {
+                                                    if debug_mode {
+                                                        debug_value = Some(result.clone());
+                                                    }
+                                                    object.set(name, result);
+                                                }
+                                            }
+                                        }
+                                        TheValueAssignment::ModulusAssign => {
+                                            let name = data.values[0].to_string().unwrap();
+                                            if let Some(left) = object.get(&name) {
+                                                if let Some(result) = TheValue::modulus(left, &v) {
+                                                    if debug_mode {
+                                                        debug_value = Some(result.clone());
+                                                    }
+                                                    object.set(name, result);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             } else {
                                 println!("Runtime error: Object Set. Stack is empty.",);
                             }
@@ -367,12 +540,15 @@ impl TheCodeAtom {
                         local.set(name.clone(), ctx.stack.pop().unwrap());
                     }
                 }
-
                 Some(TheCodeNode::new(
                     call,
                     TheCodeNodeData::location_values(
                         ctx.node_location,
-                        vec![TheValue::Text(object.clone()), TheValue::Text(name.clone())],
+                        vec![
+                            TheValue::Text(object.clone()),
+                            TheValue::Text(name.clone()),
+                            TheValue::Assignment(*op),
+                        ],
                     ),
                 ))
             }
@@ -454,7 +630,7 @@ impl TheCodeAtom {
                 TheSDF::RoundedRect(dim, (0.0, 0.0, 0.0, 0.0))
                 //TheSDF::Rhombus(dim)
             }
-            Self::ObjectSet(_, _) | Self::LocalSet(_) => {
+            Self::ObjectSet(_, _, _) | Self::LocalSet(_, _) => {
                 TheSDF::RoundedRect(dim, (0.0, 0.0, 10.0 * zoom, 10.0 * zoom))
             }
             Self::FuncCall(_) | Self::ExternalCall(_, _, _, _, _) => {
@@ -466,7 +642,7 @@ impl TheCodeAtom {
 
     pub fn to_color(&self) -> [u8; 4] {
         match self {
-            Self::ObjectSet(_, _) => [36, 61, 92, 255],
+            Self::ObjectSet(_, _, _) => [36, 61, 92, 255],
             //[87, 112, 143, 255]
             _ => [174, 174, 174, 255],
         }
@@ -482,9 +658,9 @@ impl TheCodeAtom {
             TheCodeAtom::ExternalCall(_, _, _, _, _) => TheCodeAtomKind::Identifier,
             TheCodeAtom::Return => TheCodeAtomKind::Return,
             TheCodeAtom::LocalGet(_name) => TheCodeAtomKind::Identifier,
-            TheCodeAtom::LocalSet(_name) => TheCodeAtomKind::Identifier,
-            TheCodeAtom::ObjectGet(_object, _name) => TheCodeAtomKind::Identifier,
-            TheCodeAtom::ObjectSet(_object, _name) => TheCodeAtomKind::Identifier,
+            TheCodeAtom::LocalSet(_, _) => TheCodeAtomKind::Identifier,
+            TheCodeAtom::ObjectGet(_, _) => TheCodeAtomKind::Identifier,
+            TheCodeAtom::ObjectSet(_, _, _) => TheCodeAtomKind::Identifier,
             TheCodeAtom::Value(_) => TheCodeAtomKind::Number,
             TheCodeAtom::Add => TheCodeAtomKind::Plus,
             TheCodeAtom::Multiply => TheCodeAtomKind::Star,
@@ -495,17 +671,17 @@ impl TheCodeAtom {
 
     pub fn describe(&self) -> String {
         match self {
-            TheCodeAtom::Assignment(op) => op.clone(),
-            TheCodeAtom::Comparison(op) => op.clone(),
+            TheCodeAtom::Assignment(op) => op.to_string().to_string(),
+            TheCodeAtom::Comparison(op) => op.to_string().to_string(),
             TheCodeAtom::FuncDef(name) => name.clone(),
             TheCodeAtom::FuncArg(name) => name.clone(),
             TheCodeAtom::FuncCall(name) => name.clone(),
             TheCodeAtom::ExternalCall(name, _, _, _, _) => name.clone(),
             TheCodeAtom::Return => "Return".to_string(),
             TheCodeAtom::LocalGet(name) => name.clone(),
-            TheCodeAtom::LocalSet(name) => name.clone(),
+            TheCodeAtom::LocalSet(name, _) => name.clone(),
             TheCodeAtom::ObjectGet(object, name) => format!("{}.{}", object, name),
-            TheCodeAtom::ObjectSet(object, name) => format!("{}.{}", object, name),
+            TheCodeAtom::ObjectSet(object, name, _) => format!("{}.{}", object, name),
             TheCodeAtom::Value(value) => match value {
                 TheValue::Tile(name, _id) => name.clone(),
                 _ => value.describe(),
@@ -519,8 +695,8 @@ impl TheCodeAtom {
 
     pub fn help(&self) -> String {
         match self {
-            TheCodeAtom::Assignment(name) => format!("Assignment ({}).", name),
-            TheCodeAtom::Comparison(name) => format!("Comparison ({}).", name),
+            TheCodeAtom::Assignment(op) => format!("Assignment ({}).", op.to_string()),
+            TheCodeAtom::Comparison(op) => format!("Comparison ({}).", op.to_string()),
             TheCodeAtom::FuncDef(name) => format!("Function definition ({}).", name),
             TheCodeAtom::FuncArg(name) => format!("Function argument ({}).", name),
             TheCodeAtom::FuncCall(name) => format!(
@@ -530,14 +706,18 @@ impl TheCodeAtom {
             TheCodeAtom::ExternalCall(_, description, _, _, _) => description.clone(),
             TheCodeAtom::Return => "Return from a function. Optionally with a value.".to_string(),
             TheCodeAtom::LocalGet(name) => format!("Get the value of a local variable ({}).", name),
-            TheCodeAtom::LocalSet(name) => format!("Set a value to a local variable ({}).", name),
+            TheCodeAtom::LocalSet(name, _) => {
+                format!("Set a value to a local variable ({}).", name)
+            }
             TheCodeAtom::ObjectGet(object, name) => {
                 format!("Get the value of an object variable ({}.{}).", object, name)
             }
-            TheCodeAtom::ObjectSet(object, name) => {
+            TheCodeAtom::ObjectSet(object, name, _) => {
                 format!("Set a value to an object variable ({}.{}).", object, name)
             }
             TheCodeAtom::Value(value) => match value {
+                TheValue::Assignment(_) => self.describe(),
+                TheValue::Comparison(_) => self.describe(),
                 TheValue::Bool(_v) => format!("Boolean constant ({}).", self.describe()),
                 TheValue::CodeObject(_v) => "An Object.".to_string(),
                 TheValue::Int(v) => format!("Integer constant ({}).", v),
@@ -569,6 +749,28 @@ impl TheCodeAtom {
     /// Generates a text layout to edit the properties of the atom
     pub fn to_layout(&self, layout: &mut dyn TheHLayoutTrait) {
         match self {
+            TheCodeAtom::Assignment(op) => {
+                let mut text = TheText::new(TheId::empty());
+                text.set_text("Assignment".to_string());
+                let mut drop_down = TheDropdownMenu::new(TheId::named("Atom Assignment"));
+                for dir in TheValueAssignment::iterator() {
+                    drop_down.add_option(dir.to_string().to_string());
+                }
+                drop_down.set_selected_index(*op as i32);
+                layout.add_widget(Box::new(text));
+                layout.add_widget(Box::new(drop_down));
+            }
+            TheCodeAtom::Comparison(op) => {
+                let mut text = TheText::new(TheId::empty());
+                text.set_text("Comparison".to_string());
+                let mut drop_down = TheDropdownMenu::new(TheId::named("Atom Comparison"));
+                for dir in TheValueComparison::iterator() {
+                    drop_down.add_option(dir.to_string().to_string());
+                }
+                drop_down.set_selected_index(*op as i32);
+                layout.add_widget(Box::new(text));
+                layout.add_widget(Box::new(drop_down));
+            }
             TheCodeAtom::FuncDef(name) => {
                 let mut text = TheText::new(TheId::empty());
                 text.set_text("Function Name".to_string());
@@ -605,7 +807,7 @@ impl TheCodeAtom {
                 layout.add_widget(Box::new(text));
                 layout.add_widget(Box::new(name_edit));
             }
-            TheCodeAtom::LocalSet(name) => {
+            TheCodeAtom::LocalSet(name, _) => {
                 let mut text = TheText::new(TheId::empty());
                 text.set_text("Variable Name".to_string());
                 let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Local Set"));
@@ -631,7 +833,7 @@ impl TheCodeAtom {
                 layout.add_widget(Box::new(text));
                 layout.add_widget(Box::new(name_edit));
             }
-            TheCodeAtom::ObjectSet(object, name) => {
+            TheCodeAtom::ObjectSet(object, name, _) => {
                 let mut text = TheText::new(TheId::empty());
                 text.set_text("Object Name".to_string());
                 let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Object Set Object"));
@@ -650,7 +852,7 @@ impl TheCodeAtom {
             }
             TheCodeAtom::Value(value) => match value {
                 TheValue::Position(v) => {
-                    create_float2_widgets(layout, TheId::named("Atom Position"), vec2f(v.x, v.y));
+                    create_float2_widgets(layout, TheId::named("Atom Position"), vec2f(v.x, v.z));
                 }
                 TheValue::Int(v) => {
                     let mut text = TheText::new(TheId::empty());

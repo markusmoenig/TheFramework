@@ -150,9 +150,10 @@ impl TheWidget for TheCodeView {
                                 if atom.can_assign()
                                     && !self.codegrid.code.contains_key(&(x + 1, *y))
                                 {
-                                    self.codegrid
-                                        .code
-                                        .insert((x + 1, *y), TheCodeAtom::Assignment("=".into()));
+                                    self.codegrid.code.insert(
+                                        (x + 1, *y),
+                                        TheCodeAtom::Assignment(TheValueAssignment::Assign),
+                                    );
                                 }
 
                                 if let TheCodeAtom::ExternalCall(_, _, _, arg_values, _) = &atom {
@@ -640,7 +641,7 @@ impl TheWidget for TheCodeView {
                         if let Some(font) = &ctx.ui.font {
                             match atom {
                                 TheCodeAtom::ObjectGet(object, var)
-                                | TheCodeAtom::ObjectSet(object, var) => {
+                                | TheCodeAtom::ObjectSet(object, var, _) => {
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
                                         &(rect.0, rect.1 + 8, rect.2, rect.3 - 16),

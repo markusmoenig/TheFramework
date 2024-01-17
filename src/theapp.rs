@@ -46,7 +46,7 @@ impl TheApp {
         app.init(&mut ctx);
 
         let window_title = app.window_title();
-        let mut icon : Option<Icon> = None;
+        let mut icon: Option<Icon> = None;
         if let Some(window_icon) = app.window_icon() {
             icon = Some(Icon::from_rgba(window_icon.0, window_icon.1, window_icon.2).unwrap());
         }

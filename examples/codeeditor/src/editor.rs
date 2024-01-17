@@ -1,9 +1,12 @@
 use crate::prelude::*;
+use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
 use theframework::prelude::*;
 
 pub struct CodeEditor {
     project: Project,
+    project_path: Option<PathBuf>,
+
     editor: TheCodeEditor,
     compiler: TheCompiler,
     right_width: i32,
@@ -88,6 +91,8 @@ impl TheTrait for CodeEditor {
 
         Self {
             project: Project::new(),
+            project_path: None,
+
             right_width: 280,
             editor,
 
@@ -169,6 +174,7 @@ impl TheTrait for CodeEditor {
                     TheEvent::FileRequesterResult(id, paths) => {
                         if id.name == "Open" {
                             for p in paths {
+                                self.project_path = Some(p.clone());
                                 let contents = std::fs::read_to_string(p).unwrap_or("".to_string());
                                 self.project =
                                     serde_json::from_str(&contents).unwrap_or(Project::new());
@@ -178,31 +184,43 @@ impl TheTrait for CodeEditor {
                                     self.right_width,
                                 ));
                                 redraw = true;
+                                ctx.ui.send(TheEvent::SetStatusText(
+                                    TheId::empty(),
+                                    "Project loaded successfully.".to_string(),
+                                ))
                             }
-                        } else if id.name == "Save" {
+                        } else if id.name == "Save As" {
                             self.project.bundle = self.editor.get_bundle();
-
                             for p in paths {
-                                let json = serde_json::to_string(&self.project); //.unwrap();
-                                                                                 //println!("{:?}", json.err());
+                                let json = serde_json::to_string(&self.project);
                                 if let Ok(json) = json {
-                                    println!("{:?}", p);
-                                    std::fs::write(p, json).expect("Unable to write file");
+                                    if std::fs::write(p, json).is_ok() {
+                                        ctx.ui.send(TheEvent::SetStatusText(
+                                            TheId::empty(),
+                                            "Project saved successfully.".to_string(),
+                                        ))
+                                    } else {
+                                        ctx.ui.send(TheEvent::SetStatusText(
+                                            TheId::empty(),
+                                            "Unable to save project!".to_string(),
+                                        ))
+                                    }
                                 }
                             }
                         }
                     }
+                    TheEvent::CodeBundleChanged(_, _) => {
+                        redraw = true;
+                    }
                     TheEvent::StateChanged(id, _state) => {
-                        //println!("app Widget State changed {:?}: {:?}", id, state);
-
                         if id.name == "Open" {
                             #[cfg(not(target_arch = "wasm32"))]
                             ctx.ui.open_file_requester(
                                 TheId::named_with_id(id.name.as_str(), Uuid::new_v4()),
                                 "Open".into(),
                                 TheFileExtension::new(
-                                    "CodeGrid".into(),
-                                    vec!["codegrid".to_string()],
+                                    "CodeGridFX".into(),
+                                    vec!["codegridfx".to_string()],
                                 ),
                             );
                             ctx.ui
@@ -210,13 +228,31 @@ impl TheTrait for CodeEditor {
                             ctx.ui.clear_hover();
                             redraw = true;
                         } else if id.name == "Save" {
+                            self.project.bundle = self.editor.get_bundle();
+                            if let Some(path) = &self.project_path {
+                                let json = serde_json::to_string(&self.project);
+                                if let Ok(json) = json {
+                                    if std::fs::write(path, json).is_ok() {
+                                        ctx.ui.send(TheEvent::SetStatusText(
+                                            TheId::empty(),
+                                            "Project saved successfully.".to_string(),
+                                        ))
+                                    } else {
+                                        ctx.ui.send(TheEvent::SetStatusText(
+                                            TheId::empty(),
+                                            "Unable to save project!".to_string(),
+                                        ))
+                                    }
+                                }
+                            }
+                        } else if id.name == "Save As" {
                             #[cfg(not(target_arch = "wasm32"))]
                             ctx.ui.save_file_requester(
                                 TheId::named_with_id(id.name.as_str(), Uuid::new_v4()),
                                 "Save".into(),
                                 TheFileExtension::new(
-                                    "CodeGrid".into(),
-                                    vec!["codegrid".to_string()],
+                                    "CodeGridFX".into(),
+                                    vec!["codegridfx".to_string()],
                                 ),
                             );
                             ctx.ui

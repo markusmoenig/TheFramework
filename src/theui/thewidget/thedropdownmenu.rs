@@ -325,7 +325,7 @@ impl TheWidget for TheDropdownMenu {
     }
 }
 
-pub trait TheDropdownMenuTrait : TheWidget {
+pub trait TheDropdownMenuTrait: TheWidget {
     fn add_option(&mut self, option: String);
     fn selected_text(&self) -> String;
     fn set_selected_index(&mut self, index: i32);
@@ -346,5 +346,4 @@ impl TheDropdownMenuTrait for TheDropdownMenu {
         self.selected = index;
         self.is_dirty = true;
     }
-
 }

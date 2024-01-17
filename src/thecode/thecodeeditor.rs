@@ -208,6 +208,21 @@ impl TheCodeEditor {
 
                 redraw = true;
             }
+            TheEvent::IndexChanged(id, index) => {
+                if id.name == "Atom Comparison" {
+                    if let Some(op) = TheValueComparison::from_index(*index as u8) {
+                        self.start_undo(ui);
+                        self.set_selected_atom(ui, TheCodeAtom::Comparison(op));
+                        self.finish_undo(ui, ctx);
+                    }
+                } else if id.name == "Atom Assignment" {
+                    if let Some(op) = TheValueAssignment::from_index(*index as u8) {
+                        self.start_undo(ui);
+                        self.set_selected_atom(ui, TheCodeAtom::Assignment(op));
+                        self.finish_undo(ui, ctx);
+                    }
+                }
+            }
             TheEvent::ValueChanged(id, value) => {
                 if id.name == "CodeGrid List Name" {
                     if let Some(text) = value.to_string() {
@@ -226,8 +241,7 @@ impl TheCodeEditor {
                             }
                         }
                     }
-                }
-                else if id.name == "Code Zoom" {
+                } else if id.name == "Code Zoom" {
                     if let Some(v) = value.to_f32() {
                         if let Some(layout) = ui.get_code_layout("Code Editor") {
                             if let Some(code_view) = layout.code_view_mut().as_code_view() {
@@ -236,22 +250,37 @@ impl TheCodeEditor {
                             }
                         }
                     }
-                }
-                else if id.name == "Atom Func Def" {
+                } else if id.name == "Atom Comparison" {
+                    if let TheValue::Int(v) = value {
+                        self.set_selected_atom(
+                            ui,
+                            TheCodeAtom::Comparison(
+                                TheValueComparison::from_index(*v as u8).unwrap(),
+                            ),
+                        );
+                    }
+                } else if id.name == "Atom Assignment" {
+                    if let TheValue::Int(v) = value {
+                        self.set_selected_atom(
+                            ui,
+                            TheCodeAtom::Assignment(
+                                TheValueAssignment::from_index(*v as u8).unwrap(),
+                            ),
+                        );
+                    }
+                } else if id.name == "Atom Func Def" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.set_selected_atom(ui, TheCodeAtom::FuncDef(name));
                         }
                     }
-                }
-                else if id.name == "Atom Func Arg" {
+                } else if id.name == "Atom Func Arg" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.set_selected_atom(ui, TheCodeAtom::FuncArg(name));
                         }
                     }
-                }
-                else if id.name == "Atom Func Call" {
+                } else if id.name == "Atom Func Call" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.start_undo(ui);
@@ -259,8 +288,7 @@ impl TheCodeEditor {
                             self.finish_undo(ui, ctx);
                         }
                     }
-                }
-                else if id.name == "Atom Local Get" {
+                } else if id.name == "Atom Local Get" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.start_undo(ui);
@@ -268,17 +296,18 @@ impl TheCodeEditor {
                             self.finish_undo(ui, ctx);
                         }
                     }
-                }
-                else if id.name == "Atom Local Set" {
+                } else if id.name == "Atom Local Set" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.start_undo(ui);
-                            self.set_selected_atom(ui, TheCodeAtom::LocalSet(name));
+                            self.set_selected_atom(
+                                ui,
+                                TheCodeAtom::LocalSet(name, TheValueAssignment::Assign),
+                            );
                             self.finish_undo(ui, ctx);
                         }
                     }
-                }
-                else if id.name == "Atom Object Get Object" {
+                } else if id.name == "Atom Object Get Object" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             if let Some(TheCodeAtom::ObjectGet(_object, variable)) =
@@ -290,8 +319,7 @@ impl TheCodeEditor {
                             }
                         }
                     }
-                }
-                else if id.name == "Atom Object Get Variable" {
+                } else if id.name == "Atom Object Get Variable" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             if let Some(TheCodeAtom::ObjectGet(object, _variable)) =
@@ -303,48 +331,57 @@ impl TheCodeEditor {
                             }
                         }
                     }
-                }
-                else if id.name == "Atom Object Set Object" {
+                } else if id.name == "Atom Object Set Object" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
-                            if let Some(TheCodeAtom::ObjectSet(_object, variable)) =
+                            if let Some(TheCodeAtom::ObjectSet(_, variable, _)) =
                                 self.get_selected_atom(ui)
                             {
                                 self.start_undo(ui);
-                                self.set_selected_atom(ui, TheCodeAtom::ObjectSet(name, variable));
+                                self.set_selected_atom(
+                                    ui,
+                                    TheCodeAtom::ObjectSet(
+                                        name,
+                                        variable,
+                                        TheValueAssignment::Assign,
+                                    ),
+                                );
                                 self.finish_undo(ui, ctx);
                             }
                         }
                     }
-                }
-                else if id.name == "Atom Object Set Variable" {
+                } else if id.name == "Atom Object Set Variable" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
-                            if let Some(TheCodeAtom::ObjectSet(object, _variable)) =
+                            if let Some(TheCodeAtom::ObjectSet(object, _, _)) =
                                 self.get_selected_atom(ui)
                             {
                                 self.start_undo(ui);
-                                self.set_selected_atom(ui, TheCodeAtom::ObjectSet(object, name));
+                                self.set_selected_atom(
+                                    ui,
+                                    TheCodeAtom::ObjectSet(
+                                        object,
+                                        name,
+                                        TheValueAssignment::Assign,
+                                    ),
+                                );
                                 self.finish_undo(ui, ctx);
                             }
                         }
                     }
-                }
-                else if id.name == "Atom Integer" {
+                } else if id.name == "Atom Integer" {
                     if let Some(v) = value.to_i32() {
                         self.start_undo(ui);
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Int(v)));
                         self.finish_undo(ui, ctx);
                     }
-                }
-                else if id.name == "Atom Float" {
+                } else if id.name == "Atom Float" {
                     if let Some(v) = value.to_f32() {
                         self.start_undo(ui);
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Float(v)));
                         self.finish_undo(ui, ctx);
                     }
-                }
-                else if id.name == "Atom Tile" {
+                } else if id.name == "Atom Tile" {
                     if let Some(name) = value.to_string() {
                         self.start_undo(ui);
                         self.set_selected_atom(
@@ -364,7 +401,7 @@ impl TheCodeEditor {
                         self.start_undo(ui);
                         self.set_selected_atom(
                             ui,
-                            TheCodeAtom::Value(TheValue::Position(vec3f(v.x, v.y, 0.0))),
+                            TheCodeAtom::Value(TheValue::Position(vec3f(v.x, 0.0, v.y))),
                         );
                         self.finish_undo(ui, ctx);
                     }
@@ -543,16 +580,20 @@ impl TheCodeEditor {
     /// Create an atom for the given name.
     pub fn create_atom(&self, name: &str) -> TheCodeAtom {
         match name {
-            "Assignment" => TheCodeAtom::Assignment("=".to_string()),
-            "Comparison" => TheCodeAtom::Comparison("==".to_string()),
+            "Assignment" => TheCodeAtom::Assignment(TheValueAssignment::Assign),
+            "Comparison" => TheCodeAtom::Comparison(TheValueComparison::Equal),
             "Function" => TheCodeAtom::FuncDef("name".to_string()),
             "Function Argument" => TheCodeAtom::FuncArg("name".to_string()),
             "Function Call" => TheCodeAtom::FuncCall("name".to_string()),
             "Return" => TheCodeAtom::Return,
             "Local Get" => TheCodeAtom::LocalGet("name".to_string()),
-            "Local Set" => TheCodeAtom::LocalSet("name".to_string()),
+            "Local Set" => TheCodeAtom::LocalSet("name".to_string(), TheValueAssignment::Assign),
             "Object Get" => TheCodeAtom::ObjectGet("self".to_string(), "name".to_string()),
-            "Object Set" => TheCodeAtom::ObjectSet("self".to_string(), "name".to_string()),
+            "Object Set" => TheCodeAtom::ObjectSet(
+                "self".to_string(),
+                "name".to_string(),
+                TheValueAssignment::Assign,
+            ),
             "Integer" => TheCodeAtom::Value(TheValue::Int(0)),
             "Float" => TheCodeAtom::Value(TheValue::Float(0.0)),
             "Bool" => TheCodeAtom::Value(TheValue::Bool(false)),

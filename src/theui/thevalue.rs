@@ -1,6 +1,73 @@
 use crate::prelude::*;
 use std::ops::RangeInclusive;
 
+/// Macro for math operations on TheValue.
+macro_rules! impl_arithmetic_op {
+    ($fn_name:ident, $op:tt) => {
+        pub fn $fn_name(&self, other: &TheValue) -> Option<TheValue> {
+            if let TheValue::Int(a) = self {
+                match other {
+                    TheValue::Int(b) => Some(TheValue::Int(a $op b)),
+                    TheValue::Float(b) => Some(TheValue::Float(*a as f32 $op b)),
+                    _ => None,
+                }
+            }
+            else if let TheValue::Float(a) = self {
+                match other {
+                    TheValue::Int(b) => Some(TheValue::Float(a $op *b as f32)),
+                    TheValue::Float(b) => Some(TheValue::Float(a $op b)),
+                    _ => None,
+                }
+            }
+            else if let TheValue::Position(a) = self {
+                match other {
+                    TheValue::Int(b) => Some(TheValue::Position(vec3f(a.x $op *b as f32, a.y, a.z))),
+                    TheValue::Int2(b) => Some(TheValue::Position(vec3f(
+                        a.x $op b.x as f32,
+                        a.z $op b.y as f32,
+                        a.z,
+                    ))),
+                    TheValue::Int3(b) => Some(TheValue::Position(vec3f(
+                        a.x $op b.x as f32,
+                        a.y $op b.y as f32,
+                        a.z $op b.z as f32,
+                    ))),
+                    TheValue::Float(b) => Some(TheValue::Position(vec3f(a.x $op *b, a.y, a.z))),
+                    TheValue::Float2(b) => Some(TheValue::Position(vec3f(a.x $op b.x, a.y, a.z $op b.y))),
+                    TheValue::Float3(b) => {
+                        Some(TheValue::Position(vec3f(a.x $op b.x, a.y $op b.y, a.z $op b.z)))
+                    }
+                    _ => None,
+                }
+            } else {
+                None
+            }
+        }
+    };
+}
+
+/// Macro for comparison operations on TheValue.
+macro_rules! impl_comparison_op {
+    ($fn_name:ident, $op:tt) => {
+        pub fn $fn_name(&self, other: &TheValue) -> bool {
+            let mut rc = false;
+            // Compare by converting to f32
+            if let Some(self_f) = self.as_f32() {
+                if let Some(other_f) = other.as_f32() {
+                    rc = self_f $op other_f;
+                }
+            }
+            // Compare by converting to string
+            if let Some(self_string) = self.to_string() {
+                if let Some(other_string) = other.to_string() {
+                    rc = self_string $op other_string;
+                }
+            }
+            rc
+        }
+    };
+}
+
 /// TheValue contains all possible values used by widgets and layouts. Encapsulating them in an enum alllows easy transfer and comparison of values.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum TheValue {
@@ -22,6 +89,8 @@ pub enum TheValue {
     RangeI32(RangeInclusive<i32>),
     RangeF32(RangeInclusive<f32>),
     ColorObject(TheColor),
+    Comparison(TheValueComparison),
+    Assignment(TheValueAssignment),
     #[cfg(feature = "code")]
     CodeObject(TheCodeObject),
 }
@@ -111,44 +180,34 @@ impl TheValue {
         }
     }
 
-    /// Add a value to another value. Returns None if the values are not compatible.
-    pub fn add(&self, other: &TheValue) -> Option<TheValue> {
-        if let TheValue::Int(a) = self {
-            match other {
-                TheValue::Int(b) => Some(TheValue::Int(a + b)),
-                TheValue::Float(b) => Some(TheValue::Float(*a as f32 + b)),
-                _ => None,
-            }
-        } else if let TheValue::Float(a) = self {
-            match other {
-                TheValue::Int(b) => Some(TheValue::Float(a + *b as f32)),
-                TheValue::Float(b) => Some(TheValue::Float(a + b)),
-                _ => None,
-            }
-        } else if let TheValue::Position(a) = self {
-            match other {
-                TheValue::Int(b) => Some(TheValue::Position(vec3f(a.x + *b as f32, a.y, a.z))),
-                TheValue::Int2(b) => Some(TheValue::Position(vec3f(
-                    a.x + b.x as f32,
-                    a.y + b.y as f32,
-                    a.z,
-                ))),
-                TheValue::Int3(b) => Some(TheValue::Position(vec3f(
-                    a.x + b.x as f32,
-                    a.y + b.y as f32,
-                    a.z + b.z as f32,
-                ))),
-                TheValue::Float(b) => Some(TheValue::Position(vec3f(a.x + *b, a.y, a.z))),
-                TheValue::Float2(b) => Some(TheValue::Position(vec3f(a.x + b.x, a.y + b.y, a.z))),
-                TheValue::Float3(b) => {
-                    Some(TheValue::Position(vec3f(a.x + b.x, a.y + b.y, a.z + b.z)))
+    /// Test if two values are equal.
+    pub fn is_equal(&self, other: &TheValue) -> bool {
+        // First test if they are exactly the same value.
+        let mut equal = *self == *other;
+
+        // Try to convert to f32 and compare.
+        if !equal {
+            if let Some(self_f) = self.as_f32() {
+                if let Some(other_f) = other.as_f32() {
+                    equal = self_f == other_f;
                 }
-                _ => None,
             }
-        } else {
-            None
         }
+        equal
     }
+
+    // Comparison operations on TheValue other than is_equal.
+    impl_comparison_op!(is_greater_than, >);
+    impl_comparison_op!(is_less_than, <);
+    impl_comparison_op!(is_greater_than_or_equal, >=);
+    impl_comparison_op!(is_less_than_or_equal, <=);
+
+    // Math operations on TheValue.
+    impl_arithmetic_op!(add, +);
+    impl_arithmetic_op!(sub, -);
+    impl_arithmetic_op!(mul, *);
+    impl_arithmetic_op!(div, /);
+    impl_arithmetic_op!(modulus, %);
 
     /// Returns a description of the value as string.
     pub fn to_kind(&self) -> String {
@@ -173,6 +232,8 @@ impl TheValue {
             RangeI32(r) => format!("RangeI32: {:?}", r),
             RangeF32(r) => format!("RangeF32: {:?}", r),
             ColorObject(c) => format!("Color: {:?}", c),
+            Comparison(c) => format!("Comparison: {:?}", c.to_string()),
+            Assignment(c) => format!("Assignment: {:?}", c.to_string()),
         }
     }
 
@@ -202,7 +263,7 @@ impl TheValue {
             Float3(v) => format!("({}, {}, {})", v.x, v.y, v.z),
             Int4(v) => format!("({}, {}, {}, {})", v.x, v.y, v.z, v.w),
             Float4(v) => format!("({}, {}, {}, {})", v.x, v.y, v.z, v.w),
-            Position(v) => format!("({}, {})", v.x, v.y),
+            Position(v) => format!("({}, {})", v.x, v.z),
             Tile(name, _id) => name.clone(),
             Char(c) => c.to_string(),
             #[cfg(feature = "code")]
@@ -211,6 +272,104 @@ impl TheValue {
             RangeI32(r) => format!("RangeI32: {:?}", r),
             RangeF32(r) => format!("RangeF32: {:?}", r),
             ColorObject(c) => format!("Color: {:?}", c),
+            Comparison(c) => format!("{:?}", c.to_string()),
+            Assignment(c) => format!("{:?}", c.to_string()),
+        }
+    }
+}
+
+/// The methods how to compare two values.
+#[derive(Serialize, Deserialize, PartialEq, Clone, Copy, Debug)]
+pub enum TheValueComparison {
+    Equal,
+    Unequal,
+    GreaterThanOrEqual,
+    LessThanOrEqual,
+    GreaterThan,
+    LessThan,
+}
+
+impl TheValueComparison {
+    pub fn to_string(self) -> &'static str {
+        match self {
+            TheValueComparison::Equal => "==",
+            TheValueComparison::Unequal => "!=",
+            TheValueComparison::GreaterThanOrEqual => ">=",
+            TheValueComparison::LessThanOrEqual => "<=",
+            TheValueComparison::GreaterThan => ">",
+            TheValueComparison::LessThan => "<",
+        }
+    }
+    pub fn iterator() -> impl Iterator<Item = TheValueComparison> {
+        [
+            TheValueComparison::Equal,
+            TheValueComparison::Unequal,
+            TheValueComparison::GreaterThanOrEqual,
+            TheValueComparison::LessThanOrEqual,
+            TheValueComparison::GreaterThan,
+            TheValueComparison::LessThan,
+        ]
+        .iter()
+        .copied()
+    }
+    pub fn from_index(index: u8) -> Option<TheValueComparison> {
+        match index {
+            0 => Some(TheValueComparison::Equal),
+            1 => Some(TheValueComparison::Unequal),
+            2 => Some(TheValueComparison::GreaterThanOrEqual),
+            3 => Some(TheValueComparison::LessThanOrEqual),
+            4 => Some(TheValueComparison::GreaterThan),
+            5 => Some(TheValueComparison::LessThan),
+            _ => None,
+        }
+    }
+}
+
+/// The methods of assigning values.
+#[derive(Serialize, Deserialize, PartialEq, Clone, Copy, Debug)]
+pub enum TheValueAssignment {
+    Assign,
+    AddAssign,
+    SubtractAssign,
+    MultiplyAssign,
+    DivideAssign,
+    ModulusAssign,
+}
+
+impl TheValueAssignment {
+    pub fn to_string(self) -> &'static str {
+        match self {
+            TheValueAssignment::Assign => "=",
+            TheValueAssignment::AddAssign => "+=",
+            TheValueAssignment::SubtractAssign => "-=",
+            TheValueAssignment::MultiplyAssign => "*=",
+            TheValueAssignment::DivideAssign => "/=",
+            TheValueAssignment::ModulusAssign => "%=",
+        }
+    }
+
+    pub fn iterator() -> impl Iterator<Item = TheValueAssignment> {
+        [
+            TheValueAssignment::Assign,
+            TheValueAssignment::AddAssign,
+            TheValueAssignment::SubtractAssign,
+            TheValueAssignment::MultiplyAssign,
+            TheValueAssignment::DivideAssign,
+            TheValueAssignment::ModulusAssign,
+        ]
+        .iter()
+        .copied()
+    }
+
+    pub fn from_index(index: u8) -> Option<TheValueAssignment> {
+        match index {
+            0 => Some(TheValueAssignment::Assign),
+            1 => Some(TheValueAssignment::AddAssign),
+            2 => Some(TheValueAssignment::SubtractAssign),
+            3 => Some(TheValueAssignment::MultiplyAssign),
+            4 => Some(TheValueAssignment::DivideAssign),
+            5 => Some(TheValueAssignment::ModulusAssign),
+            _ => None,
         }
     }
 }

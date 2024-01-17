@@ -78,7 +78,7 @@ pub mod prelude {
     pub use crate::theui::theuicontext::*;
     pub use crate::theui::TheUI;
 
-    pub use crate::theui::thevalue::TheValue;
+    pub use crate::theui::thevalue::{TheValue, TheValueAssignment, TheValueComparison};
     pub use crate::theui::thevent::TheEvent;
 
     pub use crate::theui::thewidget::prelude::*;
@@ -163,7 +163,7 @@ impl TheUI {
         self.statusbar_name = Some(name);
     }
 
-    pub fn relayout(&mut self,  ctx: &mut TheContext) {
+    pub fn relayout(&mut self, ctx: &mut TheContext) {
         let width = self.canvas.buffer().dim().width;
         let height = self.canvas.buffer().dim().height;
         self.canvas.layout(width, height, ctx);

@@ -299,13 +299,14 @@ impl TheCompiler {
                 func.arguments = arguments;
                 self.ctx.add_function(func);
             }
-            TheCodeAtom::LocalSet(_name) => {
+            TheCodeAtom::LocalSet(name, _) => {
                 self.advance();
-                let var = self.ctx.previous.clone();
+                let var; // = self.ctx.previous.clone();
                 let location = self.ctx.previous_location;
 
                 match &self.ctx.current {
-                    TheCodeAtom::Assignment(_op) => {
+                    TheCodeAtom::Assignment(op) => {
+                        var = TheCodeAtom::LocalSet(name, *op);
                         self.advance();
                     }
                     _ => {
@@ -326,7 +327,7 @@ impl TheCompiler {
                     self.ctx.get_current_function().add_node(node);
                 }
             }
-            TheCodeAtom::ObjectSet(_object, _name) => {
+            TheCodeAtom::ObjectSet(_, _, _) => {
                 self.advance();
                 let var = self.ctx.previous.clone();
                 let location = self.ctx.previous_location;
@@ -455,7 +456,7 @@ impl TheCompiler {
             }
             TheCodeAtom::Value(value) => {
                 self.advance();
-                let mut comparison = TheCodeAtom::Comparison("==".to_string());
+                let mut comparison = TheCodeAtom::Comparison(TheValueComparison::Equal);
                 let location: (u16, u16) = self.ctx.previous_location;
 
                 match &self.ctx.current.clone() {
@@ -465,7 +466,7 @@ impl TheCompiler {
                             self.ctx.get_current_function().add_node(node);
                         }
 
-                        comparison = TheCodeAtom::Comparison(op.clone());
+                        comparison = TheCodeAtom::Comparison(*op);
                         self.advance();
                     }
                     _ => {
