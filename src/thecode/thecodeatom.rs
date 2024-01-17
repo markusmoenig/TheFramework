@@ -302,7 +302,15 @@ impl TheCodeAtom {
                                         TheValueAssignment::AddAssign => {
                                             let name = data.values[0].to_string().unwrap();
                                             if let Some(left) = local.get(&name) {
-                                                if let Some(result) = TheValue::add(left, &v) {
+                                                // Handle special String case
+                                                if let TheValue::Text(a) = left {
+                                                    let result = TheValue::Text(format!("{} {}", a, v.describe()));
+                                                    if sandbox.debug_mode {
+                                                        debug_value = Some(result.clone());
+                                                    }
+                                                    local.set(name, result);
+                                                }
+                                                else if let Some(result) = TheValue::add(left, &v) {
                                                     if sandbox.debug_mode {
                                                         debug_value = Some(result.clone());
                                                     }
@@ -460,7 +468,15 @@ impl TheCodeAtom {
                                         TheValueAssignment::AddAssign => {
                                             let name = data.values[0].to_string().unwrap();
                                             if let Some(left) = object.get(&name) {
-                                                if let Some(result) = TheValue::add(left, &v) {
+                                                // Handle special String case
+                                                if let TheValue::Text(a) = left {
+                                                    let result = TheValue::Text(format!("{} {}", a, v.describe()));
+                                                    if debug_mode {
+                                                        debug_value = Some(result.clone());
+                                                    }
+                                                    object.set(name, result);
+                                                }
+                                                else if let Some(result) = TheValue::add(left, &v) {
                                                     if debug_mode {
                                                         debug_value = Some(result.clone());
                                                     }
@@ -575,7 +591,11 @@ impl TheCodeAtom {
                      _sandbox: &mut TheCodeSandbox| {
                         if let Some(b) = stack.pop() {
                             if let Some(a) = stack.pop() {
-                                if let Some(result) = TheValue::add(&a, &b) {
+                                if let TheValue::Text(a) = a {
+                                    let result = TheValue::Text(format!("{} {}", a, b.describe()));
+                                    stack.push(result);
+                                }
+                                else if let Some(result) = TheValue::add(&a, &b) {
                                     stack.push(result);
                                 } else {
                                     println!("Runtime error: Add. Invalid types.");
@@ -602,9 +622,15 @@ impl TheCodeAtom {
                     |stack: &mut Vec<TheValue>,
                      _data: &mut TheCodeNodeData,
                      _sandbox: &mut TheCodeSandbox| {
-                        let a = stack.pop().unwrap().to_i32().unwrap();
-                        let b = stack.pop().unwrap().to_i32().unwrap();
-                        stack.push(TheValue::Int(a * b));
+                        if let Some(b) = stack.pop() {
+                            if let Some(a) = stack.pop() {
+                                if let Some(result) = TheValue::mul(&a, &b) {
+                                    stack.push(result);
+                                } else {
+                                    println!("Runtime error: Multiply. Invalid types.");
+                                }
+                            }
+                        }
                         TheCodeNodeCallResult::Continue
                     };
 
