@@ -8,7 +8,10 @@ pub enum TheCodeAtom {
     Comparison(TheValueComparison),
     Value(TheValue),
     Add,
+    Subtract,
     Multiply,
+    Divide,
+    Modulus,
     LocalGet(String),
     LocalSet(String, TheValueAssignment),
     ObjectGet(String, String),
@@ -27,7 +30,10 @@ impl TheCodeAtom {
         matches!(self, TheCodeAtom::Assignment(_))
             || matches!(self, TheCodeAtom::Comparison(_))
             || matches!(self, TheCodeAtom::Add)
+            || matches!(self, TheCodeAtom::Subtract)
             || matches!(self, TheCodeAtom::Multiply)
+            || matches!(self, TheCodeAtom::Divide)
+            || matches!(self, TheCodeAtom::Modulus)
     }
 
     pub fn can_assign(&self) -> bool {
@@ -617,6 +623,35 @@ impl TheCodeAtom {
                     TheCodeNodeData::location(ctx.node_location),
                 ))
             }
+            TheCodeAtom::Subtract => {
+                let call: TheCodeNodeCall =
+                    |stack: &mut Vec<TheValue>,
+                     _data: &mut TheCodeNodeData,
+                     _sandbox: &mut TheCodeSandbox| {
+                        if let Some(b) = stack.pop() {
+                            if let Some(a) = stack.pop() {
+                                if let Some(result) = TheValue::sub(&a, &b) {
+                                    stack.push(result);
+                                } else {
+                                    println!("Runtime error: Sub. Invalid types.");
+                                }
+                            }
+                        }
+                        TheCodeNodeCallResult::Continue
+                    };
+
+                if ctx.error.is_none() && ctx.stack.len() < 2 {
+                    ctx.error = Some(TheCompilerError::new(
+                        ctx.node_location,
+                        format!("Invalid stack for Sub ({})", ctx.stack.len()),
+                    ));
+                }
+
+                Some(TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location(ctx.node_location),
+                ))
+            }
             TheCodeAtom::Multiply => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
@@ -638,6 +673,62 @@ impl TheCodeAtom {
                     ctx.error = Some(TheCompilerError::new(
                         ctx.node_location,
                         format!("Invalid stack for Multiply ({})", ctx.stack.len()),
+                    ));
+                }
+                Some(TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location(ctx.current_location),
+                ))
+            }
+            TheCodeAtom::Divide => {
+                let call: TheCodeNodeCall =
+                    |stack: &mut Vec<TheValue>,
+                     _data: &mut TheCodeNodeData,
+                     _sandbox: &mut TheCodeSandbox| {
+                        if let Some(b) = stack.pop() {
+                            if let Some(a) = stack.pop() {
+                                if let Some(result) = TheValue::div(&a, &b) {
+                                    stack.push(result);
+                                } else {
+                                    println!("Runtime error: Division. Invalid types.");
+                                }
+                            }
+                        }
+                        TheCodeNodeCallResult::Continue
+                    };
+
+                if ctx.error.is_none() && ctx.stack.len() < 2 {
+                    ctx.error = Some(TheCompilerError::new(
+                        ctx.node_location,
+                        format!("Invalid stack for Division ({})", ctx.stack.len()),
+                    ));
+                }
+                Some(TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location(ctx.current_location),
+                ))
+            }
+            TheCodeAtom::Modulus => {
+                let call: TheCodeNodeCall =
+                    |stack: &mut Vec<TheValue>,
+                     _data: &mut TheCodeNodeData,
+                     _sandbox: &mut TheCodeSandbox| {
+                        if let Some(b) = stack.pop() {
+                            if let Some(a) = stack.pop() {
+                                if let Some(result) = TheValue::modulus(&a, &b) {
+                                    stack.push(result);
+                                } else {
+                                    println!("Runtime error: Modulus. Invalid types.");
+                                }
+                            }
+                        }
+                        TheCodeNodeCallResult::Continue
+                    };
+
+                if ctx.error.is_none() && ctx.stack.len() < 2 {
+                    ctx.error = Some(TheCompilerError::new(
+                        ctx.node_location,
+                        format!("Invalid stack for Modulus ({})", ctx.stack.len()),
                     ));
                 }
                 Some(TheCodeNode::new(
@@ -689,7 +780,10 @@ impl TheCodeAtom {
             TheCodeAtom::ObjectSet(_, _, _) => TheCodeAtomKind::Identifier,
             TheCodeAtom::Value(_) => TheCodeAtomKind::Number,
             TheCodeAtom::Add => TheCodeAtomKind::Plus,
+            TheCodeAtom::Subtract => TheCodeAtomKind::Minus,
             TheCodeAtom::Multiply => TheCodeAtomKind::Star,
+            TheCodeAtom::Divide => TheCodeAtomKind::Slash,
+            TheCodeAtom::Modulus => TheCodeAtomKind::Percent,
             TheCodeAtom::EndOfExpression => TheCodeAtomKind::Semicolon,
             TheCodeAtom::EndOfCode => TheCodeAtomKind::Eof,
         }
@@ -713,7 +807,10 @@ impl TheCodeAtom {
                 _ => value.describe(),
             },
             TheCodeAtom::Add => "+".to_string(),
+            TheCodeAtom::Subtract => "-".to_string(),
             TheCodeAtom::Multiply => "*".to_string(),
+            TheCodeAtom::Divide => "/".to_string(),
+            TheCodeAtom::Modulus => "%".to_string(),
             TheCodeAtom::EndOfExpression => ";".to_string(),
             TheCodeAtom::EndOfCode => "Stop".to_string(),
         }
@@ -765,7 +862,10 @@ impl TheCodeAtom {
                 TheValue::Empty => "Empty value.".to_string(),
             },
             TheCodeAtom::Add => "Operator ('+')".to_string(),
+            TheCodeAtom::Subtract => "Operator ('-')".to_string(),
             TheCodeAtom::Multiply => "Operator ('*')".to_string(),
+            TheCodeAtom::Divide => "Operator ('/')".to_string(),
+            TheCodeAtom::Modulus => "Operator ('%')".to_string(),
             TheCodeAtom::EndOfExpression => ";".to_string(),
             TheCodeAtom::EndOfCode => "Stop".to_string(),
         }
@@ -957,6 +1057,7 @@ pub enum TheCodeAtomKind {
     Star,
     Dollar,
     Colon,
+    Percent,
 
     LineFeed,
     Space,

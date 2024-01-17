@@ -174,7 +174,10 @@ impl TheCompiler {
 
         rule(Number, Some(TheCompiler::number), None, P::None);
         rule(Plus, None, Some(TheCompiler::binary), P::Term);
+        rule(Minus, None, Some(TheCompiler::binary), P::Term);
         rule(Star, None, Some(TheCompiler::binary), P::Factor);
+        rule(Slash, None, Some(TheCompiler::binary), P::Factor);
+        rule(Percent, None, Some(TheCompiler::binary), P::Factor);
         rule(Eof, None, None, P::None);
         rule(Return, None, None, P::None);
         rule(Semicolon, None, None, P::None);
@@ -583,14 +586,13 @@ impl TheCompiler {
         self.parse_precedence(rule.precedence.next_higher());
 
         match operator_type {
-            // TokenType::BangEqual => self.emit_instructions(Instruction::Equal, Instruction::Not),
-            // TokenType::EqualEqual => self.emit_instruction(Instruction::Equal),
-            // TokenType::Greater => self.emit_instruction(Instruction::Greater),
-            // TokenType::GreaterEqual => self.emit_instructions(Instruction::Less, Instruction::Not),
-            // TokenType::Less => self.emit_instruction(Instruction::Less),
-            // TokenType::LessEqual => self.emit_instructions(Instruction::Greater, Instruction::Not),
             TheCodeAtomKind::Plus => {
                 if let Some(node) = TheCodeAtom::Add.to_node(&mut self.ctx) {
+                    self.ctx.get_current_function().add_node(node);
+                }
+            }
+            TheCodeAtomKind::Minus => {
+                if let Some(node) = TheCodeAtom::Subtract.to_node(&mut self.ctx) {
                     self.ctx.get_current_function().add_node(node);
                 }
             }
@@ -599,9 +601,16 @@ impl TheCompiler {
                     self.ctx.get_current_function().add_node(node);
                 }
             }
-            // TokenType::Minus => self.emit_instruction(Instruction::Subtract),
-            // TokenType::Star => self.emit_instruction(Instruction::Multiply),
-            // TokenType::Slash => self.emit_instruction(Instruction::Divide),
+            TheCodeAtomKind::Slash => {
+                if let Some(node) = TheCodeAtom::Divide.to_node(&mut self.ctx) {
+                    self.ctx.get_current_function().add_node(node);
+                }
+            }
+            TheCodeAtomKind::Percent => {
+                if let Some(node) = TheCodeAtom::Modulus.to_node(&mut self.ctx) {
+                    self.ctx.get_current_function().add_node(node);
+                }
+            }
             _ => {}
         }
     }

@@ -603,7 +603,10 @@ impl TheCodeEditor {
             "Float3" => TheCodeAtom::Value(TheValue::Float3(vec3f(0.0, 0.0, 0.0))),
             "Position" => TheCodeAtom::Value(TheValue::Position(vec3f(0.0, 0.0, 0.0))),
             "Add" => TheCodeAtom::Add,
+            "Subtract" => TheCodeAtom::Subtract,
             "Multiply" => TheCodeAtom::Multiply,
+            "Divide" => TheCodeAtom::Divide,
+            "Modulus" => TheCodeAtom::Modulus,
             _ => {
                 for e in &self.externals {
                     if e.name == name {
@@ -925,7 +928,22 @@ impl TheCodeEditor {
             code_layout.add_item(item, ctx);
 
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("Subtract".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Multiply".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("Divide".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("Modulus".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
         }
