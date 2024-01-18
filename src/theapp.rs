@@ -133,6 +133,16 @@ impl TheApp {
                     }
 
                     WindowEvent::ModifiersChanged(state) => {
+                        #[cfg(feature = "ui")]
+                        if ui.modifier_changed(
+                            state.shift(),
+                            state.ctrl(),
+                            state.alt(),
+                            state.logo(),
+                            &mut ctx,
+                        ) {
+                            window.request_redraw();
+                        }
                         if app.modifier_changed(
                             state.shift(),
                             state.ctrl(),

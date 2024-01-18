@@ -13,6 +13,7 @@ pub enum TheEvent {
 
     KeyDown(TheValue),
     KeyCodeDown(TheValue),
+    ModifierChanged(bool, bool, bool, bool),
 
     DropPreview(Vec2i, TheDrop),
     Drop(Vec2i, TheDrop),

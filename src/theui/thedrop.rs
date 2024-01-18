@@ -1,12 +1,20 @@
 use crate::prelude::*;
 
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
+pub enum TheDropOperation {
+    Copy,
+    Move,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub struct TheDrop {
     pub id: TheId,
     pub data: String,
     pub title: String,
     pub text: String,
     pub image: TheRGBABuffer,
+
+    pub operation: TheDropOperation,
 
     pub start_position: Option<Vec2i>,
     pub position: Option<Vec2i>,
@@ -21,6 +29,7 @@ impl TheDrop {
             title: String::new(),
             text: String::new(),
             image: TheRGBABuffer::empty(),
+            operation: TheDropOperation::Move,
             start_position: None,
             position: None,
             offset: Vec2i::zero(),

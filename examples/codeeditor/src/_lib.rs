@@ -176,7 +176,7 @@ pub extern "C" fn rust_key_modifier_changed(
     alt: bool,
     logo: bool,
 ) -> bool {
-    APP.lock().unwrap().modifier_changed(shift, ctrl, alt, logo)
+    UI.lock().unwrap().modifier_changed(shift, ctrl, alt, logo)
 }
 
 /// # Safety

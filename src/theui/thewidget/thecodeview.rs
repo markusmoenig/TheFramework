@@ -41,6 +41,8 @@ pub struct TheCodeView {
     layout_id: TheId,
 
     compiled: bool,
+
+    drag_copy: bool,
 }
 
 impl TheWidget for TheCodeView {
@@ -85,6 +87,8 @@ impl TheWidget for TheCodeView {
             layout_id: TheId::empty(),
 
             compiled: false,
+
+            drag_copy: false
         }
     }
 
@@ -120,6 +124,11 @@ impl TheWidget for TheCodeView {
                             drop.title = atom.describe();
                             drop.set_data(atom.to_json());
                             drop.start_position = Some(vec2i(selected.0 as i32, selected.1 as i32));
+                            drop.operation = if self.drag_copy {
+                                TheDropOperation::Copy
+                            } else {
+                                TheDropOperation::Move
+                            };
                             ctx.ui.send(TheEvent::DragStartedWithNoImage(drop));
                         }
                     }
@@ -167,8 +176,10 @@ impl TheWidget for TheCodeView {
                                     }
                                 }
 
-                                if let Some(sp) = drop.start_position {
-                                    self.codegrid.code.remove(&(sp.x as u16, sp.y as u16));
+                                if drop.operation == TheDropOperation::Move {
+                                    if let Some(sp) = drop.start_position {
+                                        self.codegrid.code.remove(&(sp.x as u16, sp.y as u16));
+                                    }
                                 }
 
                                 self.codegrid.code.insert(c, atom);
@@ -227,6 +238,9 @@ impl TheWidget for TheCodeView {
                         }
                     }
                 }
+            }
+            TheEvent::ModifierChanged(_shift, ctrl, alt, _logo) => {
+                self.drag_copy = *ctrl || *alt;
             }
             TheEvent::KeyCodeDown(code) => {
                 if let Some(code) = code.to_key_code() {
