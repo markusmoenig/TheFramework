@@ -457,14 +457,14 @@ impl TheCompiler {
                     }
                 }
             }
-            TheCodeAtom::Value(value) => {
+            TheCodeAtom::Value(_) | TheCodeAtom::LocalGet(_) | TheCodeAtom::ObjectGet(_, _) => {
                 self.advance();
                 let mut comparison = TheCodeAtom::Comparison(TheValueComparison::Equal);
                 let location: (u16, u16) = self.ctx.previous_location;
 
                 match &self.ctx.current.clone() {
                     TheCodeAtom::Comparison(op) => {
-                        // Write the value to the stack if the next operation is a comparison
+                        // Write the node to the stack if the next operation is a comparison
                         if let Some(node) = self.ctx.previous.clone().to_node(&mut self.ctx) {
                             self.ctx.get_current_function().add_node(node);
                         }
@@ -486,7 +486,7 @@ impl TheCompiler {
                     }
                 }
 
-                // Load the condition value
+                // Load the conditional value
 
                 let func = TheCodeFunction::default();
                 self.ctx.add_function(func);
@@ -494,11 +494,7 @@ impl TheCompiler {
                 self.expression();
                 self.ctx.node_location = location;
                 // Write the comparison function which will take the current function as a sub.
-                if let Some(mut node) = comparison.to_node(&mut self.ctx) {
-                    node.data.values[0] = value;
-
-                    //println!("condition start");
-
+                if let Some(node) = comparison.to_node(&mut self.ctx) {
                     let func = TheCodeFunction::default();
                     self.ctx.add_function(func);
 

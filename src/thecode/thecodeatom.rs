@@ -53,56 +53,69 @@ impl TheCodeAtom {
         match self {
             TheCodeAtom::Comparison(op) => {
                 let call: TheCodeNodeCall =
-                    |_stack: &mut Vec<TheValue>,
+                    |stack: &mut Vec<TheValue>,
                      data: &mut TheCodeNodeData,
                      sandbox: &mut TheCodeSandbox| {
-                        if let Some(f) = data.sub_functions.first_mut() {
-                            if let Some(right) = f.execute(sandbox).pop() {
-                                let left = &data.values[0];
+                        if let Some(left) = stack.pop() {
+                            if let Some(f) = data.sub_functions.first_mut() {
+                                if let Some(right) = f.execute(sandbox).pop() {
+                                    //println!("Comparison: left {:?}, right: {:?}", left, right);
 
-                                //println!("Comparison: left {:?}, right: {:?}", left, right);
-
-                                if let TheValue::Comparison(op) = data.values[1] {
-                                    match op {
-                                        TheValueComparison::Equal => {
-                                            if left.is_equal(&right) && data.sub_functions.len() > 1
-                                            {
-                                                _ = data.sub_functions[1].execute(sandbox).pop();
+                                    if let TheValue::Comparison(op) = data.values[1] {
+                                        match op {
+                                            TheValueComparison::Equal => {
+                                                if left.is_equal(&right)
+                                                    && data.sub_functions.len() > 1
+                                                {
+                                                    _ = data.sub_functions[1]
+                                                        .execute(sandbox)
+                                                        .pop();
+                                                }
                                             }
-                                        }
-                                        TheValueComparison::Unequal => {
-                                            if !left.is_equal(&right)
-                                                && data.sub_functions.len() > 1
-                                            {
-                                                _ = data.sub_functions[1].execute(sandbox).pop();
+                                            TheValueComparison::Unequal => {
+                                                if !left.is_equal(&right)
+                                                    && data.sub_functions.len() > 1
+                                                {
+                                                    _ = data.sub_functions[1]
+                                                        .execute(sandbox)
+                                                        .pop();
+                                                }
                                             }
-                                        }
-                                        TheValueComparison::GreaterThanOrEqual => {
-                                            if left.is_greater_than_or_equal(&right)
-                                                && data.sub_functions.len() > 1
-                                            {
-                                                _ = data.sub_functions[1].execute(sandbox).pop();
+                                            TheValueComparison::GreaterThanOrEqual => {
+                                                if left.is_greater_than_or_equal(&right)
+                                                    && data.sub_functions.len() > 1
+                                                {
+                                                    _ = data.sub_functions[1]
+                                                        .execute(sandbox)
+                                                        .pop();
+                                                }
                                             }
-                                        }
-                                        TheValueComparison::LessThanOrEqual => {
-                                            if left.is_less_than_or_equal(&right)
-                                                && data.sub_functions.len() > 1
-                                            {
-                                                _ = data.sub_functions[1].execute(sandbox).pop();
+                                            TheValueComparison::LessThanOrEqual => {
+                                                if left.is_less_than_or_equal(&right)
+                                                    && data.sub_functions.len() > 1
+                                                {
+                                                    _ = data.sub_functions[1]
+                                                        .execute(sandbox)
+                                                        .pop();
+                                                }
                                             }
-                                        }
-                                        TheValueComparison::GreaterThan => {
-                                            if left.is_greater_than(&right)
-                                                && data.sub_functions.len() > 1
-                                            {
-                                                _ = data.sub_functions[1].execute(sandbox).pop();
+                                            TheValueComparison::GreaterThan => {
+                                                if left.is_greater_than(&right)
+                                                    && data.sub_functions.len() > 1
+                                                {
+                                                    _ = data.sub_functions[1]
+                                                        .execute(sandbox)
+                                                        .pop();
+                                                }
                                             }
-                                        }
-                                        TheValueComparison::LessThan => {
-                                            if left.is_less_than(&right)
-                                                && data.sub_functions.len() > 1
-                                            {
-                                                _ = data.sub_functions[1].execute(sandbox).pop();
+                                            TheValueComparison::LessThan => {
+                                                if left.is_less_than(&right)
+                                                    && data.sub_functions.len() > 1
+                                                {
+                                                    _ = data.sub_functions[1]
+                                                        .execute(sandbox)
+                                                        .pop();
+                                                }
                                             }
                                         }
                                     }
@@ -310,13 +323,17 @@ impl TheCodeAtom {
                                             if let Some(left) = local.get(&name) {
                                                 // Handle special String case
                                                 if let TheValue::Text(a) = left {
-                                                    let result = TheValue::Text(format!("{} {}", a, v.describe()));
+                                                    let result = TheValue::Text(format!(
+                                                        "{} {}",
+                                                        a,
+                                                        v.describe()
+                                                    ));
                                                     if sandbox.debug_mode {
                                                         debug_value = Some(result.clone());
                                                     }
                                                     local.set(name, result);
-                                                }
-                                                else if let Some(result) = TheValue::add(left, &v) {
+                                                } else if let Some(result) = TheValue::add(left, &v)
+                                                {
                                                     if sandbox.debug_mode {
                                                         debug_value = Some(result.clone());
                                                     }
@@ -476,13 +493,17 @@ impl TheCodeAtom {
                                             if let Some(left) = object.get(&name) {
                                                 // Handle special String case
                                                 if let TheValue::Text(a) = left {
-                                                    let result = TheValue::Text(format!("{} {}", a, v.describe()));
+                                                    let result = TheValue::Text(format!(
+                                                        "{} {}",
+                                                        a,
+                                                        v.describe()
+                                                    ));
                                                     if debug_mode {
                                                         debug_value = Some(result.clone());
                                                     }
                                                     object.set(name, result);
-                                                }
-                                                else if let Some(result) = TheValue::add(left, &v) {
+                                                } else if let Some(result) = TheValue::add(left, &v)
+                                                {
                                                     if debug_mode {
                                                         debug_value = Some(result.clone());
                                                     }
@@ -600,8 +621,7 @@ impl TheCodeAtom {
                                 if let TheValue::Text(a) = a {
                                     let result = TheValue::Text(format!("{} {}", a, b.describe()));
                                     stack.push(result);
-                                }
-                                else if let Some(result) = TheValue::add(&a, &b) {
+                                } else if let Some(result) = TheValue::add(&a, &b) {
                                     stack.push(result);
                                 } else {
                                     println!("Runtime error: Add. Invalid types.");
