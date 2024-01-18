@@ -233,6 +233,7 @@ impl TheCodeAtom {
                         TheCodeNodeData::location_values(ctx.node_location, call.1.clone()),
                     ))
                 } else {
+                    println!("Did not find external function: {}.", _name);
                     None
                 }
             }
@@ -295,6 +296,7 @@ impl TheCodeAtom {
                         TheCodeNodeCallResult::Continue
                     };
 
+                /*
                 if ctx.error.is_none() {
                     let mut error = true;
                     if let Some(local) = ctx.local.last_mut() {
@@ -309,7 +311,7 @@ impl TheCodeAtom {
                             format!("Unknown local variable {}.", name),
                         ));
                     }
-                }
+                }*/
                 Some(TheCodeNode::new(
                     call,
                     TheCodeNodeData::location_values(
@@ -327,79 +329,80 @@ impl TheCodeAtom {
 
                         if let Some(function) = sandbox.call_stack.last_mut() {
                             if let Some(local) = function.local.last_mut() {
-                                let v = stack.pop().unwrap();
-                                if let TheValue::Assignment(op) = data.values[1] {
-                                    match op {
-                                        TheValueAssignment::Assign => {
-                                            if sandbox.debug_mode {
-                                                debug_value = Some(v.clone());
+                                if let Some(v) = stack.pop() {
+                                    if let TheValue::Assignment(op) = data.values[1] {
+                                        match op {
+                                            TheValueAssignment::Assign => {
+                                                if sandbox.debug_mode {
+                                                    debug_value = Some(v.clone());
+                                                }
+                                                local.set(data.values[0].to_string().unwrap(), v);
                                             }
-                                            local.set(data.values[0].to_string().unwrap(), v);
-                                        }
-                                        TheValueAssignment::AddAssign => {
-                                            let name = data.values[0].to_string().unwrap();
-                                            if let Some(left) = local.get(&name) {
-                                                // Handle special String case
-                                                if let TheValue::Text(a) = left {
-                                                    let result = TheValue::Text(format!(
-                                                        "{} {}",
-                                                        a,
-                                                        v.describe()
-                                                    ));
-                                                    if sandbox.debug_mode {
-                                                        debug_value = Some(result.clone());
+                                            TheValueAssignment::AddAssign => {
+                                                let name = data.values[0].to_string().unwrap();
+                                                if let Some(left) = local.get(&name) {
+                                                    // Handle special String case
+                                                    if let TheValue::Text(a) = left {
+                                                        let result = TheValue::Text(format!(
+                                                            "{} {}",
+                                                            a,
+                                                            v.describe()
+                                                        ));
+                                                        if sandbox.debug_mode {
+                                                            debug_value = Some(result.clone());
+                                                        }
+                                                        local.set(name, result);
+                                                    } else if let Some(result) = TheValue::add(left, &v)
+                                                    {
+                                                        if sandbox.debug_mode {
+                                                            debug_value = Some(result.clone());
+                                                        }
+                                                        local.set(name, result);
                                                     }
-                                                    local.set(name, result);
-                                                } else if let Some(result) = TheValue::add(left, &v)
-                                                {
-                                                    if sandbox.debug_mode {
-                                                        debug_value = Some(result.clone());
-                                                    }
-                                                    local.set(name, result);
                                                 }
                                             }
-                                        }
-                                        TheValueAssignment::SubtractAssign => {
-                                            let name = data.values[0].to_string().unwrap();
-                                            if let Some(left) = local.get(&name) {
-                                                if let Some(result) = TheValue::sub(left, &v) {
-                                                    if sandbox.debug_mode {
-                                                        debug_value = Some(result.clone());
+                                            TheValueAssignment::SubtractAssign => {
+                                                let name = data.values[0].to_string().unwrap();
+                                                if let Some(left) = local.get(&name) {
+                                                    if let Some(result) = TheValue::sub(left, &v) {
+                                                        if sandbox.debug_mode {
+                                                            debug_value = Some(result.clone());
+                                                        }
+                                                        local.set(name, result);
                                                     }
-                                                    local.set(name, result);
                                                 }
                                             }
-                                        }
-                                        TheValueAssignment::MultiplyAssign => {
-                                            let name = data.values[0].to_string().unwrap();
-                                            if let Some(left) = local.get(&name) {
-                                                if let Some(result) = TheValue::mul(left, &v) {
-                                                    if sandbox.debug_mode {
-                                                        debug_value = Some(result.clone());
+                                            TheValueAssignment::MultiplyAssign => {
+                                                let name = data.values[0].to_string().unwrap();
+                                                if let Some(left) = local.get(&name) {
+                                                    if let Some(result) = TheValue::mul(left, &v) {
+                                                        if sandbox.debug_mode {
+                                                            debug_value = Some(result.clone());
+                                                        }
+                                                        local.set(name, result);
                                                     }
-                                                    local.set(name, result);
                                                 }
                                             }
-                                        }
-                                        TheValueAssignment::DivideAssign => {
-                                            let name = data.values[0].to_string().unwrap();
-                                            if let Some(left) = local.get(&name) {
-                                                if let Some(result) = TheValue::div(left, &v) {
-                                                    if sandbox.debug_mode {
-                                                        debug_value = Some(result.clone());
+                                            TheValueAssignment::DivideAssign => {
+                                                let name = data.values[0].to_string().unwrap();
+                                                if let Some(left) = local.get(&name) {
+                                                    if let Some(result) = TheValue::div(left, &v) {
+                                                        if sandbox.debug_mode {
+                                                            debug_value = Some(result.clone());
+                                                        }
+                                                        local.set(name, result);
                                                     }
-                                                    local.set(name, result);
                                                 }
                                             }
-                                        }
-                                        TheValueAssignment::ModulusAssign => {
-                                            let name = data.values[0].to_string().unwrap();
-                                            if let Some(left) = local.get(&name) {
-                                                if let Some(result) = TheValue::modulus(left, &v) {
-                                                    if sandbox.debug_mode {
-                                                        debug_value = Some(result.clone());
+                                            TheValueAssignment::ModulusAssign => {
+                                                let name = data.values[0].to_string().unwrap();
+                                                if let Some(left) = local.get(&name) {
+                                                    if let Some(result) = TheValue::modulus(left, &v) {
+                                                        if sandbox.debug_mode {
+                                                            debug_value = Some(result.clone());
+                                                        }
+                                                        local.set(name, result);
                                                     }
-                                                    local.set(name, result);
                                                 }
                                             }
                                         }
@@ -415,6 +418,7 @@ impl TheCodeAtom {
                         TheCodeNodeCallResult::Continue
                     };
 
+                /*
                 if ctx.error.is_none() {
                     if ctx.stack.is_empty() {
                         ctx.error = Some(TheCompilerError::new(
@@ -424,7 +428,7 @@ impl TheCodeAtom {
                     } else if let Some(local) = ctx.local.last_mut() {
                         local.set(name.clone(), ctx.stack.pop().unwrap());
                     }
-                }
+                }*/
 
                 Some(TheCodeNode::new(
                     call,
@@ -784,6 +788,9 @@ impl TheCodeAtom {
             Self::Add | &Self::Multiply => {
                 TheSDF::RoundedRect(dim, (0.0, 0.0, 0.0, 0.0))
                 //TheSDF::Rhombus(dim)
+            }
+            Self::ObjectGet(_, _) | Self::LocalGet(_) => {
+                TheSDF::RoundedRect(dim, (10.0 * zoom, 10.0 * zoom, 0.0, 0.0))
             }
             Self::ObjectSet(_, _, _) | Self::LocalSet(_, _) => {
                 TheSDF::RoundedRect(dim, (0.0, 0.0, 10.0 * zoom, 10.0 * zoom))

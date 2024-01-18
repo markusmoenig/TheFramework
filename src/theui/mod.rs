@@ -491,13 +491,14 @@ impl TheUI {
         ctx: &mut TheContext,
     ) -> bool {
         let mut redraw = false;
+        let event = if let Some(c) = char {
+            TheEvent::KeyDown(TheValue::Char(c))
+        } else {
+            TheEvent::KeyCodeDown(TheValue::KeyCode(key.unwrap()))
+        };
+        ctx.ui.send(event.clone());
         if let Some(id) = &ctx.ui.focus {
             if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
-                let event = if let Some(c) = char {
-                    TheEvent::KeyDown(TheValue::Char(c))
-                } else {
-                    TheEvent::KeyCodeDown(TheValue::KeyCode(key.unwrap()))
-                };
                 redraw = widget.on_event(&event, ctx);
                 self.process_events(ctx);
             }

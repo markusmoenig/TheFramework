@@ -486,7 +486,6 @@ impl TheCompiler {
                     }
 
                     self.advance();
-                    //println!("off {:?} loc {:?}", off, self.ctx.current_location);
 
                     // Check if function argument value at the right position.
                     if self.ctx.current_location.0 != off
@@ -608,27 +607,72 @@ impl TheCompiler {
                     self.ctx.get_current_function().add_node(node);
                 }
             }
-            TheCodeAtom::FuncCall(_) | TheCodeAtom::ExternalCall(_, _, _, _, _) => {
+            TheCodeAtom::ExternalCall(_, _,  _, arg_values, _) => {
+                let external_call = self.ctx.previous.clone();
+                let location: (u16, u16) = self.ctx.previous_location;
+                self.ctx.node_location = location;
+
+               //self.advance();
+
+                for (index, _) in arg_values.iter().enumerate() {
+                    let off = location.0 + (index + 1) as u16 * 2;
+
+                    if !matches!(self.ctx.current, TheCodeAtom::EndOfExpression) {
+                        self.error_at(
+                            (self.ctx.current_location.0, self.ctx.current_location.1),
+                            "Unexpected code inside function call.",
+                        );
+                        return;
+                    }
+
+                    self.advance();
+
+                    // Check if function argument value at the right position.
+                    if self.ctx.current_location.0 != off
+                        || self.ctx.current_location.1 != location.1
+                    {
+                        self.error_at((off, location.1), "Expected value at this position.");
+                        return;
+                    }
+
+                    match &self.ctx.current {
+                        TheCodeAtom::Value(_op) => {
+                            // Add the function argument to the stack.
+                            if let Some(node) = self.ctx.current.clone().to_node(&mut self.ctx) {
+                                self.ctx.get_current_function().add_node(node);
+                            }
+                        }
+                        _ => {
+                            self.error_at(
+                                (self.ctx.current_location.0, self.ctx.current_location.1),
+                                "Expected Value.",
+                            );
+                            return;
+                        }
+                    }
+                    self.advance();
+                }
+
+                if let TheCodeAtom::ExternalCall(name, _, _, _, _) = &external_call {
+                    if let Some(call) = self.external_call.get(name) {
+                        self.ctx.external_call = Some(call.clone());
+                        if let Some(node) = external_call.to_node(&mut self.ctx) {
+                            self.ctx.get_current_function().add_node(node);
+                        }
+                        self.ctx.external_call = None;
+                    } else {
+                        self.error_at((location.0, location.1), "Unknown external call.");
+                    }
+                }
+
+            }
+            TheCodeAtom::FuncCall(_) => {
                 let node = self.ctx.previous.clone().to_node(&mut self.ctx);
                 //println!("FuncCall {:?}", self.ctx.current_location);
 
                 let arg_loc = (self.ctx.current_location.0, self.ctx.current_location.1 + 1);
 
                 if let Some(arg) = self.grid.code.get(&arg_loc).cloned() {
-                    //self.ctx.previous_location = (arg_loc.0 - 1, arg_loc.1);
-                    //self.ctx.current_location = arg_loc;
-                    //self.grid.current_pos = Some((arg_loc.0 - 1, arg_loc.1));
-
-                    //self.ctx.current = TheCodeAtom::EndOfExpression;
-                    //self.ctx.previous = TheCodeAtom::EndOfExpression;
-
-                    //let arg0 = self.ctx.current.clone();
-                    // println!("Starting expression");
-                    // self.expression();
-                    // println!("end expression");
-                    //let node = arg0.to_node(&mut self.ctx);
-                    //self.ctx.get_current_function().add_node(node);
-
                     if let Some(arg_node) = arg.clone().to_node(&mut self.ctx) {
                         self.ctx.get_current_function().add_node(arg_node);
                     }
