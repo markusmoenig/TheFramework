@@ -67,6 +67,9 @@ impl TheCodeAtom {
                                                 if left.is_equal(&right)
                                                     && data.sub_functions.len() > 1
                                                 {
+                                                    if sandbox.debug_mode {
+                                                        sandbox.set_debug_executed(data.location);
+                                                    }
                                                     _ = data.sub_functions[1]
                                                         .execute(sandbox)
                                                         .pop();
@@ -76,6 +79,9 @@ impl TheCodeAtom {
                                                 if !left.is_equal(&right)
                                                     && data.sub_functions.len() > 1
                                                 {
+                                                    if sandbox.debug_mode {
+                                                        sandbox.set_debug_executed(data.location);
+                                                    }
                                                     _ = data.sub_functions[1]
                                                         .execute(sandbox)
                                                         .pop();
@@ -85,6 +91,9 @@ impl TheCodeAtom {
                                                 if left.is_greater_than_or_equal(&right)
                                                     && data.sub_functions.len() > 1
                                                 {
+                                                    if sandbox.debug_mode {
+                                                        sandbox.set_debug_executed(data.location);
+                                                    }
                                                     _ = data.sub_functions[1]
                                                         .execute(sandbox)
                                                         .pop();
@@ -94,6 +103,9 @@ impl TheCodeAtom {
                                                 if left.is_less_than_or_equal(&right)
                                                     && data.sub_functions.len() > 1
                                                 {
+                                                    if sandbox.debug_mode {
+                                                        sandbox.set_debug_executed(data.location);
+                                                    }
                                                     _ = data.sub_functions[1]
                                                         .execute(sandbox)
                                                         .pop();
@@ -103,6 +115,9 @@ impl TheCodeAtom {
                                                 if left.is_greater_than(&right)
                                                     && data.sub_functions.len() > 1
                                                 {
+                                                    if sandbox.debug_mode {
+                                                        sandbox.set_debug_executed(data.location);
+                                                    }
                                                     _ = data.sub_functions[1]
                                                         .execute(sandbox)
                                                         .pop();
@@ -112,6 +127,9 @@ impl TheCodeAtom {
                                                 if left.is_less_than(&right)
                                                     && data.sub_functions.len() > 1
                                                 {
+                                                    if sandbox.debug_mode {
+                                                        sandbox.set_debug_executed(data.location);
+                                                    }
                                                     _ = data.sub_functions[1]
                                                         .execute(sandbox)
                                                         .pop();

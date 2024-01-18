@@ -155,6 +155,15 @@ impl TheCodeSandbox {
         }
     }
 
+    /// Marks the given location as executed.
+    pub fn set_debug_executed(&mut self, location: (u16, u16)) {
+        if let Some(module_id) = self.module_stack.last() {
+            if let Some(debug_module) = self.debug_modules.get_mut(module_id) {
+                debug_module.executed.insert(location);
+            }
+        }
+    }
+
     /// Returns the debug values for a given module id.
     pub fn get_module_debug_module(&self, module_id: Uuid) -> TheDebugModule {
         if let Some(dv) = self.debug_modules.get(&module_id) {

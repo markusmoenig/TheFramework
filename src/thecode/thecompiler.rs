@@ -91,6 +91,10 @@ pub struct TheCompilerContext {
     pub functions: Vec<TheCodeFunction>,
     pub curr_function_index: usize,
 
+    // Needed for multi comparison support
+    pub last_comparison_indent: Option<u16>,
+    pub last_comparison_to: Option<TheCodeAtom>,
+
     pub error: Option<TheCompilerError>,
     pub external_call: Option<(TheCodeNodeCall, Vec<TheValue>)>,
 }
@@ -119,6 +123,9 @@ impl TheCompilerContext {
             module: TheCodeModule::default(),
             functions: vec![TheCodeFunction::default()],
             curr_function_index: 0,
+
+            last_comparison_indent: None,
+            last_comparison_to: None,
 
             error: None,
             external_call: None,
@@ -216,6 +223,7 @@ impl TheCompiler {
                 continue;
             }
 
+            // Handling indention. Close blocks if needed.
             let indent = self.ctx.blocks.len();
             if indent > 0
                 && self.ctx.current_location.0 == 0
@@ -229,6 +237,7 @@ impl TheCompiler {
                         .code
                         .contains_key(&(code_index as u16, self.ctx.current_location.1))
                     {
+                        // On even indents check for a block(s) to close.
                         if code_index % 2 == 0 {
                             // Amount of blocks we have to close due to the indentation.
                             let closing = indent - code_index / 2;
@@ -239,6 +248,70 @@ impl TheCompiler {
                                         node.data.sub_functions.push(function);
                                         self.ctx.get_current_function().add_node(node);
                                     }
+                                }
+                                // Clear the last comparison meta data.
+                                self.ctx.last_comparison_indent = None;
+                                self.ctx.last_comparison_to = None;
+                            }
+                        } else {
+                            let mut cond: Option<TheValueComparison> = None;
+
+                            // On uneven lines check for multi comparisons.
+                            if let Some(TheCodeAtom::Comparison(op)) = self
+                                .grid
+                                .code
+                                .get(&(code_index as u16, self.ctx.current_location.1))
+                            {
+                                if let Some(last_comparison_indent) =
+                                    self.ctx.last_comparison_indent
+                                {
+                                    if let Some(last_comparison_to) =
+                                        self.ctx.last_comparison_to.clone()
+                                    {
+                                        if code_index == last_comparison_indent as usize {
+                                            // Fist, close the current comparison block
+                                            if let Some(function) = self.ctx.remove_function() {
+                                                if let Some(mut node) = self.ctx.blocks.pop() {
+                                                    node.data.sub_functions.push(function);
+                                                    self.ctx.get_current_function().add_node(node);
+                                                }
+                                            }
+
+                                            // Write the node we compare to, to the stack again.
+                                            if let Some(node) =
+                                                last_comparison_to.clone().to_node(&mut self.ctx)
+                                            {
+                                                self.ctx.get_current_function().add_node(node);
+                                            }
+
+                                            cond = Some(*op);
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Write out the new conditional block.
+                            if let Some(cond) = cond {
+                                // Load the conditional value
+
+                                let func = TheCodeFunction::default();
+                                self.ctx.add_function(func);
+
+                                self.ctx.node_location =
+                                    (code_index as u16, self.ctx.current_location.1);
+
+                                self.advance();
+                                self.advance();
+                                self.expression();
+                                // Write the comparison function which will take the current function as a sub.
+                                if let Some(node) =
+                                    TheCodeAtom::Comparison(cond).to_node(&mut self.ctx)
+                                {
+                                    let func = TheCodeFunction::default();
+                                    self.ctx.add_function(func);
+
+                                    // We indent one
+                                    self.ctx.blocks.push(node);
                                 }
                             }
                         }
@@ -460,13 +533,17 @@ impl TheCompiler {
             TheCodeAtom::Value(_) | TheCodeAtom::LocalGet(_) | TheCodeAtom::ObjectGet(_, _) => {
                 self.advance();
                 let mut comparison = TheCodeAtom::Comparison(TheValueComparison::Equal);
-                let location: (u16, u16) = self.ctx.previous_location;
+                let location: (u16, u16) = self.ctx.current_location;
 
                 match &self.ctx.current.clone() {
                     TheCodeAtom::Comparison(op) => {
                         // Write the node to the stack if the next operation is a comparison
                         if let Some(node) = self.ctx.previous.clone().to_node(&mut self.ctx) {
                             self.ctx.get_current_function().add_node(node);
+
+                            // Save the meta data in case we have a multi comparison.
+                            self.ctx.last_comparison_indent = Some(location.0);
+                            self.ctx.last_comparison_to = Some(self.ctx.previous.clone());
                         }
 
                         comparison = TheCodeAtom::Comparison(*op);
