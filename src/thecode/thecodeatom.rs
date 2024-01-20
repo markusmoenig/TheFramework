@@ -352,7 +352,8 @@ impl TheCodeAtom {
                                                             debug_value = Some(result.clone());
                                                         }
                                                         local.set(name, result);
-                                                    } else if let Some(result) = TheValue::add(left, &v)
+                                                    } else if let Some(result) =
+                                                        TheValue::add(left, &v)
                                                     {
                                                         if sandbox.debug_mode {
                                                             debug_value = Some(result.clone());
@@ -397,7 +398,9 @@ impl TheCodeAtom {
                                             TheValueAssignment::ModulusAssign => {
                                                 let name = data.values[0].to_string().unwrap();
                                                 if let Some(left) = local.get(&name) {
-                                                    if let Some(result) = TheValue::modulus(left, &v) {
+                                                    if let Some(result) =
+                                                        TheValue::modulus(left, &v)
+                                                    {
                                                         if sandbox.debug_mode {
                                                             debug_value = Some(result.clone());
                                                         }
@@ -1025,6 +1028,9 @@ impl TheCodeAtom {
                 TheValue::Position(v) => {
                     create_float2_widgets(layout, TheId::named("Atom Position"), vec2f(v.x, v.z));
                 }
+                TheValue::Float2(v) => {
+                    create_float2_widgets(layout, TheId::named("Atom Float2"), *v);
+                }
                 TheValue::Int(v) => {
                     let mut text = TheText::new(TheId::empty());
                     text.set_text(value.to_kind());
@@ -1054,6 +1060,16 @@ impl TheCodeAtom {
                     name_edit.set_needs_redraw(true);
                     layout.add_widget(Box::new(text));
                     layout.add_widget(Box::new(name_edit));
+                }
+                TheValue::Bool(bool) => {
+                    let mut text = TheText::new(TheId::empty());
+                    text.set_text("Boolean".to_string());
+                    let mut drop_down = TheDropdownMenu::new(TheId::named("Atom Bool"));
+                    drop_down.add_option("False".to_string());
+                    drop_down.add_option("True".to_string());
+                    drop_down.set_selected_index(if *bool { 1 } else { 0 });
+                    layout.add_widget(Box::new(text));
+                    layout.add_widget(Box::new(drop_down));
                 }
                 _ => {
                     let mut text = TheText::new(TheId::empty());

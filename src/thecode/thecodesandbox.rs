@@ -71,10 +71,10 @@ impl TheCodeSandbox {
     pub fn clear_runtime_states(&mut self) {
         self.aliases = FxHashMap::default();
         self.func_rc = None;
-        self.module_stack = vec![];
         self.call_stack = vec![];
-        self.codegrid_stack = vec![];
+        self.module_stack = vec![];
         self.debug_modules = FxHashMap::default();
+        self.codegrid_stack = vec![];
     }
 
     /// Insert a module into the environment.
@@ -141,7 +141,11 @@ impl TheCodeSandbox {
     pub fn push_current_module(&mut self, module_id: Uuid, codegrid_id: Uuid) {
         self.module_stack.push(module_id);
         self.codegrid_stack.push(codegrid_id);
-        self.debug_modules.entry(module_id).or_default();
+        let debug_module = TheDebugModule {
+            codegrid_id,
+            ..TheDebugModule::default()
+        };
+        self.debug_modules.insert(module_id, debug_module);
     }
 
     /// Sets a debug value in the current module. An optional top value and a required bottom value.
@@ -169,7 +173,7 @@ impl TheCodeSandbox {
         if let Some(dv) = self.debug_modules.get(&module_id) {
             dv.clone()
         } else {
-            TheDebugModule::new()
+            TheDebugModule::default()
         }
     }
 
@@ -184,12 +188,13 @@ impl TheCodeSandbox {
                 }
             }
         }
-        TheDebugModule::new()
+        TheDebugModule::default()
     }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TheDebugModule {
+    pub codegrid_id: Uuid,
     pub values: FxHashMap<(u16, u16), (Option<TheValue>, TheValue)>,
     pub executed: FxHashSet<(u16, u16)>,
 }
@@ -203,6 +208,7 @@ impl Default for TheDebugModule {
 impl TheDebugModule {
     pub fn new() -> Self {
         Self {
+            codegrid_id: Uuid::nil(),
             values: FxHashMap::default(),
             executed: FxHashSet::default(),
         }

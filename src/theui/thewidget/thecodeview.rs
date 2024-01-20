@@ -40,8 +40,6 @@ pub struct TheCodeView {
 
     layout_id: TheId,
 
-    compiled: bool,
-
     drag_copy: bool,
 }
 
@@ -65,7 +63,7 @@ impl TheWidget for TheCodeView {
             codegrid: TheCodeGrid::new(),
             grid_size: 70,
 
-            debug_module: TheDebugModule::new(),
+            debug_module: TheDebugModule::default(),
 
             scroll_offset: vec2i(0, 0),
             zoom: 1.0,
@@ -86,9 +84,7 @@ impl TheWidget for TheCodeView {
 
             layout_id: TheId::empty(),
 
-            compiled: false,
-
-            drag_copy: false
+            drag_copy: false,
         }
     }
 
@@ -124,6 +120,7 @@ impl TheWidget for TheCodeView {
                             drop.title = atom.describe();
                             drop.set_data(atom.to_json());
                             drop.start_position = Some(vec2i(selected.0 as i32, selected.1 as i32));
+                            println!("start {}", self.drag_copy);
                             drop.operation = if self.drag_copy {
                                 TheDropOperation::Copy
                             } else {
@@ -693,8 +690,7 @@ impl TheWidget for TheCodeView {
                                     );
                                 }
                                 _ => {
-                                    let executed = self.compiled
-                                        && self.debug_module.executed.contains(&(x, y));
+                                    let executed = self.debug_module.executed.contains(&(x, y));
                                     let c = if executed { &WHITE } else { &text_color };
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
@@ -724,38 +720,36 @@ impl TheWidget for TheCodeView {
                                 );
                             }
 
-                            if self.compiled {
-                                if let Some(v) = self.debug_module.values.get(&(x, y)) {
-                                    if let Some(top) = &v.0 {
-                                        ctx.draw.text_rect_blend(
-                                            self.buffer.pixels_mut(),
-                                            &(
-                                                rect.0,
-                                                rect.1 + zoom_const(5, zoom),
-                                                rect.2,
-                                                rect.3 - zoom_const(10, zoom),
-                                            ),
-                                            stride,
-                                            font,
-                                            font_size,
-                                            &top.describe(),
-                                            &WHITE,
-                                            TheHorizontalAlign::Center,
-                                            TheVerticalAlign::Top,
-                                        );
-                                    }
+                            if let Some(v) = self.debug_module.values.get(&(x, y)) {
+                                if let Some(top) = &v.0 {
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
-                                        &(rect.0, rect.1, rect.2, rect.3 - zoom_const(5, zoom)),
+                                        &(
+                                            rect.0,
+                                            rect.1 + zoom_const(5, zoom),
+                                            rect.2,
+                                            rect.3 - zoom_const(10, zoom),
+                                        ),
                                         stride,
                                         font,
                                         font_size,
-                                        &v.1.describe(),
+                                        &top.describe(),
                                         &WHITE,
                                         TheHorizontalAlign::Center,
-                                        TheVerticalAlign::Bottom,
+                                        TheVerticalAlign::Top,
                                     );
                                 }
+                                ctx.draw.text_rect_blend(
+                                    self.buffer.pixels_mut(),
+                                    &(rect.0, rect.1, rect.2, rect.3 - zoom_const(5, zoom)),
+                                    stride,
+                                    font,
+                                    font_size,
+                                    &v.1.describe(),
+                                    &WHITE,
+                                    TheHorizontalAlign::Center,
+                                    TheVerticalAlign::Bottom,
+                                );
                             }
                         }
                     } else if Some((x, y)) == self.selected && self.drop_atom.is_none() {
@@ -894,13 +888,6 @@ pub trait TheCodeViewTrait: TheWidget {
     /// Sets the background color of the code view.
     /// This affects the visual appearance of the widget's background.
     fn set_background(&mut self, color: RGBA);
-
-    /// Sets the compiled state of the view. Only freshly compiled views
-    /// show the debug values.
-    fn set_compiled(&mut self, compiled: bool);
-
-    /// Returns the compilation state.
-    fn compiled(&self) -> bool;
 
     /// Gets the current zoom level of the code view.
     /// This determines how much the content is scaled visually.
@@ -1101,13 +1088,5 @@ impl TheCodeViewTrait for TheCodeView {
             // }
         }
         None
-    }
-
-    fn set_compiled(&mut self, compiled: bool) {
-        self.compiled = compiled;
-    }
-
-    fn compiled(&self) -> bool {
-        self.compiled
     }
 }

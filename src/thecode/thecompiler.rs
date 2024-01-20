@@ -134,6 +134,10 @@ impl TheCompilerContext {
 
     /// Returns the current function.
     pub fn get_current_function(&mut self) -> &mut TheCodeFunction {
+        if self.functions.is_empty() {
+            println!("No function found.");
+            self.functions.push(TheCodeFunction::default());
+        }
         &mut self.functions[self.curr_function_index]
     }
 
@@ -468,7 +472,7 @@ impl TheCompiler {
                 }
                 self.advance();
             }
-            TheCodeAtom::ExternalCall(_, _, _, arg_values, _) => {
+            TheCodeAtom::ExternalCall(_name, _, _, arg_values, _) => {
                 self.advance();
                 let external_call = self.ctx.previous.clone();
                 let location: (u16, u16) = self.ctx.previous_location;
@@ -496,7 +500,7 @@ impl TheCompiler {
                     }
 
                     match &self.ctx.current {
-                        TheCodeAtom::Value(_op) => {
+                        TheCodeAtom::Value(_) | TheCodeAtom::LocalGet(_) | TheCodeAtom::ObjectGet(_, _) => {
                             // Add the function argument to the stack.
                             if let Some(node) = self.ctx.current.clone().to_node(&mut self.ctx) {
                                 self.ctx.get_current_function().add_node(node);
@@ -517,15 +521,14 @@ impl TheCompiler {
                     if let Some(call) = self.external_call.get(name) {
                         self.ctx.external_call = Some(call.clone());
                         if let Some(node) = external_call.to_node(&mut self.ctx) {
-                            let func = TheCodeFunction::default();
-                            self.ctx.add_function(func);
-
-                            self.ctx.blocks.push(node);
-                            //self.ctx.get_current_function().add_node(node);
+                            self.ctx.get_current_function().add_node(node);
                         }
                         self.ctx.external_call = None;
                     } else {
-                        self.error_at((location.0, location.1), "Unknown external call.");
+                        self.error_at(
+                            (location.0, location.1),
+                            format!("Unknown external call ({}).", name).as_str(),
+                        );
                     }
                 }
             }
@@ -607,12 +610,10 @@ impl TheCompiler {
                     self.ctx.get_current_function().add_node(node);
                 }
             }
-            TheCodeAtom::ExternalCall(_, _,  _, arg_values, _) => {
+            TheCodeAtom::ExternalCall(_name, _, _, arg_values, _) => {
                 let external_call = self.ctx.previous.clone();
                 let location: (u16, u16) = self.ctx.previous_location;
                 self.ctx.node_location = location;
-
-               //self.advance();
 
                 for (index, _) in arg_values.iter().enumerate() {
                     let off = location.0 + (index + 1) as u16 * 2;
@@ -636,7 +637,7 @@ impl TheCompiler {
                     }
 
                     match &self.ctx.current {
-                        TheCodeAtom::Value(_op) => {
+                        TheCodeAtom::Value(_) | TheCodeAtom::LocalGet(_) | TheCodeAtom::ObjectGet(_, _) => {
                             // Add the function argument to the stack.
                             if let Some(node) = self.ctx.current.clone().to_node(&mut self.ctx) {
                                 self.ctx.get_current_function().add_node(node);
@@ -661,10 +662,12 @@ impl TheCompiler {
                         }
                         self.ctx.external_call = None;
                     } else {
-                        self.error_at((location.0, location.1), "Unknown external call.");
+                        self.error_at(
+                            (location.0, location.1),
+                            format!("Unknown external call ({}).", name).as_str(),
+                        );
                     }
                 }
-
             }
             TheCodeAtom::FuncCall(_) => {
                 let node = self.ctx.previous.clone().to_node(&mut self.ctx);

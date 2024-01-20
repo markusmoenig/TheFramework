@@ -506,14 +506,29 @@ impl TheUI {
         redraw
     }
 
-    pub fn modifier_changed(&mut self, shift: bool, ctrl: bool, alt: bool, logo: bool, ctx: &mut TheContext,
-) -> bool {
+    pub fn modifier_changed(
+        &mut self,
+        shift: bool,
+        ctrl: bool,
+        alt: bool,
+        logo: bool,
+        ctx: &mut TheContext,
+    ) -> bool {
         let mut redraw = false;
         if let Some(id) = &ctx.ui.focus {
             if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
                 let event = TheEvent::ModifierChanged(shift, ctrl, alt, logo);
                 redraw = widget.on_event(&event, ctx);
                 self.process_events(ctx);
+            }
+        }
+        if ctx.ui.focus != ctx.ui.hover {
+            if let Some(id) = &ctx.ui.hover {
+                if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
+                    let event = TheEvent::ModifierChanged(shift, ctrl, alt, logo);
+                    redraw = widget.on_event(&event, ctx);
+                    self.process_events(ctx);
+                }
             }
         }
         redraw

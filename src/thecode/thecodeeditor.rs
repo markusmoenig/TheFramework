@@ -115,11 +115,8 @@ impl TheCodeEditor {
             //     self.set_grid_status_message(ui, ctx);
             //     redraw = true;
             // }
-            TheEvent::CodeBundleChanged(_, edit_state) => {
-                if *edit_state {
-                    self.set_compiled(false, ui, ctx);
-                }
-            }
+            // TheEvent::CodeBundleChanged(_, _edit_state) => {
+            // }
             TheEvent::CodeEditorChanged(_id, codegrid) => {
                 self.bundle.insert_grid(codegrid.clone());
                 ctx.ui
@@ -396,12 +393,33 @@ impl TheCodeEditor {
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Text(name)));
                         self.finish_undo(ui, ctx);
                     }
-                } else if id.name == "Atom Position" {
+                }
+                else if id.name == "Atom Position" {
                     if let Some(v) = value.to_vec2f() {
                         self.start_undo(ui);
                         self.set_selected_atom(
                             ui,
                             TheCodeAtom::Value(TheValue::Position(vec3f(v.x, 0.0, v.y))),
+                        );
+                        self.finish_undo(ui, ctx);
+                    }
+                }
+                else if id.name == "Atom Bool" {
+                    if let Some(v) = value.as_f32() {
+                        self.start_undo(ui);
+                        self.set_selected_atom(
+                            ui,
+                            TheCodeAtom::Value(TheValue::Bool(v > 0.0)),
+                        );
+                        self.finish_undo(ui, ctx);
+                    }
+                }
+                else if id.name == "Atom Float2" {
+                    if let Some(v) = value.to_vec2f() {
+                        self.start_undo(ui);
+                        self.set_selected_atom(
+                            ui,
+                            TheCodeAtom::Value(TheValue::Float2(v)),
                         );
                         self.finish_undo(ui, ctx);
                     }
@@ -457,7 +475,7 @@ impl TheCodeEditor {
     pub fn clear_debug_module(&mut self, ui: &mut TheUI) {
         if let Some(layout) = ui.get_code_layout("Code Editor") {
             if let Some(code_view) = layout.code_view_mut().as_code_view() {
-                code_view.set_debug_module(TheDebugModule::new());
+                code_view.set_debug_module(TheDebugModule::default());
             }
         }
     }
@@ -546,35 +564,6 @@ impl TheCodeEditor {
                 code_view.set_codegrid(TheCodeGrid::from_json(json.as_str()));
             }
         }
-    }
-
-    /// Set the codegrid from json
-    pub fn compiled(&self, ui: &mut TheUI) -> bool {
-        if let Some(layout) = ui.get_code_layout("Code Editor") {
-            if let Some(code_view) = layout.code_view_mut().as_code_view() {
-                return code_view.compiled();
-            }
-        }
-        false
-    }
-
-    /// Set the compilation state from json
-    pub fn set_compiled(&self, compiled: bool, ui: &mut TheUI, ctx: &mut TheContext) {
-        if let Some(layout) = ui.get_code_layout("Code Editor") {
-            if let Some(code_view) = layout.code_view_mut().as_code_view() {
-                code_view.set_compiled(compiled);
-            }
-        }
-
-        if let Some(widget) = ui.get_widget("Code Grid Status") {
-            if !compiled {
-                widget.set_value(TheValue::Text("Uncompiled".to_string()));
-            } else {
-                widget.set_value(TheValue::Text("".to_string()));
-            }
-        }
-
-        ui.relayout_layout("Code Bottom Toolbar Layout", ctx);
     }
 
     /// Create an atom for the given name.
