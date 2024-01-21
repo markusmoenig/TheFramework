@@ -21,6 +21,8 @@ pub enum TheCodeAtom {
     ExternalCall(String, String, Vec<String>, Vec<TheValue>, Option<TheValue>),
     FuncArg(String),
     Return,
+    Or,
+    And,
     EndOfExpression,
     EndOfCode,
 }
@@ -34,6 +36,8 @@ impl TheCodeAtom {
             || matches!(self, TheCodeAtom::Multiply)
             || matches!(self, TheCodeAtom::Divide)
             || matches!(self, TheCodeAtom::Modulus)
+            || matches!(self, TheCodeAtom::Or)
+            || matches!(self, TheCodeAtom::And)
     }
 
     pub fn can_assign(&self) -> bool {
@@ -832,6 +836,8 @@ impl TheCodeAtom {
             TheCodeAtom::Multiply => TheCodeAtomKind::Star,
             TheCodeAtom::Divide => TheCodeAtomKind::Slash,
             TheCodeAtom::Modulus => TheCodeAtomKind::Percent,
+            TheCodeAtom::Or => TheCodeAtomKind::Or,
+            TheCodeAtom::And => TheCodeAtomKind::And,
             TheCodeAtom::EndOfExpression => TheCodeAtomKind::Semicolon,
             TheCodeAtom::EndOfCode => TheCodeAtomKind::Eof,
         }
@@ -859,6 +865,8 @@ impl TheCodeAtom {
             TheCodeAtom::Multiply => "*".to_string(),
             TheCodeAtom::Divide => "/".to_string(),
             TheCodeAtom::Modulus => "%".to_string(),
+            TheCodeAtom::Or => "Or".to_string(),
+            TheCodeAtom::And => "And".to_string(),
             TheCodeAtom::EndOfExpression => ";".to_string(),
             TheCodeAtom::EndOfCode => "Stop".to_string(),
         }
@@ -914,6 +922,8 @@ impl TheCodeAtom {
             TheCodeAtom::Multiply => "Operator ('*')".to_string(),
             TheCodeAtom::Divide => "Operator ('/')".to_string(),
             TheCodeAtom::Modulus => "Operator ('%')".to_string(),
+            TheCodeAtom::Or => "Logical Or".to_string(),
+            TheCodeAtom::And => "Logical And".to_string(),
             TheCodeAtom::EndOfExpression => ";".to_string(),
             TheCodeAtom::EndOfCode => "Stop".to_string(),
         }
