@@ -1,6 +1,6 @@
 [package]
 name = "theframework"
-version = "0.1.19"
+version = "0.1.20"
 edition = "2021"
 description = "A cross platform application UI framework."
 license = "MIT"
@@ -9,7 +9,7 @@ repository = "https://github.com/markusmoenig/theframework.git"
 exclude = ["Xcode"]
 
 [dependencies]
-env_logger = "0.10"
+env_logger = "0.11"
 log = "0.4"
 fontdue = "0.8.0"
 maths-rs = { version = "0.2", features = ["short_types", "short_hand_constructors", "casts", "serde"] }
