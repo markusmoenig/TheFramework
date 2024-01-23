@@ -30,6 +30,14 @@ impl TheTrait for CodeEditor {
             Some(TheValue::Bool(false)),
         ));
 
+        editor.add_external(TheExternalCode::new(
+            "Doubler".to_string(),
+            "Doubles the input value.".to_string(),
+            vec!["Value".to_string()],
+            vec![TheValue::Float(0.0)],
+            Some(TheValue::Bool(false)),
+        ));
+
         let mut compiler = TheCompiler::default();
         compiler.add_external_call(
             "Pulse".to_string(),
@@ -87,6 +95,30 @@ impl TheTrait for CodeEditor {
                 }
             },
             vec![TheValue::Int(0), TheValue::Int(0)],
+        );
+
+        compiler.add_external_call(
+            "Doubler".to_string(),
+            |stack: &mut Vec<TheValue>,
+             _data: &mut TheCodeNodeData,
+             _sandbox: &mut TheCodeSandbox| {
+                let mut done = false;
+
+                if let Some(stack_v) = stack.pop() {
+                    if let Some(value) = stack_v.mul(&TheValue::Float(2.0)) {
+                        stack.push(value);
+                        done = true;
+                    }
+                }
+
+                if !done {
+                    // Runtime error, no value on the stack.
+                    stack.push(TheValue::Float(0.0));
+                }
+
+                TheCodeNodeCallResult::Continue
+            },
+            vec![],
         );
 
         Self {
@@ -286,7 +318,7 @@ impl TheTrait for CodeEditor {
                                         //     vec![TheCodeAtom::NamedValue("Count".to_string(), TheValue::Int(4))]
                                         // );
 
-                                        sandbox.insert_module(module.clone());
+                                        //sandbox.insert_module(module.clone());
                                         module.execute(&mut sandbox);
                                         code_view.set_debug_module(
                                             sandbox.get_module_debug_module(module.id),

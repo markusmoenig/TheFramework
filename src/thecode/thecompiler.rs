@@ -162,6 +162,7 @@ pub struct TheCompiler {
     grid: TheCodeGrid,
 
     external_call: FxHashMap<String, (TheCodeNodeCall, Vec<TheValue>)>,
+    packages: FxHashMap<Uuid, TheCodePackage>,
 
     ctx: TheCompilerContext,
 }
@@ -198,11 +199,12 @@ impl TheCompiler {
             rules,
             grid: TheCodeGrid::default(),
             external_call: FxHashMap::default(),
+            packages: FxHashMap::default(),
             ctx: TheCompilerContext::default(),
         }
     }
 
-    /// Add an external node to the compiler.
+    /// Add an external node (a function provided by the host) to the compiler.
     pub fn add_external_call(
         &mut self,
         name: String,
@@ -210,6 +212,16 @@ impl TheCompiler {
         values: Vec<TheValue>,
     ) {
         self.external_call.insert(name, (call, values));
+    }
+
+    /// Add the code packages to the compiler. These are used to verify module calls.
+    pub fn set_packages(&mut self, packages: FxHashMap<Uuid, TheCodePackage>) {
+        self.packages = packages;
+    }
+
+    /// Updates a code package.
+    pub fn update_package(&mut self, package: TheCodePackage) {
+        self.packages.insert(package.id, package);
     }
 
     /// Compile the given code grid and returns either a module or an error.
@@ -353,9 +365,10 @@ impl TheCompiler {
         } else {
             if !self.ctx.get_current_function().is_empty() {
                 let f = self.ctx.get_current_function().clone();
-                self.ctx.module.insert_function(f.name.clone(), f);
+                self.ctx.module.set_function(f);
             }
 
+            self.ctx.module.name = grid.name.clone();
             self.ctx.module.codegrid_id = grid.id;
             Ok(self.ctx.module.clone())
         }
@@ -365,6 +378,7 @@ impl TheCompiler {
         //println!("declaration {:?}", self.ctx.current);
 
         match self.ctx.current.clone() {
+            /*
             TheCodeAtom::FuncDef(name) => {
                 self.advance();
                 let mut func = TheCodeFunction::named(name);
@@ -378,7 +392,7 @@ impl TheCompiler {
                 }
                 func.arguments = arguments;
                 self.ctx.add_function(func);
-            }
+            }*/
             TheCodeAtom::LocalSet(name, _) => {
                 self.advance();
                 let var; // = self.ctx.previous.clone();
@@ -442,6 +456,10 @@ impl TheCompiler {
 
     fn statement(&mut self) {
         match self.ctx.current.clone() {
+            TheCodeAtom::Argument(name) => {
+                // Add the argument to the current function.
+                self.ctx.get_current_function().arguments.push(name);
+            }
             TheCodeAtom::Return => {
                 self.advance();
 
@@ -460,18 +478,19 @@ impl TheCompiler {
                 }
 
                 if let Some(f) = self.ctx.remove_function() {
-                    self.ctx.module.insert_function(f.name.clone(), f);
+                    self.ctx.module.set_function(f);
                 } else {
                     self.error_at_current("Unexpected 'Return' code.")
                 }
             }
+            /*
             TheCodeAtom::FuncCall(_) => {
                 self.ctx.node_location = self.ctx.current_location;
                 if let Some(node) = self.ctx.current.clone().to_node(&mut self.ctx) {
                     self.ctx.get_current_function().add_node(node);
                 }
                 self.advance();
-            }
+            }*/
             TheCodeAtom::ExternalCall(_name, _, _, arg_values, _) => {
                 self.advance();
                 let external_call = self.ctx.previous.clone();
@@ -500,7 +519,9 @@ impl TheCompiler {
                     }
 
                     match &self.ctx.current {
-                        TheCodeAtom::Value(_) | TheCodeAtom::LocalGet(_) | TheCodeAtom::ObjectGet(_, _) => {
+                        TheCodeAtom::Value(_)
+                        | TheCodeAtom::LocalGet(_)
+                        | TheCodeAtom::ObjectGet(_, _) => {
                             // Add the function argument to the stack.
                             if let Some(node) = self.ctx.current.clone().to_node(&mut self.ctx) {
                                 self.ctx.get_current_function().add_node(node);
@@ -637,7 +658,9 @@ impl TheCompiler {
                     }
 
                     match &self.ctx.current {
-                        TheCodeAtom::Value(_) | TheCodeAtom::LocalGet(_) | TheCodeAtom::ObjectGet(_, _) => {
+                        TheCodeAtom::Value(_)
+                        | TheCodeAtom::LocalGet(_)
+                        | TheCodeAtom::ObjectGet(_, _) => {
                             // Add the function argument to the stack.
                             if let Some(node) = self.ctx.current.clone().to_node(&mut self.ctx) {
                                 self.ctx.get_current_function().add_node(node);
@@ -669,6 +692,7 @@ impl TheCompiler {
                     }
                 }
             }
+            /*
             TheCodeAtom::FuncCall(_) => {
                 let node = self.ctx.previous.clone().to_node(&mut self.ctx);
                 //println!("FuncCall {:?}", self.ctx.current_location);
@@ -686,7 +710,7 @@ impl TheCompiler {
                 if let Some(node) = node {
                     self.ctx.get_current_function().add_node(node);
                 }
-            }
+            }*/
             _ => {
                 self.error_at_current("Unknown identifier.");
             }

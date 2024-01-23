@@ -35,6 +35,13 @@ pub struct TheCodeEditor {
 
     externals: Vec<TheExternalCode>,
 
+    // The modules available for the code editor. The String is the name of the bundle and it's id it is contained in.
+    modules: FxHashMap<Uuid, (String, Uuid, TheCodeModule)>,
+
+    function_list_needs_update: bool,
+
+    curr_list_index: u32,
+
     undo: Option<TheUndo>,
 }
 
@@ -54,6 +61,11 @@ impl TheCodeEditor {
             bundle: TheCodeBundle::new(),
 
             externals: vec![],
+            modules: FxHashMap::default(),
+
+            curr_list_index: 0,
+
+            function_list_needs_update: false,
 
             undo: None,
         }
@@ -64,8 +76,39 @@ impl TheCodeEditor {
         self.externals.push(external);
     }
 
+    /// Clears the module based code.
+    pub fn clear_modules(&mut self) {
+        self.modules.clear();
+    }
+
+    /// Add a moodule function to the code.
+    pub fn insert_module(&mut self, bundle_name: String, bundle_id: Uuid, module: TheCodeModule) {
+        self.modules
+            .insert(module.codegrid_id, (bundle_name, bundle_id, module));
+        self.function_list_needs_update = true;
+    }
+
+    /// Adds all modules of the given packages to the code.
+    pub fn set_packages(&mut self, packages: FxHashMap<Uuid, TheCodePackage> ) {
+        self.clear_modules();
+        for p in packages.values() {
+            for m in p.modules.values() {
+                self.insert_module(p.name.clone(), p.id, m.clone());
+            }
+        }
+    }
+
     pub fn handle_event(&mut self, event: &TheEvent, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
+
+        if self.function_list_needs_update {
+            if let Some(code_list) = ui.get_list_layout("Code Editor Code List") {
+                self.get_code_list_items(self.curr_list_index, code_list, ctx);
+                redraw = true;
+                self.function_list_needs_update = false;
+            }
+        }
+
         match event {
             /*
             TheEvent::CodeEditorApply(_id) => {
@@ -87,12 +130,13 @@ impl TheCodeEditor {
             }*/
             TheEvent::SDFIndexChanged(_id, index) => {
                 if let Some(code_list) = ui.get_list_layout("Code Editor Code List") {
-                    self.get_code_list_items(*index, code_list, ctx)
+                    self.curr_list_index = *index;
+                    self.get_code_list_items(*index, code_list, ctx);
                 }
             }
             TheEvent::DragStarted(id, text, offset) => {
                 if id.name == "Code Editor Code List Item" {
-                    if let Some(atom) = Some(self.create_atom(text.as_str())) {
+                    if let Some(atom) = Some(self.create_atom(text.as_str(), id.uuid)) {
                         let mut drop = TheDrop::new(TheId::named("Code Editor Atom"));
                         drop.set_data(atom.to_json());
                         drop.set_title(text.clone());
@@ -232,6 +276,11 @@ impl TheCodeEditor {
                                     {
                                         widget.set_value(TheValue::Text(text.clone()));
                                         codegrid.name = text.clone();
+
+                                        ctx.ui.send(TheEvent::CodeBundleChanged(
+                                            self.bundle.clone(),
+                                            true,
+                                        ));
                                         ctx.ui.relayout = true;
                                     }
                                 }
@@ -265,23 +314,11 @@ impl TheCodeEditor {
                             ),
                         );
                     }
-                } else if id.name == "Atom Func Def" {
-                    if let Some(name) = value.to_string() {
-                        if !name.is_empty() {
-                            self.set_selected_atom(ui, TheCodeAtom::FuncDef(name));
-                        }
-                    }
-                } else if id.name == "Atom Func Arg" {
-                    if let Some(name) = value.to_string() {
-                        if !name.is_empty() {
-                            self.set_selected_atom(ui, TheCodeAtom::FuncArg(name));
-                        }
-                    }
-                } else if id.name == "Atom Func Call" {
+                } else if id.name == "Atom Argument" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.start_undo(ui);
-                            self.set_selected_atom(ui, TheCodeAtom::FuncCall(name));
+                            self.set_selected_atom(ui, TheCodeAtom::Argument(name));
                             self.finish_undo(ui, ctx);
                         }
                     }
@@ -393,8 +430,7 @@ impl TheCodeEditor {
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Text(name)));
                         self.finish_undo(ui, ctx);
                     }
-                }
-                else if id.name == "Atom Position" {
+                } else if id.name == "Atom Position" {
                     if let Some(v) = value.to_vec2f() {
                         self.start_undo(ui);
                         self.set_selected_atom(
@@ -403,24 +439,16 @@ impl TheCodeEditor {
                         );
                         self.finish_undo(ui, ctx);
                     }
-                }
-                else if id.name == "Atom Bool" {
+                } else if id.name == "Atom Bool" {
                     if let Some(v) = value.as_f32() {
                         self.start_undo(ui);
-                        self.set_selected_atom(
-                            ui,
-                            TheCodeAtom::Value(TheValue::Bool(v > 0.0)),
-                        );
+                        self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Bool(v > 0.0)));
                         self.finish_undo(ui, ctx);
                     }
-                }
-                else if id.name == "Atom Float2" {
+                } else if id.name == "Atom Float2" {
                     if let Some(v) = value.to_vec2f() {
                         self.start_undo(ui);
-                        self.set_selected_atom(
-                            ui,
-                            TheCodeAtom::Value(TheValue::Float2(v)),
-                        );
+                        self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Float2(v)));
                         self.finish_undo(ui, ctx);
                     }
                 }
@@ -567,17 +595,15 @@ impl TheCodeEditor {
     }
 
     /// Create an atom for the given name.
-    pub fn create_atom(&self, name: &str) -> TheCodeAtom {
+    pub fn create_atom(&self, name: &str, id: Uuid) -> TheCodeAtom {
         match name {
             "Assignment" => TheCodeAtom::Assignment(TheValueAssignment::Assign),
             "Comparison" => TheCodeAtom::Comparison(TheValueComparison::Equal),
-            "Function" => TheCodeAtom::FuncDef("name".to_string()),
-            "Function Argument" => TheCodeAtom::FuncArg("name".to_string()),
-            "Function Call" => TheCodeAtom::FuncCall("name".to_string()),
+            "Argument" => TheCodeAtom::Argument("VarName".to_string()),
             "Return" => TheCodeAtom::Return,
-            "Local Get" => TheCodeAtom::LocalGet("name".to_string()),
-            "Local Set" => TheCodeAtom::LocalSet("name".to_string(), TheValueAssignment::Assign),
-            "Object Get" => TheCodeAtom::ObjectGet("self".to_string(), "name".to_string()),
+            "Local Get" => TheCodeAtom::LocalGet("VarName".to_string()),
+            "Local Set" => TheCodeAtom::LocalSet("VarName".to_string(), TheValueAssignment::Assign),
+            "Object Get" => TheCodeAtom::ObjectGet("self".to_string(), "VarName".to_string()),
             "Object Set" => TheCodeAtom::ObjectSet(
                 "self".to_string(),
                 "name".to_string(),
@@ -597,6 +623,16 @@ impl TheCodeEditor {
             "Divide" => TheCodeAtom::Divide,
             "Modulus" => TheCodeAtom::Modulus,
             _ => {
+                if let Some((bundle_name, bundle_id, module)) = self.modules.get(&id) {
+                    println!("module {}", module.name);
+                    return TheCodeAtom::ModuleCall(
+                        bundle_name.clone(),
+                        *bundle_id,
+                        module.name.clone(),
+                        module.codegrid_id,
+                    );
+                }
+
                 for e in &self.externals {
                     if e.name == name {
                         return TheCodeAtom::ExternalCall(
@@ -821,21 +857,23 @@ impl TheCodeEditor {
             item.set_text("Function".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
+            */
 
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
-            item.set_text("Function Argument".to_string());
+            item.set_text("Argument".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
+            /*
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Function Call".to_string());
             item.set_associated_layout(code_layout.id().clone());
-            code_layout.add_item(item, ctx);
+            code_layout.add_item(item, ctx);*/
 
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Return".to_string());
             item.set_associated_layout(code_layout.id().clone());
-            code_layout.add_item(item, ctx);*/
+            code_layout.add_item(item, ctx);
 
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Local Get".to_string());
@@ -942,6 +980,21 @@ impl TheCodeEditor {
                 let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
                 item.set_text(e.name.clone());
                 item.set_status_text(e.description.clone().as_str());
+                item.set_associated_layout(code_layout.id().clone());
+                code_layout.add_item(item, ctx);
+            }
+
+            for (bundle_name, _bundle_id, module) in self.modules.values() {
+                let mut item = TheListItem::new(TheId::named_with_id(
+                    "Code Editor Code List Item",
+                    module.id,
+                ));
+                item.set_text(module.name.clone());
+                item.set_status_text(
+                    format!("{}: {}", bundle_name, module.name.clone())
+                        .to_string()
+                        .as_str(),
+                );
                 item.set_associated_layout(code_layout.id().clone());
                 code_layout.add_item(item, ctx);
             }

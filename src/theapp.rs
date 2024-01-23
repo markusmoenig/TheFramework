@@ -752,7 +752,11 @@ impl TheApp {
                                     .window_pos_to_pixel(coords)
                                     .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
-                                if app.touch_dragged(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                                if app.touch_dragged(
+                                    pixel_pos.0 as f32,
+                                    pixel_pos.1 as f32,
+                                    &mut ctx,
+                                ) {
                                     window.request_redraw();
                                 }
                             }

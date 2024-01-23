@@ -5,9 +5,9 @@ pub struct TheCodeSandbox {
     /// The id of the sandbox.
     pub id: Uuid,
 
-    /// The modules with callable codegrid functions. These make up the behavior of an entity.
+    /// The packages with callable codegrid functions.
     #[serde(skip)]
-    pub modules: FxHashMap<Uuid, TheCodeModule>,
+    pub packages: FxHashMap<Uuid, TheCodePackage>,
 
     /// The objects with values. These make up the state of an entity.
     pub objects: FxHashMap<Uuid, TheCodeObject>,
@@ -53,7 +53,7 @@ impl TheCodeSandbox {
             id: Uuid::new_v4(),
 
             objects: FxHashMap::default(),
-            modules: FxHashMap::default(),
+            packages: FxHashMap::default(),
 
             debug_mode: false,
 
@@ -78,8 +78,8 @@ impl TheCodeSandbox {
     }
 
     /// Insert a module into the environment.
-    pub fn insert_module(&mut self, module: TheCodeModule) {
-        self.modules.insert(module.id, module);
+    pub fn insert_package(&mut self, package: TheCodePackage) {
+        self.packages.insert(package.id, package);
     }
 
     /// Add an object into the sandbox.
@@ -87,11 +87,15 @@ impl TheCodeSandbox {
         self.objects.insert(object.id, object);
     }
 
-    /// Get a clone of the function from the environment.
-    pub fn get_function_cloned(&self, module_id: Uuid, name: &String) -> Option<TheCodeFunction> {
-        if let Some(module) = self.modules.get(&module_id) {
-            if let Some(function) = module.get_function(name) {
-                return Some(function.clone());
+    /// Get a clone of the function from the environment. The function is identified by the package id and the codegrid id the module is based on.
+    pub fn get_function_cloned(
+        &self,
+        package_id: &Uuid,
+        codegrid_id: &Uuid,
+    ) -> Option<TheCodeFunction> {
+        if let Some(package) = self.packages.get(package_id) {
+            if let Some(module) = package.get_function_codegrid(codegrid_id) {
+                return Some(module.get_function().clone());
             }
         }
         None

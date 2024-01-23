@@ -16,10 +16,12 @@ pub enum TheCodeAtom {
     LocalSet(String, TheValueAssignment),
     ObjectGet(String, String),
     ObjectSet(String, String, TheValueAssignment),
-    FuncDef(String),
-    FuncCall(String),
+    /// A call into a native function defined by the host.
     ExternalCall(String, String, Vec<String>, Vec<TheValue>, Option<TheValue>),
-    FuncArg(String),
+    /// A call into a module, identified by the bundle id and the codegrid id the module is based on.
+    /// We keep the bundle and module names so we can display them in the editor.
+    ModuleCall(String, Uuid, String, Uuid),
+    Argument(String),
     Return,
     Or,
     And,
@@ -241,6 +243,7 @@ impl TheCodeAtom {
                     None
                 }
             }
+            /*
             TheCodeAtom::FuncCall(name) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
@@ -279,7 +282,7 @@ impl TheCodeAtom {
                         vec![TheValue::Text(name.clone())],
                     ),
                 ))
-            }
+            }*/
             TheCodeAtom::LocalGet(name) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
@@ -802,7 +805,7 @@ impl TheCodeAtom {
             Self::ObjectSet(_, _, _) | Self::LocalSet(_, _) => {
                 TheSDF::RoundedRect(dim, (0.0, 0.0, 10.0 * zoom, 10.0 * zoom))
             }
-            Self::FuncCall(_) | Self::ExternalCall(_, _, _, _, _) => {
+            Self::ExternalCall(_, _, _, _, _) => {
                 TheSDF::RoundedRect(dim, (10.0 * zoom, 10.0 * zoom, 10.0 * zoom, 10.0 * zoom))
             }
             _ => TheSDF::RoundedRect(dim, (0.0, 0.0, 0.0, 0.0)),
@@ -821,10 +824,9 @@ impl TheCodeAtom {
         match self {
             TheCodeAtom::Assignment(_op) => TheCodeAtomKind::Equal,
             TheCodeAtom::Comparison(_op) => TheCodeAtomKind::Equal,
-            TheCodeAtom::FuncDef(_name) => TheCodeAtomKind::Fn,
-            TheCodeAtom::FuncArg(_name) => TheCodeAtomKind::Identifier,
-            TheCodeAtom::FuncCall(_name) => TheCodeAtomKind::Identifier,
+            TheCodeAtom::Argument(_name) => TheCodeAtomKind::Identifier,
             TheCodeAtom::ExternalCall(_, _, _, _, _) => TheCodeAtomKind::Identifier,
+            TheCodeAtom::ModuleCall(_, _, _, _) => TheCodeAtomKind::Identifier,
             TheCodeAtom::Return => TheCodeAtomKind::Return,
             TheCodeAtom::LocalGet(_name) => TheCodeAtomKind::Identifier,
             TheCodeAtom::LocalSet(_, _) => TheCodeAtomKind::Identifier,
@@ -847,10 +849,9 @@ impl TheCodeAtom {
         match self {
             TheCodeAtom::Assignment(op) => op.to_string().to_string(),
             TheCodeAtom::Comparison(op) => op.to_string().to_string(),
-            TheCodeAtom::FuncDef(name) => name.clone(),
-            TheCodeAtom::FuncArg(name) => name.clone(),
-            TheCodeAtom::FuncCall(name) => name.clone(),
+            TheCodeAtom::Argument(name) => name.clone(),
             TheCodeAtom::ExternalCall(name, _, _, _, _) => name.clone(),
+            TheCodeAtom::ModuleCall(name, _, _, _) => name.clone(),
             TheCodeAtom::Return => "Return".to_string(),
             TheCodeAtom::LocalGet(name) => name.clone(),
             TheCodeAtom::LocalSet(name, _) => name.clone(),
@@ -876,12 +877,8 @@ impl TheCodeAtom {
         match self {
             TheCodeAtom::Assignment(op) => format!("Assignment ({}).", op.to_string()),
             TheCodeAtom::Comparison(op) => format!("Comparison ({}).", op.to_string()),
-            TheCodeAtom::FuncDef(name) => format!("Function definition ({}).", name),
-            TheCodeAtom::FuncArg(name) => format!("Function argument ({}).", name),
-            TheCodeAtom::FuncCall(name) => format!(
-                "Function call ({}). Values below will be passed as arguments.",
-                name
-            ),
+            TheCodeAtom::Argument(name) => format!("Function argument ({}).", name),
+            TheCodeAtom::ModuleCall(bundle, _, name, _) => format!("{}: {}.", bundle, name),
             TheCodeAtom::ExternalCall(_, description, _, _, _) => description.clone(),
             TheCodeAtom::Return => "Return from a function. Optionally with a value.".to_string(),
             TheCodeAtom::LocalGet(name) => format!("Get the value of a local variable ({}).", name),
@@ -955,28 +952,10 @@ impl TheCodeAtom {
                 layout.add_widget(Box::new(text));
                 layout.add_widget(Box::new(drop_down));
             }
-            TheCodeAtom::FuncDef(name) => {
-                let mut text = TheText::new(TheId::empty());
-                text.set_text("Function Name".to_string());
-                let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Func Def"));
-                name_edit.set_text(name.clone());
-                name_edit.set_needs_redraw(true);
-                layout.add_widget(Box::new(text));
-                layout.add_widget(Box::new(name_edit));
-            }
-            TheCodeAtom::FuncArg(name) => {
+            TheCodeAtom::Argument(name) => {
                 let mut text = TheText::new(TheId::empty());
                 text.set_text("Argument Name".to_string());
                 let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Func Arg"));
-                name_edit.set_text(name.clone());
-                name_edit.set_needs_redraw(true);
-                layout.add_widget(Box::new(text));
-                layout.add_widget(Box::new(name_edit));
-            }
-            TheCodeAtom::FuncCall(name) => {
-                let mut text = TheText::new(TheId::empty());
-                text.set_text("Function Name".to_string());
-                let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Func Call"));
                 name_edit.set_text(name.clone());
                 name_edit.set_needs_redraw(true);
                 layout.add_widget(Box::new(text));

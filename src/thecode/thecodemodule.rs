@@ -1,13 +1,13 @@
 use crate::prelude::*;
 
-/// TheCodeModule is a compiled output of the TheCodeGrid source.
+/// TheCodeModule is a compiled output of a TheCodeGrid source.
 #[derive(Clone, Debug)]
 pub struct TheCodeModule {
     pub name: String,
     pub id: Uuid,
     /// The id of the codegrid that was used to compile this module.
     pub codegrid_id: Uuid,
-    pub functions: FxHashMap<String, TheCodeFunction>,
+    pub function: TheCodeFunction,
 }
 
 impl Default for TheCodeModule {
@@ -22,35 +22,33 @@ impl TheCodeModule {
             name: "Unnamed".to_string(),
             id: Uuid::new_v4(),
             codegrid_id: Uuid::nil(),
-            functions: FxHashMap::default(),
+            function: TheCodeFunction::default(),
         }
     }
 
     /// Insert a function into the module.
-    pub fn insert_function(&mut self, name: String, function: TheCodeFunction) {
-        self.functions.insert(name, function);
+    pub fn set_function(&mut self, function: TheCodeFunction) {
+        self.function = function;
     }
 
-    /// Get a function from the module.
-    pub fn get_function(&self, name: &String) -> Option<&TheCodeFunction> {
-        self.functions.get(name)
+    /// Get the function from the module.
+    pub fn get_function(&self) -> &TheCodeFunction {
+        &self.function
     }
 
-    /// Get a mutable function from the module.
-    pub fn get_function_mut(&mut self, name: &String) -> Option<&mut TheCodeFunction> {
-        self.functions.get_mut(name)
+    /// Get the function as mutable from the module.
+    pub fn get_function_mut(&mut self) -> &mut TheCodeFunction {
+        &mut self.function
     }
 
-    /// Execute the module by calling the main function.
+    /// Execute the module.
     pub fn execute(&mut self, sandbox: &mut TheCodeSandbox) {
-        if let Some(main) = self.functions.get_mut(&"main".to_string()) {
-            let clone = main.clone();
+        let clone = self.function.clone();
 
-            sandbox.push_current_module(self.id, self.codegrid_id);
-            sandbox.call_stack.push(clone);
+        sandbox.push_current_module(self.id, self.codegrid_id);
+        sandbox.call_stack.push(clone);
 
-            main.execute(sandbox);
-            sandbox.call_stack.pop();
-        }
+        self.function.execute(sandbox);
+        sandbox.call_stack.pop();
     }
 }

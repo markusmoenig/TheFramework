@@ -33,7 +33,17 @@ impl TheCodePackage {
         self.modules.get(name)
     }
 
-    /// Get a moutable m module from the package.
+    /// Get a module from the package based on the codegrid id.
+    pub fn get_function_codegrid(&self, codegrid_id: &Uuid) -> Option<&TheCodeModule> {
+        self.modules.values().find(|module| module.codegrid_id == *codegrid_id)
+    }
+
+    /// Get a mutable module from the package based on the codegrid id.
+    pub fn get_function_codegrid_mut(&mut self, codegrid_id: &Uuid) -> Option<&mut TheCodeModule> {
+        self.modules.values_mut().find(|module| module.codegrid_id == *codegrid_id)
+    }
+
+    /// Get a mutable m module from the package.
     pub fn get_function_mut(&mut self, name: &String) -> Option<&mut TheCodeModule> {
         self.modules.get_mut(name)
     }

@@ -6,7 +6,6 @@ pub struct TheCodeFunction {
     pub nodes: Vec<TheCodeNode>,
     pub local: Vec<TheCodeObject>,
 
-    pub public: bool,
     pub arguments: Vec<String>,
 }
 
@@ -22,7 +21,6 @@ impl TheCodeFunction {
             name: "main".to_string(),
             local: vec![TheCodeObject::default()],
             nodes: vec![],
-            public: false,
             arguments: vec![],
         }
     }
@@ -32,7 +30,6 @@ impl TheCodeFunction {
             name,
             local: vec![TheCodeObject::default()],
             nodes: vec![],
-            public: false,
             arguments: vec![],
         }
     }
