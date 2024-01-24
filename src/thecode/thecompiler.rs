@@ -553,6 +553,75 @@ impl TheCompiler {
                     }
                 }
             }
+            TheCodeAtom::ModuleCall(_bundle_name, bundle_id, _module_name, codegrid_id) => {
+                self.advance();
+                let module_call = self.ctx.previous.clone();
+                let location: (u16, u16) = self.ctx.previous_location;
+                self.ctx.node_location = location;
+
+                /*
+                for (index, _) in arg_values.iter().enumerate() {
+                    let off = location.0 + (index + 1) as u16 * 2;
+
+                    if !matches!(self.ctx.current, TheCodeAtom::EndOfExpression) {
+                        self.error_at(
+                            (self.ctx.current_location.0, self.ctx.current_location.1),
+                            "Unexpected code inside function call.",
+                        );
+                        return;
+                    }
+
+                    self.advance();
+
+                    // Check if function argument value at the right position.
+                    if self.ctx.current_location.0 != off
+                        || self.ctx.current_location.1 != location.1
+                    {
+                        self.error_at((off, location.1), "Expected value at this position.");
+                        return;
+                    }
+
+                    match &self.ctx.current {
+                        TheCodeAtom::Value(_)
+                        | TheCodeAtom::LocalGet(_)
+                        | TheCodeAtom::ObjectGet(_, _) => {
+                            // Add the function argument to the stack.
+                            if let Some(node) = self.ctx.current.clone().to_node(&mut self.ctx) {
+                                self.ctx.get_current_function().add_node(node);
+                            }
+                        }
+                        _ => {
+                            self.error_at(
+                                (self.ctx.current_location.0, self.ctx.current_location.1),
+                                "Expected Value.",
+                            );
+                            return;
+                        }
+                    }
+                    self.advance();
+                }*/
+
+                let mut found_module = false;
+                if let TheCodeAtom::ModuleCall(_, _, _, module_name) = &module_call {
+                    //self.ctx.external_call = Some(call.clone());
+
+                    if let Some(package) = self.packages.get(&bundle_id) {
+                        if let Some(_module) = package.get_function_codegrid(&codegrid_id) {
+                            found_module = true;
+                            if let Some(node) = module_call.to_node(&mut self.ctx) {
+                                self.ctx.get_current_function().add_node(node);
+                            }
+                        }
+                    }
+
+                    if !found_module {
+                        self.error_at(
+                            (location.0, location.1),
+                            format!("Unknown module call ({}).", module_name).as_str(),
+                        );
+                    }
+                }
+            }
             TheCodeAtom::Value(_) | TheCodeAtom::LocalGet(_) | TheCodeAtom::ObjectGet(_, _) => {
                 self.advance();
                 let mut comparison = TheCodeAtom::Comparison(TheValueComparison::Equal);

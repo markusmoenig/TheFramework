@@ -91,6 +91,7 @@ pub enum TheValue {
     ColorObject(TheColor),
     Comparison(TheValueComparison),
     Assignment(TheValueAssignment),
+    Id(Uuid),
     #[cfg(feature = "code")]
     CodeObject(TheCodeObject),
 }
@@ -234,6 +235,7 @@ impl TheValue {
             ColorObject(c) => format!("Color: {:?}", c),
             Comparison(c) => format!("Comparison: {:?}", c.to_string()),
             Assignment(c) => format!("Assignment: {:?}", c.to_string()),
+            Id(c) => format!("Id: {:?}", c.to_string()),
         }
     }
 
@@ -274,6 +276,7 @@ impl TheValue {
             ColorObject(c) => format!("Color: {:?}", c),
             Comparison(c) => format!("{:?}", c.to_string()),
             Assignment(c) => format!("{:?}", c.to_string()),
+            Id(c) => format!("Id: {:?}", c.to_string()),
         }
     }
 }

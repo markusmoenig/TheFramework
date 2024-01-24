@@ -39,6 +39,7 @@ pub struct TheCodeEditor {
     modules: FxHashMap<Uuid, (String, Uuid, TheCodeModule)>,
 
     function_list_needs_update: bool,
+    allow_modules: bool,
 
     curr_list_index: u32,
 
@@ -66,6 +67,7 @@ impl TheCodeEditor {
             curr_list_index: 0,
 
             function_list_needs_update: false,
+            allow_modules: false,
 
             undo: None,
         }
@@ -89,13 +91,19 @@ impl TheCodeEditor {
     }
 
     /// Adds all modules of the given packages to the code.
-    pub fn set_packages(&mut self, packages: FxHashMap<Uuid, TheCodePackage> ) {
+    pub fn set_packages(&mut self, packages: FxHashMap<Uuid, TheCodePackage>) {
         self.clear_modules();
         for p in packages.values() {
             for m in p.modules.values() {
                 self.insert_module(p.name.clone(), p.id, m.clone());
             }
         }
+    }
+
+    /// Sets if modules are allowed.
+    pub fn set_allow_modules(&mut self, allow: bool) {
+        self.allow_modules = allow;
+        self.function_list_needs_update = true;
     }
 
     pub fn handle_event(&mut self, event: &TheEvent, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
@@ -984,19 +992,21 @@ impl TheCodeEditor {
                 code_layout.add_item(item, ctx);
             }
 
-            for (bundle_name, _bundle_id, module) in self.modules.values() {
-                let mut item = TheListItem::new(TheId::named_with_id(
-                    "Code Editor Code List Item",
-                    module.id,
-                ));
-                item.set_text(module.name.clone());
-                item.set_status_text(
-                    format!("{}: {}", bundle_name, module.name.clone())
-                        .to_string()
-                        .as_str(),
-                );
-                item.set_associated_layout(code_layout.id().clone());
-                code_layout.add_item(item, ctx);
+            if self.allow_modules {
+                for (bundle_name, _bundle_id, module) in self.modules.values() {
+                    let mut item = TheListItem::new(TheId::named_with_id(
+                        "Code Editor Code List Item",
+                        module.codegrid_id,
+                    ));
+                    item.set_text(module.name.clone());
+                    item.set_status_text(
+                        format!("{}: {}", bundle_name, module.name.clone())
+                            .to_string()
+                            .as_str(),
+                    );
+                    item.set_associated_layout(code_layout.id().clone());
+                    code_layout.add_item(item, ctx);
+                }
             }
         }
     }

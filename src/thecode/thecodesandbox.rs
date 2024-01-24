@@ -39,6 +39,10 @@ pub struct TheCodeSandbox {
     /// The call stack of functions.
     #[serde(skip)]
     pub debug_modules: FxHashMap<Uuid, TheDebugModule>,
+
+    /// The debug messages.
+    #[serde(skip)]
+    pub debug_messages: Vec<TheDebugMessage>,
 }
 
 impl Default for TheCodeSandbox {
@@ -64,6 +68,7 @@ impl TheCodeSandbox {
             call_stack: vec![],
             codegrid_stack: vec![],
             debug_modules: FxHashMap::default(),
+            debug_messages: vec![],
         }
     }
 
@@ -75,6 +80,11 @@ impl TheCodeSandbox {
         self.module_stack = vec![];
         self.debug_modules = FxHashMap::default();
         self.codegrid_stack = vec![];
+    }
+
+    /// Clear the debug messages.
+    pub fn clear_debug_messages(&mut self) {
+        self.debug_messages = vec![];
     }
 
     /// Insert a module into the environment.
@@ -194,6 +204,19 @@ impl TheCodeSandbox {
         }
         TheDebugModule::default()
     }
+
+    /// Add a debug message
+    pub fn add_debug_message(&mut self, message: String) {
+        let mut debug_message = TheDebugMessage::new(TheDebugMessageRole::Debug, message);
+
+        if let Some(object) = self.get_self_mut() {
+            if let Some(name) = object.get(&"name".to_string()) {
+                debug_message.entity = name.describe();
+            }
+        }
+
+        self.debug_messages.push(debug_message);
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -215,6 +238,38 @@ impl TheDebugModule {
             codegrid_id: Uuid::nil(),
             values: FxHashMap::default(),
             executed: FxHashSet::default(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum TheDebugMessageRole {
+    /// The message is a status message.
+    Status,
+    /// The message is a debug message.
+    Debug,
+    /// The message is a warning.
+    Warning,
+    /// The message is an error.
+    Error,
+}
+
+/// TheDebugMessage
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TheDebugMessage {
+    pub role: TheDebugMessageRole,
+    pub message: String,
+    pub module: String,
+    pub entity: String,
+}
+
+impl TheDebugMessage {
+    pub fn new(role: TheDebugMessageRole, message: String) -> Self {
+        Self {
+            role,
+            message,
+            module: "".to_string(),
+            entity: "".to_string(),
         }
     }
 }

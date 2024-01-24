@@ -24,6 +24,6 @@ pub mod prelude {
     pub use crate::thecode::thecodenode::*;
     pub use crate::thecode::thecodeobject::TheCodeObject;
     pub use crate::thecode::thecodepackage::TheCodePackage;
-    pub use crate::thecode::thecodesandbox::{TheCodeSandbox, TheDebugModule};
+    pub use crate::thecode::thecodesandbox::*;
     pub use crate::thecode::thecompiler::{TheCompiler, TheCompilerContext, TheCompilerError};
 }
