@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::prelude::*;
 
 use super::thecodenode::TheCodeNodeData;
@@ -16,6 +18,8 @@ pub enum TheCodeAtom {
     LocalSet(String, TheValueAssignment),
     ObjectGet(String, String),
     ObjectSet(String, String, TheValueAssignment),
+    RandInt(Vec2i),
+    RandFloat(Vec2f),
     /// A call into a native function defined by the host.
     ExternalCall(String, String, Vec<String>, Vec<TheValue>, Option<TheValue>),
     /// A call into a module, identified by the bundle id and the codegrid id the module is based on.
@@ -606,6 +610,48 @@ impl TheCodeAtom {
                     TheCodeNodeData::location_values(ctx.node_location, vec![value.clone()]),
                 ))
             }
+            TheCodeAtom::RandInt(value) => {
+                let call: TheCodeNodeCall =
+                    |stack: &mut Vec<TheValue>,
+                     data: &mut TheCodeNodeData,
+                     sandbox: &mut TheCodeSandbox| {
+                        let mut rng = rand::thread_rng();
+                        if let Some(range) = data.values[0].to_vec2i() {
+                            let v = rng.gen_range(range.x..=range.y);
+                            if sandbox.debug_mode {
+                                sandbox.set_debug_value(data.location, (None, TheValue::Int(v)));
+                            }
+                            stack.push(TheValue::Int(v));
+                        }
+                        TheCodeNodeCallResult::Continue
+                    };
+
+                Some(TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location_values(ctx.node_location, vec![TheValue::Int2(*value)]),
+                ))
+            }
+            TheCodeAtom::RandFloat(value) => {
+                let call: TheCodeNodeCall =
+                    |stack: &mut Vec<TheValue>,
+                     data: &mut TheCodeNodeData,
+                     sandbox: &mut TheCodeSandbox| {
+                        let mut rng = rand::thread_rng();
+                        if let Some(range) = data.values[0].to_vec2f() {
+                            let v = rng.gen_range(range.x..=range.y);
+                            if sandbox.debug_mode {
+                                sandbox.set_debug_value(data.location, (None, TheValue::Float(v)));
+                            }
+                            stack.push(TheValue::Float(v));
+                        }
+                        TheCodeNodeCallResult::Continue
+                    };
+
+                Some(TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location_values(ctx.node_location, vec![TheValue::Float2(*value)]),
+                ))
+            }
             TheCodeAtom::Add => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
@@ -757,7 +803,7 @@ impl TheCodeAtom {
 
     pub fn to_sdf(&self, dim: TheDim, zoom: f32) -> TheSDF {
         match self {
-            Self::Value(_) => TheSDF::Hexagon(dim),
+            Self::Value(_) | Self::RandInt(_) | Self::RandFloat(_) => TheSDF::Hexagon(dim),
             Self::Add | &Self::Multiply => {
                 TheSDF::RoundedRect(dim, (0.0, 0.0, 0.0, 0.0))
                 //TheSDF::Rhombus(dim)
@@ -786,7 +832,7 @@ impl TheCodeAtom {
     pub fn to_kind(&self) -> TheCodeAtomKind {
         match self {
             TheCodeAtom::Return => TheCodeAtomKind::Return,
-            TheCodeAtom::Value(_) => TheCodeAtomKind::Number,
+            TheCodeAtom::Value(_) | TheCodeAtom::RandInt(_) | TheCodeAtom::RandFloat(_) => TheCodeAtomKind::Number,
             TheCodeAtom::Add => TheCodeAtomKind::Plus,
             TheCodeAtom::Subtract => TheCodeAtomKind::Minus,
             TheCodeAtom::Multiply => TheCodeAtomKind::Star,
@@ -825,6 +871,8 @@ impl TheCodeAtom {
             TheCodeAtom::And => "And".to_string(),
             TheCodeAtom::EndOfExpression => ";".to_string(),
             TheCodeAtom::EndOfCode => "Stop".to_string(),
+            TheCodeAtom::RandInt(_) => "RInt".to_string(),
+            TheCodeAtom::RandFloat(_) => "RFloat".to_string(),
         }
     }
 
@@ -879,6 +927,12 @@ impl TheCodeAtom {
             TheCodeAtom::And => "Logical And".to_string(),
             TheCodeAtom::EndOfExpression => ";".to_string(),
             TheCodeAtom::EndOfCode => "Stop".to_string(),
+            TheCodeAtom::RandInt(_) => {
+                "Generates a random Integer value in a given range".to_string()
+            }
+            TheCodeAtom::RandFloat(_) => {
+                "Generates a random Float value in a given range".to_string()
+            }
         }
     }
 
@@ -969,12 +1023,23 @@ impl TheCodeAtom {
                 layout.add_widget(Box::new(text));
                 layout.add_widget(Box::new(name_edit));
             }
+            TheCodeAtom::RandInt(v) => {
+                create_int2_widgets(layout, TheId::named("Atom RandInt"), *v, vec!["Low", "High"]);
+            }
+            TheCodeAtom::RandFloat(v) => {
+                create_float2_widgets(layout, TheId::named("Atom RandFloat"), *v, vec!["Low", "High"]);
+            }
             TheCodeAtom::Value(value) => match value {
                 TheValue::Position(v) => {
-                    create_float2_widgets(layout, TheId::named("Atom Position"), vec2f(v.x, v.z));
+                    create_float2_widgets(
+                        layout,
+                        TheId::named("Atom Position"),
+                        vec2f(v.x, v.z),
+                        vec!["X", "Y"],
+                    );
                 }
                 TheValue::Float2(v) => {
-                    create_float2_widgets(layout, TheId::named("Atom Float2"), *v);
+                    create_float2_widgets(layout, TheId::named("Atom Float2"), *v, vec!["X", "Y"]);
                 }
                 TheValue::Int(v) => {
                     let mut text = TheText::new(TheId::empty());

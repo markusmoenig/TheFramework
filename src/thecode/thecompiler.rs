@@ -521,7 +521,9 @@ impl TheCompiler {
                     match &self.ctx.current {
                         TheCodeAtom::Value(_)
                         | TheCodeAtom::LocalGet(_)
-                        | TheCodeAtom::ObjectGet(_, _) => {
+                        | TheCodeAtom::ObjectGet(_, _)
+                        | TheCodeAtom::RandInt(_)
+                        | TheCodeAtom::RandFloat(_) => {
                             // Add the function argument to the stack.
                             if let Some(node) = self.ctx.current.clone().to_node(&mut self.ctx) {
                                 self.ctx.get_current_function().add_node(node);
@@ -729,7 +731,9 @@ impl TheCompiler {
                     match &self.ctx.current {
                         TheCodeAtom::Value(_)
                         | TheCodeAtom::LocalGet(_)
-                        | TheCodeAtom::ObjectGet(_, _) => {
+                        | TheCodeAtom::ObjectGet(_, _)
+                        | TheCodeAtom::RandInt(_)
+                        | TheCodeAtom::RandFloat(_) => {
                             // Add the function argument to the stack.
                             if let Some(node) = self.ctx.current.clone().to_node(&mut self.ctx) {
                                 self.ctx.get_current_function().add_node(node);

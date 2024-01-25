@@ -12,6 +12,9 @@ pub struct TheCodeSandbox {
     /// The objects with values. These make up the state of an entity.
     pub objects: FxHashMap<Uuid, TheCodeObject>,
 
+    /// Represents the level or region if used inside a game
+    pub level: TheCodeLevel,
+
     /// Debug switch.
     pub debug_mode: bool,
 
@@ -57,6 +60,8 @@ impl TheCodeSandbox {
             id: Uuid::new_v4(),
 
             objects: FxHashMap::default(),
+            level: TheCodeLevel::default(),
+
             packages: FxHashMap::default(),
 
             debug_mode: false,

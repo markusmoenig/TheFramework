@@ -411,19 +411,22 @@ impl TheCodeEditor {
                             }
                         }
                     }
-                } else if id.name == "Atom Integer" {
+                }
+                else if id.name == "Atom Integer" {
                     if let Some(v) = value.to_i32() {
                         self.start_undo(ui);
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Int(v)));
                         self.finish_undo(ui, ctx);
                     }
-                } else if id.name == "Atom Float" {
+                }
+                else if id.name == "Atom Float" {
                     if let Some(v) = value.to_f32() {
                         self.start_undo(ui);
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Float(v)));
                         self.finish_undo(ui, ctx);
                     }
-                } else if id.name == "Atom Tile" {
+                }
+                else if id.name == "Atom Tile" {
                     if let Some(name) = value.to_string() {
                         self.start_undo(ui);
                         self.set_selected_atom(
@@ -432,13 +435,15 @@ impl TheCodeEditor {
                         );
                         self.finish_undo(ui, ctx);
                     }
-                } else if id.name == "Atom Text" {
+                }
+                else if id.name == "Atom Text" {
                     if let Some(name) = value.to_string() {
                         self.start_undo(ui);
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Text(name)));
                         self.finish_undo(ui, ctx);
                     }
-                } else if id.name == "Atom Position" {
+                }
+                else if id.name == "Atom Position" {
                     if let Some(v) = value.to_vec2f() {
                         self.start_undo(ui);
                         self.set_selected_atom(
@@ -447,16 +452,32 @@ impl TheCodeEditor {
                         );
                         self.finish_undo(ui, ctx);
                     }
-                } else if id.name == "Atom Bool" {
+                }
+                else if id.name == "Atom Bool" {
                     if let Some(v) = value.as_f32() {
                         self.start_undo(ui);
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Bool(v > 0.0)));
                         self.finish_undo(ui, ctx);
                     }
-                } else if id.name == "Atom Float2" {
+                }
+                else if id.name == "Atom Float2" {
                     if let Some(v) = value.to_vec2f() {
                         self.start_undo(ui);
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Float2(v)));
+                        self.finish_undo(ui, ctx);
+                    }
+                }
+                else if id.name == "Atom RandInt" {
+                    if let Some(v) = value.to_vec2i() {
+                        self.start_undo(ui);
+                        self.set_selected_atom(ui, TheCodeAtom::RandInt(v));
+                        self.finish_undo(ui, ctx);
+                    }
+                }
+                else if id.name == "Atom RandFloat" {
+                    if let Some(v) = value.to_vec2f() {
+                        self.start_undo(ui);
+                        self.set_selected_atom(ui, TheCodeAtom::RandFloat(v));
                         self.finish_undo(ui, ctx);
                     }
                 }
@@ -630,9 +651,10 @@ impl TheCodeEditor {
             "Multiply" => TheCodeAtom::Multiply,
             "Divide" => TheCodeAtom::Divide,
             "Modulus" => TheCodeAtom::Modulus,
+            "RInt" => TheCodeAtom::RandInt(vec2i(0, 3)),
+            "RFloat" => TheCodeAtom::RandFloat(vec2f(0.0, 1.0)),
             _ => {
                 if let Some((bundle_name, bundle_id, module)) = self.modules.get(&id) {
-                    println!("module {}", module.name);
                     return TheCodeAtom::ModuleCall(
                         bundle_name.clone(),
                         *bundle_id,
@@ -932,6 +954,16 @@ impl TheCodeEditor {
 
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Position".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("RInt".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("RFloat".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
