@@ -102,15 +102,15 @@ impl TheCodeSandbox {
         self.objects.insert(object.id, object);
     }
 
-    /// Get a clone of the function from the environment. The function is identified by the package id and the codegrid id the module is based on.
-    pub fn get_function_cloned(
+    /// Get a clone of the module from the environment. The module is identified by the package id and the codegrid id the module is based on.
+    pub fn get_package_module_cloned(
         &self,
         package_id: &Uuid,
         codegrid_id: &Uuid,
-    ) -> Option<TheCodeFunction> {
+    ) -> Option<TheCodeModule> {
         if let Some(package) = self.packages.get(package_id) {
             if let Some(module) = package.get_function_codegrid(codegrid_id) {
-                return Some(module.get_function().clone());
+                return Some(module.clone());
             }
         }
         None
@@ -165,6 +165,12 @@ impl TheCodeSandbox {
             ..TheDebugModule::default()
         };
         self.debug_modules.insert(module_id, debug_module);
+    }
+
+    /// Pops the current module from the module stack.
+    pub fn pop_current_module(&mut self) {
+        self.module_stack.pop();
+        self.codegrid_stack.pop();
     }
 
     /// Sets a debug value in the current module. An optional top value and a required bottom value.

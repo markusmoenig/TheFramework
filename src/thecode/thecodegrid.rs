@@ -196,6 +196,7 @@ impl TheCodeGrid {
         self.code = new_code;
     }
 
+    /*
     /// Deletes the atom at the current position and moves all subsequent content one position to the left.
     pub fn delete(&mut self, pos: (u16, u16)) -> (u16, u16) {
         let (x, y) = pos;
@@ -245,6 +246,28 @@ impl TheCodeGrid {
         // } else {
         //     (x, y)
         // }
+    }*/
+
+    /// Function to delete an element at a given position
+    pub fn delete(&mut self, position: (u16, u16)) -> (u16, u16) {
+        // Check if the position is occupied
+        if self.code.contains_key(&position) {
+            // Check if there are no elements in front of it in the line
+            // and if the above line is empty
+            if position.1 >= 2
+                && self.is_line_clear(position)
+                && self.is_line_empty(position.1 - 2)
+            {
+                // Move all following elements one line up
+                self.move_line_up(position);
+                return (0, position.1 - 2);
+            } else {
+                // Remove the element at the position
+                self.code.remove(&position);
+            }
+        }
+
+        position
     }
 
     /// Moves the items on the line of the given position one position to the right.
@@ -256,10 +279,37 @@ impl TheCodeGrid {
         for ((cx, cy), atom) in self.code.drain() {
             if cy == y && cx >= x {
                 // Shift elements on the specified line and to the right of the position one position to the right
-                new_code.insert((cx + 1, cy), atom);
+                new_code.insert((cx + 2, cy), atom);
             } else {
                 // Keep other elements unchanged
                 new_code.insert((cx, cy), atom);
+            }
+        }
+
+        self.code = new_code;
+    }
+
+    // Function to check if there are no elements in front of the position in the same line
+    fn is_line_clear(&self, position: (u16, u16)) -> bool {
+        let (x, y) = position;
+        for col in 0..x {
+            if self.code.contains_key(&(col, y)) {
+                return false;
+            }
+        }
+        true
+    }
+
+    // Function to move all following elements one line up
+    fn move_line_up(&mut self, position: (u16, u16)) {
+        let (_, y) = position;
+        let mut new_code = FxHashMap::default();
+
+        for (&(x, old_y), value) in self.code.iter() {
+            if old_y >= y && old_y >= 2 {
+                new_code.insert((x, old_y - 2), value.clone());
+            } else {
+                new_code.insert((x, old_y), value.clone());
             }
         }
 

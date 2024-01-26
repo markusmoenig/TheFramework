@@ -41,6 +41,7 @@ pub struct TheCodeView {
     layout_id: TheId,
 
     drag_copy: bool,
+    shift_is_down: bool,
 }
 
 impl TheWidget for TheCodeView {
@@ -85,6 +86,7 @@ impl TheWidget for TheCodeView {
             layout_id: TheId::empty(),
 
             drag_copy: false,
+            shift_is_down: false,
         }
     }
 
@@ -120,7 +122,6 @@ impl TheWidget for TheCodeView {
                             drop.title = atom.describe();
                             drop.set_data(atom.to_json());
                             drop.start_position = Some(vec2i(selected.0 as i32, selected.1 as i32));
-                            println!("start {}", self.drag_copy);
                             drop.operation = if self.drag_copy {
                                 TheDropOperation::Copy
                             } else {
@@ -147,7 +148,7 @@ impl TheWidget for TheCodeView {
                 if drop.id.name == "Code Editor Atom" {
                     self.selected = self.get_code_grid_offset(*coord);
                     if let Some(c) = self.get_code_grid_offset(*coord) {
-                        let atom = TheCodeAtom::from_json(&drop.data);
+                        let mut atom = TheCodeAtom::from_json(&drop.data);
 
                         if let Some((x, y)) = &self.selected {
                             if (x % 2 == 1 || y % 2 == 1) && atom.uneven_slot()
@@ -173,7 +174,15 @@ impl TheWidget for TheCodeView {
                                     }
                                 }
 
-                                if drop.operation == TheDropOperation::Move {
+                                if self.shift_is_down {
+                                    if let TheCodeAtom::LocalSet(name,_) = atom {
+                                        atom = TheCodeAtom::LocalGet(name);
+                                    }
+                                    else if let TheCodeAtom::ObjectSet(object, name, _) = atom {
+                                        atom = TheCodeAtom::ObjectGet(object, name);
+                                    }
+                                }
+                                else if drop.operation == TheDropOperation::Move {
                                     if let Some(sp) = drop.start_position {
                                         self.codegrid.code.remove(&(sp.x as u16, sp.y as u16));
                                     }
@@ -236,8 +245,9 @@ impl TheWidget for TheCodeView {
                     }
                 }
             }
-            TheEvent::ModifierChanged(_shift, ctrl, alt, _logo) => {
+            TheEvent::ModifierChanged(shift, ctrl, alt, _logo) => {
                 self.drag_copy = *ctrl || *alt;
+                self.shift_is_down = *shift;
             }
             TheEvent::KeyCodeDown(code) => {
                 if let Some(code) = code.to_key_code() {
@@ -676,7 +686,8 @@ impl TheWidget for TheCodeView {
                                         TheVerticalAlign::Center,
                                     );
                                 }
-                                TheCodeAtom::ExternalCall(_, _, _, _, _) => {
+                                TheCodeAtom::ExternalCall(_, _, _, _, _)
+                                | TheCodeAtom::ModuleCall(_, _, _, _) => {
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
                                         &(rect.0 + 2, rect.1, rect.2 - 4, rect.3),

@@ -460,37 +460,6 @@ impl TheCompiler {
                 // Add the argument to the current function.
                 self.ctx.get_current_function().arguments.push(name);
             }
-            TheCodeAtom::Return => {
-                self.advance();
-
-                if self
-                    .grid
-                    .code
-                    .contains_key(&(self.ctx.current_location.0 + 1, self.ctx.current_location.1))
-                {
-                    // This return statement has a value parse if first.
-                    let ret = self.ctx.previous.clone();
-                    self.expression();
-
-                    if let Some(node) = ret.to_node(&mut self.ctx) {
-                        self.ctx.get_current_function().add_node(node);
-                    }
-                }
-
-                if let Some(f) = self.ctx.remove_function() {
-                    self.ctx.module.set_function(f);
-                } else {
-                    self.error_at_current("Unexpected 'Return' code.")
-                }
-            }
-            /*
-            TheCodeAtom::FuncCall(_) => {
-                self.ctx.node_location = self.ctx.current_location;
-                if let Some(node) = self.ctx.current.clone().to_node(&mut self.ctx) {
-                    self.ctx.get_current_function().add_node(node);
-                }
-                self.advance();
-            }*/
             TheCodeAtom::ExternalCall(_name, _, _, arg_values, _) => {
                 self.advance();
                 let external_call = self.ctx.previous.clone();
@@ -671,6 +640,25 @@ impl TheCompiler {
 
                     // We indent one
                     self.ctx.blocks.push(node);
+                }
+            }
+            TheCodeAtom::Return => {
+                self.advance();
+                let location: (u16, u16) = self.ctx.previous_location;
+                let return_node = self.ctx.previous.clone();
+                self.advance();
+
+                // if self
+                //     .grid
+                //     .code
+                //     .contains_key(&(self.ctx.pre.0 + 2, self.ctx.current_location.1))
+                // {
+                self.expression();
+                //}
+
+                self.ctx.node_location = location;
+                if let Some(node) = return_node.to_node(&mut self.ctx) {
+                    self.ctx.get_current_function().add_node(node);
                 }
             }
             TheCodeAtom::EndOfExpression => {

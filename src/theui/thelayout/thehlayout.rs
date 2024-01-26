@@ -233,8 +233,7 @@ impl TheLayout for TheHLayout {
                         ));
                     }
                 }
-            }
-            else if widget_id.name == "Int2 Y" {
+            } else if widget_id.name == "Int2 Y" {
                 if let Some(v) = value.to_i32() {
                     if let Some(x) = self.widgets[1].value().to_i32() {
                         ctx.ui.send(TheEvent::ValueChanged(
@@ -243,8 +242,7 @@ impl TheLayout for TheHLayout {
                         ));
                     }
                 }
-            }
-            else if widget_id.name == "Float2 X" {
+            } else if widget_id.name == "Float2 X" {
                 if let Some(v) = value.to_f32() {
                     if let Some(y) = self.widgets[3].value().to_f32() {
                         ctx.ui.send(TheEvent::ValueChanged(
@@ -253,8 +251,7 @@ impl TheLayout for TheHLayout {
                         ));
                     }
                 }
-            }
-            else if widget_id.name == "Float2 Y" {
+            } else if widget_id.name == "Float2 Y" {
                 if let Some(v) = value.to_f32() {
                     if let Some(x) = self.widgets[1].value().to_f32() {
                         ctx.ui.send(TheEvent::ValueChanged(

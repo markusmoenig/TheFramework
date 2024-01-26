@@ -42,13 +42,16 @@ impl TheCodeModule {
     }
 
     /// Execute the module.
-    pub fn execute(&mut self, sandbox: &mut TheCodeSandbox) {
+    pub fn execute(&mut self, sandbox: &mut TheCodeSandbox) -> Vec<TheValue> {
         let clone = self.function.clone();
 
         sandbox.push_current_module(self.id, self.codegrid_id);
         sandbox.call_stack.push(clone);
 
-        self.function.execute(sandbox);
+        let rc = self.function.execute(sandbox);
         sandbox.call_stack.pop();
+        sandbox.pop_current_module();
+
+        rc
     }
 }

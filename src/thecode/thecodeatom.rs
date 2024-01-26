@@ -173,6 +173,27 @@ impl TheCodeAtom {
 
                 Some(node)
             }
+            TheCodeAtom::Return => {
+                let call: TheCodeNodeCall =
+                    |stack: &mut Vec<TheValue>,
+                     data: &mut TheCodeNodeData,
+                     sandbox: &mut TheCodeSandbox| {
+
+                    if sandbox.debug_mode {
+                        if let Some(v) = stack.last() {
+                            sandbox
+                                .set_debug_value(data.location, (None, v.clone()));
+                            }
+                        }
+
+                        TheCodeNodeCallResult::Break
+                    };
+
+                Some(TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location_values(ctx.node_location, vec![]),
+                ))
+            }
             TheCodeAtom::ExternalCall(_name, _, _, _, _rc) => {
                 if let Some(call) = &ctx.external_call {
                     Some(TheCodeNode::new(
@@ -191,10 +212,21 @@ impl TheCodeAtom {
                      sandbox: &mut TheCodeSandbox| {
                         if let TheValue::Id(package_id) = data.values[0] {
                             if let TheValue::Id(codegrid_id) = data.values[1] {
-                                if let Some(mut function) =
-                                    sandbox.get_function_cloned(&package_id, &codegrid_id)
+                                if let Some(mut module) =
+                                    sandbox.get_package_module_cloned(&package_id, &codegrid_id)
                                 {
-                                    function.execute(sandbox);
+                                    let rc = module.execute(sandbox);
+                                    if sandbox.debug_mode {
+                                        if let Some(v) = rc.last() {
+                                            sandbox
+                                                .set_debug_value(data.location, (None, v.clone()));
+                                        } else {
+                                            sandbox.set_debug_value(
+                                                data.location,
+                                                (None, TheValue::Empty),
+                                            );
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -628,7 +660,10 @@ impl TheCodeAtom {
 
                 Some(TheCodeNode::new(
                     call,
-                    TheCodeNodeData::location_values(ctx.node_location, vec![TheValue::Int2(*value)]),
+                    TheCodeNodeData::location_values(
+                        ctx.node_location,
+                        vec![TheValue::Int2(*value)],
+                    ),
                 ))
             }
             TheCodeAtom::RandFloat(value) => {
@@ -649,7 +684,10 @@ impl TheCodeAtom {
 
                 Some(TheCodeNode::new(
                     call,
-                    TheCodeNodeData::location_values(ctx.node_location, vec![TheValue::Float2(*value)]),
+                    TheCodeNodeData::location_values(
+                        ctx.node_location,
+                        vec![TheValue::Float2(*value)],
+                    ),
                 ))
             }
             TheCodeAtom::Add => {
@@ -814,6 +852,9 @@ impl TheCodeAtom {
             Self::ObjectSet(_, _, _) | Self::LocalSet(_, _) => {
                 TheSDF::RoundedRect(dim, (0.0, 0.0, 10.0 * zoom, 10.0 * zoom))
             }
+            Self::Return => {
+                TheSDF::RoundedRect(dim, (0.0, 0.0, 10.0 * zoom, 0.0))
+            }
             Self::ExternalCall(_, _, _, _, _) | Self::ModuleCall(_, _, _, _) => {
                 TheSDF::RoundedRect(dim, (10.0 * zoom, 10.0 * zoom, 10.0 * zoom, 10.0 * zoom))
             }
@@ -831,8 +872,9 @@ impl TheCodeAtom {
 
     pub fn to_kind(&self) -> TheCodeAtomKind {
         match self {
-            TheCodeAtom::Return => TheCodeAtomKind::Return,
-            TheCodeAtom::Value(_) | TheCodeAtom::RandInt(_) | TheCodeAtom::RandFloat(_) => TheCodeAtomKind::Number,
+            TheCodeAtom::Value(_) | TheCodeAtom::RandInt(_) | TheCodeAtom::RandFloat(_) => {
+                TheCodeAtomKind::Number
+            }
             TheCodeAtom::Add => TheCodeAtomKind::Plus,
             TheCodeAtom::Subtract => TheCodeAtomKind::Minus,
             TheCodeAtom::Multiply => TheCodeAtomKind::Star,
@@ -840,6 +882,7 @@ impl TheCodeAtom {
             TheCodeAtom::Modulus => TheCodeAtomKind::Percent,
             TheCodeAtom::Or => TheCodeAtomKind::Or,
             TheCodeAtom::And => TheCodeAtomKind::And,
+            TheCodeAtom::Return => TheCodeAtomKind::Return,
             TheCodeAtom::EndOfExpression => TheCodeAtomKind::Semicolon,
             TheCodeAtom::EndOfCode => TheCodeAtomKind::Eof,
             _ => TheCodeAtomKind::Identifier,
@@ -853,7 +896,6 @@ impl TheCodeAtom {
             TheCodeAtom::Argument(name) => name.clone(),
             TheCodeAtom::ExternalCall(name, _, _, _, _) => name.clone(),
             TheCodeAtom::ModuleCall(_, _, module_name, _) => module_name.clone(),
-            TheCodeAtom::Return => "Return".to_string(),
             TheCodeAtom::LocalGet(name) => name.clone(),
             TheCodeAtom::LocalSet(name, _) => name.clone(),
             TheCodeAtom::ObjectGet(object, name) => format!("{}.{}", object, name),
@@ -869,6 +911,7 @@ impl TheCodeAtom {
             TheCodeAtom::Modulus => "%".to_string(),
             TheCodeAtom::Or => "Or".to_string(),
             TheCodeAtom::And => "And".to_string(),
+            TheCodeAtom::Return => "Return".to_string(),
             TheCodeAtom::EndOfExpression => ";".to_string(),
             TheCodeAtom::EndOfCode => "Stop".to_string(),
             TheCodeAtom::RandInt(_) => "RInt".to_string(),
@@ -883,7 +926,6 @@ impl TheCodeAtom {
             TheCodeAtom::Argument(name) => format!("Function argument ({}).", name),
             TheCodeAtom::ModuleCall(bundle, _, name, _) => format!("{}: {}.", bundle, name),
             TheCodeAtom::ExternalCall(_, description, _, _, _) => description.clone(),
-            TheCodeAtom::Return => "Return from a function. Optionally with a value.".to_string(),
             TheCodeAtom::LocalGet(name) => format!("Get the value of a local variable ({}).", name),
             TheCodeAtom::LocalSet(name, _) => {
                 format!("Set a value to a local variable ({}).", name)
@@ -925,6 +967,7 @@ impl TheCodeAtom {
             TheCodeAtom::Modulus => "Operator ('%')".to_string(),
             TheCodeAtom::Or => "Logical Or".to_string(),
             TheCodeAtom::And => "Logical And".to_string(),
+            TheCodeAtom::Return => "Return".to_string(),
             TheCodeAtom::EndOfExpression => ";".to_string(),
             TheCodeAtom::EndOfCode => "Stop".to_string(),
             TheCodeAtom::RandInt(_) => {
@@ -1024,10 +1067,20 @@ impl TheCodeAtom {
                 layout.add_widget(Box::new(name_edit));
             }
             TheCodeAtom::RandInt(v) => {
-                create_int2_widgets(layout, TheId::named("Atom RandInt"), *v, vec!["Low", "High"]);
+                create_int2_widgets(
+                    layout,
+                    TheId::named("Atom RandInt"),
+                    *v,
+                    vec!["Low", "High"],
+                );
             }
             TheCodeAtom::RandFloat(v) => {
-                create_float2_widgets(layout, TheId::named("Atom RandFloat"), *v, vec!["Low", "High"]);
+                create_float2_widgets(
+                    layout,
+                    TheId::named("Atom RandFloat"),
+                    *v,
+                    vec!["Low", "High"],
+                );
             }
             TheCodeAtom::Value(value) => match value {
                 TheValue::Position(v) => {

@@ -48,7 +48,7 @@ impl TheSDF {
                     r = vec2f(rounding.2, rounding.3);
                 }
 
-                if p.y <= 0.0 {
+                if pp.y <= 0.0 {
                     r.x = r.y;
                 }
 
