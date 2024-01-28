@@ -66,6 +66,9 @@ pub enum TheEvent {
     ShowContextMenu(TheId, Vec2i, TheContextMenu),
     ContextMenuSelected(TheId, TheId),
 
+    //
+    DialogValueOnClose(String, TheValue),
+
     // These events define layout states.
     SetStackIndex(TheId, usize),
     NewListItemSelected(TheId, TheId),

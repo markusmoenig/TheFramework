@@ -114,7 +114,7 @@ pub enum TheDialogButtonRole {
 impl TheDialogButtonRole {
     pub fn to_string(self) -> &'static str {
         match self {
-            Self::Accept => "OK",
+            Self::Accept => "Accept",
             Self::Reject => "Cancel",
         }
     }
@@ -123,6 +123,9 @@ impl TheDialogButtonRole {
             Self::Accept => "TheDialogButtonRole::Accept",
             Self::Reject => "TheDialogButtonRole::Reject",
         }
+    }
+    pub fn iterator() -> impl Iterator<Item = TheDialogButtonRole> {
+        [Self::Accept, Self::Reject].iter().copied()
     }
 }
 
@@ -292,6 +295,28 @@ impl TheUI {
                     }
                     TheEvent::StateChanged(id, state) => {
                         //println!("Widget State changed {:?}: {:?}", id, state);
+
+                        if let Some(dialog) = &mut self.dialog {
+                            // If a dialog, close it if one of the dialog buttons was clicked.
+                            if state == TheWidgetState::Clicked
+                                && id.name.starts_with("TheDialogButtonRole")
+                            {
+                                for button in TheDialogButtonRole::iterator() {
+                                    if id.name == button.to_id() {
+                                        if let Some(widget) = dialog
+                                            .get_widget(Some(&"Dialog Value".to_string()), None)
+                                        {
+                                            let value = widget.value();
+                                            ctx.ui.send(TheEvent::DialogValueOnClose(
+                                                self.dialog_text.clone(),
+                                                value,
+                                            ));
+                                        }
+                                    }
+                                }
+                                self.dialog = None;
+                            }
+                        }
                     }
                     TheEvent::SetState(name, state) => {
                         //println!("Set State {:?}: {:?}", name, state);
@@ -787,7 +812,13 @@ impl TheUI {
 
     #[cfg(feature = "ui")]
     /// Opens a dialog which will have the canvas as context and the given text as title.
-    pub fn show_dialog(&mut self, text: &str, mut canvas: TheCanvas, buttons: Vec<TheDialogButtonRole>, ctx: &mut TheContext) {
+    pub fn show_dialog(
+        &mut self,
+        text: &str,
+        mut canvas: TheCanvas,
+        buttons: Vec<TheDialogButtonRole>,
+        ctx: &mut TheContext,
+    ) {
         self.dialog_text = text.to_string();
 
         let width = canvas.limiter.get_max_width();
