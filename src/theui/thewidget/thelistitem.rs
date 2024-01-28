@@ -63,10 +63,10 @@ impl TheWidget for TheListItem {
         let mut redraw = false;
         // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
-            TheEvent::Context(coord) => {
-                ctx.ui
-                    .send(TheEvent::ShowContextMenu(self.id().clone(), *coord));
-            }
+            // TheEvent::Context(coord) => {
+            //     ctx.ui
+            //         .send(TheEvent::ShowContextMenu(self.id().clone(), *coord));
+            // }
             TheEvent::MouseDown(coord) => {
                 if self.state != TheWidgetState::Selected || !self.id().equals(&ctx.ui.focus) {
                     self.is_dirty = true;

@@ -127,4 +127,16 @@ pub enum TheThemeColors {
     DropItemBackground,
     DropItemBorder,
     DropItemText,
+
+    ContextMenuBackground,
+    ContextMenuBorder,
+    ContextMenuHighlight,
+    ContextMenuTextNormal,
+    ContextMenuTextHighlight,
+
+    WindowBorderOuter,
+    WindowBorderInner,
+    WindowHeaderBackground,
+    WindowHeaderBorder1,
+    WindowHeaderBorder2,
 }

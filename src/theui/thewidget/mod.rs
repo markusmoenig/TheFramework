@@ -197,6 +197,9 @@ pub trait TheWidget: Send {
         false
     }
 
+    /// Sets the context menu for the widget.
+    fn set_context_menu(&mut self, menu: Option<TheContextMenu>) {}
+
     // Casting
 
     /// Attempts to cast to TheListItemTrait. Only valid for TheListItem.

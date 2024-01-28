@@ -178,11 +178,9 @@ impl TheCodeAtom {
                     |stack: &mut Vec<TheValue>,
                      data: &mut TheCodeNodeData,
                      sandbox: &mut TheCodeSandbox| {
-
-                    if sandbox.debug_mode {
-                        if let Some(v) = stack.last() {
-                            sandbox
-                                .set_debug_value(data.location, (None, v.clone()));
+                        if sandbox.debug_mode {
+                            if let Some(v) = stack.last() {
+                                sandbox.set_debug_value(data.location, (None, v.clone()));
                             }
                         }
 
@@ -852,9 +850,7 @@ impl TheCodeAtom {
             Self::ObjectSet(_, _, _) | Self::LocalSet(_, _) => {
                 TheSDF::RoundedRect(dim, (0.0, 0.0, 10.0 * zoom, 10.0 * zoom))
             }
-            Self::Return => {
-                TheSDF::RoundedRect(dim, (0.0, 0.0, 10.0 * zoom, 0.0))
-            }
+            Self::Return => TheSDF::RoundedRect(dim, (0.0, 0.0, 10.0 * zoom, 0.0)),
             Self::ExternalCall(_, _, _, _, _) | Self::ModuleCall(_, _, _, _) => {
                 TheSDF::RoundedRect(dim, (10.0 * zoom, 10.0 * zoom, 10.0 * zoom, 10.0 * zoom))
             }

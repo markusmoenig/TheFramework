@@ -254,9 +254,7 @@ impl TheCodeGrid {
         if self.code.contains_key(&position) {
             // Check if there are no elements in front of it in the line
             // and if the above line is empty
-            if position.1 >= 2
-                && self.is_line_clear(position)
-                && self.is_line_empty(position.1 - 2)
+            if position.1 >= 2 && self.is_line_clear(position) && self.is_line_empty(position.1 - 2)
             {
                 // Move all following elements one line up
                 self.move_line_up(position);

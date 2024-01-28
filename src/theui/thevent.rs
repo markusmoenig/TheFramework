@@ -49,6 +49,7 @@ pub enum TheEvent {
     TileEditorHoverChanged(TheId, Vec2i),
     TileEditorDrop(TheId, Vec2i, TheDrop),
     TileEditorDelete(TheId, FxHashSet<(i32, i32)>),
+    TileEditorUp(TheId),
 
     // CodeEditor
     #[cfg(feature = "code")]
@@ -61,8 +62,9 @@ pub enum TheEvent {
     // SDF
     SDFIndexChanged(TheId, u32),
 
-    // Show the given context menu at the given coordinates
-    ShowContextMenu(TheId, Vec2i),
+    // Show the given context menu at the given (global) coordinates.
+    ShowContextMenu(TheId, Vec2i, TheContextMenu),
+    ContextMenuSelected(TheId, TheId),
 
     // These events define layout states.
     SetStackIndex(TheId, usize),

@@ -100,6 +100,30 @@ pub mod prelude {
     pub use crate::theui::thedrop::*;
     pub use crate::theui::theuiglobals::*;
     pub use crate::theui::theundo::*;
+
+    pub use crate::theui::TheDialogButtonRole;
+}
+
+/// The roles for dialog buttons.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum TheDialogButtonRole {
+    Accept,
+    Reject,
+}
+
+impl TheDialogButtonRole {
+    pub fn to_string(self) -> &'static str {
+        match self {
+            Self::Accept => "OK",
+            Self::Reject => "Cancel",
+        }
+    }
+    pub fn to_id(self) -> &'static str {
+        match self {
+            Self::Accept => "TheDialogButtonRole::Accept",
+            Self::Reject => "TheDialogButtonRole::Reject",
+        }
+    }
 }
 
 pub struct TheUI {
@@ -115,6 +139,8 @@ pub struct TheUI {
     app_state_events: FxHashMap<String, Sender<TheEvent>>,
 
     statusbar_name: Option<String>,
+
+    pub context_menu: Option<TheContextMenu>,
 
     pub is_dirty: bool,
 }
@@ -140,6 +166,8 @@ impl TheUI {
             dialog: None,
 
             statusbar_name: None,
+
+            context_menu: None,
 
             is_dirty: false,
         }
@@ -192,6 +220,9 @@ impl TheUI {
                 )
             }
         }
+        if let Some(menu) = &mut self.context_menu {
+            menu.draw(self.canvas.buffer.pixels_mut(), &mut self.style, ctx);
+        }
         ctx.ui.redraw_all = false;
 
         pixels.copy_from_slice(self.canvas.buffer().pixels());
@@ -208,6 +239,11 @@ impl TheUI {
                 }
 
                 match event {
+                    TheEvent::ShowContextMenu(id, coord, mut menu) => {
+                        menu.set_position(coord, ctx);
+                        menu.id = id;
+                        self.context_menu = Some(menu);
+                    }
                     TheEvent::RedirectWidgetValueToLayout(layout_id, widget_id, value) => {
                         if let Some(layout) = self.canvas.get_layout(None, Some(&layout_id.uuid)) {
                             layout.redirected_widget_value(&widget_id, &value, ctx);
@@ -368,7 +404,7 @@ impl TheUI {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
         if let Some(widget) = self.get_widget_at_coord(coord) {
-            let event = TheEvent::Context(widget.dim().to_local(coord));
+            let event = TheEvent::Context(coord);
             redraw = widget.on_event(&event, ctx);
 
             self.process_events(ctx);
@@ -379,6 +415,27 @@ impl TheUI {
     pub fn touch_down(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
+
+        if let Some(context) = &mut self.context_menu {
+            if context.dim.contains(coord) {
+                let event = TheEvent::MouseDown(context.dim.to_local(coord));
+                if context.on_event(&event, ctx) {
+                    redraw = true;
+                    if let Some(menu_id) = &context.hovered {
+                        ctx.ui.send(TheEvent::ContextMenuSelected(
+                            context.id.clone(),
+                            menu_id.clone(),
+                        ));
+                    }
+                    self.context_menu = None;
+                }
+            } else {
+                self.context_menu = None;
+                redraw = true;
+            }
+            return redraw;
+        }
+
         if let Some(widget) = self.get_widget_at_coord(coord) {
             let event = TheEvent::MouseDown(widget.dim().to_local(coord));
             redraw = widget.on_event(&event, ctx);
@@ -391,6 +448,10 @@ impl TheUI {
     pub fn touch_dragged(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
+
+        if let Some(context) = &mut self.context_menu {
+            return redraw;
+        }
 
         if let Some(id) = &ctx.ui.focus {
             if let Some(widget) = self.get_widget_abs(None, Some(&id.uuid)) {
@@ -421,6 +482,10 @@ impl TheUI {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
 
+        if let Some(context) = &mut self.context_menu {
+            return redraw;
+        }
+
         if let Some(id) = &ctx.ui.focus {
             if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
                 let event = TheEvent::MouseUp(widget.dim().to_local(coord));
@@ -449,6 +514,15 @@ impl TheUI {
     pub fn hover(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
+
+        if let Some(context) = &mut self.context_menu {
+            if context.dim.contains(coord) {
+                let event = TheEvent::Hover(context.dim.to_local(coord));
+                redraw = context.on_event(&event, ctx);
+            }
+            return redraw;
+        }
+
         if let Some(widget) = self.get_widget_at_coord(coord) {
             //println!("Hover {:?}", widget.id());
             let event = TheEvent::Hover(widget.dim().to_local(coord));
@@ -697,6 +771,13 @@ impl TheUI {
         }
     }
 
+    /// Sets the context menu for the widget.
+    pub fn set_widget_context_menu(&mut self, name: &str, menu: Option<TheContextMenu>) {
+        if let Some(widget) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            widget.set_context_menu(menu);
+        }
+    }
+
     /// Set the value of the given widget.
     pub fn set_widget_value(&mut self, name: &str, ctx: &mut TheContext, value: TheValue) {
         if let Some(widget) = self.canvas.get_widget(Some(&name.to_string()), None) {
@@ -706,16 +787,35 @@ impl TheUI {
 
     #[cfg(feature = "ui")]
     /// Opens a dialog which will have the canvas as context and the given text as title.
-    pub fn show_dialog(&mut self, text: &str, mut canvas: TheCanvas, ctx: &mut TheContext) {
+    pub fn show_dialog(&mut self, text: &str, mut canvas: TheCanvas, buttons: Vec<TheDialogButtonRole>, ctx: &mut TheContext) {
         self.dialog_text = text.to_string();
 
         let width = canvas.limiter.get_max_width();
-        let height = canvas.limiter.get_max_height();
+        let mut height = canvas.limiter.get_max_height();
+
+        if !buttons.is_empty() {
+            let mut toolbar_hlayout = TheHLayout::new(TheId::empty());
+            toolbar_hlayout.set_background_color(Some(TheThemeColors::ListLayoutBackground));
+            toolbar_hlayout.limiter_mut().set_max_width(width);
+            toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
+
+            for b in &buttons {
+                let mut button = TheTraybarButton::new(TheId::named(b.to_id()));
+                button.set_text(b.to_string().to_string());
+                toolbar_hlayout.add_widget(Box::new(button));
+            }
+
+            toolbar_hlayout.set_reverse_index(Some(buttons.len() as i32));
+
+            let mut toolbar_canvas = TheCanvas::default();
+            // toolbar_canvas.set_widget(TheTraybar::new(TheId::empty()));
+            toolbar_hlayout.limiter_mut().set_max_height(30);
+            toolbar_canvas.set_layout(toolbar_hlayout);
+            canvas.set_bottom(toolbar_canvas);
+        }
 
         let off_x = (ctx.width as i32 - width) / 2;
         let off_y = (ctx.height as i32 - height) / 2;
-
-        println!("{} {}", width, height);
 
         let mut dim = TheDim::new(off_x, off_y, width, height);
         dim.buffer_x = off_x;
@@ -744,19 +844,110 @@ impl TheUI {
             let width = dialog_canvas.limiter.get_max_width();
             let height = dialog_canvas.limiter.get_max_height();
 
-            let off_x = (ctx.width as i32 - width) / 2;
-            let off_y = (ctx.height as i32 - height) / 2;
+            // ctx.draw.rect(
+            //     self.canvas.buffer.pixels_mut(),
+            //     &(
+            //         dialog_canvas.dim.buffer_x as usize,
+            //         dialog_canvas.dim.buffer_y as usize,
+            //         width as usize,
+            //         height as usize,
+            //     ),
+            //     ctx.width,
+            //     &BLACK,
+            // );
+
+            let mut tuple = dialog_canvas.dim.to_buffer_utuple();
+
+            let window_margin = vec4i(3, 29, 3, 3);
+
+            let mut border_shrinker = TheDimShrinker::zero();
+            let mut border_dim = TheDim::new(
+                tuple.0 as i32 - window_margin.x,
+                tuple.1 as i32 - window_margin.y,
+                tuple.2 as i32 + window_margin.x + window_margin.z,
+                tuple.3 as i32 + window_margin.y + window_margin.w,
+            );
+            border_dim.buffer_x = border_dim.x;
+            border_dim.buffer_y = border_dim.y;
+
+            tuple = border_dim.to_buffer_utuple();
+
+            ctx.draw.rect_outline(
+                self.canvas.buffer.pixels_mut(),
+                &tuple,
+                ctx.width,
+                self.style.theme().color(WindowBorderOuter),
+            );
+
+            border_shrinker.shrink(1);
+            tuple = border_dim.to_buffer_shrunk_utuple(&border_shrinker);
+            ctx.draw.rect_outline(
+                self.canvas.buffer.pixels_mut(),
+                &tuple,
+                ctx.width,
+                self.style.theme().color(WindowBorderInner),
+            );
+
+            border_shrinker.shrink(1);
+            tuple = border_dim.to_buffer_shrunk_utuple(&border_shrinker);
+            ctx.draw.rect_outline(
+                self.canvas.buffer.pixels_mut(),
+                &tuple,
+                ctx.width,
+                self.style.theme().color(WindowBorderInner),
+            );
+
+            // Header
+
+            border_shrinker.shrink(1);
+            tuple = border_dim.to_buffer_shrunk_utuple(&border_shrinker);
+            ctx.draw.rect(
+                self.canvas.buffer.pixels_mut(),
+                &(tuple.0, tuple.1, tuple.2, 23),
+                ctx.width,
+                self.style.theme().color(WindowHeaderBackground),
+            );
 
             ctx.draw.rect(
                 self.canvas.buffer.pixels_mut(),
-                &(off_x as usize, off_y as usize, 400, 400),
+                &(tuple.0, tuple.1 + 23, tuple.2, 1),
                 ctx.width,
-                &BLACK,
+                self.style.theme().color(WindowHeaderBorder1),
             );
 
-            self.canvas
-                .buffer
-                .copy_into(off_x, off_y, &dialog_canvas.buffer);
+            ctx.draw.rect(
+                self.canvas.buffer.pixels_mut(),
+                &(tuple.0, tuple.1 + 24, tuple.2, 1),
+                ctx.width,
+                self.style.theme().color(WindowBorderInner),
+            );
+
+            ctx.draw.rect(
+                self.canvas.buffer.pixels_mut(),
+                &(tuple.0, tuple.1 + 25, tuple.2, 1),
+                ctx.width,
+                self.style.theme().color(WindowHeaderBorder2),
+            );
+
+            if let Some(font) = &ctx.ui.font {
+                ctx.draw.text_rect_blend(
+                    self.canvas.buffer.pixels_mut(),
+                    &(tuple.0 + 13, tuple.1, tuple.2 - 13, 23),
+                    ctx.width,
+                    font,
+                    15.0,
+                    &self.dialog_text,
+                    &WHITE,
+                    TheHorizontalAlign::Left,
+                    TheVerticalAlign::Center,
+                );
+            }
+
+            self.canvas.buffer.copy_into(
+                dialog_canvas.dim.buffer_x,
+                dialog_canvas.dim.buffer_y,
+                &dialog_canvas.buffer,
+            );
         }
     }
 }

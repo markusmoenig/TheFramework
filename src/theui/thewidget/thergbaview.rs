@@ -42,6 +42,8 @@ pub struct TheRGBAView {
     accumulated_wheel_delta: Vec2f,
 
     layout_id: TheId,
+
+    context_menu: Option<TheContextMenu>,
 }
 
 impl TheWidget for TheRGBAView {
@@ -85,6 +87,8 @@ impl TheWidget for TheRGBAView {
             accumulated_wheel_delta: Vec2f::zero(),
 
             layout_id: TheId::empty(),
+
+            context_menu: None,
         }
     }
 
@@ -92,11 +96,24 @@ impl TheWidget for TheRGBAView {
         &self.id
     }
 
+    fn set_context_menu(&mut self, menu: Option<TheContextMenu>) {
+        self.context_menu = menu;
+    }
+
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         //println!("event ({}): {:?}", self.id.name, event);
 
         match event {
+            TheEvent::Context(coord) => {
+                if let Some(context_menu) = &self.context_menu {
+                    ctx.ui.send(TheEvent::ShowContextMenu(
+                        self.id().clone(),
+                        *coord,
+                        context_menu.clone(),
+                    ));
+                }
+            }
             TheEvent::MouseDown(coord) => {
                 if self.state != TheWidgetState::Selected {
                     self.is_dirty = true;
@@ -181,6 +198,9 @@ impl TheWidget for TheRGBAView {
             }
             TheEvent::MouseUp(_id) => {
                 self.drop = None;
+                if self.mode == TheRGBAViewMode::TileEditor {
+                    ctx.ui.send(TheEvent::TileEditorUp(self.id.clone()));
+                }
             }
             TheEvent::LostHover(_id) => {
                 if self.hover.is_some() {

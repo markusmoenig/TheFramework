@@ -175,14 +175,12 @@ impl TheWidget for TheCodeView {
                                 }
 
                                 if self.shift_is_down {
-                                    if let TheCodeAtom::LocalSet(name,_) = atom {
+                                    if let TheCodeAtom::LocalSet(name, _) = atom {
                                         atom = TheCodeAtom::LocalGet(name);
-                                    }
-                                    else if let TheCodeAtom::ObjectSet(object, name, _) = atom {
+                                    } else if let TheCodeAtom::ObjectSet(object, name, _) = atom {
                                         atom = TheCodeAtom::ObjectGet(object, name);
                                     }
-                                }
-                                else if drop.operation == TheDropOperation::Move {
+                                } else if drop.operation == TheDropOperation::Move {
                                     if let Some(sp) = drop.start_position {
                                         self.codegrid.code.remove(&(sp.x as u16, sp.y as u16));
                                     }

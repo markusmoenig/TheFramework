@@ -114,6 +114,18 @@ impl TheTheme for TheDarkTheme {
         colors.insert(DropItemBorder, [237, 237, 237, 255]);
         colors.insert(DropItemText, [85, 81, 85, 255]);
 
+        colors.insert(ContextMenuBackground, [149, 149, 149, 255]);
+        colors.insert(ContextMenuBorder, [130, 130, 130, 255]);
+        colors.insert(ContextMenuHighlight, [187, 122, 208, 255]);
+        colors.insert(ContextMenuTextNormal, [255, 255, 255, 255]);
+        colors.insert(ContextMenuTextHighlight, [82, 82, 82, 255]);
+
+        colors.insert(WindowBorderOuter, [147, 147, 147, 255]);
+        colors.insert(WindowBorderInner, [197, 197, 197, 255]);
+        colors.insert(WindowHeaderBackground, [148, 148, 148, 255]);
+        colors.insert(WindowHeaderBorder1, [163, 163, 163, 255]);
+        colors.insert(WindowHeaderBorder2, [139, 139, 139, 255]);
+
         Self {
             temp_color: BLACK,
             colors,
