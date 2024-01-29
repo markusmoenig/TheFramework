@@ -75,3 +75,30 @@ pub fn create_float2_widgets(
     layout.add_widget(Box::new(text));
     layout.add_widget(Box::new(name_edit));
 }
+
+/// Opens a new dialog with a text edit widget.
+pub fn open_text_dialog(
+    window_title: &str,
+    title: &str,
+    text: &str,
+    ui: &mut TheUI,
+    ctx: &mut TheContext,
+) {
+    let width = 300;
+    let height = 100;
+
+    let mut canvas = TheCanvas::new();
+    canvas.limiter_mut().set_max_size(vec2i(width, height));
+
+    let mut text_layout: TheTextLayout = TheTextLayout::new(TheId::empty());
+    text_layout.set_margin(vec4i(20, 20, 20, 20));
+
+    text_layout.limiter_mut().set_max_width(width);
+    let mut name_edit = TheTextLineEdit::new(TheId::named("Dialog Value"));
+    name_edit.set_text(text.to_string());
+    name_edit.limiter_mut().set_max_width(200);
+    text_layout.add_pair(title.to_string(), Box::new(name_edit));
+
+    canvas.set_layout(text_layout);
+    ui.show_dialog(window_title, canvas, vec![TheDialogButtonRole::Accept], ctx);
+}

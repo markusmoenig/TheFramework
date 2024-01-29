@@ -67,7 +67,7 @@ pub enum TheEvent {
     ContextMenuSelected(TheId, TheId),
 
     //
-    DialogValueOnClose(String, TheValue),
+    DialogValueOnClose(TheDialogButtonRole, String, TheValue),
 
     // These events define layout states.
     SetStackIndex(TheId, usize),

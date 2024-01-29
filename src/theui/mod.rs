@@ -308,6 +308,7 @@ impl TheUI {
                                         {
                                             let value = widget.value();
                                             ctx.ui.send(TheEvent::DialogValueOnClose(
+                                                button,
                                                 self.dialog_text.clone(),
                                                 value,
                                             ));
