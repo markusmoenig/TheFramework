@@ -686,6 +686,8 @@ impl TheWidget for TheCodeView {
                                 }
                                 TheCodeAtom::ExternalCall(_, _, _, _, _)
                                 | TheCodeAtom::ModuleCall(_, _, _, _) => {
+                                    let executed = self.debug_module.executed.contains(&(x, y));
+                                    let c = if executed { &WHITE } else { &text_color };
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
                                         &(rect.0 + 2, rect.1, rect.2 - 4, rect.3),
@@ -693,7 +695,7 @@ impl TheWidget for TheCodeView {
                                         font,
                                         font_size,
                                         &atom.describe(),
-                                        &text_color,
+                                        c,
                                         TheHorizontalAlign::Center,
                                         TheVerticalAlign::Center,
                                     );

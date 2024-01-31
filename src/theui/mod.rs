@@ -109,6 +109,7 @@ pub mod prelude {
 pub enum TheDialogButtonRole {
     Accept,
     Reject,
+    Delete,
 }
 
 impl TheDialogButtonRole {
@@ -116,16 +117,18 @@ impl TheDialogButtonRole {
         match self {
             Self::Accept => "Accept",
             Self::Reject => "Cancel",
+            Self::Delete => "Delete",
         }
     }
     pub fn to_id(self) -> &'static str {
         match self {
             Self::Accept => "TheDialogButtonRole::Accept",
             Self::Reject => "TheDialogButtonRole::Reject",
+            Self::Delete => "TheDialogButtonRole::Delete",
         }
     }
     pub fn iterator() -> impl Iterator<Item = TheDialogButtonRole> {
-        [Self::Accept, Self::Reject].iter().copied()
+        [Self::Accept, Self::Reject, Self::Delete].iter().copied()
     }
 }
 
@@ -310,6 +313,7 @@ impl TheUI {
                                             ctx.ui.send(TheEvent::DialogValueOnClose(
                                                 button,
                                                 self.dialog_text.clone(),
+                                                widget.id().uuid,
                                                 value,
                                             ));
                                         }

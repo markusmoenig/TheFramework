@@ -12,6 +12,12 @@ pub struct TheCodeSandbox {
     /// The objects with values. These make up the state of an entity.
     pub objects: FxHashMap<Uuid, TheCodeObject>,
 
+    /// The items with values. These make up the state of an entity.
+    pub items: FxHashMap<Uuid, TheCodeObject>,
+
+    /// The areas with values. These make up the state of an entity.
+    pub areas: FxHashMap<Uuid, TheCodeObject>,
+
     /// Represents the level or region if used inside a game
     pub level: TheCodeLevel,
 
@@ -60,6 +66,9 @@ impl TheCodeSandbox {
             id: Uuid::new_v4(),
 
             objects: FxHashMap::default(),
+            items: FxHashMap::default(),
+            areas: FxHashMap::default(),
+
             level: TheCodeLevel::default(),
 
             packages: FxHashMap::default(),
@@ -100,6 +109,16 @@ impl TheCodeSandbox {
     /// Add an object into the sandbox.
     pub fn add_object(&mut self, object: TheCodeObject) {
         self.objects.insert(object.id, object);
+    }
+
+    /// Add an item into the sandbox.
+    pub fn add_item(&mut self, item: TheCodeObject) {
+        self.items.insert(item.id, item);
+    }
+
+    /// Add an area into the sandbox.
+    pub fn add_area(&mut self, area: TheCodeObject) {
+        self.areas.insert(area.id, area);
     }
 
     /// Get a clone of the module from the environment. The module is identified by the package id and the codegrid id the module is based on.
@@ -151,6 +170,16 @@ impl TheCodeSandbox {
         if let Some(id) = self.aliases.get("self") {
             if let Some(object) = self.objects.get_mut(id) {
                 return Some(object);
+            }
+        }
+        None
+    }
+
+    /// Returns a mutable reference to the current area with an alias of "self".
+    pub fn get_self_area_mut(&mut self) -> Option<&mut TheCodeObject> {
+        if let Some(id) = self.aliases.get("self") {
+            if let Some(area) = self.areas.get_mut(id) {
+                return Some(area);
             }
         }
         None

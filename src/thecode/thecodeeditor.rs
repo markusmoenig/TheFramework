@@ -313,7 +313,8 @@ impl TheCodeEditor {
                             ),
                         );
                     }
-                } else if id.name == "Atom Assignment" {
+                }
+                else if id.name == "Atom Assignment" {
                     if let TheValue::Int(v) = value {
                         self.set_selected_atom(
                             ui,
@@ -322,7 +323,22 @@ impl TheCodeEditor {
                             ),
                         );
                     }
-                } else if id.name == "Atom Argument" {
+                }
+                else if id.name == "Atom TextList" {
+                    if let Some(index) = value.to_i32() {
+                        self.start_undo(ui);
+                        if let Some(TheCodeAtom::Value(TheValue::TextList(_, list))) = self.get_selected_atom(ui) {
+                            self.set_selected_atom(
+                                ui,
+                                TheCodeAtom::Value(
+                                    TheValue::TextList(index, list.clone()),
+                                ),
+                            );
+                            self.finish_undo(ui, ctx);
+                        }
+                    }
+                }
+                else if id.name == "Atom Argument" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.start_undo(ui);

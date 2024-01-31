@@ -76,6 +76,7 @@ pub enum TheValue {
     Float(f32),
     Int(i32),
     Text(String),
+    TextList(i32, Vec<String>),
     Char(char),
     Int2(Vec2i),
     Float2(Vec2f),
@@ -218,6 +219,7 @@ impl TheValue {
             Float(_v) => "Float".to_string(),
             Int(_i) => "Integer".to_string(),
             Text(_s) => "Text".to_string(),
+            TextList(index, list) => list[*index as usize].clone(),
             Int2(v) => format!("Int2: {:?}", v),
             Float2(v) => format!("Float22: {:?}", v),
             Int3(v) => format!("Int3: {:?}", v),
@@ -259,6 +261,7 @@ impl TheValue {
             }
             Int(i) => i.to_string(),
             Text(s) => s.clone(),
+            TextList(index, list) => list[*index as usize].clone(),
             Int2(v) => format!("({}, {})", v.x, v.y),
             Float2(v) => format!("({}, {})", v.x, v.y),
             Int3(v) => format!("({}, {}, {})", v.x, v.y, v.z),

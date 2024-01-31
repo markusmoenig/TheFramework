@@ -224,6 +224,7 @@ impl TheCodeAtom {
                                                 (None, TheValue::Empty),
                                             );
                                         }
+                                        sandbox.set_debug_executed(data.location);
                                     }
                                 }
                             }
@@ -940,6 +941,7 @@ impl TheCodeAtom {
                 TheValue::Int(v) => format!("Integer constant ({}).", v),
                 TheValue::Float(_v) => format!("Float constant ({}).", value.describe()),
                 TheValue::Text(v) => format!("Text constant ({}).", v),
+                TheValue::TextList(index, v) => format!("Text List ({}).", v[*index as usize].clone()),
                 TheValue::Char(v) => format!("Char constant ({}).", v),
                 TheValue::Int2(v) => format!("Int2 constant ({}).", v),
                 TheValue::Float2(v) => format!("Float2 constant ({}).", v),
@@ -1079,6 +1081,14 @@ impl TheCodeAtom {
                 );
             }
             TheCodeAtom::Value(value) => match value {
+                TheValue::TextList(index, list) => {
+                    let mut drop_down = TheDropdownMenu::new(TheId::named("Atom TextList"));
+                    for l in list {
+                        drop_down.add_option(l.clone());
+                    }
+                    drop_down.set_selected_index(*index);
+                    layout.add_widget(Box::new(drop_down));
+                }
                 TheValue::Position(v) => {
                     create_float2_widgets(
                         layout,
