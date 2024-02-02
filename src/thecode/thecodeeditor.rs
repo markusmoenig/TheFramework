@@ -841,7 +841,7 @@ impl TheCodeEditor {
         }
 
         if let Some(id) = self.bundle.selected_grid_id {
-            if !code_layout.select_item(id, ctx) {
+            if !code_layout.select_item(id, ctx, true) {
                 code_layout.select_first_item(ctx);
             }
         } else {

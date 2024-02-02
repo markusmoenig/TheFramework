@@ -160,6 +160,21 @@ impl TheWidget for TheGroupButton {
         true
     }
 
+    fn value(&self) -> TheValue {
+        TheValue::Int(self.selected_index.unwrap_or(0) as i32)
+    }
+
+    #[allow(clippy::single_match)]
+    fn set_value(&mut self, value: TheValue) {
+        match value {
+            TheValue::Int(value) => {
+                self.selected_index = Some(value as usize);
+                self.is_dirty = true;
+            }
+            _ => {}
+        }
+    }
+
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,

@@ -809,9 +809,12 @@ impl TheUI {
     }
 
     /// Set the value of the given widget.
-    pub fn set_widget_value(&mut self, name: &str, ctx: &mut TheContext, value: TheValue) {
+    pub fn set_widget_value(&mut self, name: &str, ctx: &mut TheContext, value: TheValue) -> bool {
         if let Some(widget) = self.canvas.get_widget(Some(&name.to_string()), None) {
             widget.set_value(value);
+            true
+        } else {
+            false
         }
     }
 
