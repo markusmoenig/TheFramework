@@ -717,6 +717,22 @@ impl TheWidget for TheCodeView {
                                 }
                             }
 
+                            if let TheCodeAtom::Value(TheValue::ColorObject(color, _)) = atom {
+                                let off = zoom_const(4, zoom);
+                                ctx.draw.rounded_rect(
+                                    self.buffer.pixels_mut(),
+                                    &(
+                                        rect.0 + 4 * off,
+                                        rect.1 + rect.3 - 7 * off,
+                                        rect.2 - 8 * off,
+                                        3 * off,
+                                    ),
+                                    stride,
+                                    &color.to_u8_array(),
+                                    &(2.0 * zoom, 2.0 * zoom, 2.0 * zoom, 2.0 * zoom),
+                                );
+                            }
+
                             if let Some((name, _)) = func_args_hash.get(&(x, y)) {
                                 ctx.draw.text_rect_blend(
                                     self.buffer.pixels_mut(),

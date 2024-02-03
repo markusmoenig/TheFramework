@@ -313,8 +313,7 @@ impl TheCodeEditor {
                             ),
                         );
                     }
-                }
-                else if id.name == "Atom Assignment" {
+                } else if id.name == "Atom Assignment" {
                     if let TheValue::Int(v) = value {
                         self.set_selected_atom(
                             ui,
@@ -323,22 +322,20 @@ impl TheCodeEditor {
                             ),
                         );
                     }
-                }
-                else if id.name == "Atom TextList" {
+                } else if id.name == "Atom TextList" {
                     if let Some(index) = value.to_i32() {
                         self.start_undo(ui);
-                        if let Some(TheCodeAtom::Value(TheValue::TextList(_, list))) = self.get_selected_atom(ui) {
+                        if let Some(TheCodeAtom::Value(TheValue::TextList(_, list))) =
+                            self.get_selected_atom(ui)
+                        {
                             self.set_selected_atom(
                                 ui,
-                                TheCodeAtom::Value(
-                                    TheValue::TextList(index, list.clone()),
-                                ),
+                                TheCodeAtom::Value(TheValue::TextList(index, list.clone())),
                             );
                             self.finish_undo(ui, ctx);
                         }
                     }
-                }
-                else if id.name == "Atom Argument" {
+                } else if id.name == "Atom Argument" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.start_undo(ui);
@@ -427,7 +424,44 @@ impl TheCodeEditor {
                             }
                         }
                     }
-                } else if id.name == "Atom Integer" {
+                }
+                else if id.name == "Atom Color Hex" {
+                    if let Some(hex_color) = value.to_string() {
+                        if !hex_color.is_empty() {
+                            if let Some(TheCodeAtom::Value(TheValue::ColorObject(_, randomness))) =
+                                self.get_selected_atom(ui)
+                            {
+                                self.start_undo(ui);
+                                self.set_selected_atom(
+                                    ui,
+                                    TheCodeAtom::Value(TheValue::ColorObject(
+                                        TheColor::from_hex(hex_color.as_str()),
+                                        randomness,
+                                    )),
+                                );
+                                self.finish_undo(ui, ctx);
+                            }
+                        }
+                    }
+                }
+                else if id.name == "Atom Color Randomness" {
+                    if let Some(randomness) = value.to_f32() {
+                        if let Some(TheCodeAtom::Value(TheValue::ColorObject(color, _))) =
+                            self.get_selected_atom(ui)
+                        {
+                            self.start_undo(ui);
+                            self.set_selected_atom(
+                                ui,
+                                TheCodeAtom::Value(TheValue::ColorObject(
+                                    color,
+                                    randomness,
+                                )),
+                            );
+                            self.finish_undo(ui, ctx);
+                        }
+                    }
+                }
+                else if id.name == "Atom Integer" {
                     if let Some(v) = value.to_i32() {
                         self.start_undo(ui);
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Int(v)));
@@ -645,6 +679,7 @@ impl TheCodeEditor {
                 "name".to_string(),
                 TheValueAssignment::Assign,
             ),
+            "Empty" => TheCodeAtom::Value(TheValue::Empty),
             "Integer" => TheCodeAtom::Value(TheValue::Int(0)),
             "Float" => TheCodeAtom::Value(TheValue::Float(0.0)),
             "Bool" => TheCodeAtom::Value(TheValue::Bool(false)),
@@ -660,6 +695,7 @@ impl TheCodeEditor {
             "Modulus" => TheCodeAtom::Modulus,
             "RInt" => TheCodeAtom::RandInt(vec2i(0, 3)),
             "RFloat" => TheCodeAtom::RandFloat(vec2f(0.0, 1.0)),
+            "Color" => TheCodeAtom::Value(TheValue::ColorObject(TheColor::default(), 0.0)),
             _ => {
                 if let Some((bundle_name, bundle_id, module)) = self.modules.get(&id) {
                     return TheCodeAtom::ModuleCall(
@@ -765,7 +801,7 @@ impl TheCodeEditor {
 
         let mut zoom = TheSlider::new(TheId::named("Code Zoom"));
         zoom.set_value(TheValue::Float(1.0));
-        zoom.set_range(TheValue::RangeF32(0.3..=3.0));
+        zoom.set_range(TheValue::RangeF32(0.5..=3.0));
         zoom.set_continuous(true);
         zoom.limiter_mut().set_max_width(120);
 
@@ -922,6 +958,11 @@ impl TheCodeEditor {
 
         if index == 1 {
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("Empty".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Integer".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
@@ -958,6 +999,11 @@ impl TheCodeEditor {
 
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("RFloat".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("Color".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 

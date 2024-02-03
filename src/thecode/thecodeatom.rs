@@ -941,7 +941,9 @@ impl TheCodeAtom {
                 TheValue::Int(v) => format!("Integer constant ({}).", v),
                 TheValue::Float(_v) => format!("Float constant ({}).", value.describe()),
                 TheValue::Text(v) => format!("Text constant ({}).", v),
-                TheValue::TextList(index, v) => format!("Text List ({}).", v[*index as usize].clone()),
+                TheValue::TextList(index, v) => {
+                    format!("Text List ({}).", v[*index as usize].clone())
+                }
                 TheValue::Char(v) => format!("Char constant ({}).", v),
                 TheValue::Int2(v) => format!("Int2 constant ({}).", v),
                 TheValue::Float2(v) => format!("Float2 constant ({}).", v),
@@ -954,7 +956,7 @@ impl TheCodeAtom {
                 TheValue::KeyCode(_v) => "Key Code value.".to_string(),
                 TheValue::RangeI32(_v) => "Range value.".to_string(),
                 TheValue::RangeF32(_v) => "Range value.".to_string(),
-                TheValue::ColorObject(_v) => "Color.".to_string(),
+                TheValue::ColorObject(_, _) => "Color.".to_string(),
                 TheValue::Empty => "Empty value.".to_string(),
                 TheValue::Id(id) => format!("Id ({}).", id),
             },
@@ -1081,6 +1083,29 @@ impl TheCodeAtom {
                 );
             }
             TheCodeAtom::Value(value) => match value {
+                TheValue::ColorObject(color, randomness) => {
+                    let mut text = TheText::new(TheId::empty());
+                    text.set_text("Color #".to_string());
+
+                    let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Color Hex"));
+                    name_edit.set_status_text("The color in hex.");
+                    name_edit.set_text(color.to_hex());
+                    name_edit.set_needs_redraw(true);
+
+                    let mut text2 = TheText::new(TheId::empty());
+                    text2.set_text("Randomness".to_string());
+
+                    let mut random = TheSlider::new(TheId::named("Atom Color Randomness"));
+                    random.set_status_text("The randomness of the color. From 0.0 (no randomness) to 1.0 (full randomness).");
+                    random.set_value(TheValue::Float(*randomness));
+                    random.set_range(TheValue::RangeF32(0.0..=1.0));
+                    random.limiter_mut().set_max_width(120);
+
+                    layout.add_widget(Box::new(text));
+                    layout.add_widget(Box::new(name_edit));
+                    layout.add_widget(Box::new(text2));
+                    layout.add_widget(Box::new(random));
+                }
                 TheValue::TextList(index, list) => {
                     let mut drop_down = TheDropdownMenu::new(TheId::named("Atom TextList"));
                     for l in list {

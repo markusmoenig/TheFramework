@@ -127,5 +127,10 @@ pub fn open_delete_confirmation_dialog(
     hlayout.add_widget(Box::new(text_widget));
 
     canvas.set_layout(hlayout);
-    ui.show_dialog(window_title, canvas, vec![TheDialogButtonRole::Delete, TheDialogButtonRole::Reject], ctx);
+    ui.show_dialog(
+        window_title,
+        canvas,
+        vec![TheDialogButtonRole::Delete, TheDialogButtonRole::Reject],
+        ctx,
+    );
 }

@@ -89,7 +89,7 @@ pub enum TheValue {
     KeyCode(TheKeyCode),
     RangeI32(RangeInclusive<i32>),
     RangeF32(RangeInclusive<f32>),
-    ColorObject(TheColor),
+    ColorObject(TheColor, f32),
     Comparison(TheValueComparison),
     Assignment(TheValueAssignment),
     Id(Uuid),
@@ -167,7 +167,7 @@ impl TheValue {
 
     pub fn to_color(&self) -> Option<TheColor> {
         match self {
-            ColorObject(v) => Some(v.clone()),
+            ColorObject(v, _) => Some(v.clone()),
             _ => None,
         }
     }
@@ -234,7 +234,7 @@ impl TheValue {
             KeyCode(k) => format!("KeyCode: {:?}", k),
             RangeI32(r) => format!("RangeI32: {:?}", r),
             RangeF32(r) => format!("RangeF32: {:?}", r),
-            ColorObject(c) => format!("Color: {:?}", c),
+            ColorObject(c, _) => format!("Color: {:?}", c),
             Comparison(c) => format!("Comparison: {:?}", c.to_string()),
             Assignment(c) => format!("Assignment: {:?}", c.to_string()),
             Id(c) => format!("Id: {:?}", c.to_string()),
@@ -276,7 +276,7 @@ impl TheValue {
             KeyCode(k) => format!("KeyCode: {:?}", k),
             RangeI32(r) => format!("RangeI32: {:?}", r),
             RangeF32(r) => format!("RangeF32: {:?}", r),
-            ColorObject(c) => format!("Color: {:?}", c),
+            ColorObject(_, _) => "Color".to_string(),
             Comparison(c) => format!("{:?}", c.to_string()),
             Assignment(c) => format!("{:?}", c.to_string()),
             Id(c) => format!("Id: {:?}", c.to_string()),

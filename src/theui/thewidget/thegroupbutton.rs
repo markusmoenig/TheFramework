@@ -328,7 +328,7 @@ impl TheWidget for TheGroupButton {
     }
 }
 
-pub trait TheGroupButtonTrait : TheWidget {
+pub trait TheGroupButtonTrait: TheWidget {
     /// Add a new text based item.
     fn add_text(&mut self, text: String);
     /// Add a new text based item with an associated status text.

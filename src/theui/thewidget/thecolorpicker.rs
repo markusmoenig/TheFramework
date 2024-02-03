@@ -9,6 +9,8 @@ pub struct TheColorPicker {
     dim: TheDim,
     is_dirty: bool,
 
+    background: Option<[u8; 4]>,
+
     color: Vec3f,
 
     h: f32,
@@ -44,6 +46,7 @@ impl TheWidget for TheColorPicker {
             dim: TheDim::zero(),
             is_dirty: false,
 
+            background: None,
             color: Vec3f::zero(),
 
             h: 0.0,
@@ -89,7 +92,7 @@ impl TheWidget for TheColorPicker {
                 if self.continuous {
                     ctx.ui.send(TheEvent::ValueChanged(
                         self.id.clone(),
-                        TheValue::ColorObject(TheColor::from_vec3f(self.color)),
+                        TheValue::ColorObject(TheColor::from_vec3f(self.color), 0.0),
                     ));
                 }
                 self.is_dirty = true;
@@ -99,7 +102,7 @@ impl TheWidget for TheColorPicker {
                 self.calc_color(*coord, false);
                 ctx.ui.send(TheEvent::ValueChanged(
                     self.id.clone(),
-                    TheValue::ColorObject(TheColor::from_vec3f(self.color)),
+                    TheValue::ColorObject(TheColor::from_vec3f(self.color), 0.0),
                 ));
                 self.is_dirty = true;
                 redraw = true;
@@ -175,6 +178,16 @@ impl TheWidget for TheColorPicker {
         let pixels = b.pixels_mut();
 
         let width = size as usize;
+
+        if let Some(bc) = self.background {
+            let stride = buffer.stride();
+            ctx.draw.rect(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_utuple(),
+                stride,
+                &bc,
+            );
+        }
 
         pixels
             .par_rchunks_exact_mut(width * 4)
@@ -281,6 +294,14 @@ impl TheWidget for TheColorPicker {
     #[allow(clippy::single_match)]
     fn set_value(&mut self, value: TheValue) {
         match value {
+            TheValue::ColorObject(color, _) => {
+                self.color = color.to_vec3f();
+                let hsl = color.as_hsl();
+                self.h = hsl.x * 360.0;
+                self.s = hsl.y;
+                self.l = hsl.z;
+                self.is_dirty = true;
+            }
             TheValue::Float3(color) => {
                 self.color = color;
                 let hsl = TheColor::from_vec3f(color).as_hsl();
@@ -295,6 +316,8 @@ impl TheWidget for TheColorPicker {
 }
 
 pub trait TheColorPickerTrait: TheWidget {
+    fn set_background_color(&mut self, color: [u8; 4]);
+
     fn set_color(&mut self, color: Vec3f);
     fn set_continuous(&mut self, continuous: bool);
 
@@ -305,6 +328,10 @@ pub trait TheColorPickerTrait: TheWidget {
 }
 
 impl TheColorPickerTrait for TheColorPicker {
+    fn set_background_color(&mut self, color: [u8; 4]) {
+        self.background = Some(color);
+    }
+
     fn set_color(&mut self, color: Vec3f) {
         self.color = color;
         let hsl = TheColor::from_vec3f(color).as_hsl();

@@ -10,6 +10,12 @@ pub struct TheColor {
     pub a: f32,
 }
 
+impl Default for TheColor {
+    fn default() -> Self {
+        Self::gray()
+    }
+}
+
 impl TheColor {
     /// Creates a color from u8 values.
     pub fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
@@ -123,12 +129,38 @@ impl TheColor {
         }
     }
 
+    /// Converts the color to a hexadecimal string.
+    pub fn to_hex(&self) -> String {
+        // Convert each color component to an integer in the range 0-255
+        let r = (self.r * 255.0).round() as u8;
+        let g = (self.g * 255.0).round() as u8;
+        let b = (self.b * 255.0).round() as u8;
+        let a = (self.a * 255.0).round() as u8;
+
+        // Convert to hexadecimal string. If alpha is fully opaque (255), omit it from the string.
+        if a == 255 {
+            format!("#{:02X}{:02X}{:02X}", r, g, b)
+        } else {
+            format!("#{:02X}{:02X}{:02X}{:02X}", r, g, b, a)
+        }
+    }
+
     /// Creates a white color.
     pub fn white() -> Self {
         Self {
             r: 1.0,
             g: 1.0,
             b: 1.0,
+            a: 1.0,
+        }
+    }
+
+    /// Creates a gray.
+    pub fn gray() -> Self {
+        Self {
+            r: 0.5,
+            g: 0.5,
+            b: 0.5,
             a: 1.0,
         }
     }
