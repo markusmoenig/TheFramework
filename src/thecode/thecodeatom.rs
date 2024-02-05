@@ -293,8 +293,8 @@ impl TheCodeAtom {
                                 stack.push(local.clone());
                             } else {
                                 println!(
-                                    "Runtime error: Unknown local variable {}.",
-                                    &data.values[0].to_string().unwrap()
+                                    "Runtime error: Unknown local variable {} at {:?}.",
+                                    &data.values[0].to_string().unwrap(), data.location
                                 );
                             }
                         }
@@ -959,6 +959,7 @@ impl TheCodeAtom {
                 TheValue::ColorObject(_, _) => "Color.".to_string(),
                 TheValue::Empty => "Empty value.".to_string(),
                 TheValue::Id(id) => format!("Id ({}).", id),
+                TheValue::Direction(v, _) => format!("Direction ({}).", v),
             },
             TheCodeAtom::Add => "Operator ('+')".to_string(),
             TheCodeAtom::Subtract => "Operator ('-')".to_string(),
@@ -1093,7 +1094,7 @@ impl TheCodeAtom {
                     name_edit.set_needs_redraw(true);
 
                     let mut text2 = TheText::new(TheId::empty());
-                    text2.set_text("Randomness".to_string());
+                    text2.set_text("R".to_string());
 
                     let mut random = TheSlider::new(TheId::named("Atom Color Randomness"));
                     random.set_status_text("The randomness of the color. From 0.0 (no randomness) to 1.0 (full randomness).");
@@ -1104,6 +1105,26 @@ impl TheCodeAtom {
                     layout.add_widget(Box::new(text));
                     layout.add_widget(Box::new(name_edit));
                     layout.add_widget(Box::new(text2));
+                    layout.add_widget(Box::new(random));
+                }
+                TheValue::Direction(value, randomness) => {
+                    create_float2_widgets(
+                        layout,
+                        TheId::named("Atom Direction Float2"),
+                        vec2f(value.x, value.z),
+                        vec!["X", "Y"],
+                    );
+
+                    let mut random = TheSlider::new(TheId::named("Atom Direction Randomness"));
+                    random.set_status_text("The randomness of the color. From 0.0 (no randomness) to 1.0 (full randomness).");
+                    random.set_value(TheValue::Float(*randomness));
+                    random.set_range(TheValue::RangeF32(0.0..=1.0));
+                    random.limiter_mut().set_max_width(120);
+
+                    let mut text = TheText::new(TheId::empty());
+                    text.set_text("R".to_string());
+
+                    layout.add_widget(Box::new(text));
                     layout.add_widget(Box::new(random));
                 }
                 TheValue::TextList(index, list) => {

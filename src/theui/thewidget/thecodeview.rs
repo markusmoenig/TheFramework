@@ -1097,11 +1097,13 @@ impl TheCodeViewTrait for TheCodeView {
             if grid_off_y > (grid_size - quarter_grid_size)
                 && grid_off_x > (grid_size / 2 - quarter_grid_size)
                 && grid_off_x < (grid_size / 2 + quarter_grid_size)
+                && grid_y % 2 == 1
             {
                 grid_y = grid_y * 2 + 1;
             } else if (source_y % grid_size) < (quarter_grid_size)
                 && grid_off_x > (grid_size / 2 - quarter_grid_size)
                 && grid_off_x < (grid_size / 2 + quarter_grid_size)
+                && grid_y % 2 == 0
             {
                 grid_y = grid_y * 2 - 1;
             } else {

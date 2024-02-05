@@ -93,6 +93,7 @@ pub enum TheValue {
     Comparison(TheValueComparison),
     Assignment(TheValueAssignment),
     Id(Uuid),
+    Direction(Vec3f, f32),
     #[cfg(feature = "code")]
     CodeObject(TheCodeObject),
 }
@@ -238,6 +239,7 @@ impl TheValue {
             Comparison(c) => format!("Comparison: {:?}", c.to_string()),
             Assignment(c) => format!("Assignment: {:?}", c.to_string()),
             Id(c) => format!("Id: {:?}", c.to_string()),
+            Direction(v, _) => format!("Direction: {:?}", v),
         }
     }
 
@@ -280,6 +282,7 @@ impl TheValue {
             Comparison(c) => format!("{:?}", c.to_string()),
             Assignment(c) => format!("{:?}", c.to_string()),
             Id(c) => format!("Id: {:?}", c.to_string()),
+            Direction(_, _) => "Direction".to_string(),
         }
     }
 }

@@ -593,7 +593,11 @@ impl TheCompiler {
                     }
                 }
             }
-            TheCodeAtom::Value(_) | TheCodeAtom::LocalGet(_) | TheCodeAtom::ObjectGet(_, _) => {
+            TheCodeAtom::Value(_)
+            | TheCodeAtom::LocalGet(_)
+            | TheCodeAtom::ObjectGet(_, _)
+            | TheCodeAtom::RandInt(_)
+            | TheCodeAtom::RandFloat(_) => {
                 self.advance();
                 let mut comparison = TheCodeAtom::Comparison(TheValueComparison::Equal);
                 let location: (u16, u16) = self.ctx.current_location;

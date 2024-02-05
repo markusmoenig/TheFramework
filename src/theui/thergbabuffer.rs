@@ -244,6 +244,46 @@ impl TheRGBABuffer {
             None
         }
     }
+
+    /// Draws a line from (x0, y0) to (x1, y1) with the given color.
+    pub fn draw_line(&mut self, x0: i32, y0: i32, x1: i32, y1: i32, color: [u8; 4]) {
+        let mut x = x0;
+        let mut y = y0;
+        let dx = (x1 - x0).abs();
+        let dy = -(y1 - y0).abs();
+        let sx = if x0 < x1 { 1 } else { -1 };
+        let sy = if y0 < y1 { 1 } else { -1 };
+        let mut err = dx + dy; // Error value e_xy
+
+        loop {
+            // Set pixel color
+            if let Some(pixel_index) = self.pixel_index(x, y) {
+                self.buffer[pixel_index..pixel_index + 4].copy_from_slice(&color);
+            }
+
+            if x == x1 && y == y1 {
+                break;
+            }
+            let e2 = 2 * err;
+            if e2 >= dy {
+                err += dy; // e_xy+e_x > 0
+                x += sx;
+            }
+            if e2 <= dx {
+                err += dx; // e_xy+e_y < 0
+                y += sy;
+            }
+        }
+    }
+
+    /// Helper method to calculate the buffer index for a pixel at (x, y).
+    fn pixel_index(&self, x: i32, y: i32) -> Option<usize> {
+        if x >= 0 && x < self.dim.width && y >= 0 && y < self.dim.height {
+            Some((y as usize * self.dim.width as usize + x as usize) * 4)
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]

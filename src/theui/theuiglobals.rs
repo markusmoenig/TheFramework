@@ -54,8 +54,8 @@ pub fn create_float2_widgets(
         std::f32::MIN,
         std::f32::MAX,
     )));
-    name_edit.limiter_mut().set_max_width(100);
-    name_edit.set_text(value.x.to_string());
+    name_edit.limiter_mut().set_max_width(80);
+    name_edit.set_text(format!("{:.3}", value.x));
     name_edit.set_associated_layout(layout.id().clone());
 
     layout.add_widget(Box::new(text));
@@ -68,8 +68,8 @@ pub fn create_float2_widgets(
         std::f32::MIN,
         std::f32::MAX,
     )));
-    name_edit.limiter_mut().set_max_width(100);
-    name_edit.set_text(value.y.to_string());
+    name_edit.limiter_mut().set_max_width(80);
+    name_edit.set_text(format!("{:.3}", value.y));
     name_edit.set_associated_layout(layout.id().clone());
 
     layout.add_widget(Box::new(text));

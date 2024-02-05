@@ -161,6 +161,12 @@ impl TheCodeSandbox {
             if let Some(object) = self.objects.get_mut(id) {
                 return Some(object);
             }
+            else if let Some(item) = self.items.get_mut(id) {
+                return Some(item);
+            }
+            else if let Some(area) = self.areas.get_mut(id) {
+                return Some(area);
+            }
         }
         None
     }
@@ -171,6 +177,12 @@ impl TheCodeSandbox {
             if let Some(object) = self.objects.get_mut(id) {
                 return Some(object);
             }
+            else if let Some(item) = self.items.get_mut(id) {
+                return Some(item);
+            }
+            else if let Some(area) = self.areas.get_mut(id) {
+                return Some(area);
+            }
         }
         None
     }
@@ -180,6 +192,16 @@ impl TheCodeSandbox {
         if let Some(id) = self.aliases.get("self") {
             if let Some(area) = self.areas.get_mut(id) {
                 return Some(area);
+            }
+        }
+        None
+    }
+
+    /// Returns a mutable reference to the current item with an alias of "self".
+    pub fn get_self_item_mut(&mut self) -> Option<&mut TheCodeObject> {
+        if let Some(id) = self.aliases.get("self") {
+            if let Some(item) = self.items.get_mut(id) {
+                return Some(item);
             }
         }
         None

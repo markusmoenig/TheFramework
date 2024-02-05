@@ -424,8 +424,7 @@ impl TheCodeEditor {
                             }
                         }
                     }
-                }
-                else if id.name == "Atom Color Hex" {
+                } else if id.name == "Atom Color Hex" {
                     if let Some(hex_color) = value.to_string() {
                         if !hex_color.is_empty() {
                             if let Some(TheCodeAtom::Value(TheValue::ColorObject(_, randomness))) =
@@ -443,8 +442,7 @@ impl TheCodeEditor {
                             }
                         }
                     }
-                }
-                else if id.name == "Atom Color Randomness" {
+                } else if id.name == "Atom Color Randomness" {
                     if let Some(randomness) = value.to_f32() {
                         if let Some(TheCodeAtom::Value(TheValue::ColorObject(color, _))) =
                             self.get_selected_atom(ui)
@@ -452,16 +450,41 @@ impl TheCodeEditor {
                             self.start_undo(ui);
                             self.set_selected_atom(
                                 ui,
-                                TheCodeAtom::Value(TheValue::ColorObject(
-                                    color,
+                                TheCodeAtom::Value(TheValue::ColorObject(color, randomness)),
+                            );
+                            self.finish_undo(ui, ctx);
+                        }
+                    }
+                } else if id.name == "Atom Direction Float2" {
+                    if let Some(value) = value.to_vec2f() {
+                        if let Some(TheCodeAtom::Value(TheValue::Direction(_, randomness))) =
+                            self.get_selected_atom(ui)
+                        {
+                            self.start_undo(ui);
+                            self.set_selected_atom(
+                                ui,
+                                TheCodeAtom::Value(TheValue::Direction(
+                                    vec3f(value.x, 0.0, value.y),
                                     randomness,
                                 )),
                             );
                             self.finish_undo(ui, ctx);
                         }
                     }
-                }
-                else if id.name == "Atom Integer" {
+                } else if id.name == "Atom Direction Randomness" {
+                    if let Some(randomness) = value.to_f32() {
+                        if let Some(TheCodeAtom::Value(TheValue::Direction(value, _))) =
+                            self.get_selected_atom(ui)
+                        {
+                            self.start_undo(ui);
+                            self.set_selected_atom(
+                                ui,
+                                TheCodeAtom::Value(TheValue::Direction(value, randomness)),
+                            );
+                            self.finish_undo(ui, ctx);
+                        }
+                    }
+                } else if id.name == "Atom Integer" {
                     if let Some(v) = value.to_i32() {
                         self.start_undo(ui);
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Int(v)));
@@ -696,6 +719,7 @@ impl TheCodeEditor {
             "RInt" => TheCodeAtom::RandInt(vec2i(0, 3)),
             "RFloat" => TheCodeAtom::RandFloat(vec2f(0.0, 1.0)),
             "Color" => TheCodeAtom::Value(TheValue::ColorObject(TheColor::default(), 0.0)),
+            "Direction" => TheCodeAtom::Value(TheValue::Direction(vec3f(0.0, 0.0, -1.0), 0.0)),
             _ => {
                 if let Some((bundle_name, bundle_id, module)) = self.modules.get(&id) {
                     return TheCodeAtom::ModuleCall(
@@ -787,6 +811,7 @@ impl TheCodeEditor {
         let mut toolbar_hlayout = TheHLayout::new(TheId::named("Code Top Toolbar"));
         toolbar_hlayout.set_background_color(None);
         toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
+        toolbar_hlayout.set_padding(10);
         top_toolbar_canvas.set_layout(toolbar_hlayout);
         top_toolbar_canvas.set_widget(TheTraybar::new(TheId::empty()));
 
@@ -1004,6 +1029,12 @@ impl TheCodeEditor {
 
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Color".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item: TheListItem =
+                TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("Direction".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
