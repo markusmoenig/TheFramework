@@ -18,6 +18,8 @@ pub enum TheCodeAtom {
     LocalSet(String, TheValueAssignment),
     ObjectGet(String, String),
     ObjectSet(String, String, TheValueAssignment),
+    Get(String),
+    Set(String, TheValueAssignment),
     RandInt(Vec2i),
     RandFloat(Vec2f),
     /// A call into a native function defined by the host.
@@ -294,7 +296,8 @@ impl TheCodeAtom {
                             } else {
                                 println!(
                                     "Runtime error: Unknown local variable {} at {:?}.",
-                                    &data.values[0].to_string().unwrap(), data.location
+                                    &data.values[0].to_string().unwrap(),
+                                    data.location
                                 );
                             }
                         }
@@ -625,6 +628,256 @@ impl TheCodeAtom {
                     ),
                 ))
             }
+            TheCodeAtom::Get(path) => {
+                let call: TheCodeNodeCall =
+                    |stack: &mut Vec<TheValue>,
+                     data: &mut TheCodeNodeData,
+                     sandbox: &mut TheCodeSandbox| {
+                        // Get a value of an object by recursively traversing the object tree.
+                        fn get_value(
+                            object: &TheCodeObject,
+                            mut parts: Vec<String>,
+                        ) -> Option<TheValue> {
+                            match parts.len().cmp(&1) {
+                                std::cmp::Ordering::Greater => {
+                                    let current_part = parts.remove(0).to_string();
+                                    if let Some(TheValue::CodeObject(o)) = object.get(&current_part)
+                                    {
+                                        get_value(o, parts)
+                                    } else {
+                                        None
+                                    }
+                                }
+                                std::cmp::Ordering::Equal => object.get(&parts[0]).cloned(),
+                                _ => None,
+                            }
+                        }
+
+                        if data.values[0] == TheValue::Bool(true) {
+                            // Object
+                            if let TheValue::TextList(_, parts) = &data.values[1] {
+                                if let Some(object) = sandbox.get_object_mut(&parts[0]) {
+                                    let rest_parts: Vec<String> =
+                                        parts.iter().skip(1).cloned().collect();
+
+                                    if let Some(value) = get_value(object, rest_parts) {
+                                        stack.push(value);
+                                    }
+                                }
+                            }
+                        } else if let Some(function) = sandbox.call_stack.last_mut() {
+                            if let Some(object) = function.local.last_mut() {
+                                if let TheValue::TextList(_, parts) = &data.values[1] {
+                                    if let Some(value) = get_value(object, parts.clone()) {
+                                        stack.push(value);
+                                    }
+                                }
+                            }
+                        }
+                        TheCodeNodeCallResult::Continue
+                    };
+
+                let mut is_object = false;
+                let mut parts: Vec<String> = path.split('.').map(|s| s.to_string()).collect();
+
+                if let Some(first) = parts.get_mut(0) {
+                    if first.starts_with(':') {
+                        *first = first.strip_prefix(':').unwrap_or(first).to_string();
+                        is_object = true;
+                    }
+                }
+
+                if ctx.error.is_none() && parts.is_empty() {
+                    ctx.error = Some(TheCompilerError::new(
+                        ctx.node_location,
+                        "Empty variable path for Set().".to_string(),
+                    ));
+                }
+
+                Some(TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location_values(
+                        ctx.node_location,
+                        vec![TheValue::Bool(is_object), TheValue::TextList(0, parts)],
+                    ),
+                ))
+            }
+            TheCodeAtom::Set(path, op) => {
+                let call: TheCodeNodeCall =
+                    |stack: &mut Vec<TheValue>,
+                     data: &mut TheCodeNodeData,
+                     sandbox: &mut TheCodeSandbox| {
+                        // Assign a value to an object by recursively traversing the object tree.
+                        fn assign_value(
+                            object: &mut TheCodeObject,
+                            mut parts: Vec<String>,
+                            value: TheValue,
+                            op: TheValueAssignment,
+                            debug_value: &mut Option<TheValue>,
+                        ) {
+                            match parts.len().cmp(&1) {
+                                std::cmp::Ordering::Greater => {
+                                    let current_part = parts.remove(0).to_string();
+                                    if let Some(TheValue::CodeObject(o)) =
+                                        object.get_mut(&current_part)
+                                    {
+                                        assign_value(o, parts, value, op, debug_value);
+                                    }
+                                }
+                                std::cmp::Ordering::Equal => {
+                                    let name = parts[0].clone();
+                                    match op {
+                                        TheValueAssignment::Assign => {
+                                            if let Some(dv) = debug_value {
+                                                *dv = value.clone();
+                                            }
+                                            object.set(parts[0].clone(), value);
+                                        }
+                                        TheValueAssignment::AddAssign => {
+                                            if let Some(left) = object.get(&name) {
+                                                // Handle special String case
+                                                if let TheValue::Text(a) = left {
+                                                    let result = TheValue::Text(format!(
+                                                        "{} {}",
+                                                        a,
+                                                        value.describe()
+                                                    ));
+                                                    if let Some(dv) = debug_value {
+                                                        *dv = result.clone();
+                                                    }
+                                                    object.set(name, result);
+                                                } else if let Some(result) =
+                                                    TheValue::add(left, &value)
+                                                {
+                                                    if let Some(dv) = debug_value {
+                                                        *dv = result.clone();
+                                                    }
+                                                    object.set(name, result);
+                                                }
+                                            }
+                                        }
+                                        TheValueAssignment::SubtractAssign => {
+                                            if let Some(left) = object.get(&name) {
+                                                if let Some(result) = TheValue::sub(left, &value) {
+                                                    if let Some(dv) = debug_value {
+                                                        *dv = result.clone();
+                                                    }
+                                                    object.set(name, result);
+                                                }
+                                            }
+                                        }
+                                        TheValueAssignment::MultiplyAssign => {
+                                            if let Some(left) = object.get(&name) {
+                                                if let Some(result) = TheValue::mul(left, &value) {
+                                                    if let Some(dv) = debug_value {
+                                                        *dv = result.clone();
+                                                    }
+                                                    object.set(name, result);
+                                                }
+                                            }
+                                        }
+                                        TheValueAssignment::DivideAssign => {
+                                            if let Some(left) = object.get(&name) {
+                                                if let Some(result) = TheValue::div(left, &value) {
+                                                    if let Some(dv) = debug_value {
+                                                        *dv = result.clone();
+                                                    }
+                                                    object.set(name, result);
+                                                }
+                                            }
+                                        }
+                                        TheValueAssignment::ModulusAssign => {
+                                            if let Some(left) = object.get(&name) {
+                                                if let Some(result) =
+                                                    TheValue::modulus(left, &value)
+                                                {
+                                                    if let Some(dv) = debug_value {
+                                                        *dv = result.clone();
+                                                    }
+                                                    object.set(name, result);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+
+                        if let Some(v) = stack.pop() {
+                            let mut debug_value: Option<TheValue> = None;
+                            if sandbox.debug_mode {
+                                debug_value = Some(TheValue::Empty);
+                            }
+
+                            if let TheValue::Assignment(op) = data.values[2] {
+                                if data.values[0] == TheValue::Bool(true) {
+                                    // Object
+                                    if let TheValue::TextList(_, parts) = &data.values[1] {
+                                        if let Some(object) = sandbox.get_object_mut(&parts[0]) {
+                                            let rest_parts: Vec<String> =
+                                                parts.iter().skip(1).cloned().collect();
+
+                                            assign_value(
+                                                object,
+                                                rest_parts,
+                                                v,
+                                                op,
+                                                &mut debug_value,
+                                            );
+                                        }
+                                    }
+                                } else if let Some(function) = sandbox.call_stack.last_mut() {
+                                    if let Some(object) = function.local.last_mut() {
+                                        if let TheValue::TextList(_, parts) = &data.values[1] {
+                                            assign_value(
+                                                object,
+                                                parts.clone(),
+                                                v,
+                                                op,
+                                                &mut debug_value,
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+
+                            if let Some(debug_value) = debug_value {
+                                sandbox.set_debug_value(data.location, (None, debug_value));
+                            }
+                        }
+                        TheCodeNodeCallResult::Continue
+                    };
+
+                let mut is_object = false;
+                let mut parts: Vec<String> = path.split('.').map(|s| s.to_string()).collect();
+
+                if let Some(first) = parts.get_mut(0) {
+                    if first.starts_with(':') {
+                        *first = first.strip_prefix(':').unwrap_or(first).to_string();
+                        is_object = true;
+                    }
+                }
+
+                if ctx.error.is_none() && parts.is_empty() {
+                    ctx.error = Some(TheCompilerError::new(
+                        ctx.node_location,
+                        "Empty variable path for Set().".to_string(),
+                    ));
+                }
+
+                Some(TheCodeNode::new(
+                    call,
+                    TheCodeNodeData::location_values(
+                        ctx.node_location,
+                        vec![
+                            TheValue::Bool(is_object),
+                            TheValue::TextList(0, parts),
+                            TheValue::Assignment(*op),
+                        ],
+                    ),
+                ))
+            }
             TheCodeAtom::Value(value) => {
                 let call: TheCodeNodeCall =
                     |stack: &mut Vec<TheValue>,
@@ -845,10 +1098,10 @@ impl TheCodeAtom {
                 TheSDF::RoundedRect(dim, (0.0, 0.0, 0.0, 0.0))
                 //TheSDF::Rhombus(dim)
             }
-            Self::ObjectGet(_, _) | Self::LocalGet(_) => {
+            Self::ObjectGet(_, _) | Self::LocalGet(_) | Self::Get(_) => {
                 TheSDF::RoundedRect(dim, (10.0 * zoom, 10.0 * zoom, 0.0, 0.0))
             }
-            Self::ObjectSet(_, _, _) | Self::LocalSet(_, _) => {
+            Self::ObjectSet(_, _, _) | Self::LocalSet(_, _) | Self::Set(_, _) => {
                 TheSDF::RoundedRect(dim, (0.0, 0.0, 10.0 * zoom, 10.0 * zoom))
             }
             Self::Return => TheSDF::RoundedRect(dim, (0.0, 0.0, 10.0 * zoom, 0.0)),
@@ -897,6 +1150,8 @@ impl TheCodeAtom {
             TheCodeAtom::LocalSet(name, _) => name.clone(),
             TheCodeAtom::ObjectGet(object, name) => format!("{}.{}", object, name),
             TheCodeAtom::ObjectSet(object, name, _) => format!("{}.{}", object, name),
+            TheCodeAtom::Get(name) => name.clone(),
+            TheCodeAtom::Set(name, _) => name.clone(),
             TheCodeAtom::Value(value) => match value {
                 TheValue::Tile(name, _id) => name.clone(),
                 _ => value.describe(),
@@ -932,6 +1187,10 @@ impl TheCodeAtom {
             }
             TheCodeAtom::ObjectSet(object, name, _) => {
                 format!("Set a value to an object variable ({}.{}).", object, name)
+            }
+            TheCodeAtom::Get(name) => format!("Get the value of a variable ({}).", name),
+            TheCodeAtom::Set(name, _) => {
+                format!("Set a value to a variable ({}).", name)
             }
             TheCodeAtom::Value(value) => match value {
                 TheValue::Assignment(_) => self.describe(),
@@ -1012,6 +1271,24 @@ impl TheCodeAtom {
                 let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Func Arg"));
                 name_edit.set_text(name.clone());
                 name_edit.set_needs_redraw(true);
+                layout.add_widget(Box::new(text));
+                layout.add_widget(Box::new(name_edit));
+            }
+            TheCodeAtom::Get(name) => {
+                let mut text = TheText::new(TheId::empty());
+                text.set_text("Path".to_string());
+                let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Get"));
+                name_edit.set_text(name.clone());
+                name_edit.limiter_mut().set_max_width(300);
+                layout.add_widget(Box::new(text));
+                layout.add_widget(Box::new(name_edit));
+            }
+            TheCodeAtom::Set(name, _) => {
+                let mut text = TheText::new(TheId::empty());
+                text.set_text("Path".to_string());
+                let mut name_edit = TheTextLineEdit::new(TheId::named("Atom Set"));
+                name_edit.set_text(name.clone());
+                name_edit.limiter_mut().set_max_width(300);
                 layout.add_widget(Box::new(text));
                 layout.add_widget(Box::new(name_edit));
             }

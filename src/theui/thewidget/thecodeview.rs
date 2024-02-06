@@ -684,6 +684,69 @@ impl TheWidget for TheCodeView {
                                         TheVerticalAlign::Center,
                                     );
                                 }
+                                TheCodeAtom::Get(path) | TheCodeAtom::Set(path, _) => {
+                                    let parts: Vec<String> =
+                                        path.split('.').map(|s| s.to_string()).collect();
+
+                                    if parts.len() == 1 {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &(rect.0 + 4, rect.1, rect.2 - 8, rect.3),
+                                            stride,
+                                            font,
+                                            font_size,
+                                            &parts[0],
+                                            &text_color,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Center,
+                                        );
+                                    }
+                                    else if parts.len() == 2 {
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &(rect.0, rect.1 + 8, rect.2, rect.3 - 16),
+                                            stride,
+                                            font,
+                                            font_size,
+                                            &parts[0],
+                                            &WHITE,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Top,
+                                        );
+                                        ctx.draw.text_rect_blend(
+                                            self.buffer.pixels_mut(),
+                                            &(rect.0 + 4, rect.1, rect.2 - 8, rect.3),
+                                            stride,
+                                            font,
+                                            font_size,
+                                            &parts[1],
+                                            &text_color,
+                                            TheHorizontalAlign::Center,
+                                            TheVerticalAlign::Center,
+                                        );
+                                    }
+
+                                    else {
+                                        for (index, part) in parts.iter().enumerate() {
+                                            ctx.draw.text_rect_blend(
+                                                self.buffer.pixels_mut(),
+                                                &(
+                                                    rect.0 + 2,
+                                                    rect.1 + zoom_const(4 + index * 16, zoom),
+                                                    rect.2 - 4,
+                                                    zoom_const(16, zoom),
+                                                ),
+                                                stride,
+                                                font,
+                                                font_size,
+                                                part,
+                                                if index != 0 { &text_color } else { &WHITE },
+                                                TheHorizontalAlign::Center,
+                                                TheVerticalAlign::Center,
+                                            );
+                                        }
+                                    }
+                                }
                                 TheCodeAtom::ExternalCall(_, _, _, _, _)
                                 | TheCodeAtom::ModuleCall(_, _, _, _) => {
                                     let executed = self.debug_module.executed.contains(&(x, y));

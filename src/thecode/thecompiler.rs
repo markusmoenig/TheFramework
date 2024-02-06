@@ -448,6 +448,34 @@ impl TheCompiler {
                     self.ctx.get_current_function().add_node(node);
                 }
             }
+            TheCodeAtom::Set(path, _) => {
+                self.advance();
+                let var;
+                let location = self.ctx.previous_location;
+
+                match &self.ctx.current {
+                    TheCodeAtom::Assignment(op) => {
+                        var = TheCodeAtom::Set(path, *op);
+                        self.advance();
+                    }
+                    _ => {
+                        self.error_at(
+                            (
+                                self.ctx.previous_location.0 + 1,
+                                self.ctx.previous_location.1,
+                            ),
+                            "Expected assignment operator.",
+                        );
+                        return;
+                    }
+                }
+
+                self.expression();
+                self.ctx.node_location = location;
+                if let Some(node) = var.to_node(&mut self.ctx) {
+                    self.ctx.get_current_function().add_node(node);
+                }
+            }
             _ => {
                 self.statement();
             }
@@ -489,6 +517,7 @@ impl TheCompiler {
 
                     match &self.ctx.current {
                         TheCodeAtom::Value(_)
+                        | TheCodeAtom::Get(_)
                         | TheCodeAtom::LocalGet(_)
                         | TheCodeAtom::ObjectGet(_, _)
                         | TheCodeAtom::RandInt(_)
@@ -594,6 +623,7 @@ impl TheCompiler {
                 }
             }
             TheCodeAtom::Value(_)
+            | TheCodeAtom::Get(_)
             | TheCodeAtom::LocalGet(_)
             | TheCodeAtom::ObjectGet(_, _)
             | TheCodeAtom::RandInt(_)
@@ -684,6 +714,11 @@ impl TheCompiler {
 
     fn variable(&mut self, _can_assing: bool) {
         match self.ctx.previous.clone() {
+            TheCodeAtom::Get(_name) => {
+                if let Some(node) = self.ctx.previous.clone().to_node(&mut self.ctx) {
+                    self.ctx.get_current_function().add_node(node);
+                }
+            }
             TheCodeAtom::LocalGet(_name) => {
                 if let Some(node) = self.ctx.previous.clone().to_node(&mut self.ctx) {
                     self.ctx.get_current_function().add_node(node);
@@ -722,6 +757,7 @@ impl TheCompiler {
 
                     match &self.ctx.current {
                         TheCodeAtom::Value(_)
+                        | TheCodeAtom::Get(_)
                         | TheCodeAtom::LocalGet(_)
                         | TheCodeAtom::ObjectGet(_, _)
                         | TheCodeAtom::RandInt(_)

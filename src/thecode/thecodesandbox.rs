@@ -160,11 +160,9 @@ impl TheCodeSandbox {
         if let Some(id) = self.aliases.get(name) {
             if let Some(object) = self.objects.get_mut(id) {
                 return Some(object);
-            }
-            else if let Some(item) = self.items.get_mut(id) {
+            } else if let Some(item) = self.items.get_mut(id) {
                 return Some(item);
-            }
-            else if let Some(area) = self.areas.get_mut(id) {
+            } else if let Some(area) = self.areas.get_mut(id) {
                 return Some(area);
             }
         }
@@ -176,11 +174,9 @@ impl TheCodeSandbox {
         if let Some(id) = self.aliases.get("self") {
             if let Some(object) = self.objects.get_mut(id) {
                 return Some(object);
-            }
-            else if let Some(item) = self.items.get_mut(id) {
+            } else if let Some(item) = self.items.get_mut(id) {
                 return Some(item);
-            }
-            else if let Some(area) = self.areas.get_mut(id) {
+            } else if let Some(area) = self.areas.get_mut(id) {
                 return Some(area);
             }
         }

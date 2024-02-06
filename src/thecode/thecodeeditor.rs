@@ -362,7 +362,32 @@ impl TheCodeEditor {
                             self.finish_undo(ui, ctx);
                         }
                     }
-                } else if id.name == "Atom Object Get Object" {
+                }
+                else if id.name == "Atom Get" {
+                    if let Some(name) = value.to_string() {
+                        if !name.is_empty() {
+                            self.start_undo(ui);
+                            self.set_selected_atom(
+                                ui,
+                                TheCodeAtom::Get(name),
+                            );
+                            self.finish_undo(ui, ctx);
+                        }
+                    }
+                }
+                else if id.name == "Atom Set" {
+                    if let Some(name) = value.to_string() {
+                        if !name.is_empty() {
+                            self.start_undo(ui);
+                            self.set_selected_atom(
+                                ui,
+                                TheCodeAtom::Set(name, TheValueAssignment::Assign),
+                            );
+                            self.finish_undo(ui, ctx);
+                        }
+                    }
+                }
+                else if id.name == "Atom Object Get Object" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             if let Some(TheCodeAtom::ObjectGet(_object, variable)) =
@@ -702,6 +727,8 @@ impl TheCodeEditor {
                 "name".to_string(),
                 TheValueAssignment::Assign,
             ),
+            "Get" => TheCodeAtom::Get("".to_string()),
+            "Set" => TheCodeAtom::Set("".to_string(), TheValueAssignment::Assign),
             "Empty" => TheCodeAtom::Value(TheValue::Empty),
             "Integer" => TheCodeAtom::Value(TheValue::Int(0)),
             "Float" => TheCodeAtom::Value(TheValue::Float(0.0)),
@@ -961,22 +988,12 @@ impl TheCodeEditor {
             code_layout.add_item(item, ctx);
 
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
-            item.set_text("Object Get".to_string());
+            item.set_text("Get".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
-            item.set_text("Object Set".to_string());
-            item.set_associated_layout(code_layout.id().clone());
-            code_layout.add_item(item, ctx);
-
-            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
-            item.set_text("Local Get".to_string());
-            item.set_associated_layout(code_layout.id().clone());
-            code_layout.add_item(item, ctx);
-
-            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
-            item.set_text("Local Set".to_string());
+            item.set_text("Set".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
         }
