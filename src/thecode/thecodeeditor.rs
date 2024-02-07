@@ -362,20 +362,15 @@ impl TheCodeEditor {
                             self.finish_undo(ui, ctx);
                         }
                     }
-                }
-                else if id.name == "Atom Get" {
+                } else if id.name == "Atom Get" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.start_undo(ui);
-                            self.set_selected_atom(
-                                ui,
-                                TheCodeAtom::Get(name),
-                            );
+                            self.set_selected_atom(ui, TheCodeAtom::Get(name));
                             self.finish_undo(ui, ctx);
                         }
                     }
-                }
-                else if id.name == "Atom Set" {
+                } else if id.name == "Atom Set" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             self.start_undo(ui);
@@ -386,8 +381,7 @@ impl TheCodeEditor {
                             self.finish_undo(ui, ctx);
                         }
                     }
-                }
-                else if id.name == "Atom Object Get Object" {
+                } else if id.name == "Atom Object Get Object" {
                     if let Some(name) = value.to_string() {
                         if !name.is_empty() {
                             if let Some(TheCodeAtom::ObjectGet(_object, variable)) =

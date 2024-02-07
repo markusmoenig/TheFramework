@@ -42,6 +42,8 @@ pub struct TheCodeView {
 
     drag_copy: bool,
     shift_is_down: bool,
+
+    command: String,
 }
 
 impl TheWidget for TheCodeView {
@@ -87,6 +89,8 @@ impl TheWidget for TheCodeView {
 
             drag_copy: false,
             shift_is_down: false,
+
+            command: "".to_string(),
         }
     }
 
@@ -251,16 +255,23 @@ impl TheWidget for TheCodeView {
                 if let Some(code) = code.to_key_code() {
                     if code == TheKeyCode::Return {
                         if let Some(selected) = &mut self.selected {
-                            self.codegrid.move_one_line_down(*selected);
-                            selected.1 += 2;
-                            self.code_is_dirty = true;
-                            redraw = true;
-                            self.hover = None;
-                            ctx.ui.send(TheEvent::CodeEditorChanged(
-                                self.id.clone(),
-                                self.codegrid.clone(),
-                            ));
+                            if !self.command.is_empty() {
+                                self.process_command(self.command.clone(), ctx);
+                                self.command.clear();
+                            } else {
+                                self.codegrid.move_one_line_down(*selected);
+                                selected.1 += 2;
+                                self.code_is_dirty = true;
+                                redraw = true;
+                                self.hover = None;
+                                ctx.ui.send(TheEvent::CodeEditorChanged(
+                                    self.id.clone(),
+                                    self.codegrid.clone(),
+                                ));
+                            }
                         }
+                    } else if code == TheKeyCode::Escape {
+                        self.command.clear();
                     } else if code == TheKeyCode::Delete {
                         if let Some(selected) = self.selected {
                             self.selected = Some(self.codegrid.delete(selected));
@@ -288,6 +299,56 @@ impl TheWidget for TheCodeView {
                                 self.codegrid.clone(),
                             ));
                         }
+                    } else if code == TheKeyCode::Left {
+                        if self.selected.is_none() {
+                            self.selected = Some((0, 0));
+                        }
+
+                        if let Some(selected) = &mut self.selected {
+                            if selected.0 > 0 {
+                                selected.0 -= 1;
+                                self.code_is_dirty = true;
+                                redraw = true;
+                            }
+                        }
+                    } else if code == TheKeyCode::Up {
+                        if self.selected.is_none() {
+                            self.selected = Some((0, 0));
+                        }
+
+                        if let Some(selected) = &mut self.selected {
+                            if selected.1 > 1 {
+                                selected.1 -= 2;
+                                self.code_is_dirty = true;
+                                redraw = true;
+                            }
+                        }
+                    } else if code == TheKeyCode::Right {
+                        if self.selected.is_none() {
+                            self.selected = Some((0, 0));
+                        }
+                        if let Some(selected) = &mut self.selected {
+                            if let Some(minmax) = self.codegrid.max_xy() {
+                                if selected.0 < minmax.0 + 2 {
+                                    selected.0 += 1;
+                                    self.code_is_dirty = true;
+                                    redraw = true;
+                                }
+                            }
+                        }
+                    } else if code == TheKeyCode::Down {
+                        if self.selected.is_none() {
+                            self.selected = Some((0, 0));
+                        }
+                        if let Some(selected) = &mut self.selected {
+                            if let Some(minmax) = self.codegrid.max_xy() {
+                                if selected.1 < minmax.1 + 2 {
+                                    selected.1 += 2;
+                                    self.code_is_dirty = true;
+                                    redraw = true;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -306,6 +367,11 @@ impl TheWidget for TheCodeView {
                     redraw = true;
                     self.is_dirty = true;
                     self.code_is_dirty = true;
+                }
+            }
+            TheEvent::KeyDown(key) => {
+                if let Some(key) = key.to_char() {
+                    self.command.push(key);
                 }
             }
             _ => {}
@@ -700,8 +766,7 @@ impl TheWidget for TheCodeView {
                                             TheHorizontalAlign::Center,
                                             TheVerticalAlign::Center,
                                         );
-                                    }
-                                    else if parts.len() == 2 {
+                                    } else if parts.len() == 2 {
                                         ctx.draw.text_rect_blend(
                                             self.buffer.pixels_mut(),
                                             &(rect.0, rect.1 + 8, rect.2, rect.3 - 16),
@@ -724,9 +789,7 @@ impl TheWidget for TheCodeView {
                                             TheHorizontalAlign::Center,
                                             TheVerticalAlign::Center,
                                         );
-                                    }
-
-                                    else {
+                                    } else {
                                         for (index, part) in parts.iter().enumerate() {
                                             ctx.draw.text_rect_blend(
                                                 self.buffer.pixels_mut(),
@@ -948,6 +1011,9 @@ impl TheWidget for TheCodeView {
 
 /// `TheCodeViewTrait` trait defines a set of functionalities specifically for `TheCodeView` widget.
 pub trait TheCodeViewTrait: TheWidget {
+    /// Processes a command string for the current location.
+    fn process_command(&mut self, command: String, ctx: &mut TheContext);
+
     /// Adjusts the buffer size to match the size of the code grid. This ensures
     /// that the buffer is correctly sized to fit the grid layout.
     fn adjust_buffer_to_grid(&mut self) -> (u16, u16);
@@ -1017,6 +1083,27 @@ pub trait TheCodeViewTrait: TheWidget {
 }
 
 impl TheCodeViewTrait for TheCodeView {
+    fn process_command(&mut self, command: String, ctx: &mut TheContext) {
+
+        println!("Command: {}", command);
+
+        let mut atom: Option<TheCodeAtom> = None;
+        if let Some(selection) = self.selected {
+
+            if command == "=" && selection.0 % 2 == 1 {
+                atom = Some(TheCodeAtom::Assignment(TheValueAssignment::Assign));
+            }
+        }
+
+        if let Some(atom) = atom {
+            self.set_grid_atom(self.selected.unwrap(), atom);
+            ctx.ui.send(TheEvent::CodeEditorChanged(
+                self.id.clone(),
+                self.codegrid.clone(),
+            ));
+        }
+    }
+
     fn adjust_buffer_to_grid(&mut self) -> (u16, u16) {
         let size = self.codegrid.max_xy();
 
@@ -1103,7 +1190,6 @@ impl TheCodeViewTrait for TheCodeView {
         self.codegrid.code.insert(coord, atom);
         self.code_is_dirty = true;
         self.is_dirty = true;
-        self.code_is_dirty = true;
     }
     fn get_code_grid_offset(&self, coord: Vec2i) -> Option<(u16, u16)> {
         let centered_offset_x = 0.0;

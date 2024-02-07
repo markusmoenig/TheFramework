@@ -21,6 +21,8 @@ pub struct TheListItem {
     scroll_offset: i32,
 
     values: Vec<(i32, TheValue)>,
+
+    context_menu: Option<TheContextMenu>,
 }
 
 impl TheWidget for TheListItem {
@@ -52,6 +54,8 @@ impl TheWidget for TheListItem {
             scroll_offset: 0,
 
             values: Vec::new(),
+
+            context_menu: None,
         }
     }
 
@@ -59,14 +63,26 @@ impl TheWidget for TheListItem {
         &self.id
     }
 
+    fn set_context_menu(&mut self, menu: Option<TheContextMenu>) {
+        self.context_menu = menu;
+    }
+
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
-            // TheEvent::Context(coord) => {
-            //     ctx.ui
-            //         .send(TheEvent::ShowContextMenu(self.id().clone(), *coord));
-            // }
+            TheEvent::Context(coord) => {
+                if let Some(context_menu) = &self.context_menu {
+                    ctx.ui.send(TheEvent::ShowContextMenu(
+                        self.id().clone(),
+                        *coord,
+                        context_menu.clone(),
+                    ));
+                    ctx.ui.set_focus(self.id());
+                    redraw = true;
+                    self.is_dirty = true;
+                }
+            }
             TheEvent::MouseDown(coord) => {
                 if self.state != TheWidgetState::Selected || !self.id().equals(&ctx.ui.focus) {
                     self.is_dirty = true;

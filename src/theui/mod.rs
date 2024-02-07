@@ -110,6 +110,7 @@ pub enum TheDialogButtonRole {
     Accept,
     Reject,
     Delete,
+    Rename,
 }
 
 impl TheDialogButtonRole {
@@ -118,6 +119,7 @@ impl TheDialogButtonRole {
             Self::Accept => "Accept",
             Self::Reject => "Cancel",
             Self::Delete => "Delete",
+            Self::Rename => "Delete",
         }
     }
     pub fn to_id(self) -> &'static str {
@@ -125,10 +127,11 @@ impl TheDialogButtonRole {
             Self::Accept => "TheDialogButtonRole::Accept",
             Self::Reject => "TheDialogButtonRole::Reject",
             Self::Delete => "TheDialogButtonRole::Delete",
+            Self::Rename => "TheDialogButtonRole::Rename",
         }
     }
     pub fn iterator() -> impl Iterator<Item = TheDialogButtonRole> {
-        [Self::Accept, Self::Reject, Self::Delete].iter().copied()
+        [Self::Accept, Self::Reject, Self::Delete, Self::Rename].iter().copied()
     }
 }
 

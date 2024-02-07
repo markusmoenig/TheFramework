@@ -93,6 +93,7 @@ pub fn open_text_dialog(
     window_title: &str,
     title: &str,
     text: &str,
+    uuid: Uuid,
     ui: &mut TheUI,
     ctx: &mut TheContext,
 ) {
@@ -106,7 +107,7 @@ pub fn open_text_dialog(
     text_layout.set_margin(vec4i(20, 20, 20, 20));
 
     text_layout.limiter_mut().set_max_width(width);
-    let mut name_edit = TheTextLineEdit::new(TheId::named("Dialog Value"));
+    let mut name_edit = TheTextLineEdit::new(TheId::named_with_id("Dialog Value", uuid));
     name_edit.set_text(text.to_string());
     name_edit.limiter_mut().set_max_width(200);
     text_layout.add_pair(title.to_string(), Box::new(name_edit));
