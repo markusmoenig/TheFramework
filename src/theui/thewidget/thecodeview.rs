@@ -494,7 +494,7 @@ impl TheWidget for TheCodeView {
                 .rect(self.buffer.pixels_mut(), &utuple, stride, &background);
 
             // let border_color = dark;
-            let font_size = 13.0_f32 * self.zoom;
+            let font_size = 12.5_f32 * self.zoom;
 
             let grid_size = ceil(self.grid_size as f32 * self.zoom) as i32;
             //let rounding = 10.0 * self.zoom;
@@ -826,12 +826,27 @@ impl TheWidget for TheCodeView {
                                         TheVerticalAlign::Center,
                                     );
                                 }
+                                TheCodeAtom::Assignment(_) | TheCodeAtom::Comparison(_) => {
+                                    let executed = self.debug_module.executed.contains(&(x, y));
+                                    let c = if executed { &WHITE } else { &text_color };
+                                    ctx.draw.text_rect_blend(
+                                        self.buffer.pixels_mut(),
+                                        &(rect.0 + 8, rect.1, rect.2 - 8, rect.3),
+                                        stride,
+                                        font,
+                                        font_size,
+                                        &atom.describe(),
+                                        c,
+                                        TheHorizontalAlign::Center,
+                                        TheVerticalAlign::Center,
+                                    );
+                                }
                                 _ => {
                                     let executed = self.debug_module.executed.contains(&(x, y));
                                     let c = if executed { &WHITE } else { &text_color };
                                     ctx.draw.text_rect_blend(
                                         self.buffer.pixels_mut(),
-                                        &(rect.0 + 4, rect.1, rect.2 - 8, rect.3),
+                                        &(rect.0 + 2, rect.1, rect.2 - 4, rect.3),
                                         stride,
                                         font,
                                         font_size,

@@ -102,6 +102,16 @@ pub mod prelude {
     pub use crate::theui::theundo::*;
 
     pub use crate::theui::TheDialogButtonRole;
+
+    pub use crate::str;
+}
+
+// Define a macro named `str!`.
+#[macro_export]
+macro_rules! str {
+    ($x:expr) => {
+        $x.to_string()
+    };
 }
 
 /// The roles for dialog buttons.

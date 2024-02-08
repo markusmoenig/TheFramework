@@ -711,11 +711,11 @@ impl TheCodeEditor {
         match name {
             "Assignment" => TheCodeAtom::Assignment(TheValueAssignment::Assign),
             "Comparison" => TheCodeAtom::Comparison(TheValueComparison::Equal),
-            "Argument" => TheCodeAtom::Argument("Var".to_string()),
+            "Argument" => TheCodeAtom::Argument("var".to_string()),
             "Return" => TheCodeAtom::Return,
-            "Local Get" => TheCodeAtom::LocalGet("Var".to_string()),
-            "Local Set" => TheCodeAtom::LocalSet("Var".to_string(), TheValueAssignment::Assign),
-            "Object Get" => TheCodeAtom::ObjectGet("self".to_string(), "VarName".to_string()),
+            "Local Get" => TheCodeAtom::LocalGet("var".to_string()),
+            "Local Set" => TheCodeAtom::LocalSet("var".to_string(), TheValueAssignment::Assign),
+            "Object Get" => TheCodeAtom::ObjectGet("self".to_string(), "name".to_string()),
             "Object Set" => TheCodeAtom::ObjectSet(
                 "self".to_string(),
                 "name".to_string(),
@@ -728,7 +728,9 @@ impl TheCodeEditor {
             "Float" => TheCodeAtom::Value(TheValue::Float(0.0)),
             "Bool" => TheCodeAtom::Value(TheValue::Bool(false)),
             "Text" => TheCodeAtom::Value(TheValue::Text("".to_string())),
-            "Tile" => TheCodeAtom::Value(TheValue::Tile("Name".into(), Uuid::nil())),
+            "Object" => TheCodeAtom::Value(TheValue::CodeObject(TheCodeObject::default())),
+            "List" => TheCodeAtom::Value(TheValue::List(vec![])),
+            "Tile" => TheCodeAtom::Value(TheValue::Tile("name".into(), Uuid::nil())),
             "Float2" => TheCodeAtom::Value(TheValue::Float2(vec2f(0.0, 0.0))),
             "Float3" => TheCodeAtom::Value(TheValue::Float3(vec3f(0.0, 0.0, 0.0))),
             "Position" => TheCodeAtom::Value(TheValue::Position(vec3f(0.0, 0.0, 0.0))),
@@ -1015,6 +1017,16 @@ impl TheCodeEditor {
 
             let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
             item.set_text("Text".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("Object".to_string());
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);
+
+            let mut item = TheListItem::new(TheId::named("Code Editor Code List Item"));
+            item.set_text("List".to_string());
             item.set_associated_layout(code_layout.id().clone());
             code_layout.add_item(item, ctx);
 

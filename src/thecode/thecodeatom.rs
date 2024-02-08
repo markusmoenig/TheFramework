@@ -734,9 +734,9 @@ impl TheCodeAtom {
                                             object.set(parts[0].clone(), value);
                                         }
                                         TheValueAssignment::AddAssign => {
-                                            if let Some(left) = object.get(&name) {
-                                                // Handle special String case
+                                            if let Some(left) = object.get_mut(&name) {
                                                 if let TheValue::Text(a) = left {
+                                                    // Handle special String case
                                                     let result = TheValue::Text(format!(
                                                         "{} {}",
                                                         a,
@@ -746,7 +746,12 @@ impl TheCodeAtom {
                                                         *dv = result.clone();
                                                     }
                                                     object.set(name, result);
-                                                } else if let Some(result) =
+                                                }
+                                                else if let TheValue::List(list) = left {
+                                                    // += on a list, add the value.
+                                                    list.push(value);
+                                                }
+                                                else if let Some(result) =
                                                     TheValue::add(left, &value)
                                                 {
                                                     if let Some(dv) = debug_value {
@@ -1196,7 +1201,8 @@ impl TheCodeAtom {
                 TheValue::Assignment(_) => self.describe(),
                 TheValue::Comparison(_) => self.describe(),
                 TheValue::Bool(_v) => format!("Boolean constant ({}).", self.describe()),
-                TheValue::CodeObject(_v) => "An Object.".to_string(),
+                TheValue::CodeObject(_v) => "An object.".to_string(),
+                TheValue::List(_v) => "A list of values.".to_string(),
                 TheValue::Int(v) => format!("Integer constant ({}).", v),
                 TheValue::Float(_v) => format!("Float constant ({}).", value.describe()),
                 TheValue::Text(v) => format!("Text constant ({}).", v),
