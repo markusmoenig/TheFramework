@@ -141,7 +141,9 @@ impl TheDialogButtonRole {
         }
     }
     pub fn iterator() -> impl Iterator<Item = TheDialogButtonRole> {
-        [Self::Accept, Self::Reject, Self::Delete, Self::Rename].iter().copied()
+        [Self::Accept, Self::Reject, Self::Delete, Self::Rename]
+            .iter()
+            .copied()
     }
 }
 
@@ -458,6 +460,8 @@ impl TheUI {
     pub fn touch_down(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
+
+        ctx.ui.clear_focus();
 
         if let Some(context) = &mut self.context_menu {
             if context.dim.contains(coord) {
@@ -776,10 +780,18 @@ impl TheUI {
         None
     }
 
-    /// Gets a given TheSharedLayout by name
-    pub fn get_shared_layout(&mut self, name: &str) -> Option<&mut dyn TheSharedLayoutTrait> {
+    /// Gets a given TheSharedHLayout by name
+    pub fn get_sharedhlayout(&mut self, name: &str) -> Option<&mut dyn TheSharedHLayoutTrait> {
         if let Some(layout) = self.canvas.get_layout(Some(&name.to_string()), None) {
-            return layout.as_shared_layout();
+            return layout.as_sharedhlayout();
+        }
+        None
+    }
+
+    /// Gets a given TheSharedVLayout by name
+    pub fn get_sharedvlayout(&mut self, name: &str) -> Option<&mut dyn TheSharedVLayoutTrait> {
+        if let Some(layout) = self.canvas.get_layout(Some(&name.to_string()), None) {
+            return layout.as_sharedvlayout();
         }
         None
     }

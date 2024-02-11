@@ -746,12 +746,10 @@ impl TheCodeAtom {
                                                         *dv = result.clone();
                                                     }
                                                     object.set(name, result);
-                                                }
-                                                else if let TheValue::List(list) = left {
+                                                } else if let TheValue::List(list) = left {
                                                     // += on a list, add the value.
                                                     list.push(value);
-                                                }
-                                                else if let Some(result) =
+                                                } else if let Some(result) =
                                                     TheValue::add(left, &value)
                                                 {
                                                     if let Some(dv) = debug_value {

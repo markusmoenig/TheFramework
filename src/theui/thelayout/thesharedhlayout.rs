@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 /// The layout mode.
 #[derive(PartialEq, Clone, Debug)]
-pub enum TheSharedLayoutMode {
+pub enum TheSharedHLayoutMode {
     ///
     Left,
     ////
@@ -11,11 +11,11 @@ pub enum TheSharedLayoutMode {
     Right,
 }
 
-pub struct TheSharedLayout {
+pub struct TheSharedHLayout {
     id: TheId,
     limiter: TheSizeLimiter,
 
-    mode: TheSharedLayoutMode,
+    mode: TheSharedHLayoutMode,
     dim: TheDim,
 
     margin: Vec4i,
@@ -28,7 +28,7 @@ pub struct TheSharedLayout {
     ratio: f32,
 }
 
-impl TheLayout for TheSharedLayout {
+impl TheLayout for TheSharedHLayout {
     fn new(id: TheId) -> Self
     where
         Self: Sized,
@@ -36,7 +36,7 @@ impl TheLayout for TheSharedLayout {
         Self {
             id,
             limiter: TheSizeLimiter::new(),
-            mode: TheSharedLayoutMode::Left,
+            mode: TheSharedHLayoutMode::Left,
 
             dim: TheDim::zero(),
 
@@ -76,9 +76,9 @@ impl TheLayout for TheSharedLayout {
             return None;
         }
 
-        if self.mode == TheSharedLayoutMode::Left {
+        if self.mode == TheSharedHLayoutMode::Left {
             return self.canvas[0].get_widget_at_coord(coord);
-        } else if self.mode == TheSharedLayoutMode::Right {
+        } else if self.mode == TheSharedHLayoutMode::Right {
             return self.canvas[1].get_widget_at_coord(coord);
         } else {
             for c in &mut self.canvas {
@@ -99,9 +99,9 @@ impl TheLayout for TheSharedLayout {
             return None;
         }
 
-        if self.mode == TheSharedLayoutMode::Left {
+        if self.mode == TheSharedHLayoutMode::Left {
             return self.canvas[0].get_widget(name, uuid);
-        } else if self.mode == TheSharedLayoutMode::Right {
+        } else if self.mode == TheSharedHLayoutMode::Right {
             return self.canvas[1].get_widget(name, uuid);
         } else {
             for c in &mut self.canvas {
@@ -121,9 +121,9 @@ impl TheLayout for TheSharedLayout {
         if self.canvas.len() < 2 {
             return None;
         }
-        if self.mode == TheSharedLayoutMode::Left {
+        if self.mode == TheSharedHLayoutMode::Left {
             return self.canvas[0].get_layout(name, uuid);
-        } else if self.mode == TheSharedLayoutMode::Right {
+        } else if self.mode == TheSharedHLayoutMode::Right {
             return self.canvas[1].get_layout(name, uuid);
         } else {
             for c in &mut self.canvas {
@@ -151,9 +151,9 @@ impl TheLayout for TheSharedLayout {
                 return;
             }
 
-            if self.mode == TheSharedLayoutMode::Left {
+            if self.mode == TheSharedHLayoutMode::Left {
                 self.canvas[0].set_dim(dim, ctx);
-            } else if self.mode == TheSharedLayoutMode::Right {
+            } else if self.mode == TheSharedHLayoutMode::Right {
                 self.canvas[1].set_dim(dim, ctx);
             } else {
                 self.canvas[0].set_dim(
@@ -207,7 +207,7 @@ impl TheLayout for TheSharedLayout {
             );
         }
 
-        if self.mode == TheSharedLayoutMode::Left {
+        if self.mode == TheSharedHLayoutMode::Left {
             self.canvas[0].draw(style, ctx);
 
             buffer.copy_into(
@@ -215,7 +215,7 @@ impl TheLayout for TheSharedLayout {
                 self.dim.buffer_y,
                 self.canvas[0].buffer(),
             );
-        } else if self.mode == TheSharedLayoutMode::Right {
+        } else if self.mode == TheSharedHLayoutMode::Right {
             self.canvas[1].draw(style, ctx);
             buffer.copy_into(
                 self.dim.buffer_x,
@@ -240,26 +240,26 @@ impl TheLayout for TheSharedLayout {
         }
     }
 
-    fn as_shared_layout(&mut self) -> Option<&mut dyn TheSharedLayoutTrait> {
+    fn as_sharedhlayout(&mut self) -> Option<&mut dyn TheSharedHLayoutTrait> {
         Some(self)
     }
 }
 
 /// TheHLayout specific functions.
-pub trait TheSharedLayoutTrait: TheLayout {
+pub trait TheSharedHLayoutTrait: TheLayout {
     /// Add a canvas.
     fn add_canvas(&mut self, canvas: TheCanvas);
     /// Set the layout mode.
-    fn set_mode(&mut self, mode: TheSharedLayoutMode);
+    fn set_mode(&mut self, mode: TheSharedHLayoutMode);
     // Se the shared ratio. Default is 0.5.
     fn set_shared_ratio(&mut self, ratio: f32);
 }
 
-impl TheSharedLayoutTrait for TheSharedLayout {
+impl TheSharedHLayoutTrait for TheSharedHLayout {
     fn add_canvas(&mut self, canvas: TheCanvas) {
         self.canvas.push(canvas);
     }
-    fn set_mode(&mut self, mode: TheSharedLayoutMode) {
+    fn set_mode(&mut self, mode: TheSharedHLayoutMode) {
         self.mode = mode;
     }
     fn set_shared_ratio(&mut self, ratio: f32) {

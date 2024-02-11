@@ -177,7 +177,7 @@ impl TheTrait for CodeEditor {
 
         let bundle_canvas =
             self.editor
-                .set_bundle(self.project.bundle.clone(), ctx, self.right_width);
+                .set_bundle(self.project.bundle.clone(), ctx, self.right_width, None);
         ui.canvas.set_right(bundle_canvas);
 
         let mut status_canvas = TheCanvas::new();
@@ -214,6 +214,7 @@ impl TheTrait for CodeEditor {
                                     self.project.bundle.clone(),
                                     ctx,
                                     self.right_width,
+                                    None,
                                 ));
                                 redraw = true;
                                 ctx.ui.send(TheEvent::SetStatusText(

@@ -64,6 +64,8 @@ impl TheWidget for TheTabbar {
                 if index >= 0 && index < self.tabs.len() as i32 {
                     if Some(index) != self.selected_index {
                         self.selected_index = Some(index);
+                        ctx.ui
+                            .send(TheEvent::IndexChanged(self.id.clone(), index as usize));
                         redraw = true;
                         self.is_dirty = true;
                     }

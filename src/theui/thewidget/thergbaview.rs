@@ -28,6 +28,9 @@ pub struct TheRGBAView {
     hover: Option<(i32, i32)>,
     drop: Option<(i32, i32)>,
 
+    rectangular_selection: bool,
+    rectangle_start: Option<(i32, i32)>,
+
     last_loc: (i32, i32),
 
     hscrollbar: TheId,
@@ -72,6 +75,9 @@ impl TheWidget for TheRGBAView {
             hover_color: None,
             hover: None,
             drop: None,
+
+            rectangular_selection: false,
+            rectangle_start: None,
 
             last_loc: (0, 0),
 
@@ -132,12 +138,18 @@ impl TheWidget for TheRGBAView {
                     if let Some(loc) = self.get_grid_location(*coord) {
                         self.last_loc = loc;
                         if self.mode == TheRGBAViewMode::TileSelection {
-                            if self.selected.contains(&(loc.0, loc.1)) {
-                                self.selected.remove(&(loc.0, loc.1));
-                            } else {
+                            if self.rectangular_selection {
+                                self.rectangle_start = Some(loc);
+                                self.selected.clear();
                                 self.selected.insert((loc.0, loc.1));
+                            } else {
+                                if self.selected.contains(&(loc.0, loc.1)) {
+                                    self.selected.remove(&(loc.0, loc.1));
+                                } else {
+                                    self.selected.insert((loc.0, loc.1));
+                                }
+                                ctx.ui.send(TheEvent::TileSelectionChanged(self.id.clone()));
                             }
-                            ctx.ui.send(TheEvent::TileSelectionChanged(self.id.clone()));
                         } else if self.mode == TheRGBAViewMode::TilePicker {
                             self.selected.clear();
                             self.selected.insert((loc.0, loc.1));
@@ -171,12 +183,36 @@ impl TheWidget for TheRGBAView {
                         if loc != self.last_loc {
                             self.last_loc = loc;
                             if self.mode == TheRGBAViewMode::TileSelection {
-                                if self.selected.contains(&(loc.0, loc.1)) {
-                                    self.selected.remove(&(loc.0, loc.1));
+                                if self.rectangular_selection {
+                                    if let Some(rectangle_start) = self.rectangle_start {
+                                        let mut min_x = rectangle_start.0;
+                                        let mut min_y = rectangle_start.1;
+                                        let mut max_x = self.last_loc.0;
+                                        let mut max_y = self.last_loc.1;
+
+                                        if min_x > max_x {
+                                            std::mem::swap(&mut min_x, &mut max_x);
+                                        }
+                                        if min_y > max_y {
+                                            std::mem::swap(&mut min_y, &mut max_y);
+                                        }
+
+                                        self.selected.clear();
+
+                                        for x in min_x..=max_x {
+                                            for y in min_y..=max_y {
+                                                self.selected.insert((x, y));
+                                            }
+                                        }
+                                    }
                                 } else {
-                                    self.selected.insert((loc.0, loc.1));
+                                    if self.selected.contains(&(loc.0, loc.1)) {
+                                        self.selected.remove(&(loc.0, loc.1));
+                                    } else {
+                                        self.selected.insert((loc.0, loc.1));
+                                    }
+                                    ctx.ui.send(TheEvent::TileSelectionChanged(self.id.clone()));
                                 }
-                                ctx.ui.send(TheEvent::TileSelectionChanged(self.id.clone()));
                             } else if self.mode == TheRGBAViewMode::TilePicker {
                                 self.selected.clear();
                                 self.selected.insert((loc.0, loc.1));
@@ -198,7 +234,31 @@ impl TheWidget for TheRGBAView {
             }
             TheEvent::MouseUp(_id) => {
                 self.drop = None;
-                if self.mode == TheRGBAViewMode::TileEditor {
+                if self.mode == TheRGBAViewMode::TileSelection {
+                    if self.rectangular_selection {
+                        if let Some(rectangle_start) = self.rectangle_start {
+                            let mut min_x = rectangle_start.0;
+                            let mut min_y = rectangle_start.1;
+                            let mut max_x = self.last_loc.0;
+                            let mut max_y = self.last_loc.1;
+
+                            if min_x > max_x {
+                                std::mem::swap(&mut min_x, &mut max_x);
+                            }
+                            if min_y > max_y {
+                                std::mem::swap(&mut min_y, &mut max_y);
+                            }
+
+                            for x in min_x..=max_x {
+                                for y in min_y..=max_y {
+                                    self.selected.insert((x, y));
+                                }
+                            }
+                            ctx.ui.send(TheEvent::TileSelectionChanged(self.id.clone()));
+                            self.rectangle_start = None;
+                        }
+                    }
+                } else if self.mode == TheRGBAViewMode::TileEditor {
                     ctx.ui.send(TheEvent::TileEditorUp(self.id.clone()));
                 }
             }
@@ -465,9 +525,51 @@ impl TheWidget for TheRGBAView {
                 if self.mode == TheRGBAViewMode::TileSelection {
                     if let Some(grid) = self.grid {
                         if src_x as i32 % grid == 0 || src_y as i32 % grid == 0 {
-                            target.pixels_mut()[target_index..target_index + 4]
-                                .copy_from_slice(&self.grid_color);
-                            continue;
+                            if self.rectangular_selection {
+                                let centered_offset_x = if (self.zoom
+                                    * self.buffer.dim().width as f32)
+                                    < self.dim.width as f32
+                                {
+                                    (self.dim.width as f32
+                                        - self.zoom * self.buffer.dim().width as f32)
+                                        / 2.0
+                                } else {
+                                    0.0
+                                };
+                                let centered_offset_y = if (self.zoom
+                                    * self.buffer.dim().height as f32)
+                                    < self.dim.height as f32
+                                {
+                                    (self.dim.height as f32
+                                        - self.zoom * self.buffer.dim().height as f32)
+                                        / 2.0
+                                } else {
+                                    0.0
+                                };
+
+                                let source_x = (((target_x as f32 - centered_offset_x)
+                                    + self.scroll_offset.x as f32)
+                                    / self.zoom)
+                                    .round() as i32;
+                                let source_y = (((target_y as f32 - centered_offset_y)
+                                    + self.scroll_offset.y as f32)
+                                    / self.zoom)
+                                    .round() as i32;
+
+                                if source_x >= 0
+                                    && source_x < self.buffer.dim().width
+                                    && source_y >= 0
+                                    && source_y < self.buffer.dim().height
+                                {
+                                    target.pixels_mut()[target_index..target_index + 4]
+                                        .copy_from_slice(&self.grid_color);
+                                    continue;
+                                }
+                            } else {
+                                target.pixels_mut()[target_index..target_index + 4]
+                                    .copy_from_slice(&self.grid_color);
+                                continue;
+                            }
                         }
                     }
                 }
@@ -601,9 +703,13 @@ pub trait TheRGBAViewTrait: TheWidget {
     fn selection_as_tile(&self) -> TheRGBATile;
     fn set_selection(&mut self, selection: FxHashSet<(i32, i32)>);
     fn set_mode(&mut self, mode: TheRGBAViewMode);
+    fn set_rectangular_selection(&mut self, rectangular_selection: bool);
 }
 
 impl TheRGBAViewTrait for TheRGBAView {
+    fn set_rectangular_selection(&mut self, rectangular_selection: bool) {
+        self.rectangular_selection = rectangular_selection;
+    }
     fn get_grid_location(&self, coord: Vec2i) -> Option<(i32, i32)> {
         if let Some(grid) = self.grid {
             let centered_offset_x =
@@ -619,11 +725,17 @@ impl TheRGBAViewTrait for TheRGBAView {
                     0.0
                 };
 
-            let source_x = ((coord.x as f32 - centered_offset_x) / self.zoom
-                + self.scroll_offset.x as f32 / self.zoom)
+            // let source_x = ((coord.x as f32 - centered_offset_x) / self.zoom
+            //     + self.scroll_offset.x as f32 / self.zoom)
+            //     .round() as i32;
+            // let source_y = ((coord.y as f32 - centered_offset_y) / self.zoom
+            //     + self.scroll_offset.y as f32 / self.zoom)
+            //     .round() as i32;
+            let source_x = (((coord.x as f32 - centered_offset_x) + self.scroll_offset.x as f32)
+                / self.zoom)
                 .round() as i32;
-            let source_y = ((coord.y as f32 - centered_offset_y) / self.zoom
-                + self.scroll_offset.y as f32 / self.zoom)
+            let source_y = (((coord.y as f32 - centered_offset_y) + self.scroll_offset.y as f32)
+                / self.zoom)
                 .round() as i32;
 
             if source_x >= 0

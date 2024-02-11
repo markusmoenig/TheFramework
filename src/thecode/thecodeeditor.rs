@@ -892,6 +892,7 @@ impl TheCodeEditor {
         bundle: TheCodeBundle,
         ctx: &mut TheContext,
         width: i32,
+        height: Option<i32>,
     ) -> TheCanvas {
         ctx.ui.relayout = true;
         self.bundle = bundle;
@@ -900,7 +901,7 @@ impl TheCodeEditor {
 
         let mut settings_header = TheCanvas::new();
         let mut switchbar = TheSwitchbar::new(TheId::empty());
-        switchbar.set_text("Codes".to_string());
+        switchbar.set_text("Functions".to_string());
         settings_header.set_widget(switchbar);
 
         canvas.set_top(settings_header);
@@ -909,6 +910,9 @@ impl TheCodeEditor {
 
         let mut list_canvas: TheCanvas = TheCanvas::new();
         list_canvas.limiter_mut().set_max_width(width);
+        if let Some(height) = height{
+            list_canvas.limiter_mut().set_max_height(height);
+        }
 
         let mut code_layout = TheListLayout::new(TheId::named("CodeGrid List"));
 

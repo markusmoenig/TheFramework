@@ -1099,12 +1099,10 @@ pub trait TheCodeViewTrait: TheWidget {
 
 impl TheCodeViewTrait for TheCodeView {
     fn process_command(&mut self, command: String, ctx: &mut TheContext) {
-
         println!("Command: {}", command);
 
         let mut atom: Option<TheCodeAtom> = None;
         if let Some(selection) = self.selected {
-
             if command == "=" && selection.0 % 2 == 1 {
                 atom = Some(TheCodeAtom::Assignment(TheValueAssignment::Assign));
             }

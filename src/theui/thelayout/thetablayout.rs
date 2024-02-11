@@ -19,11 +19,11 @@ impl TheLayout for TheTabLayout {
         Self: Sized,
     {
         Self {
-            id,
+            id: id.clone(),
             dim: TheDim::zero(),
             limiter: TheSizeLimiter::new(),
 
-            tabbar: Box::new(TheTabbar::new(TheId::named("Tabbar"))),
+            tabbar: Box::new(TheTabbar::new(TheId::named((id.name + " Tabbar").as_str()))),
 
             canvas: vec![],
             widgets: vec![],

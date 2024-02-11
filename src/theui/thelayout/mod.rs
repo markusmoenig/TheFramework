@@ -5,7 +5,8 @@ pub mod thecodelayout;
 pub mod thehlayout;
 pub mod thelistlayout;
 pub mod thergbalayout;
-pub mod thesharedlayout;
+pub mod thesharedhlayout;
+pub mod thesharedvlayout;
 pub mod thesnapperlayout;
 pub mod thestacklayout;
 pub mod thetablayout;
@@ -18,9 +19,8 @@ pub mod prelude {
     pub use crate::theui::thelayout::thehlayout::{TheHLayout, TheHLayoutMode, TheHLayoutTrait};
     pub use crate::theui::thelayout::thelistlayout::{TheListLayout, TheListLayoutTrait};
     pub use crate::theui::thelayout::thergbalayout::{TheRGBALayout, TheRGBALayoutTrait};
-    pub use crate::theui::thelayout::thesharedlayout::{
-        TheSharedLayout, TheSharedLayoutMode, TheSharedLayoutTrait,
-    };
+    pub use crate::theui::thelayout::thesharedhlayout::*;
+    pub use crate::theui::thelayout::thesharedvlayout::*;
     pub use crate::theui::thelayout::thesnapperlayout::{TheSnapperLayout, TheSnapperLayoutTrait};
     pub use crate::theui::thelayout::thestacklayout::{TheStackLayout, TheStackLayoutTrait};
     pub use crate::theui::thelayout::thetablayout::{TheTabLayout, TheTabLayoutTrait};
@@ -131,8 +131,13 @@ pub trait TheLayout: Send {
         None
     }
 
-    /// Attempts to cast to TheSharedLayoutTrait. Only valid for TheSharedLayout.
-    fn as_shared_layout(&mut self) -> Option<&mut dyn TheSharedLayoutTrait> {
+    /// Attempts to cast to TheSharedHLayoutTrait. Only valid for TheSharedHLayout.
+    fn as_sharedhlayout(&mut self) -> Option<&mut dyn TheSharedHLayoutTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheSharedVLayoutTrait. Only valid for TheSharedVLayout.
+    fn as_sharedvlayout(&mut self) -> Option<&mut dyn TheSharedVLayoutTrait> {
         None
     }
 
