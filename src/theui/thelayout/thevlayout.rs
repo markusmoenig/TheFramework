@@ -147,7 +147,9 @@ impl TheLayout for TheVLayout {
                         }
 
                         let mut x = self.margin.x;
-                        if self.dim.width > self.margin.x + self.margin.z {
+                        if /*self.alignment == TheHorizontalAlign::Center
+                            &&*/ self.dim.width > self.margin.x + self.margin.z
+                        {
                             let off = (self.dim.width - self.margin.x - self.margin.z - width) / 2;
                             if x + off + width < self.dim.width {
                                 x += off;

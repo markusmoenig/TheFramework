@@ -275,6 +275,16 @@ impl TheCodeSandbox {
 
         self.debug_messages.push(debug_message);
     }
+
+    /// Create an instance from json.
+    pub fn from_json(json: &str) -> Self {
+        serde_json::from_str(json).unwrap_or_default()
+    }
+
+    /// Convert the instance to json.
+    pub fn to_json(&self) -> String {
+        serde_json::to_string(&self).unwrap_or_default()
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

@@ -18,6 +18,8 @@ pub struct TheTraybarButton {
 
     dim: TheDim,
     is_dirty: bool,
+
+    context_menu: Option<TheContextMenu>,
 }
 
 impl TheWidget for TheTraybarButton {
@@ -45,6 +47,8 @@ impl TheWidget for TheTraybarButton {
             dim: TheDim::zero(),
             is_dirty: false,
             is_disabled: false,
+
+            context_menu: None,
         }
     }
 
@@ -59,6 +63,10 @@ impl TheWidget for TheTraybarButton {
     /// Sets the status text for the widget.
     fn set_status_text(&mut self, text: &str) {
         self.status = Some(text.to_string());
+    }
+
+    fn set_context_menu(&mut self, menu: Option<TheContextMenu>) {
+        self.context_menu = menu;
     }
 
     #[allow(clippy::single_match)]
@@ -76,6 +84,18 @@ impl TheWidget for TheTraybarButton {
                     ctx.ui
                         .send_widget_state_changed(self.id(), TheWidgetState::Clicked);
                 }
+
+                if let Some(context_menu) = &self.context_menu {
+                    ctx.ui.send(TheEvent::ShowContextMenu(
+                        self.id().clone(),
+                        vec2i(self.dim.x, self.dim.y + self.dim.height),
+                        context_menu.clone(),
+                    ));
+
+                    ctx.ui.clear_focus();
+                    ctx.ui.clear_hover();
+                }
+
                 self.is_dirty = true;
                 redraw = true;
             }

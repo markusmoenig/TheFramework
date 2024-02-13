@@ -277,7 +277,8 @@ impl TheWidget for TheRGBAView {
                 }
 
                 if (self.mode == TheRGBAViewMode::TileEditor
-                    || self.mode == TheRGBAViewMode::TilePicker)
+                    || self.mode == TheRGBAViewMode::TilePicker
+                    || self.mode == TheRGBAViewMode::TileSelection)
                     && self.hover_color.is_some()
                 {
                     if let Some(grid) = self.grid {
@@ -632,7 +633,9 @@ impl TheWidget for TheRGBAView {
                     }
                 } else {
                     // Set the pixel to black if it's out of the source bounds
-                    target.pixels_mut()[target_index..target_index + 4].fill(0);
+                    // target.pixels_mut()[target_index..target_index + 4].fill(0);
+                    target.pixels_mut()[target_index..target_index + 4]
+                        .copy_from_slice(&[50, 50, 50, 255]);
                 }
             }
         }

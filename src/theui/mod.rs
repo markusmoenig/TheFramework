@@ -475,9 +475,11 @@ impl TheUI {
                         ));
                     }
                     self.context_menu = None;
+                    ctx.ui.clear_hover();
                 }
             } else {
                 self.context_menu = None;
+                ctx.ui.clear_hover();
                 redraw = true;
             }
             return redraw;

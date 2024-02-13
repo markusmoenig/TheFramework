@@ -74,8 +74,15 @@ impl TheCodeEditor {
     }
 
     /// Add an external function to the code.
+    pub fn clear_externals(&mut self) {
+        self.externals.clear();
+        self.function_list_needs_update = true;
+    }
+
+    /// Add an external function to the code.
     pub fn add_external(&mut self, external: TheExternalCode) {
         self.externals.push(external);
+        self.function_list_needs_update = true;
     }
 
     /// Clears the module based code.
@@ -910,7 +917,7 @@ impl TheCodeEditor {
 
         let mut list_canvas: TheCanvas = TheCanvas::new();
         list_canvas.limiter_mut().set_max_width(width);
-        if let Some(height) = height{
+        if let Some(height) = height {
             list_canvas.limiter_mut().set_max_height(height);
         }
 

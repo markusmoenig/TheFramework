@@ -127,6 +127,7 @@ impl TheValue {
     pub fn to_f32(&self) -> Option<f32> {
         match self {
             Float(v) => Some(*v),
+            Text(t) => t.parse::<f32>().ok(),
             _ => None,
         }
     }
@@ -180,6 +181,7 @@ impl TheValue {
             Float(v) => Some(*v),
             Int(v) => Some(*v as f32),
             Bool(v) => Some(*v as i32 as f32),
+            Text(t) => t.parse::<f32>().ok(),
             _ => None,
         }
     }

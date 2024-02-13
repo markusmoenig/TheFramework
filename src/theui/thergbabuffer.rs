@@ -1,6 +1,8 @@
 use crate::prelude::*;
 use std::ops::{Index, IndexMut, Range};
-
+use fontdue::layout::{
+    CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle, VerticalAlign,
+};
 use super::{compress, decompress};
 
 #[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]
@@ -245,6 +247,19 @@ impl TheRGBABuffer {
         }
     }
 
+    /// Fills the entire buffer with the given RGBA color.
+    pub fn fill(&mut self, color: [u8; 4]) {
+        for y in 0..self.dim.height {
+            for x in 0..self.dim.width {
+                let index = (y * self.dim.width + x) as usize * 4;
+                // Check to make sure we don't write out of bounds
+                if index < self.buffer.len() {
+                    self.buffer[index..index + 4].copy_from_slice(&color);
+                }
+            }
+        }
+    }
+
     /// Draws a line from (x0, y0) to (x1, y1) with the given color.
     pub fn draw_line(&mut self, x0: i32, y0: i32, x1: i32, y1: i32, color: [u8; 4]) {
         let mut x = x0;
@@ -274,6 +289,97 @@ impl TheRGBABuffer {
                 y += sy;
             }
         }
+    }
+
+    /// Renders text using a fondue::Font.
+    pub fn draw_text(&mut self, font: &fontdue::Font, text: &str, size: f32, color: [u8; 4]) {
+
+        pub fn mix_color(a: &[u8; 4], b: &[u8; 4], v: f32) -> [u8; 4] {
+            [
+                (((1.0 - v) * (a[0] as f32 / 255.0) + b[0] as f32 / 255.0 * v) * 255.0) as u8,
+                (((1.0 - v) * (a[1] as f32 / 255.0) + b[1] as f32 / 255.0 * v) * 255.0) as u8,
+                (((1.0 - v) * (a[2] as f32 / 255.0) + b[2] as f32 / 255.0 * v) * 255.0) as u8,
+                (((1.0 - v) * (a[3] as f32 / 255.0) + b[3] as f32 / 255.0 * v) * 255.0) as u8,
+            ]
+        }
+
+        // fn get_text_size(font: &Font, size: f32, text: &str) -> (usize, usize) {
+        //     let fonts = &[font];
+
+        //     let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
+        //     layout.reset(&LayoutSettings {
+        //         ..LayoutSettings::default()
+        //     });
+        //     layout.append(fonts, &TextStyle::new(text, size, 0));
+
+        //     let x = layout.glyphs()[layout.glyphs().len() - 1].x.ceil() as usize
+        //         + layout.glyphs()[layout.glyphs().len() - 1].width
+        //         + 1;
+        //     (x, layout.height() as usize)
+        // }
+
+        // let (width, height) = get_text_size(font, size, text);
+
+        let fonts = &[font];
+
+        let halign  = TheHorizontalAlign::Center;
+        let valign  = TheVerticalAlign::Center;
+
+        let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
+        layout.reset(&LayoutSettings {
+            max_width: Some(self.dim.width as f32),
+            max_height: Some(self.dim.height as f32),
+            horizontal_align: if halign == TheHorizontalAlign::Left {
+                HorizontalAlign::Left
+            } else if halign == TheHorizontalAlign::Right {
+                HorizontalAlign::Right
+            } else {
+                HorizontalAlign::Center
+            },
+            vertical_align: if valign == TheVerticalAlign::Top {
+                VerticalAlign::Top
+            } else if valign == TheVerticalAlign::Bottom {
+                VerticalAlign::Bottom
+            } else {
+                VerticalAlign::Middle
+            },
+            ..LayoutSettings::default()
+        });
+        layout.append(fonts, &TextStyle::new(text, size, 0));
+
+        for glyph in layout.glyphs() {
+            let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
+            //println!("Metrics: {:?}", glyph);
+
+            for y in 0..metrics.height {
+                for x in 0..metrics.width {
+                    // if (y + rect.1) >= rect.1
+                    //     && (y + rect.1) < (rect.1 + rect.3)
+                    //     && (x + rect.0) >= rect.0
+                    //     && (x + rect.0) < (rect.0 + rect.2)
+                    // {
+
+                    // let i = (x + glyph.x as usize) * 4
+                    //     + (y + glyph.y as usize) * stride * 4;
+                    let m = alphamap[x + y * metrics.width];
+
+                    if let Some(index) = self.pixel_index(x as i32 + glyph.x as i32, y as i32 + glyph.y as i32) {
+                        let background = &[
+                            self.buffer[index],
+                            self.buffer[index + 1],
+                            self.buffer[index + 2],
+                            self.buffer[index + 3],
+                        ];
+                        self.buffer[index..index + 4].copy_from_slice(&mix_color(
+                            background,
+                            &color,
+                            m as f32 / 255.0,
+                        ));
+                    }
+                }
+            }
+        }
+
     }
 
     /// Helper method to calculate the buffer index for a pixel at (x, y).
