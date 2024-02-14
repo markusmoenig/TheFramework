@@ -22,6 +22,7 @@ pub struct TheRGBAView {
 
     grid: Option<i32>,
     grid_color: RGBA,
+    dont_show_grid: bool,
     selected: FxHashSet<(i32, i32)>,
     selection_color: RGBA,
     hover_color: Option<RGBA>,
@@ -70,6 +71,7 @@ impl TheWidget for TheRGBAView {
 
             grid: None,
             grid_color: [200, 200, 200, 255],
+            dont_show_grid: false,
             selected: FxHashSet::default(),
             selection_color: [255, 255, 255, 180],
             hover_color: None,
@@ -523,7 +525,7 @@ impl TheWidget for TheRGBAView {
                     + self.dim.buffer_x) as usize
                     * 4;
 
-                if self.mode == TheRGBAViewMode::TileSelection {
+                if !self.dont_show_grid && self.mode == TheRGBAViewMode::TileSelection {
                     if let Some(grid) = self.grid {
                         if src_x as i32 % grid == 0 || src_y as i32 % grid == 0 {
                             if self.rectangular_selection {
@@ -692,6 +694,7 @@ pub trait TheRGBAViewTrait: TheWidget {
     fn grid(&self) -> Option<i32>;
     fn set_grid(&mut self, grid: Option<i32>);
     fn set_grid_color(&mut self, color: RGBA);
+    fn set_dont_show_grid(&mut self, dont_show_grid: bool);
     fn set_selection_color(&mut self, color: RGBA);
     fn set_wheel_scale(&mut self, wheel_scale: f32);
     fn set_hover_color(&mut self, color: Option<RGBA>);
@@ -797,6 +800,10 @@ impl TheRGBAViewTrait for TheRGBAView {
     }
     fn set_grid_color(&mut self, color: RGBA) {
         self.grid_color = color;
+    }
+    fn set_dont_show_grid(&mut self, dont_show_grid: bool) {
+        self.dont_show_grid = dont_show_grid;
+        self.is_dirty = true;
     }
     fn set_selection_color(&mut self, color: RGBA) {
         self.selection_color = color;
