@@ -92,6 +92,11 @@ impl TheTime {
         })
     }
 
+    /// Returns the total minutes from midnight.
+    pub fn total_minutes(&self) -> i32 {
+        self.hours as i32 * 60 + self.minutes as i32
+    }
+
     /// Calculates the duration between two TheDateTime instances.
     pub fn duration_between(start: &TheTime, end: &TheTime) -> TheTime {
         let start_in_seconds =
