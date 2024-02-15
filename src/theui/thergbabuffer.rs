@@ -1,9 +1,9 @@
+use super::{compress, decompress};
 use crate::prelude::*;
-use std::ops::{Index, IndexMut, Range};
 use fontdue::layout::{
     CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle, VerticalAlign,
 };
-use super::{compress, decompress};
+use std::ops::{Index, IndexMut, Range};
 
 #[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]
 pub struct TheRGBABuffer {
@@ -180,7 +180,6 @@ impl TheRGBABuffer {
 
     /// Creates a scaled version of the buffer.
     pub fn scaled_into(&self, into: &mut TheRGBABuffer) {
-
         let new_width = into.dim().width;
         let new_height = into.dim().height;
 
@@ -318,7 +317,6 @@ impl TheRGBABuffer {
 
     /// Renders text using a fondue::Font.
     pub fn draw_text(&mut self, font: &fontdue::Font, text: &str, size: f32, color: [u8; 4]) {
-
         pub fn mix_color(a: &[u8; 4], b: &[u8; 4], v: f32) -> [u8; 4] {
             [
                 (((1.0 - v) * (a[0] as f32 / 255.0) + b[0] as f32 / 255.0 * v) * 255.0) as u8,
@@ -347,8 +345,8 @@ impl TheRGBABuffer {
 
         let fonts = &[font];
 
-        let halign  = TheHorizontalAlign::Center;
-        let valign  = TheVerticalAlign::Center;
+        let halign = TheHorizontalAlign::Center;
+        let valign = TheVerticalAlign::Center;
 
         let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
         layout.reset(&LayoutSettings {
@@ -388,7 +386,9 @@ impl TheRGBABuffer {
                     //     + (y + glyph.y as usize) * stride * 4;
                     let m = alphamap[x + y * metrics.width];
 
-                    if let Some(index) = self.pixel_index(x as i32 + glyph.x as i32, y as i32 + glyph.y as i32) {
+                    if let Some(index) =
+                        self.pixel_index(x as i32 + glyph.x as i32, y as i32 + glyph.y as i32)
+                    {
                         let background = &[
                             self.buffer[index],
                             self.buffer[index + 1],
@@ -404,7 +404,6 @@ impl TheRGBABuffer {
                 }
             }
         }
-
     }
 
     /// Helper method to calculate the buffer index for a pixel at (x, y).

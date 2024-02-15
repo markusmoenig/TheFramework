@@ -126,6 +126,10 @@ impl TheTheme for TheDarkTheme {
         colors.insert(WindowHeaderBorder1, [163, 163, 163, 255]);
         colors.insert(WindowHeaderBorder2, [139, 139, 139, 255]);
 
+        colors.insert(TimeSliderBackground, [174, 174, 174, 255]);
+        colors.insert(TimeSliderText, [85, 81, 85, 255]);
+        colors.insert(TimeSliderMarker, [240, 240, 240, 255]);
+
         Self {
             temp_color: BLACK,
             colors,

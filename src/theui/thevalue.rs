@@ -95,6 +95,8 @@ pub enum TheValue {
     Id(Uuid),
     Direction(Vec3f, f32),
     List(Vec<TheValue>),
+    Time(TheTime),
+    TimeDuration(TheTime, TheTime),
     #[cfg(feature = "code")]
     CodeObject(TheCodeObject),
 }
@@ -136,6 +138,7 @@ impl TheValue {
         match self {
             Text(v) => Some(v.clone()),
             Tile(name, _id) => Some(name.clone()),
+            Time(t) => Some(t.to_time24()),
             _ => None,
         }
     }
@@ -244,6 +247,8 @@ impl TheValue {
             Assignment(c) => format!("Assignment: {:?}", c.to_string()),
             Id(c) => format!("Id: {:?}", c.to_string()),
             Direction(v, _) => format!("Direction: {:?}", v),
+            Time(t) => format!("Time: {:?}", t.to_time24()),
+            TimeDuration(s, e) => format!("Time Duration: {:?} {:?}", s.to_time24(), e.to_time24()),
         }
     }
 
@@ -289,6 +294,8 @@ impl TheValue {
             Assignment(c) => format!("{:?}", c.to_string()),
             Id(c) => format!("Id: {:?}", c.to_string()),
             Direction(_, _) => "Direction".to_string(),
+            Time(t) => t.to_time24(),
+            TimeDuration(s, e) => format!("{} - {}", s.to_time24(), e.to_time24()),
         }
     }
 }

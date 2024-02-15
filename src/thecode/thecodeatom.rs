@@ -1223,6 +1223,8 @@ impl TheCodeAtom {
                 TheValue::Empty => "Empty value.".to_string(),
                 TheValue::Id(id) => format!("Id ({}).", id),
                 TheValue::Direction(v, _) => format!("Direction ({}).", v),
+                TheValue::Time(_) => self.describe(),
+                TheValue::TimeDuration(_, _) => self.describe(),
             },
             TheCodeAtom::Add => "Operator ('+')".to_string(),
             TheCodeAtom::Subtract => "Operator ('-')".to_string(),

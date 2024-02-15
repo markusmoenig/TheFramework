@@ -28,6 +28,7 @@ pub mod thecolorpicker;
 pub mod thedirectionpicker;
 pub mod thesdfview;
 pub mod thetextlineedit;
+pub mod thetimeslider;
 pub mod thetoolbar;
 pub mod thetoolbarbutton;
 pub mod thetraybar;
@@ -86,6 +87,7 @@ pub mod prelude {
 
     pub use crate::theui::thewidget::thecolorpicker::{TheColorPicker, TheColorPickerTrait};
     pub use crate::theui::thewidget::thedirectionpicker::TheDirectionPicker;
+    pub use crate::theui::thewidget::thetimeslider::{TheTimeSlider, TheTimeSliderTrait};
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetState;
 }

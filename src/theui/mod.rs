@@ -1,5 +1,6 @@
 pub mod thecanvas;
 pub mod thecontextmenu;
+pub mod thetime;
 pub mod thedim;
 pub mod thedrop;
 pub mod theid;
@@ -101,6 +102,7 @@ pub mod prelude {
     pub use crate::theui::theuiglobals::*;
     pub use crate::theui::theundo::*;
 
+    pub use crate::theui::thetime::TheTime;
     pub use crate::theui::TheDialogButtonRole;
 
     pub use crate::str;
