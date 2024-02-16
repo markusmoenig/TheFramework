@@ -16,6 +16,8 @@ pub mod theundo;
 pub mod thevalue;
 pub mod thevent;
 pub mod thewidget;
+pub mod thecollection;
+pub mod thetimeline;
 
 use ::serde::de::{self, Deserializer};
 use ::serde::ser::{self, Serializer};
@@ -104,6 +106,8 @@ pub mod prelude {
 
     pub use crate::theui::thetime::TheTime;
     pub use crate::theui::TheDialogButtonRole;
+    pub use crate::theui::thecollection::TheCollection;
+    pub use crate::theui::thetimeline::TheTimeline;
 
     pub use crate::str;
 }

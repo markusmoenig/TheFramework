@@ -15,7 +15,6 @@ pub struct TheTimeSlider {
     dim: TheDim,
     is_dirty: bool,
 
-    range: TheValue,
     continuous: bool,
 }
 
@@ -43,7 +42,6 @@ impl TheWidget for TheTimeSlider {
             dim: TheDim::zero(),
             is_dirty: false,
 
-            range: TheValue::RangeF32(0.0..=1.0),
             continuous: false,
         }
     }
@@ -130,14 +128,7 @@ impl TheWidget for TheTimeSlider {
 
                 ctx.ui.set_focus(self.id());
 
-                let fraction_of_day = coord.x as f64 / self.dim.width as f64;
-                let minutes_since_midnight = (1440f64 * fraction_of_day).round() as u32;
-                let hours = (minutes_since_midnight / 60) as u8;
-                let minutes = (minutes_since_midnight % 60) as u8;
-
-                if let Ok(time) = TheTime::new_time(hours, minutes) {
-                    self.value = TheValue::Time(time);
-                }
+                self.value = TheValue::Time(TheTime::from_widget_offset(coord.x as u32, self.dim.width as u32));
 
                 ctx.ui
                     .send_widget_value_changed(self.id(), self.value.clone());
@@ -145,14 +136,16 @@ impl TheWidget for TheTimeSlider {
             }
             TheEvent::MouseDragged(coord) => {
 
-                let fraction_of_day = coord.x as f64 / self.dim.width as f64;
-                let minutes_since_midnight = (1440f64 * fraction_of_day).round() as u32;
-                let hours = (minutes_since_midnight / 60) as u8;
-                let minutes = (minutes_since_midnight % 60) as u8;
-
-                if let Ok(time) = TheTime::new_time(hours, minutes) {
-                    self.value = TheValue::Time(time);
+                let mut offset = coord.x;
+                if offset < 0 {
+                    offset = 0;
                 }
+
+                if offset > self.dim.width {
+                    offset = self.dim.width ;
+                }
+
+                self.value = TheValue::Time(TheTime::from_widget_offset(offset as u32, self.dim.width as u32));
 
                 if self.continuous {
                     ctx.ui
@@ -247,15 +240,7 @@ impl TheWidget for TheTimeSlider {
         }
 
         if let TheValue::Time(time) = &self.value {
-
-            let total_minutes_in_day: u32 = 1440; // Total minutes in a 24-hour period
-            let time_in_minutes = time.hours as u32 * 60 + time.minutes as u32;
-
-            // Calculate the fraction of the day that has passed.
-            let fraction_of_day_passed = time_in_minutes as f64 / total_minutes_in_day as f64;
-
-            // Calculate the pixel offset based on the fraction of the day passed.
-            let offset = (fraction_of_day_passed * self.dim.width as f64).round() as usize;
+            let offset = time.to_widget_offset(self.dim.width as u32) as usize;
 
             let r = (r.0 + offset, r.1, 2, r.3);
             ctx.draw.rect(
@@ -275,17 +260,10 @@ impl TheWidget for TheTimeSlider {
 }
 
 pub trait TheTimeSliderTrait: TheWidget {
-    fn set_range(&mut self, range: TheValue);
     fn set_continuous(&mut self, continuous: bool);
 }
 
 impl TheTimeSliderTrait for TheTimeSlider {
-    fn set_range(&mut self, range: TheValue) {
-        if range != self.range {
-            self.range = range;
-            self.is_dirty = true;
-        }
-    }
     fn set_continuous(&mut self, continuous: bool) {
         self.continuous = continuous;
     }

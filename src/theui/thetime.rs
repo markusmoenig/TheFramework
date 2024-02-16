@@ -2,7 +2,7 @@ pub use crate::prelude::*;
 use std::cmp::{Ord, Ordering, PartialOrd};
 
 /// Represents a time.
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Eq, Copy)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Eq, Copy, Hash)]
 pub struct TheTime {
     pub hours: u8,
     pub minutes: u8,
@@ -40,7 +40,33 @@ impl TheTime {
         })
     }
 
-    /// Calculate the date and time from server (game) ticks.
+    /// Creates a TheTime from an offset in a widget.
+    pub fn from_widget_offset(offset_px: u32, total_width_px: u32) -> Self {
+        let fraction_of_day = offset_px as f64 / total_width_px as f64;
+        let minutes_since_midnight = (1440f64 * fraction_of_day).round() as u32;
+        let hours = (minutes_since_midnight / 60) as u8;
+        let minutes = (minutes_since_midnight % 60) as u8;
+
+        Self {
+            hours,
+            minutes,
+            seconds: 0,
+        }
+    }
+
+    /// Calculates the pixel offset in a widget of a given width from the current TheTime.
+    pub fn to_widget_offset(&self, total_width_px: u32) -> u32 {
+        let total_minutes_in_day: u32 = 1440; // Total minutes in a 24-hour period
+        let time_in_minutes = self.hours as u32 * 60 + self.minutes as u32;
+
+        // Calculate the fraction of the day that has passed.
+        let fraction_of_day_passed = time_in_minutes as f64 / total_minutes_in_day as f64;
+
+        // Calculate the pixel offset based on the fraction of the day passed.
+        (fraction_of_day_passed * total_width_px as f64).round() as u32
+    }
+
+    /// Calculate TheTime from server (game) ticks.
     pub fn from_ticks(ticks: i64, ticks_per_minute: u32) -> Self {
         let total_minutes = (ticks / ticks_per_minute as i64) as u32;
         Self {
@@ -65,7 +91,7 @@ impl TheTime {
         ticks_from_minutes + ticks_from_seconds
     }
 
-    /// Updates the current TheDateTime instance based on a time string in "HH:MM" format.
+    /// Updates the current TheTime instance based on a time string in "HH:MM" format.
     pub fn from_time_string(&mut self, time_str: &str) -> Result<Self, String> {
         let parts: Vec<&str> = time_str.split(':').collect();
         if parts.len() != 2 {
@@ -97,7 +123,12 @@ impl TheTime {
         self.hours as i32 * 60 + self.minutes as i32
     }
 
-    /// Calculates the duration between two TheDateTime instances.
+    /// Converts the time to total seconds since midnight.
+    pub fn to_total_seconds(&self) -> u32 {
+        self.hours as u32 * 3600 + self.minutes as u32 * 60 + self.seconds as u32
+    }
+
+    /// Calculates the duration between two TheTime instances.
     pub fn duration_between(start: &TheTime, end: &TheTime) -> TheTime {
         let start_in_seconds =
             start.hours as u32 * 3600 + start.minutes as u32 * 60 + start.seconds as u32;
@@ -131,7 +162,7 @@ impl TheTime {
     }
 
     /// Returns a string representation in 12-hour format with AM/PM suffix.
-    pub fn time12(&self) -> String {
+    pub fn to_time12(&self) -> String {
         let period = if self.hours >= 12 { "PM" } else { "AM" };
         let adjusted_hour = if self.hours % 12 == 0 {
             12
@@ -141,7 +172,7 @@ impl TheTime {
         format!("{:02}:{:02} {}", adjusted_hour, self.minutes, period)
     }
 
-    /// Checks if the current TheDateTime instance is between two other TheDateTime instances.
+    /// Checks if the current TheTime instance is between two other TheTime instances.
     pub fn is_time_between(&self, start: &TheTime, end: &TheTime) -> bool {
         let current_time_in_minutes = self.hours as u16 * 60 + self.minutes as u16;
         let start_time_in_minutes = start.hours as u16 * 60 + start.minutes as u16;
