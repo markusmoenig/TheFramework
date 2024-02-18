@@ -1202,7 +1202,9 @@ impl TheCodeAtom {
                 TheValue::CodeObject(_v) => "An object.".to_string(),
                 TheValue::List(_v) => "A list of values.".to_string(),
                 TheValue::Int(v) => format!("Integer constant ({}).", v),
-                TheValue::Float(_v) => format!("Float constant ({}).", value.describe()),
+                TheValue::Float(_) | TheValue::FloatRange(_, _) => {
+                    format!("Float constant ({}).", value.describe())
+                }
                 TheValue::Text(v) => format!("Text constant ({}).", v),
                 TheValue::TextList(index, v) => {
                     format!("Text List ({}).", v[*index as usize].clone())

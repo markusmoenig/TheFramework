@@ -4,7 +4,8 @@ use std::collections::BTreeMap;
 /// Represents a collection of TheValues.
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct TheCollection {
-    pub keys: BTreeMap<String, TheValue>
+    pub name: String,
+    pub keys: BTreeMap<String, TheValue>,
 }
 
 impl Default for TheCollection {
@@ -14,9 +15,16 @@ impl Default for TheCollection {
 }
 
 impl TheCollection {
+    pub fn named(name: String) -> Self {
+        Self {
+            name,
+            keys: BTreeMap::default(),
+        }
+    }
     pub fn new() -> Self {
         Self {
-            keys: BTreeMap::default()
+            name: str!("Unnamed"),
+            keys: BTreeMap::default(),
         }
     }
 
@@ -32,5 +40,10 @@ impl TheCollection {
         } else {
             default
         }
+    }
+
+    /// Sets the given key with the given value.
+    pub fn set(&mut self, key: &str, value: TheValue) {
+        self.keys.insert(key.to_string(), value);
     }
 }

@@ -74,6 +74,7 @@ pub enum TheValue {
     Empty,
     Bool(bool),
     Float(f32),
+    FloatRange(f32, RangeInclusive<f32>),
     Int(i32),
     Text(String),
     TextList(i32, Vec<String>),
@@ -224,6 +225,7 @@ impl TheValue {
             Empty => "Empty".to_string(),
             Bool(_v) => "Bool".to_string(),
             Float(_v) => "Float".to_string(),
+            FloatRange(_, _) => "Float".to_string(),
             Int(_i) => "Integer".to_string(),
             Text(_s) => "Text".to_string(),
             TextList(index, list) => list[*index as usize].clone(),
@@ -263,7 +265,7 @@ impl TheValue {
                     "False".to_string()
                 }
             }
-            Float(v) => {
+            Float(v) | FloatRange(v, _) => {
                 if v.fract() == 0.0 {
                     format!("{:.1}", *v)
                 } else {
