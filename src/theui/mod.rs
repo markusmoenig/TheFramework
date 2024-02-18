@@ -1,8 +1,9 @@
 pub mod thecanvas;
+pub mod thecollection;
 pub mod thecontextmenu;
-pub mod thetime;
 pub mod thedim;
 pub mod thedrop;
+pub mod theflattenedmap;
 pub mod theid;
 pub mod thelayout;
 pub mod thergbabuffer;
@@ -10,14 +11,14 @@ pub mod thesdf;
 pub mod thesizelimiter;
 pub mod thestyle;
 pub mod thetheme;
+pub mod thetime;
+pub mod thetimeline;
 pub mod theuicontext;
 pub mod theuiglobals;
 pub mod theundo;
 pub mod thevalue;
 pub mod thevent;
 pub mod thewidget;
-pub mod thecollection;
-pub mod thetimeline;
 
 use ::serde::de::{self, Deserializer};
 use ::serde::ser::{self, Serializer};
@@ -104,10 +105,11 @@ pub mod prelude {
     pub use crate::theui::theuiglobals::*;
     pub use crate::theui::theundo::*;
 
-    pub use crate::theui::thetime::TheTime;
-    pub use crate::theui::TheDialogButtonRole;
     pub use crate::theui::thecollection::TheCollection;
+    pub use crate::theui::theflattenedmap::TheFlattenedMap;
+    pub use crate::theui::thetime::TheTime;
     pub use crate::theui::thetimeline::TheTimeline;
+    pub use crate::theui::TheDialogButtonRole;
 
     pub use crate::str;
 }

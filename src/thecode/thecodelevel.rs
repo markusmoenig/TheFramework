@@ -2,21 +2,15 @@ use crate::prelude::*;
 
 /// TheCodeLevel holds all necessary data needed to represent a game level from a CodeGridFX.
 /// i.e. defining blocking areas, spawn points, portals, tile types at a given position etc.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Clone)]
 pub struct TheCodeLevel {
-    blocking: FxHashSet<(u16, u16)>,
-}
-
-impl Default for TheCodeLevel {
-    fn default() -> Self {
-        TheCodeLevel::new()
-    }
+    blocking: TheFlattenedMap<bool>,
 }
 
 impl TheCodeLevel {
-    pub fn new() -> Self {
+    pub fn new(width: i32, height: i32) -> Self {
         Self {
-            blocking: FxHashSet::default(),
+            blocking: TheFlattenedMap::new(width, height),
         }
     }
 
@@ -27,13 +21,17 @@ impl TheCodeLevel {
 
     /// Marks the given position as blocking.
     #[inline(always)]
-    pub fn set_blocking(&mut self, position: (u16, u16)) {
-        self.blocking.insert(position);
+    pub fn set_blocking(&mut self, position: (i32, i32)) {
+        self.blocking.set(position, true);
     }
 
     /// Checks if the given position is blocking.
     #[inline(always)]
-    pub fn is_blocking(&mut self, position: (u16, u16)) -> bool {
-        self.blocking.contains(&position)
+    pub fn is_blocking(&self, position: (i32, i32)) -> bool {
+        if let Some(blocking) = self.blocking.get(position) {
+            *blocking
+        } else {
+            false
+        }
     }
 }
