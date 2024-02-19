@@ -146,6 +146,11 @@ pub trait TheLayout: Send {
         None
     }
 
+    /// Attempts to cast to TheTextLayout. Only valid for TheTextLayout.
+    fn as_text_layout(&mut self) -> Option<&mut dyn TheTextLayoutTrait> {
+        None
+    }
+
     /// Attempts to cast to TheCodeLayoutTrait. Only valid for TheCodeLayout.
     #[cfg(feature = "code")]
     fn as_code_layout(&mut self) -> Option<&mut dyn TheCodeLayoutTrait> {

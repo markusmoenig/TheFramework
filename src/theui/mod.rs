@@ -108,7 +108,7 @@ pub mod prelude {
     pub use crate::theui::thecollection::TheCollection;
     pub use crate::theui::theflattenedmap::TheFlattenedMap;
     pub use crate::theui::thetime::TheTime;
-    pub use crate::theui::thetimeline::TheTimeline;
+    pub use crate::theui::thetimeline::{TheInterpolation, TheTimeline};
     pub use crate::theui::TheDialogButtonRole;
 
     pub use crate::str;
@@ -747,6 +747,14 @@ impl TheUI {
         None
     }
 
+    /// Gets a given time slider by name
+    pub fn get_time_slider(&mut self, name: &str) -> Option<&mut dyn TheTimeSliderTrait> {
+        if let Some(text) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            return text.as_time_slider();
+        }
+        None
+    }
+
     /// Gets a given layout by name
     pub fn get_layout(&mut self, name: &str) -> Option<&mut Box<dyn TheLayout>> {
         self.canvas.get_layout(Some(&name.to_string()), None)
@@ -810,6 +818,14 @@ impl TheUI {
     pub fn get_hlayout(&mut self, name: &str) -> Option<&mut dyn TheHLayoutTrait> {
         if let Some(layout) = self.canvas.get_layout(Some(&name.to_string()), None) {
             return layout.as_hlayout();
+        }
+        None
+    }
+
+    /// Gets a given TheTextLayout by name
+    pub fn get_text_layout(&mut self, name: &str) -> Option<&mut dyn TheTextLayoutTrait> {
+        if let Some(layout) = self.canvas.get_layout(Some(&name.to_string()), None) {
+            return layout.as_text_layout();
         }
         None
     }

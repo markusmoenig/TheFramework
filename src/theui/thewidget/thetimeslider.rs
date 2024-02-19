@@ -16,6 +16,7 @@ pub struct TheTimeSlider {
     is_dirty: bool,
 
     continuous: bool,
+    marker: Vec<TheTime>,
 }
 
 impl TheWidget for TheTimeSlider {
@@ -43,6 +44,8 @@ impl TheWidget for TheTimeSlider {
             is_dirty: false,
 
             continuous: false,
+
+            marker: vec![],
         }
     }
 
@@ -128,24 +131,29 @@ impl TheWidget for TheTimeSlider {
 
                 ctx.ui.set_focus(self.id());
 
-                self.value = TheValue::Time(TheTime::from_widget_offset(coord.x as u32, self.dim.width as u32));
+                self.value = TheValue::Time(TheTime::from_widget_offset(
+                    coord.x as u32,
+                    self.dim.width as u32,
+                ));
 
                 ctx.ui
                     .send_widget_value_changed(self.id(), self.value.clone());
                 redraw = true;
             }
             TheEvent::MouseDragged(coord) => {
-
                 let mut offset = coord.x;
                 if offset < 0 {
                     offset = 0;
                 }
 
                 if offset > self.dim.width {
-                    offset = self.dim.width ;
+                    offset = self.dim.width;
                 }
 
-                self.value = TheValue::Time(TheTime::from_widget_offset(offset as u32, self.dim.width as u32));
+                self.value = TheValue::Time(TheTime::from_widget_offset(
+                    offset as u32,
+                    self.dim.width as u32,
+                ));
 
                 if self.continuous {
                     ctx.ui
@@ -192,12 +200,18 @@ impl TheWidget for TheTimeSlider {
 
         let r = self.dim.to_buffer_utuple();
 
-        ctx.draw.rounded_rect(
+        ctx.draw.rect(
             buffer.pixels_mut(),
             &r,
             stride,
             style.theme().color(TimeSliderBackground),
-            &(5.0, 5.0, 5.0, 5.0)
+        );
+
+        ctx.draw.rect_outline(
+            buffer.pixels_mut(),
+            &r,
+            stride,
+            style.theme().color(TimeSliderBorder),
         );
 
         let text_space = r.2 / 24;
@@ -205,12 +219,12 @@ impl TheWidget for TheTimeSlider {
 
         for i in 0..=24 {
             if i > 0 {
-                let r = (x, r.1 + 1, 1, 2);
+                let r = (x, r.1 + r.3 - 4, 2, 2);
                 ctx.draw.rect(
                     buffer.pixels_mut(),
                     &r,
                     stride,
-                    style.theme().color(TimeSliderText),
+                    style.theme().color(TimeSliderLine),
                 );
             }
             x += text_space;
@@ -232,7 +246,7 @@ impl TheWidget for TheTimeSlider {
                         &(i * 2).to_string(),
                         style.theme().color(TimeSliderText),
                         TheHorizontalAlign::Center,
-                        TheVerticalAlign::Bottom,
+                        TheVerticalAlign::Top,
                     );
                 }
             }
@@ -240,7 +254,19 @@ impl TheWidget for TheTimeSlider {
         }
 
         if let TheValue::Time(time) = &self.value {
-            let offset = time.to_widget_offset(self.dim.width as u32) as usize;
+            let offset = time.to_widget_offset(r.2 as u32) as usize;
+
+            let r = (r.0 + offset, r.1, 2, r.3);
+            ctx.draw.rect(
+                buffer.pixels_mut(),
+                &r,
+                stride,
+                style.theme().color(TimeSliderPosition),
+            );
+        }
+
+        for marker in &self.marker {
+            let offset = marker.to_widget_offset(r.2 as u32) as usize;
 
             let r = (r.0 + offset, r.1, 2, r.3);
             ctx.draw.rect(
@@ -254,6 +280,10 @@ impl TheWidget for TheTimeSlider {
         self.is_dirty = false;
     }
 
+    fn as_time_slider(&mut self) -> Option<&mut dyn TheTimeSliderTrait> {
+        Some(self)
+    }
+
     fn as_any(&mut self) -> &mut dyn std::any::Any {
         self
     }
@@ -261,10 +291,20 @@ impl TheWidget for TheTimeSlider {
 
 pub trait TheTimeSliderTrait: TheWidget {
     fn set_continuous(&mut self, continuous: bool);
+    fn clear_marker(&mut self);
+    fn add_marker(&mut self, time: TheTime);
 }
 
 impl TheTimeSliderTrait for TheTimeSlider {
     fn set_continuous(&mut self, continuous: bool) {
         self.continuous = continuous;
+    }
+    fn clear_marker(&mut self) {
+        self.marker = vec![];
+        self.is_dirty = true;
+    }
+    fn add_marker(&mut self, time: TheTime) {
+        self.marker.push(time);
+        self.is_dirty = true;
     }
 }

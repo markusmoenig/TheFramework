@@ -266,6 +266,11 @@ pub trait TheWidget: Send {
         None
     }
 
+    /// Attempts to cast to TheTimeSlider. Only valid for TheTimeSliderTrait.
+    fn as_time_slider(&mut self) -> Option<&mut dyn TheTimeSliderTrait> {
+        None
+    }
+
     /// Attempts to cast to TheCodeViewTrait. Only valid for TheCodeView.
     #[cfg(feature = "code")]
     fn as_code_view(&mut self) -> Option<&mut dyn TheCodeViewTrait> {

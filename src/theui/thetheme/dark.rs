@@ -126,9 +126,12 @@ impl TheTheme for TheDarkTheme {
         colors.insert(WindowHeaderBorder1, [163, 163, 163, 255]);
         colors.insert(WindowHeaderBorder2, [139, 139, 139, 255]);
 
-        colors.insert(TimeSliderBackground, [174, 174, 174, 255]);
-        colors.insert(TimeSliderText, [85, 81, 85, 255]);
-        colors.insert(TimeSliderMarker, [240, 240, 240, 255]);
+        colors.insert(TimeSliderBorder, [216, 216, 216, 255]);
+        colors.insert(TimeSliderBackground, [184, 184, 184, 255]);
+        colors.insert(TimeSliderText, [27, 27, 27, 255]);
+        colors.insert(TimeSliderLine, [135, 135, 135, 255]);
+        colors.insert(TimeSliderMarker, [202, 113, 230, 255]);
+        colors.insert(TimeSliderPosition, [240, 240, 240, 255]);
 
         Self {
             temp_color: BLACK,

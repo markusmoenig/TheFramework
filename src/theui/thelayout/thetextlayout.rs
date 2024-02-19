@@ -222,10 +222,16 @@ impl TheLayout for TheTextLayout {
             w.draw(buffer, style, ctx);
         }
     }
+
+    fn as_text_layout(&mut self) -> Option<&mut dyn TheTextLayoutTrait> {
+        Some(self)
+    }
 }
 
 /// TheTextLayout specific functions.
 pub trait TheTextLayoutTrait {
+    /// Clear the text and widget pairs.
+    fn clear(&mut self);
     /// Add a text / widget pair.
     fn add_pair(&mut self, text: String, widget: Box<dyn TheWidget>);
     /// Set the text size to use for the left handed text.
@@ -235,6 +241,10 @@ pub trait TheTextLayoutTrait {
 }
 
 impl TheTextLayoutTrait for TheTextLayout {
+    fn clear(&mut self) {
+        self.text.clear();
+        self.widgets.clear();
+    }
     fn add_pair(&mut self, text: String, widget: Box<dyn TheWidget>) {
         self.text.push(text);
         self.widgets.push(widget);

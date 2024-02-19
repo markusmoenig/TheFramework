@@ -140,8 +140,10 @@ pub enum TheThemeColors {
     WindowHeaderBorder1,
     WindowHeaderBorder2,
 
+    TimeSliderBorder,
     TimeSliderBackground,
     TimeSliderText,
     TimeSliderMarker,
-    TimeSliderTime,
+    TimeSliderLine,
+    TimeSliderPosition,
 }
