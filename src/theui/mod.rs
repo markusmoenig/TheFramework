@@ -11,6 +11,7 @@ pub mod thesdf;
 pub mod thesizelimiter;
 pub mod thestyle;
 pub mod thetheme;
+pub mod thetilemask;
 pub mod thetime;
 pub mod thetimeline;
 pub mod theuicontext;
@@ -105,13 +106,13 @@ pub mod prelude {
     pub use crate::theui::theuiglobals::*;
     pub use crate::theui::theundo::*;
 
+    pub use crate::str;
     pub use crate::theui::thecollection::TheCollection;
     pub use crate::theui::theflattenedmap::TheFlattenedMap;
+    pub use crate::theui::thetilemask::TheTileMask;
     pub use crate::theui::thetime::TheTime;
     pub use crate::theui::thetimeline::{TheInterpolation, TheTimeline};
     pub use crate::theui::TheDialogButtonRole;
-
-    pub use crate::str;
 }
 
 // Define a macro named `str!`.

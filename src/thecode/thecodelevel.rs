@@ -4,13 +4,17 @@ use crate::prelude::*;
 /// i.e. defining blocking areas, spawn points, portals, tile types at a given position etc.
 #[derive(Clone)]
 pub struct TheCodeLevel {
-    blocking: TheFlattenedMap<bool>,
+    pub time: TheTime,
+    pub blocking: TheFlattenedMap<bool>,
+    pub lights: FxHashMap<Vec2i, TheCollection>,
 }
 
 impl TheCodeLevel {
-    pub fn new(width: i32, height: i32) -> Self {
+    pub fn new(width: i32, height: i32, time: TheTime) -> Self {
         Self {
             blocking: TheFlattenedMap::new(width, height),
+            time,
+            lights: FxHashMap::default(),
         }
     }
 
@@ -33,5 +37,11 @@ impl TheCodeLevel {
         } else {
             false
         }
+    }
+
+    /// Adds a light to the level.
+    #[inline(always)]
+    pub fn add_light(&mut self, position: Vec2i, light: TheCollection) {
+        self.lights.insert(position, light);
     }
 }

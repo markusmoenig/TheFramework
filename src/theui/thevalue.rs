@@ -98,6 +98,7 @@ pub enum TheValue {
     List(Vec<TheValue>),
     Time(TheTime),
     TimeDuration(TheTime, TheTime),
+    TileMask(TheTileMask),
     #[cfg(feature = "code")]
     CodeObject(TheCodeObject),
 }
@@ -251,6 +252,7 @@ impl TheValue {
             Direction(v, _) => format!("Direction: {:?}", v),
             Time(t) => format!("Time: {:?}", t.to_time24()),
             TimeDuration(s, e) => format!("Time Duration: {:?} {:?}", s.to_time24(), e.to_time24()),
+            TileMask(_) => str!("Pixels in a tile"),
         }
     }
 
@@ -298,6 +300,7 @@ impl TheValue {
             Direction(_, _) => "Direction".to_string(),
             Time(t) => t.to_time24(),
             TimeDuration(s, e) => format!("{} - {}", s.to_time24(), e.to_time24()),
+            TileMask(_) => str!("Pixels"),
         }
     }
 }

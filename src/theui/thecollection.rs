@@ -42,8 +42,23 @@ impl TheCollection {
         }
     }
 
+    /// Get an f32 value, if not found return the default.
+    pub fn get_f32_default(&self, key: &str, default: f32) -> f32 {
+        if let Some(v) = self.keys.get(key) {
+            if let Some(v) = v.to_f32() {
+                return v;
+            }
+        }
+        default
+    }
+
     /// Sets the given key with the given value.
     pub fn set(&mut self, key: &str, value: TheValue) {
         self.keys.insert(key.to_string(), value);
+    }
+
+    /// Checks if the collection contains the given key.
+    pub fn contains_key(&self, key: &str) -> bool {
+        self.keys.contains_key(key)
     }
 }

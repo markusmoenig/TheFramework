@@ -12,18 +12,26 @@ exclude = ["Xcode"]
 env_logger = "0.11"
 log = "0.4"
 fontdue = "0.8.0"
-maths-rs = { version = "0.2", features = ["short_types", "short_hand_constructors", "casts", "serde"] }
+maths-rs = { version = "0.2.6", features = [
+    "short_types",
+    "short_hand_constructors",
+    "casts",
+    "serde",
+    "hash",
+] }
 pixels = { version = "0.13.0", optional = true }
-winit = { version = "0.28.7", optional = true }
-winit_input_helper = { version = "0.14.1", optional = true }
+winit = { version = "0.28", optional = true }
+winit_input_helper = { version = "0.14", optional = true }
 #therenderer = { version = "0.1.1", optional = true }
 # therenderer = { path = "../therenderer", optional = true }
-rust-embed = { version = "8", default-features = true, features = ["include-exclude"] }
+rust-embed = { version = "8", default-features = true, features = [
+    "include-exclude",
+] }
 png = "0.17"
 rustc-hash = "1.1.0"
 rfd = { version = "0.13", optional = true }
 futures = { version = "0.3", optional = true }
-serde = { version = "1.0", features = ["derive"], optional = false}
+serde = { version = "1.0", features = ["derive"], optional = false }
 serde_json = { version = "1.0", optional = false }
 flate2 = { version = "1.0", optional = true }
 rayon = { version = "1", optional = true }
@@ -37,7 +45,7 @@ features = [
     "fast-rng",          # Use a faster (but still sufficiently random) RNG
     "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
     "serde",
-    "js"
+    "js",
 ]
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
@@ -55,7 +63,4 @@ pixels_winit = ["pixels", "winit", "winit_input_helper"]
 default = ["pixels_winit"]
 
 [workspace]
-members = [
-    "examples/*",
-    "run-wasm",
-]
+members = ["examples/*", "run-wasm"]

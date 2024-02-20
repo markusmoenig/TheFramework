@@ -31,25 +31,33 @@ impl TheTimeline {
     }
 
     /// Gets the value for the given key at the given time.
-    pub fn get(&self, key: String, at: &TheTime, inter: TheInterpolation) -> Option<TheValue> {
+    pub fn get(
+        &self,
+        name: String,
+        key: String,
+        at: &TheTime,
+        inter: TheInterpolation,
+    ) -> Option<TheValue> {
         let mut previous_time: Option<&TheTime> = None;
         let mut previous_value: Option<&TheValue> = None;
 
         for (time, collection) in &self.events {
-            if let Some(value) = collection.get(&key) {
-                if let Some(prev_time) = previous_time {
-                    if at >= prev_time && at <= time {
-                        let start = previous_value.unwrap();
-                        let total_span =
-                            time.to_total_seconds() as f32 - prev_time.to_total_seconds() as f32;
-                        let time_position =
-                            at.to_total_seconds() as f32 - prev_time.to_total_seconds() as f32;
-                        let t = time_position / total_span;
-                        return Some(inter.interpolate(start, value, t));
+            if name == collection.name {
+                if let Some(value) = collection.get(&key) {
+                    if let Some(prev_time) = previous_time {
+                        if at >= prev_time && at <= time {
+                            let start = previous_value.unwrap();
+                            let total_span = time.to_total_seconds() as f32
+                                - prev_time.to_total_seconds() as f32;
+                            let time_position =
+                                at.to_total_seconds() as f32 - prev_time.to_total_seconds() as f32;
+                            let t = time_position / total_span;
+                            return Some(inter.interpolate(start, value, t));
+                        }
                     }
+                    previous_time = Some(time);
+                    previous_value = Some(value);
                 }
-                previous_time = Some(time);
-                previous_value = Some(value);
             }
         }
 
@@ -59,12 +67,13 @@ impl TheTimeline {
     /// Gets the value for the given key at the given time.
     pub fn get_default(
         &self,
+        name: String,
         key: String,
         at: &TheTime,
         default: TheValue,
         inter: TheInterpolation,
     ) -> TheValue {
-        if let Some(value) = self.get(key, at, inter) {
+        if let Some(value) = self.get(name, key, at, inter) {
             value
         } else {
             default
@@ -74,23 +83,40 @@ impl TheTimeline {
     /// Adds a collection of values at the given time.
     pub fn add(&mut self, time: TheTime, collection: TheCollection) {
         if let Some(existing) = self.events.get_mut(&time) {
-            for (key, value) in collection.keys.iter() {
-                existing.keys.insert(key.clone(), value.clone());
+            if existing.name == collection.name {
+                // for (key, value) in collection.keys.iter() {
+                //     existing.keys.insert(key.clone(), value.clone());
+                // }
+                *existing = collection;
+                return;
             }
-            return;
         }
         self.events.insert(time, collection);
     }
 
-    /// Adds a value at the given time.
-    pub fn add_value(&mut self, time: TheTime, key: String, value: TheValue) {
-        if let Some(existing) = self.events.get_mut(&time) {
-            existing.keys.insert(key, value);
-            return;
+    /// Replaces the keys of the collection with the keys at the given time.
+    pub fn fill(&self, time: &TheTime, collection: &mut TheCollection) {
+        let keys = collection.keys.keys().cloned().collect::<Vec<String>>();
+        for k in keys {
+            if let Some(value) = self.get(
+                collection.name.clone(),
+                k.clone(),
+                time,
+                TheInterpolation::Linear,
+            ) {
+                collection.keys.insert(k, value);
+            }
         }
-        let mut collection = TheCollection::new();
-        collection.keys.insert(key, value);
-        self.add(time, collection);
+    }
+
+    /// Checks if the timeline contains the given collection.
+    pub fn contains_collection(&self, name: &str) -> bool {
+        for (_, collection) in self.events.iter() {
+            if collection.name == name {
+                return true;
+            }
+        }
+        false
     }
 }
 
