@@ -26,6 +26,7 @@ pub mod thetext;
 // pub mod thetextedit;
 pub mod thecolorpicker;
 pub mod thedirectionpicker;
+pub mod thepalettepicker;
 pub mod thesdfview;
 pub mod thetextlineedit;
 pub mod thetimeslider;
@@ -87,6 +88,7 @@ pub mod prelude {
 
     pub use crate::theui::thewidget::thecolorpicker::{TheColorPicker, TheColorPickerTrait};
     pub use crate::theui::thewidget::thedirectionpicker::TheDirectionPicker;
+    pub use crate::theui::thewidget::thepalettepicker::{ThePalettePicker, ThePalettePickerTrait};
     pub use crate::theui::thewidget::thetimeslider::{TheTimeSlider, TheTimeSliderTrait};
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetState;
@@ -268,6 +270,11 @@ pub trait TheWidget: Send {
 
     /// Attempts to cast to TheTimeSlider. Only valid for TheTimeSliderTrait.
     fn as_time_slider(&mut self) -> Option<&mut dyn TheTimeSliderTrait> {
+        None
+    }
+
+    /// Attempts to cast to ThePalettePickerTrait. Only valid for ThePalettePicker.
+    fn as_palette_picker(&mut self) -> Option<&mut dyn ThePalettePickerTrait> {
         None
     }
 

@@ -48,6 +48,19 @@ impl TheWidget for TheDropdownMenu {
         &self.id
     }
 
+    fn value(&self) -> TheValue {
+        TheValue::Int(self.selected)
+    }
+
+    fn set_value(&mut self, value: TheValue) {
+        if let Some(index) = value.to_i32() {
+            if index >= 0 && index < self.options.len() as i32 {
+                self.selected = index;
+                self.is_dirty = true;
+            }
+        }
+    }
+
     fn status_text(&self) -> Option<String> {
         self.status.clone()
     }

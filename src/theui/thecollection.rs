@@ -1,11 +1,12 @@
+use indexmap::IndexMap;
+
 pub use crate::prelude::*;
-use std::collections::BTreeMap;
 
 /// Represents a collection of TheValues.
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct TheCollection {
     pub name: String,
-    pub keys: BTreeMap<String, TheValue>,
+    pub keys: indexmap::IndexMap<String, TheValue>,
 }
 
 impl Default for TheCollection {
@@ -18,13 +19,13 @@ impl TheCollection {
     pub fn named(name: String) -> Self {
         Self {
             name,
-            keys: BTreeMap::default(),
+            keys: IndexMap::default(),
         }
     }
     pub fn new() -> Self {
         Self {
             name: str!("Unnamed"),
-            keys: BTreeMap::default(),
+            keys: IndexMap::default(),
         }
     }
 
@@ -46,6 +47,16 @@ impl TheCollection {
     pub fn get_f32_default(&self, key: &str, default: f32) -> f32 {
         if let Some(v) = self.keys.get(key) {
             if let Some(v) = v.to_f32() {
+                return v;
+            }
+        }
+        default
+    }
+
+    /// Get an i32 value, if not found return the default.
+    pub fn get_i32_default(&self, key: &str, default: i32) -> i32 {
+        if let Some(v) = self.keys.get(key) {
+            if let Some(v) = v.to_i32() {
                 return v;
             }
         }

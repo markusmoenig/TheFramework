@@ -8,6 +8,8 @@ pub struct TheColor {
     pub g: f32,
     pub b: f32,
     pub a: f32,
+
+    pub name: String,
 }
 
 impl Default for TheColor {
@@ -19,7 +21,13 @@ impl Default for TheColor {
 impl TheColor {
     /// Creates a color from u8 values.
     pub fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
-        Self { r, g, b, a }
+        Self {
+            r,
+            g,
+            b,
+            a,
+            name: String::default(),
+        }
     }
 
     /// Creates a color from hsl.
@@ -64,7 +72,13 @@ impl TheColor {
             )
         };
 
-        Self { r, g, b, a: 1.0 }
+        Self {
+            r,
+            g,
+            b,
+            a: 1.0,
+            name: String::default(),
+        }
     }
 
     /// Creates a color from u8 values.
@@ -74,6 +88,7 @@ impl TheColor {
             g: g as f32 / 255.0,
             b: b as f32 / 255.0,
             a: a as f32 / 255.0,
+            name: String::default(),
         }
     }
 
@@ -84,6 +99,7 @@ impl TheColor {
             g: color[1] as f32 / 255.0,
             b: color[2] as f32 / 255.0,
             a: color[3] as f32 / 255.0,
+            name: String::default(),
         }
     }
 
@@ -94,6 +110,7 @@ impl TheColor {
             g: color.y,
             b: color.z,
             a: 1.0,
+            name: String::default(),
         }
     }
 
@@ -126,6 +143,7 @@ impl TheColor {
             g: g as f32 / 255.0,
             b: b as f32 / 255.0,
             a: a as f32 / 255.0,
+            name: String::default(),
         }
     }
 
@@ -152,6 +170,7 @@ impl TheColor {
             g: 1.0,
             b: 1.0,
             a: 1.0,
+            name: str!("White"),
         }
     }
 
@@ -162,6 +181,7 @@ impl TheColor {
             g: 0.5,
             b: 0.5,
             a: 1.0,
+            name: str!("Gray"),
         }
     }
 
@@ -172,6 +192,7 @@ impl TheColor {
             g: 0.0,
             b: 0.0,
             a: 1.0,
+            name: str!("Black"),
         }
     }
 
@@ -182,6 +203,7 @@ impl TheColor {
             g: 0.0,
             b: 0.0,
             a: 0.0,
+            name: str!("Transparent"),
         }
     }
 

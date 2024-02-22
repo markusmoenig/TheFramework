@@ -76,6 +76,7 @@ pub enum TheValue {
     Float(f32),
     FloatRange(f32, RangeInclusive<f32>),
     Int(i32),
+    IntRange(i32, RangeInclusive<i32>),
     Text(String),
     TextList(i32, Vec<String>),
     Char(char),
@@ -124,6 +125,7 @@ impl TheValue {
         match self {
             Int(v) => Some(*v),
             Text(t) => t.parse::<i32>().ok(),
+            TextList(index, _) => Some(*index),
             _ => None,
         }
     }
@@ -228,6 +230,7 @@ impl TheValue {
             Float(_v) => "Float".to_string(),
             FloatRange(_, _) => "Float".to_string(),
             Int(_i) => "Integer".to_string(),
+            IntRange(_, _) => "Integer".to_string(),
             Text(_s) => "Text".to_string(),
             TextList(index, list) => list[*index as usize].clone(),
             Int2(v) => format!("Int2: {:?}", v),
@@ -274,7 +277,7 @@ impl TheValue {
                     v.to_string()
                 }
             }
-            Int(i) => i.to_string(),
+            Int(i) | IntRange(i, _) => i.to_string(),
             Text(s) => s.clone(),
             TextList(index, list) => list[*index as usize].clone(),
             Int2(v) => format!("({}, {})", v.x, v.y),

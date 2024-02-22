@@ -1201,7 +1201,7 @@ impl TheCodeAtom {
                 TheValue::Bool(_v) => format!("Boolean constant ({}).", self.describe()),
                 TheValue::CodeObject(_v) => "An object.".to_string(),
                 TheValue::List(_v) => "A list of values.".to_string(),
-                TheValue::Int(v) => format!("Integer constant ({}).", v),
+                TheValue::Int(v) | TheValue::IntRange(v, _) => format!("Integer constant ({}).", v),
                 TheValue::Float(_) | TheValue::FloatRange(_, _) => {
                     format!("Float constant ({}).", value.describe())
                 }

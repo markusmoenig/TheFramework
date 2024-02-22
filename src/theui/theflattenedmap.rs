@@ -1,8 +1,7 @@
-#[derive(Clone, Debug)]
-pub struct TheFlattenedMap<T>
-where
-    T: Clone,
-{
+use crate::prelude::*;
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TheFlattenedMap<T> {
     data: Vec<Option<T>>,
     width: i32,
     height: i32,
