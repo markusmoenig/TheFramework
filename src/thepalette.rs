@@ -4,7 +4,7 @@ use std::ops::{Index, IndexMut};
 /// Holds an array of colors.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct ThePalette {
-    colors: Vec<Option<TheColor>>,
+    pub colors: Vec<Option<TheColor>>,
 }
 
 impl Default for ThePalette {

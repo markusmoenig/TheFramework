@@ -124,6 +124,7 @@ impl TheValue {
     pub fn to_i32(&self) -> Option<i32> {
         match self {
             Int(v) => Some(*v),
+            IntRange(v, _) => Some(*v),
             Text(t) => t.parse::<i32>().ok(),
             TextList(index, _) => Some(*index),
             _ => None,
@@ -133,6 +134,7 @@ impl TheValue {
     pub fn to_f32(&self) -> Option<f32> {
         match self {
             Float(v) => Some(*v),
+            FloatRange(v, _) => Some(*v),
             Text(t) => t.parse::<f32>().ok(),
             _ => None,
         }

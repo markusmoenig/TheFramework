@@ -756,6 +756,14 @@ impl TheUI {
         None
     }
 
+    /// Gets a given palette picker by name
+    pub fn get_palette_picker(&mut self, name: &str) -> Option<&mut dyn ThePalettePickerTrait> {
+        if let Some(text) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            return text.as_palette_picker();
+        }
+        None
+    }
+
     /// Gets a given layout by name
     pub fn get_layout(&mut self, name: &str) -> Option<&mut Box<dyn TheLayout>> {
         self.canvas.get_layout(Some(&name.to_string()), None)
