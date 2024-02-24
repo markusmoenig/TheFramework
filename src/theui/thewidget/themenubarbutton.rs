@@ -182,9 +182,19 @@ impl TheWidget for TheMenubarButton {
         if let Some(icon) = ctx.ui.icon(&self.icon_name) {
             let utuple = self.dim.to_buffer_shrunk_utuple(&shrinker);
             let r = (
-                ((utuple.0 + (utuple.2 - icon.dim().width as usize) / 2) as i32
+                ((utuple.0
+                    + if utuple.2 > icon.dim().width as usize {
+                        utuple.2 - icon.dim().width as usize
+                    } else {
+                        0
+                    } / 2) as i32
                     + self.icon_offset.x) as usize,
-                ((utuple.1 + (utuple.3 - icon.dim().height as usize) / 2) as i32
+                ((utuple.1
+                    + if utuple.3 > icon.dim().height as usize {
+                        utuple.3 - icon.dim().height as usize
+                    } else {
+                        0
+                    } / 2) as i32
                     + self.icon_offset.y) as usize,
                 icon.dim().width as usize,
                 icon.dim().height as usize,

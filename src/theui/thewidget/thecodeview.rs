@@ -615,22 +615,24 @@ impl TheWidget for TheCodeView {
                         }
                     }
 
-                    // Minor to the left
-                    if let Some(atom) = self.codegrid.code.get(&(x - 1, y)) {
-                        let dim = TheDim::new(
-                            -grid_size / 4,
-                            grid_size / 4,
-                            grid_size / 2,
-                            grid_size / 2,
-                        );
+                    if x > 0 {
+                        // Minor to the left
+                        if let Some(atom) = self.codegrid.code.get(&(x - 1, y)) {
+                            let dim = TheDim::new(
+                                -grid_size / 4,
+                                grid_size / 4,
+                                grid_size / 2,
+                                grid_size / 2,
+                            );
 
-                        let sdf = atom.to_sdf(dim, zoom);
-                        canvas.add(sdf, pattern_normal.clone());
+                            let sdf = atom.to_sdf(dim, zoom);
+                            canvas.add(sdf, pattern_normal.clone());
 
-                        if Some((x - 1, y)) == self.selected {
-                            canvas.selected = Some(canvas.sdfs.len() - 1);
-                        } else if Some((x - 1, y)) == self.hover {
-                            canvas.hover = Some(canvas.sdfs.len() - 1);
+                            if Some((x - 1, y)) == self.selected {
+                                canvas.selected = Some(canvas.sdfs.len() - 1);
+                            } else if Some((x - 1, y)) == self.hover {
+                                canvas.hover = Some(canvas.sdfs.len() - 1);
+                            }
                         }
                     }
 
