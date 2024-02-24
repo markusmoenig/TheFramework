@@ -121,6 +121,10 @@ impl TheWidget for TheDropdownMenu {
                     if self.selected != self.original {
                         ctx.ui
                             .send_widget_value_changed(self.id(), TheValue::Int(self.selected));
+                        ctx.ui.send(TheEvent::IndexChanged(
+                            self.id().clone(),
+                            self.selected as usize,
+                        ));
                     }
                 }
                 redraw = true;

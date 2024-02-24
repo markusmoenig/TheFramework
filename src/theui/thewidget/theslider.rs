@@ -115,7 +115,6 @@ impl TheWidget for TheSlider {
     fn set_value(&mut self, value: TheValue) {
         if value != self.value {
             self.value = value.clone();
-            self.default_value = value;
             self.is_dirty = true;
         }
     }
@@ -347,6 +346,7 @@ impl TheWidget for TheSlider {
 
 pub trait TheSliderTrait: TheWidget {
     fn set_range(&mut self, range: TheValue);
+    fn set_default_value(&mut self, value: TheValue);
     fn set_continuous(&mut self, continuous: bool);
 }
 
@@ -359,5 +359,9 @@ impl TheSliderTrait for TheSlider {
     }
     fn set_continuous(&mut self, continuous: bool) {
         self.continuous = continuous;
+    }
+    fn set_default_value(&mut self, value: TheValue) {
+        self.default_value = value;
+        self.is_dirty = true;
     }
 }
