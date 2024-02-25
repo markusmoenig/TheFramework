@@ -270,6 +270,14 @@ impl TheColor {
         vec3f(h, clamp(s, 0.0, 1.0), clamp(l, 0.0, 1.0))
     }
 
+    /// Lights or darken the color by the given amount.
+    pub fn lighten_darken(&self, amount: f32) -> Self {
+        let hsl = self.as_hsl();
+        let new_l = (hsl.z + amount).max(0.0).min(1.0);
+
+        Self::from_hsl(hsl.x * 360.0, hsl.y, new_l)
+    }
+
     /// Returns a new color as a mix between self and other.
     pub fn mix(&self, other: &TheColor, v: f32) -> TheColor {
         TheColor::new(

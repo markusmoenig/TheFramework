@@ -86,6 +86,7 @@ pub enum TheThemeColors {
     TraybarButtonDisabledBackground,
 
     ListLayoutBackground,
+    ListLayoutBorder,
     ListItemNormal,
     ListItemSelected,
     ListItemSelectedNoFocus,

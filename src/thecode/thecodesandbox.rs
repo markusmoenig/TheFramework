@@ -178,6 +178,16 @@ impl TheCodeSandbox {
         None
     }
 
+    /// Returns a mutable reference to the current object with an alias of "target".
+    pub fn get_target_mut(&mut self) -> Option<&mut TheCodeObject> {
+        if let Some(id) = self.aliases.get("target") {
+            if let Some(object) = self.objects.get_mut(id) {
+                return Some(object);
+            }
+        }
+        None
+    }
+
     /// Returns a mutable reference to the current area with an alias of "self".
     pub fn get_self_area_mut(&mut self) -> Option<&mut TheCodeObject> {
         if let Some(id) = self.aliases.get("self") {

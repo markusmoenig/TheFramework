@@ -199,6 +199,13 @@ impl TheLayout for TheListLayout {
             style.theme().color(ListLayoutBackground),
         );
 
+        ctx.draw.rect_outline(
+            self.list_buffer.pixels_mut(),
+            &utuple,
+            stride,
+            style.theme().color(ListLayoutBorder),
+        );
+
         if self.vertical_scrollbar_visible {
             self.vertical_scrollbar.draw(buffer, style, ctx);
         }

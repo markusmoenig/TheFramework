@@ -9,7 +9,8 @@ pub struct TheColorPicker {
     dim: TheDim,
     is_dirty: bool,
 
-    background: Option<[u8; 4]>,
+    background: Option<RGBA>,
+    border: Option<RGBA>,
 
     color: Vec3f,
 
@@ -47,6 +48,8 @@ impl TheWidget for TheColorPicker {
             is_dirty: false,
 
             background: None,
+            border: None,
+
             color: Vec3f::zero(),
 
             h: 0.0,
@@ -317,6 +320,7 @@ impl TheWidget for TheColorPicker {
 
 pub trait TheColorPickerTrait: TheWidget {
     fn set_background_color(&mut self, color: [u8; 4]);
+    fn set_border_color(&mut self, color: [u8; 4]);
 
     fn set_color(&mut self, color: Vec3f);
     fn set_continuous(&mut self, continuous: bool);
@@ -330,6 +334,10 @@ pub trait TheColorPickerTrait: TheWidget {
 impl TheColorPickerTrait for TheColorPicker {
     fn set_background_color(&mut self, color: [u8; 4]) {
         self.background = Some(color);
+    }
+
+    fn set_border_color(&mut self, color: [u8; 4]) {
+        self.border = Some(color);
     }
 
     fn set_color(&mut self, color: Vec3f) {

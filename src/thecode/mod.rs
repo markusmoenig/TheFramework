@@ -5,7 +5,6 @@ pub mod thecodebundle;
 pub mod thecodeeditor;
 pub mod thecodefunction;
 pub mod thecodegrid;
-pub mod thecodelevel;
 pub mod thecodemodule;
 pub mod thecodenode;
 pub mod thecodeobject;
@@ -21,7 +20,6 @@ pub mod prelude {
     pub use crate::thecode::thecodegrid::{
         TheCodeGrid, TheCodeGridMessage, TheCodeGridMessageType,
     };
-    pub use crate::thecode::thecodelevel::*;
     pub use crate::thecode::thecodemodule::TheCodeModule;
     pub use crate::thecode::thecodenode::*;
     pub use crate::thecode::thecodeobject::TheCodeObject;

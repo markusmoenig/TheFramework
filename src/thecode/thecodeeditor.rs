@@ -283,6 +283,7 @@ impl TheCodeEditor {
                 if id.name == "CodeGrid List Name" {
                     if let Some(text) = value.to_string() {
                         if let Some(codegrid_selection) = &self.codegrid_selection {
+                            let mut cg_for_rename_clone: Option<TheCodeGrid> = None;
                             if let Some(codegrid) =
                                 self.bundle.get_grid_mut(&codegrid_selection.uuid)
                             {
@@ -292,6 +293,8 @@ impl TheCodeEditor {
                                         widget.set_value(TheValue::Text(text.clone()));
                                         codegrid.name = text.clone();
 
+                                        cg_for_rename_clone = Some(codegrid.clone());
+
                                         ctx.ui.send(TheEvent::CodeBundleChanged(
                                             self.bundle.clone(),
                                             true,
@@ -299,6 +302,11 @@ impl TheCodeEditor {
                                         ctx.ui.relayout = true;
                                     }
                                 }
+                            }
+                            // We have to change the bundle in the view after rename
+                            // Otherwise the old name will be used after a change in the view.
+                            if let Some(cg_for_rename_clone) = cg_for_rename_clone {
+                                self.set_codegrid(cg_for_rename_clone, ui);
                             }
                         }
                     }

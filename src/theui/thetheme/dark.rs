@@ -72,6 +72,7 @@ impl TheTheme for TheDarkTheme {
         colors.insert(TraybarButtonDisabledBackground, [119, 119, 119, 255]);
 
         colors.insert(ListLayoutBackground, [82, 82, 82, 255]);
+        colors.insert(ListLayoutBorder, [139, 139, 139, 255]);
         colors.insert(ListItemNormal, [174, 174, 174, 255]);
         colors.insert(ListItemSelected, [187, 122, 208, 255]);
         colors.insert(ListItemSelectedNoFocus, [208, 208, 208, 255]);

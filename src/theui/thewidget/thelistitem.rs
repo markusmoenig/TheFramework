@@ -23,6 +23,8 @@ pub struct TheListItem {
     values: Vec<(i32, TheValue)>,
 
     context_menu: Option<TheContextMenu>,
+
+    background: Option<TheColor>,
 }
 
 impl TheWidget for TheListItem {
@@ -56,6 +58,8 @@ impl TheWidget for TheListItem {
             values: Vec::new(),
 
             context_menu: None,
+
+            background: None,
         }
     }
 
@@ -209,16 +213,18 @@ impl TheWidget for TheListItem {
 
         let mut color = if self.state == TheWidgetState::Selected {
             if !self.id().equals(&ctx.ui.focus) {
-                style.theme().color(ListItemSelectedNoFocus)
+                *style.theme().color(ListItemSelectedNoFocus)
             } else {
-                style.theme().color(ListItemSelected)
+                *style.theme().color(ListItemSelected)
             }
+        } else if let Some(background) = &self.background {
+            background.to_u8_array()
         } else {
-            style.theme().color(ListItemNormal)
+            *style.theme().color(ListItemNormal)
         };
 
         if self.state != TheWidgetState::Selected && self.id().equals(&ctx.ui.hover) {
-            color = style.theme().color(ListItemHover);
+            color = *style.theme().color(ListItemHover)
         }
 
         let stride = buffer.stride();
@@ -228,7 +234,7 @@ impl TheWidget for TheListItem {
             buffer.pixels_mut(),
             &self.dim.to_buffer_shrunk_utuple(&shrinker),
             stride,
-            color,
+            &color,
             1,
         );
 
@@ -237,7 +243,7 @@ impl TheWidget for TheListItem {
             buffer.pixels_mut(),
             &self.dim.to_buffer_shrunk_utuple(&shrinker),
             stride,
-            color,
+            &color,
         );
 
         if let Some(icon) = &self.icon {
@@ -372,6 +378,7 @@ impl TheWidget for TheListItem {
 }
 
 pub trait TheListItemTrait {
+    fn set_background_color(&mut self, color: TheColor);
     fn set_text(&mut self, text: String);
     fn set_sub_text(&mut self, sub_text: String);
     fn set_associated_layout(&mut self, id: TheId);
@@ -382,6 +389,10 @@ pub trait TheListItemTrait {
 }
 
 impl TheListItemTrait for TheListItem {
+    fn set_background_color(&mut self, color: TheColor) {
+        self.background = Some(color);
+        self.is_dirty = true;
+    }
     fn set_text(&mut self, text: String) {
         self.text = text;
         self.is_dirty = true;
