@@ -4,6 +4,7 @@ use crate::{prelude::*, TheTrait};
 pub struct TheApp {
     #[cfg(feature = "ui")]
     pub ui: TheUI,
+    pub args: Option<Vec<String>>,
 }
 
 impl Default for TheApp {
@@ -17,7 +18,13 @@ impl TheApp {
         Self {
             #[cfg(feature = "ui")]
             ui: TheUI::new(),
+            args: None,
         }
+    }
+
+    /// Optionally set the command line arguments of the app.
+    pub fn set_cmd_line_args(&mut self, args: Vec<String>) {
+        self.args = Some(args);
     }
 
     /// Runs the app
@@ -34,8 +41,7 @@ impl TheApp {
         use winit::window::{Icon, WindowBuilder};
         use winit_input_helper::WinitInputHelper;
 
-        let width: usize = 1200;
-        let height: usize = 700;
+        let (width, height) = app.default_window_size();
 
         let mut ctx = TheContext::new(width, height);
         #[cfg(feature = "ui")]
@@ -44,6 +50,11 @@ impl TheApp {
         ui.init(&mut ctx);
 
         app.init(&mut ctx);
+
+        // If available set the command line arguments to the trait.
+        if let Some(args) = self.args.take() {
+            app.set_cmd_line_args(args, &mut ctx);
+        }
 
         let window_title = app.window_title();
         let mut icon: Option<Icon> = None;

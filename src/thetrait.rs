@@ -8,6 +8,10 @@ pub trait TheTrait {
 
     fn init(&mut self, ctx: &mut TheContext) {}
 
+    fn default_window_size(&self) -> (usize, usize) {
+        (1200, 700)
+    }
+
     fn window_title(&self) -> String {
         "TheFramework based App".to_string()
     }
@@ -15,6 +19,8 @@ pub trait TheTrait {
     fn window_icon(&self) -> Option<(Vec<u8>, u32, u32)> {
         None
     }
+
+    fn set_cmd_line_args(&mut self, args: Vec<String>, ctx: &mut TheContext) {}
 
     #[cfg(feature = "ui")]
     fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {}
