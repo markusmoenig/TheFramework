@@ -718,6 +718,14 @@ impl TheUI {
         None
     }
 
+    /// Gets a given render view by name
+    pub fn get_render_view(&mut self, name: &str) -> Option<&mut dyn TheRenderViewTrait> {
+        if let Some(render_view) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            return render_view.as_render_view();
+        }
+        None
+    }
+
     /// Gets a given text by name
     pub fn get_text(&mut self, name: &str) -> Option<&mut dyn TheTextTrait> {
         if let Some(text) = self.canvas.get_widget(Some(&name.to_string()), None) {

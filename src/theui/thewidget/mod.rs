@@ -27,6 +27,7 @@ pub mod thetext;
 pub mod thecolorpicker;
 pub mod thedirectionpicker;
 pub mod thepalettepicker;
+pub mod therenderview;
 pub mod thesdfview;
 pub mod thetextlineedit;
 pub mod thetimeslider;
@@ -92,6 +93,8 @@ pub mod prelude {
     pub use crate::theui::thewidget::thetimeslider::{TheTimeSlider, TheTimeSliderTrait};
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetState;
+
+    pub use crate::theui::thewidget::therenderview::{TheRenderView, TheRenderViewTrait};
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -228,8 +231,13 @@ pub trait TheWidget: Send {
         None
     }
 
-    /// Attempts to cast to TheRGBAView. Only valid for TheVerticalScrollbar.
+    /// Attempts to cast to TheRGBAView. Only valid for TheRGBAViewTrait.
     fn as_rgba_view(&mut self) -> Option<&mut dyn TheRGBAViewTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheRenderViewTrait. Only valid for TheRenderView.
+    fn as_render_view(&mut self) -> Option<&mut dyn TheRenderViewTrait> {
         None
     }
 

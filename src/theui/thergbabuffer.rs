@@ -39,6 +39,15 @@ impl TheRGBABuffer {
         }
     }
 
+    /// Resizes the buffer.
+    pub fn resize(&mut self, width: i32, height: i32) {
+        if self.dim.width != width || self.dim.height != height {
+            self.dim.width = width;
+            self.dim.height = height;
+            self.allocate();
+        }
+    }
+
     /// Check for size validity
     pub fn is_valid(&self) -> bool {
         self.dim.is_valid()
