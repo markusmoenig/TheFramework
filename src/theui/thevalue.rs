@@ -121,6 +121,14 @@ impl TheValue {
         }
     }
 
+    pub fn to_vec3f(&self) -> Option<Vec3f> {
+        match self {
+            Float3(v) => Some(*v),
+            ColorObject(color, _) => Some(color.to_vec3f()),
+            _ => None,
+        }
+    }
+
     pub fn to_i32(&self) -> Option<i32> {
         match self {
             Int(v) => Some(*v),

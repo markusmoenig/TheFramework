@@ -825,10 +825,18 @@ impl TheUI {
         None
     }
 
-    /// Gets a given TheSharedLayout by name
+    /// Gets a given TheHLayout by name
     pub fn get_hlayout(&mut self, name: &str) -> Option<&mut dyn TheHLayoutTrait> {
         if let Some(layout) = self.canvas.get_layout(Some(&name.to_string()), None) {
             return layout.as_hlayout();
+        }
+        None
+    }
+
+    /// Gets a given TheVLayout by name
+    pub fn get_vlayout(&mut self, name: &str) -> Option<&mut dyn TheVLayoutTrait> {
+        if let Some(layout) = self.canvas.get_layout(Some(&name.to_string()), None) {
+            return layout.as_vlayout();
         }
         None
     }

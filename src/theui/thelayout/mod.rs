@@ -146,6 +146,11 @@ pub trait TheLayout: Send {
         None
     }
 
+    /// Attempts to cast to TheVLayoutTrait. Only valid for TheVLayout.
+    fn as_vlayout(&mut self) -> Option<&mut dyn TheVLayoutTrait> {
+        None
+    }
+
     /// Attempts to cast to TheTextLayout. Only valid for TheTextLayout.
     fn as_text_layout(&mut self) -> Option<&mut dyn TheTextLayoutTrait> {
         None

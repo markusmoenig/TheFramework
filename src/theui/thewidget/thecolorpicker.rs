@@ -264,7 +264,7 @@ impl TheWidget for TheColorPicker {
 
         buffer.blend_into(self.dim.buffer_x, self.dim.buffer_y, &b);
 
-        self.dot_size = size as f32 / 20.0;
+        self.dot_size = (size as f32 / 20.0).max(5.0);
         self.compute_points();
 
         let mut r = self.dim.to_buffer_utuple();

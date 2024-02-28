@@ -203,6 +203,10 @@ impl TheLayout for TheVLayout {
             w.draw(buffer, style, ctx);
         }
     }
+
+    fn as_vlayout(&mut self) -> Option<&mut dyn TheVLayoutTrait> {
+        Some(self)
+    }
 }
 
 /// TheVLayout specific functions.
