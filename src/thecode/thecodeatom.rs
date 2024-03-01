@@ -1224,7 +1224,7 @@ impl TheCodeAtom {
                 TheValue::ColorObject(_, _) => "Color.".to_string(),
                 TheValue::Empty => "Empty value.".to_string(),
                 TheValue::Id(id) => format!("Id ({}).", id),
-                TheValue::Direction(v, _) => format!("Direction ({}).", v),
+                TheValue::Direction(v) => format!("Direction ({}).", v),
                 TheValue::Time(_) => self.describe(),
                 TheValue::TimeDuration(_, _) => self.describe(),
                 TheValue::TileMask(_) => self.describe(),
@@ -1393,25 +1393,13 @@ impl TheCodeAtom {
                     layout.add_widget(Box::new(text2));
                     layout.add_widget(Box::new(random));
                 }
-                TheValue::Direction(value, randomness) => {
+                TheValue::Direction(value) => {
                     create_float2_widgets(
                         layout,
                         TheId::named("Atom Direction Float2"),
                         vec2f(value.x, value.z),
                         vec!["X", "Y"],
                     );
-
-                    let mut random = TheSlider::new(TheId::named("Atom Direction Randomness"));
-                    random.set_status_text("The randomness of the color. From 0.0 (no randomness) to 1.0 (full randomness).");
-                    random.set_value(TheValue::Float(*randomness));
-                    random.set_range(TheValue::RangeF32(0.0..=1.0));
-                    random.limiter_mut().set_max_width(120);
-
-                    let mut text = TheText::new(TheId::empty());
-                    text.set_text("R".to_string());
-
-                    layout.add_widget(Box::new(text));
-                    layout.add_widget(Box::new(random));
                 }
                 TheValue::TextList(index, list) => {
                     let mut drop_down = TheDropdownMenu::new(TheId::named("Atom TextList"));

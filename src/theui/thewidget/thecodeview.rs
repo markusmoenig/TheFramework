@@ -828,21 +828,6 @@ impl TheWidget for TheCodeView {
                                         TheVerticalAlign::Center,
                                     );
                                 }
-                                TheCodeAtom::Assignment(_) | TheCodeAtom::Comparison(_) => {
-                                    let executed = self.debug_module.executed.contains(&(x, y));
-                                    let c = if executed { &WHITE } else { &text_color };
-                                    ctx.draw.text_rect_blend(
-                                        self.buffer.pixels_mut(),
-                                        &(rect.0 + 8, rect.1, rect.2 - 8, rect.3),
-                                        stride,
-                                        font,
-                                        font_size,
-                                        &atom.describe(),
-                                        c,
-                                        TheHorizontalAlign::Center,
-                                        TheVerticalAlign::Center,
-                                    );
-                                }
                                 _ => {
                                     let executed = self.debug_module.executed.contains(&(x, y));
                                     let c = if executed { &WHITE } else { &text_color };

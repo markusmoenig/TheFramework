@@ -78,13 +78,14 @@ impl TheLayout for TheSharedVLayout {
 
         if self.mode == TheSharedVLayoutMode::Top {
             return self.canvas[0].get_widget_at_coord(coord);
-        } else if self.mode == TheSharedVLayoutMode::Bottom {
+        }
+        if self.mode == TheSharedVLayoutMode::Bottom {
             return self.canvas[1].get_widget_at_coord(coord);
-        } else {
-            for c in &mut self.canvas {
-                if let Some(w) = c.get_widget_at_coord(coord) {
-                    return Some(w);
-                }
+        }
+
+        for c in self.canvas.iter_mut() {
+            if let Some(w) = c.get_widget_at_coord(coord) {
+                return Some(w);
             }
         }
         None
@@ -101,13 +102,14 @@ impl TheLayout for TheSharedVLayout {
 
         if self.mode == TheSharedVLayoutMode::Top {
             return self.canvas[0].get_widget(name, uuid);
-        } else if self.mode == TheSharedVLayoutMode::Bottom {
+        }
+        if self.mode == TheSharedVLayoutMode::Bottom {
             return self.canvas[1].get_widget(name, uuid);
-        } else {
-            for c in &mut self.canvas {
-                if let Some(w) = c.get_widget(name, uuid) {
-                    return Some(w);
-                }
+        }
+
+        for c in self.canvas.iter_mut() {
+            if let Some(w) = c.get_widget(name, uuid) {
+                return Some(w);
             }
         }
         None
@@ -123,13 +125,14 @@ impl TheLayout for TheSharedVLayout {
         }
         if self.mode == TheSharedVLayoutMode::Top {
             return self.canvas[0].get_layout(name, uuid);
-        } else if self.mode == TheSharedVLayoutMode::Bottom {
+        }
+        if self.mode == TheSharedVLayoutMode::Bottom {
             return self.canvas[1].get_layout(name, uuid);
-        } else {
-            for c in &mut self.canvas {
-                if let Some(w) = c.get_layout(name, uuid) {
-                    return Some(w);
-                }
+        }
+
+        for c in self.canvas.iter_mut() {
+            if let Some(w) = c.get_layout(name, uuid) {
+                return Some(w);
             }
         }
         None
@@ -167,8 +170,8 @@ impl TheLayout for TheSharedVLayout {
                 );
                 self.canvas[1].set_dim(
                     TheDim::new(
-                        dim.x + (dim.width as f32 * self.ratio) as i32 + 1,
-                        dim.y,
+                        dim.x,
+                        dim.y + (dim.height as f32 * self.ratio) as i32 + 1,
                         dim.width,
                         (dim.height - (dim.height as f32 * self.ratio) as i32) - 1,
                     ),
@@ -249,6 +252,8 @@ impl TheLayout for TheSharedVLayout {
 pub trait TheSharedVLayoutTrait: TheLayout {
     /// Add a canvas.
     fn add_canvas(&mut self, canvas: TheCanvas);
+    /// Get the mode
+    fn mode(&mut self) -> TheSharedVLayoutMode;
     /// Set the layout mode.
     fn set_mode(&mut self, mode: TheSharedVLayoutMode);
     // Se the shared ratio. Default is 0.5.
@@ -259,6 +264,10 @@ impl TheSharedVLayoutTrait for TheSharedVLayout {
     fn add_canvas(&mut self, canvas: TheCanvas) {
         self.canvas.push(canvas);
     }
+    fn mode(&mut self) -> TheSharedVLayoutMode {
+        self.mode.clone()
+    }
+
     fn set_mode(&mut self, mode: TheSharedVLayoutMode) {
         self.mode = mode;
     }

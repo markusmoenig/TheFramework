@@ -584,7 +584,7 @@ impl TheUI {
         }
 
         if let Some(widget) = self.get_widget_at_coord(coord) {
-            //println!("Hover {:?}", widget.id());
+            println!("Hover {:?}", widget.id());
             let event = TheEvent::Hover(widget.dim().to_local(coord));
             redraw = widget.on_event(&event, ctx);
 

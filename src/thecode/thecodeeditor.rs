@@ -491,29 +491,15 @@ impl TheCodeEditor {
                     }
                 } else if id.name == "Atom Direction Float2" {
                     if let Some(value) = value.to_vec2f() {
-                        if let Some(TheCodeAtom::Value(TheValue::Direction(_, randomness))) =
+                        if let Some(TheCodeAtom::Value(TheValue::Direction(_))) =
                             self.get_selected_atom(ui)
                         {
                             self.start_undo(ui);
                             self.set_selected_atom(
                                 ui,
-                                TheCodeAtom::Value(TheValue::Direction(
-                                    vec3f(value.x, 0.0, value.y),
-                                    randomness,
-                                )),
-                            );
-                            self.finish_undo(ui, ctx);
-                        }
-                    }
-                } else if id.name == "Atom Direction Randomness" {
-                    if let Some(randomness) = value.to_f32() {
-                        if let Some(TheCodeAtom::Value(TheValue::Direction(value, _))) =
-                            self.get_selected_atom(ui)
-                        {
-                            self.start_undo(ui);
-                            self.set_selected_atom(
-                                ui,
-                                TheCodeAtom::Value(TheValue::Direction(value, randomness)),
+                                TheCodeAtom::Value(TheValue::Direction(vec3f(
+                                    value.x, 0.0, value.y,
+                                ))),
                             );
                             self.finish_undo(ui, ctx);
                         }
@@ -757,7 +743,7 @@ impl TheCodeEditor {
             "RInt" => TheCodeAtom::RandInt(vec2i(0, 3)),
             "RFloat" => TheCodeAtom::RandFloat(vec2f(0.0, 1.0)),
             "Color" => TheCodeAtom::Value(TheValue::ColorObject(TheColor::default(), 0.0)),
-            "Direction" => TheCodeAtom::Value(TheValue::Direction(vec3f(0.0, 0.0, -1.0), 0.0)),
+            "Direction" => TheCodeAtom::Value(TheValue::Direction(vec3f(0.0, 0.0, -1.0))),
             _ => {
                 if let Some((bundle_name, bundle_id, module)) = self.modules.get(&id) {
                     return TheCodeAtom::ModuleCall(

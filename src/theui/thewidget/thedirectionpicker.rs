@@ -27,7 +27,7 @@ impl TheWidget for TheDirectionPicker {
             dim: TheDim::zero(),
             is_dirty: false,
 
-            value: TheValue::Direction(vec3f(0.0, 0.0, -1.0), 0.0),
+            value: TheValue::Direction(vec3f(0.0, 0.0, -1.0)),
         }
     }
 
@@ -47,7 +47,7 @@ impl TheWidget for TheDirectionPicker {
                 }
                 ctx.ui.set_focus(self.id());
 
-                if let TheValue::Direction(_, r) = self.value {
+                if let TheValue::Direction(_) = self.value {
                     let v = vec2i(
                         coord.x - self.dim().width / 2,
                         coord.y - self.dim().height / 2,
@@ -55,7 +55,7 @@ impl TheWidget for TheDirectionPicker {
                     let norm = normalize(Vec2f::from(v));
 
                     let value = vec3f(norm.x, 0.0, norm.y);
-                    self.value = TheValue::Direction(value, r);
+                    self.value = TheValue::Direction(value);
                     ctx.ui
                         .send(TheEvent::ValueChanged(self.id.clone(), self.value.clone()));
                 }
@@ -66,7 +66,7 @@ impl TheWidget for TheDirectionPicker {
             TheEvent::MouseDragged(coord) => {
                 println!("here 0");
 
-                if let TheValue::Direction(_, r) = self.value {
+                if let TheValue::Direction(_) = self.value {
                     let v = vec2i(
                         coord.x - self.dim().width / 2,
                         coord.y - self.dim().height / 2,
@@ -74,7 +74,7 @@ impl TheWidget for TheDirectionPicker {
                     let norm = normalize(Vec2f::from(v));
 
                     let value = vec3f(norm.x, 0.0, norm.y);
-                    self.value = TheValue::Direction(value, r);
+                    self.value = TheValue::Direction(value);
                     ctx.ui
                         .send(TheEvent::ValueChanged(self.id.clone(), self.value.clone()));
                 }
@@ -149,7 +149,7 @@ impl TheWidget for TheDirectionPicker {
             90.0,
         );
 
-        if let TheValue::Direction(value, _randomness) = self.value {
+        if let TheValue::Direction(value) = self.value {
             let cx = buffer.dim().width / 2;
             let cy = buffer.dim().height / 2 - 6;
 
@@ -174,7 +174,7 @@ impl TheWidget for TheDirectionPicker {
     }
 
     fn set_value(&mut self, value: TheValue) {
-        if let TheValue::Direction(_, _) = value {
+        if let TheValue::Direction(_) = value {
             self.value = value;
             self.is_dirty = true;
         }
