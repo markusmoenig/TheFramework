@@ -269,39 +269,37 @@ impl TheCompiler {
                                 self.ctx.last_comparison_indent = None;
                                 self.ctx.last_comparison_to = None;
                             }
-                        } else {
-                            let mut cond: Option<TheValueComparison> = None;
+                            break;
+                        }
+                        let mut cond: Option<TheValueComparison> = None;
 
-                            // On uneven lines check for multi comparisons.
-                            if let Some(TheCodeAtom::Comparison(op)) = self
-                                .grid
-                                .code
-                                .get(&(code_index as u16, self.ctx.current_location.1))
-                            {
-                                if let Some(last_comparison_indent) =
-                                    self.ctx.last_comparison_indent
+                        // On uneven lines check for multi comparisons.
+                        if let Some(TheCodeAtom::Comparison(op)) = self
+                            .grid
+                            .code
+                            .get(&(code_index as u16, self.ctx.current_location.1))
+                        {
+                            if let Some(last_comparison_indent) = self.ctx.last_comparison_indent {
+                                if let Some(last_comparison_to) =
+                                    self.ctx.last_comparison_to.clone()
                                 {
-                                    if let Some(last_comparison_to) =
-                                        self.ctx.last_comparison_to.clone()
-                                    {
-                                        if code_index == last_comparison_indent as usize {
-                                            // Fist, close the current comparison block
-                                            if let Some(function) = self.ctx.remove_function() {
-                                                if let Some(mut node) = self.ctx.blocks.pop() {
-                                                    node.data.sub_functions.push(function);
-                                                    self.ctx.get_current_function().add_node(node);
-                                                }
-                                            }
-
-                                            // Write the node we compare to, to the stack again.
-                                            if let Some(node) =
-                                                last_comparison_to.clone().to_node(&mut self.ctx)
-                                            {
+                                    if code_index == last_comparison_indent as usize {
+                                        // Fist, close the current comparison block
+                                        if let Some(function) = self.ctx.remove_function() {
+                                            if let Some(mut node) = self.ctx.blocks.pop() {
+                                                node.data.sub_functions.push(function);
                                                 self.ctx.get_current_function().add_node(node);
                                             }
-
-                                            cond = Some(*op);
                                         }
+
+                                        // Write the node we compare to, to the stack again.
+                                        if let Some(node) =
+                                            last_comparison_to.clone().to_node(&mut self.ctx)
+                                        {
+                                            self.ctx.get_current_function().add_node(node);
+                                        }
+
+                                        cond = Some(*op);
                                     }
                                 }
                             }
