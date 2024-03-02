@@ -310,7 +310,7 @@ impl TheValue {
             Comparison(c) => format!("{:?}", c.to_string()),
             Assignment(c) => format!("{:?}", c.to_string()),
             Id(c) => format!("Id: {:?}", c.to_string()),
-            Direction(d) => format!("D ({}, {})", d.x, d.z),
+            Direction(d) => format!("D ({:.2}, {:.2})", d.x, d.z),
             Time(t) => t.to_time24(),
             TimeDuration(s, e) => format!("{} - {}", s.to_time24(), e.to_time24()),
             TileMask(_) => str!("Pixels"),

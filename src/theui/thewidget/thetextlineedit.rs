@@ -260,6 +260,9 @@ impl TheWidget for TheTextLineEdit {
                         } else {
                             ctx.ui.send_widget_value_changed(self.id(), self.value());
                         }
+                        ctx.ui.clear_focus();
+                        redraw = true;
+                        self.is_dirty = true;
                         self.original = self.text.clone();
                     }
 
