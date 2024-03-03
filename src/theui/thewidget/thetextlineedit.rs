@@ -156,26 +156,47 @@ impl TheWidget for TheTextLineEdit {
                 self.is_dirty = true;
                 redraw = true;
 
-                self.position = 0;
-                let x = coord.x - 7;
-                let mut offset = 0;
-                let mut found = false;
-                if !self.text.is_empty() && x >= 0 {
-                    for i in 1..self.text.len() {
-                        let txt = &self.text[0..i];
-                        if let Some(font) = &ctx.ui.font {
-                            let size = ctx.draw.get_text_size(font, self.font_size, txt);
-                            if size.0 as i32 >= x {
-                                offset = i;
-                                found = true;
-                                break;
+                // If we have an i32 or f32 range, we treat the text line edit as a slider
+                if let Some(range) = &self.range {
+                    if let Some(range_f32) = range.to_range_f32() {
+                        let d = abs(range_f32.end() - range_f32.start())
+                            * (coord.x as f32 / (self.dim.width) as f32).clamp(0.0, 1.0);
+                        let v = *range_f32.start() + d;
+                        self.text = format!("{:.3}", v);
+                    } else if let Some(range_i32) = range.to_range_i32() {
+                        let range_diff = range_i32.end() - range_i32.start();
+                        let d = (coord.x * range_diff) / (self.dim.width);
+                        let v =
+                            (*range_i32.start() + d).clamp(*range_i32.start(), *range_i32.end());
+                        self.text = v.to_string()
+                    }
+                    if self.continuous {
+                        ctx.ui.send_widget_value_changed(
+                            self.id(),
+                            TheValue::Text(self.text.clone()),
+                        );
+                    }
+                } else {
+                    let x = coord.x - 7;
+                    let mut offset = 0;
+                    let mut found = false;
+                    if !self.text.is_empty() && x >= 0 {
+                        for i in 1..self.text.len() {
+                            let txt = &self.text[0..i];
+                            if let Some(font) = &ctx.ui.font {
+                                let size = ctx.draw.get_text_size(font, self.font_size, txt);
+                                if size.0 as i32 >= x {
+                                    offset = i;
+                                    found = true;
+                                    break;
+                                }
                             }
                         }
-                    }
-                    if found {
-                        self.position = offset;
-                    } else {
-                        self.position = self.text.len();
+                        if found {
+                            self.position = offset;
+                        } else {
+                            self.position = self.text.len();
+                        }
                     }
                 }
             }
