@@ -12,6 +12,7 @@ pub struct TheGroupButton {
     hover_index: Option<usize>,
     selected_index: Option<usize>,
 
+    icon_size: Vec2i,
     item_width: usize,
 
     dim: TheDim,
@@ -40,6 +41,7 @@ impl TheWidget for TheGroupButton {
             hover_index: None,
             selected_index: Some(0),
 
+            icon_size: vec2i(16, 16),
             item_width: 60,
 
             dim: TheDim::zero(),
@@ -281,14 +283,21 @@ impl TheWidget for TheGroupButton {
                 if let Some(icon) = ctx.ui.icon(&icon_name) {
                     let r = (
                         ut.0 + x + 5,
-                        ((ut.1 + (20 - icon.dim().height as usize) / 2) as i32) as usize,
-                        icon.dim().width as usize,
-                        icon.dim().height as usize,
+                        ((ut.1 + (20 - self.icon_size.y as usize) / 2) as i32) as usize,
+                        self.icon_size.x as usize,
+                        self.icon_size.y as usize,
                     );
-                    ctx.draw
-                        .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
+                    ctx.draw.blend_scale_chunk(
+                        buffer.pixels_mut(),
+                        &r,
+                        stride,
+                        icon.pixels(),
+                        &(icon.dim().width as usize, icon.dim().height as usize),
+                    );
+                    // ctx.draw
+                    // .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
                     has_icon = true;
-                    offset = icon.dim().width as usize + 5 + 2;
+                    offset = self.icon_size.x as usize + 5 + 2;
                 }
             }
 

@@ -1009,6 +1009,53 @@ impl TheDraw2D {
         }
     }
 
+    /// Scale a chunk to the destination size with linear interpolation and blend onto destination
+    pub fn blend_scale_chunk_linear(
+        &self,
+        dest: &mut [u8],
+        dest_rect: &(usize, usize, usize, usize),
+        dest_stride: usize,
+        source: &[u8],
+        source_size: &(usize, usize),
+    ) {
+        let x_ratio = (source_size.0 - 1) as f32 / dest_rect.2 as f32;
+        let y_ratio = (source_size.1 - 1) as f32 / dest_rect.3 as f32;
+
+        for dy in 0..dest_rect.3 {
+            let sy = (dy as f32 * y_ratio).round() as usize;
+            let sy_frac = dy as f32 * y_ratio - sy as f32;
+
+            for dx in 0..dest_rect.2 {
+                let sx = (dx as f32 * x_ratio).round() as usize;
+                let sx_frac = dx as f32 * x_ratio - sx as f32;
+
+                let d = (dest_rect.0 + dx) * 4 + (dest_rect.1 + dy) * dest_stride * 4;
+
+                // Interpolate between four neighboring pixels
+                let mut interpolated_color = [0; 4];
+                for c in 0..4 {
+                    let tl = source[(sy * source_size.0 + sx) * 4 + c] as f32;
+                    let tr = source[(sy * source_size.0 + sx + 1) * 4 + c] as f32;
+                    let bl = source[((sy + 1) * source_size.0 + sx) * 4 + c] as f32;
+                    let br = source[((sy + 1) * source_size.0 + sx + 1) * 4 + c] as f32;
+
+                    let top = tl * (1.0 - sx_frac) + tr * sx_frac;
+                    let bottom = bl * (1.0 - sx_frac) + br * sx_frac;
+
+                    interpolated_color[c] = (top * (1.0 - sy_frac) + bottom * sy_frac) as u8;
+                }
+
+                // Blend the interpolated color onto the destination
+                let background = &[dest[d], dest[d + 1], dest[d + 2], dest[d + 3]];
+                dest[d..d + 4].copy_from_slice(&self.mix_color(
+                    background,
+                    &interpolated_color,
+                    interpolated_color[3] as f32 / 255.0,
+                ));
+            }
+        }
+    }
+
     /// The fill mask for an SDF distance
     fn fill_mask(&self, dist: f32) -> f32 {
         (-dist).clamp(0.0, 1.0)
