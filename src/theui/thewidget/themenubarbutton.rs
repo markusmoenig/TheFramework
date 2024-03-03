@@ -8,6 +8,8 @@ pub struct TheMenubarButton {
     icon_name: String,
     icon_offset: Vec2i,
 
+    fixed_size: Option<Vec2i>,
+
     status: Option<String>,
 
     dim: TheDim,
@@ -29,6 +31,8 @@ impl TheWidget for TheMenubarButton {
 
             icon_name: "".to_string(),
             icon_offset: vec2i(0, 0),
+
+            fixed_size: None,
 
             status: None,
 
@@ -181,26 +185,54 @@ impl TheWidget for TheMenubarButton {
 
         if let Some(icon) = ctx.ui.icon(&self.icon_name) {
             let utuple = self.dim.to_buffer_shrunk_utuple(&shrinker);
-            let r = (
-                ((utuple.0
-                    + if utuple.2 > icon.dim().width as usize {
-                        utuple.2 - icon.dim().width as usize
-                    } else {
-                        0
-                    } / 2) as i32
-                    + self.icon_offset.x) as usize,
-                ((utuple.1
-                    + if utuple.3 > icon.dim().height as usize {
-                        utuple.3 - icon.dim().height as usize
-                    } else {
-                        0
-                    } / 2) as i32
-                    + self.icon_offset.y) as usize,
-                icon.dim().width as usize,
-                icon.dim().height as usize,
-            );
-            ctx.draw
-                .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
+            if let Some(fixed_size) = self.fixed_size {
+                let r = (
+                    ((utuple.0
+                        + if utuple.2 > fixed_size.x as usize {
+                            utuple.2 - fixed_size.x as usize
+                        } else {
+                            0
+                        } / 2) as i32
+                        + self.icon_offset.x) as usize,
+                    ((utuple.1
+                        + if utuple.3 > fixed_size.y as usize {
+                            utuple.3 - fixed_size.y as usize
+                        } else {
+                            0
+                        } / 2) as i32
+                        + self.icon_offset.y) as usize,
+                    fixed_size.x as usize,
+                    fixed_size.y as usize,
+                );
+                ctx.draw.blend_scale_chunk_linear(
+                    buffer.pixels_mut(),
+                    &r,
+                    stride,
+                    icon.pixels(),
+                    &(icon.dim().width as usize, icon.dim().height as usize),
+                );
+            } else {
+                let r = (
+                    ((utuple.0
+                        + if utuple.2 > icon.dim().width as usize {
+                            utuple.2 - icon.dim().width as usize
+                        } else {
+                            0
+                        } / 2) as i32
+                        + self.icon_offset.x) as usize,
+                    ((utuple.1
+                        + if utuple.3 > icon.dim().height as usize {
+                            utuple.3 - icon.dim().height as usize
+                        } else {
+                            0
+                        } / 2) as i32
+                        + self.icon_offset.y) as usize,
+                    icon.dim().width as usize,
+                    icon.dim().height as usize,
+                );
+                ctx.draw
+                    .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
+            }
         }
 
         self.is_dirty = false;
@@ -216,11 +248,16 @@ impl TheWidget for TheMenubarButton {
 }
 
 pub trait TheMenubarButtonTrait {
+    fn set_fixed_size(&mut self, size: Vec2i);
     fn set_icon_name(&mut self, text: String);
     fn set_icon_offset(&mut self, offset: Vec2i);
 }
 
 impl TheMenubarButtonTrait for TheMenubarButton {
+    fn set_fixed_size(&mut self, size: Vec2i) {
+        self.fixed_size = Some(size);
+        self.is_dirty = true;
+    }
     fn set_icon_name(&mut self, text: String) {
         self.icon_name = text;
         self.is_dirty = true;
