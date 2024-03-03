@@ -204,7 +204,7 @@ impl TheWidget for TheMenubarButton {
                     fixed_size.x as usize,
                     fixed_size.y as usize,
                 );
-                ctx.draw.blend_scale_chunk_linear(
+                ctx.draw.blend_scale_chunk(
                     buffer.pixels_mut(),
                     &r,
                     stride,
