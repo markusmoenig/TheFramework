@@ -16,7 +16,10 @@ pub struct TheTimeSlider {
     is_dirty: bool,
 
     continuous: bool,
-    marker: Vec<TheTime>,
+    marker: Vec<(TheTime, Vec<String>)>,
+    selected_marker: Option<TheTime>,
+
+    text_width: i32,
 }
 
 impl TheWidget for TheTimeSlider {
@@ -45,7 +48,10 @@ impl TheWidget for TheTimeSlider {
 
             continuous: false,
 
+            text_width: 40,
+
             marker: vec![],
+            selected_marker: None,
         }
     }
 
@@ -131,14 +137,36 @@ impl TheWidget for TheTimeSlider {
 
                 ctx.ui.set_focus(self.id());
 
+                let mut offset = coord.x;
+                if offset < 0 {
+                    offset = 0;
+                }
+
+                if offset > self.dim.width - self.text_width {
+                    offset = self.dim.width - self.text_width;
+                }
+
+                for (time, _) in &self.marker {
+                    let marker_offset =
+                        time.to_widget_offset((self.dim.width - self.text_width) as u32) as i32;
+
+                    if offset >= marker_offset && offset < marker_offset + 10 {
+                        self.selected_marker = Some(*time);
+                        ctx.ui
+                            .send(TheEvent::TimelineMarkerSelected(self.id.clone(), *time));
+                        break;
+                    }
+                }
+
                 self.value = TheValue::Time(TheTime::from_widget_offset(
-                    coord.x as u32,
-                    self.dim.width as u32,
+                    offset as u32,
+                    (self.dim.width - self.text_width) as u32,
                 ));
 
                 ctx.ui
                     .send_widget_value_changed(self.id(), self.value.clone());
                 redraw = true;
+                self.is_dirty = true;
             }
             TheEvent::MouseDragged(coord) => {
                 let mut offset = coord.x;
@@ -146,13 +174,13 @@ impl TheWidget for TheTimeSlider {
                     offset = 0;
                 }
 
-                if offset > self.dim.width {
-                    offset = self.dim.width;
+                if offset > self.dim.width - self.text_width {
+                    offset = self.dim.width - self.text_width;
                 }
 
                 self.value = TheValue::Time(TheTime::from_widget_offset(
                     offset as u32,
-                    self.dim.width as u32,
+                    (self.dim.width - self.text_width) as u32,
                 ));
 
                 if self.continuous {
@@ -174,11 +202,40 @@ impl TheWidget for TheTimeSlider {
                 }
                 redraw = true;
             }
-            TheEvent::Hover(_coord) => {
+            TheEvent::Hover(coord) => {
                 if self.state != TheWidgetState::Selected && !self.id().equals(&ctx.ui.hover) {
                     self.is_dirty = true;
                     ctx.ui.set_hover(self.id());
                     redraw = true;
+                }
+
+                let mut offset = coord.x;
+                if offset < 0 {
+                    offset = 0;
+                }
+
+                if offset > self.dim.width - self.text_width {
+                    offset = self.dim.width - self.text_width;
+                }
+
+                let mut hovered_marker = false;
+                for (time, names) in &self.marker {
+                    let marker_offset =
+                        time.to_widget_offset((self.dim.width - self.text_width) as u32) as i32;
+
+                    if offset >= marker_offset && offset < marker_offset + 10 {
+                        let text = format!("Marker at {}: {}.", time.to_time24(), names.join(", "));
+                        ctx.ui.send(TheEvent::SetStatusText(TheId::empty(), text));
+                        hovered_marker = true;
+                        break;
+                    }
+                }
+
+                if !hovered_marker {
+                    if let Some(status) = &self.status {
+                        ctx.ui
+                            .send(TheEvent::SetStatusText(TheId::empty(), status.clone()));
+                    }
                 }
             }
             _ => {}
@@ -198,7 +255,7 @@ impl TheWidget for TheTimeSlider {
 
         let stride = buffer.stride();
 
-        let r = self.dim.to_buffer_utuple();
+        let mut r = self.dim.to_buffer_utuple();
 
         ctx.draw.rect(
             buffer.pixels_mut(),
@@ -214,48 +271,58 @@ impl TheWidget for TheTimeSlider {
             style.theme().color(TimeSliderBorder),
         );
 
-        let text_space = r.2 / 24;
+        r.2 -= self.text_width as usize;
+        let marker_space = r.2 / 23;
+        let text_space = r.2 / 11;
         let mut x = r.0;
 
         for i in 0..=24 {
             if i > 0 {
-                let r = (x, r.1 + r.3 - 4, 2, 2);
+                let marker_pos = (x, r.1 + r.3 - 4, 2, 2);
                 ctx.draw.rect(
                     buffer.pixels_mut(),
-                    &r,
+                    &marker_pos,
                     stride,
                     style.theme().color(TimeSliderLine),
                 );
-            }
-            x += text_space;
-        }
 
-        let text_space = r.2 / 12;
-        x = r.0;
-
-        for i in 0..12 {
-            if i > 0 {
-                let r = (x - text_space / 2, r.1, text_space, r.3 - 1);
-                if let Some(font) = &ctx.ui.font {
-                    ctx.draw.text_rect_blend(
-                        buffer.pixels_mut(),
-                        &r,
-                        stride,
-                        font,
-                        11.0,
-                        &(i * 2).to_string(),
-                        style.theme().color(TimeSliderText),
-                        TheHorizontalAlign::Center,
-                        TheVerticalAlign::Top,
-                    );
+                if i % 2 == 0 && i < 24 {
+                    let text_pos = (x - text_space / 2, r.1, text_space, r.3 - 1);
+                    if let Some(font) = &ctx.ui.font {
+                        ctx.draw.text_rect_blend(
+                            buffer.pixels_mut(),
+                            &text_pos,
+                            stride,
+                            font,
+                            11.0,
+                            &i.to_string(),
+                            style.theme().color(TimeSliderText),
+                            TheHorizontalAlign::Center,
+                            TheVerticalAlign::Top,
+                        );
+                    }
                 }
             }
-            x += text_space;
+            x += marker_space;
         }
 
         if let TheValue::Time(time) = &self.value {
-            let offset = time.to_widget_offset(r.2 as u32) as usize;
+            let text_pos = (r.0 + r.2, r.1, self.text_width as usize - 3, r.3);
+            if let Some(font) = &ctx.ui.font {
+                ctx.draw.text_rect_blend(
+                    buffer.pixels_mut(),
+                    &text_pos,
+                    stride,
+                    font,
+                    11.0,
+                    &time.to_time24(),
+                    style.theme().color(TimeSliderPosition),
+                    TheHorizontalAlign::Right,
+                    TheVerticalAlign::Center,
+                );
+            }
 
+            let offset = time.to_widget_offset(r.2 as u32) as usize;
             let r = (r.0 + offset, r.1, 2, r.3);
             ctx.draw.rect(
                 buffer.pixels_mut(),
@@ -265,16 +332,23 @@ impl TheWidget for TheTimeSlider {
             );
         }
 
-        for marker in &self.marker {
-            let offset = marker.to_widget_offset(r.2 as u32) as usize;
+        for (time, _) in &self.marker {
+            let offset = time.to_widget_offset(r.2 as u32) as usize;
 
-            let r = (r.0 + offset, r.1, 2, r.3);
-            ctx.draw.rect(
-                buffer.pixels_mut(),
-                &r,
-                stride,
-                style.theme().color(TimeSliderMarker),
-            );
+            let mut color = style.theme().color(TimeSliderMarker);
+
+            if let Some(selected) = &self.selected_marker {
+                if *selected == *time {
+                    color = style.theme().color(TimeSliderPosition);
+                }
+            }
+
+            let mut r = (r.0 + offset, r.1, 2, r.3);
+            ctx.draw.rect(buffer.pixels_mut(), &r, stride, color);
+
+            r.2 = 10;
+            r.3 = 12;
+            ctx.draw.rect(buffer.pixels_mut(), &r, stride, color);
         }
 
         self.is_dirty = false;
@@ -292,7 +366,8 @@ impl TheWidget for TheTimeSlider {
 pub trait TheTimeSliderTrait: TheWidget {
     fn set_continuous(&mut self, continuous: bool);
     fn clear_marker(&mut self);
-    fn add_marker(&mut self, time: TheTime);
+    fn add_marker(&mut self, time: TheTime, names: Vec<String>);
+    fn remove_marker(&mut self, marker: TheTime);
 }
 
 impl TheTimeSliderTrait for TheTimeSlider {
@@ -301,10 +376,14 @@ impl TheTimeSliderTrait for TheTimeSlider {
     }
     fn clear_marker(&mut self) {
         self.marker = vec![];
+        self.selected_marker = None;
         self.is_dirty = true;
     }
-    fn add_marker(&mut self, time: TheTime) {
-        self.marker.push(time);
+    fn add_marker(&mut self, time: TheTime, names: Vec<String>) {
+        self.marker.push((time, names));
         self.is_dirty = true;
+    }
+    fn remove_marker(&mut self, marker: TheTime) {
+        self.marker.retain(|(time, _)| *time != marker);
     }
 }

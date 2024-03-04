@@ -59,6 +59,9 @@ pub enum TheEvent {
     #[cfg(feature = "code")]
     CodeBundleChanged(TheCodeBundle, bool),
 
+    // Timeline
+    TimelineMarkerSelected(TheId, TheTime),
+
     // SDF
     SDFIndexChanged(TheId, u32),
 

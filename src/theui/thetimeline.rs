@@ -139,6 +139,23 @@ impl TheTimeline {
         }
         false
     }
+
+    /// Returns the collection names at the given time.
+    pub fn get_collection_names_at(&self, time: &TheTime) -> Option<Vec<String>> {
+        if let Some(list) = self.events.get(time) {
+            let mut names = vec![];
+            for collection in list {
+                names.push(collection.name.clone());
+            }
+            return Some(names);
+        }
+        None
+    }
+
+    /// Removes the event at the given time position.
+    pub fn remove(&mut self, time: &TheTime) {
+        self.events.remove(time);
+    }
 }
 
 // TheInterpolation
