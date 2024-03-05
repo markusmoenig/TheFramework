@@ -187,7 +187,7 @@ impl TheRGBABuffer {
         new_buffer
     }
 
-    /// Creates a scaled version of the buffer.
+    /// Creates a scaled version of the buffer by writing into the other buffer.
     pub fn scaled_into(&self, into: &mut TheRGBABuffer) {
         let new_width = into.dim().width;
         let new_height = into.dim().height;
