@@ -114,6 +114,17 @@ impl TheColor {
         }
     }
 
+    /// Creates a color from an vec4.
+    pub fn from_vec4f(color: Vec4f) -> Self {
+        Self {
+            r: color.x,
+            g: color.y,
+            b: color.z,
+            a: color.w,
+            name: String::default(),
+        }
+    }
+
     /// Creates a color from a hex value.
     pub fn from_hex(hex_color: &str) -> Self {
         let mut r = 255;
@@ -225,6 +236,11 @@ impl TheColor {
     /// Convert the color to Vec3f.
     pub fn to_vec3f(&self) -> Vec3f {
         vec3f(self.r, self.g, self.b)
+    }
+
+    /// Convert the color to Vec4f.
+    pub fn to_vec4f(&self) -> Vec4f {
+        vec4f(self.r, self.g, self.b, self.a)
     }
 
     pub fn as_srgba(&self) -> TheColor {

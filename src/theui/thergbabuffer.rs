@@ -244,6 +244,24 @@ impl TheRGBABuffer {
             .collect()
     }
 
+    /// Returns the pixel at the given UV coordinate as [f32;4]
+    pub fn at_f_vec4f(&self, uv: Vec2f) -> Option<Vec4f> {
+        let x = (uv.x * self.dim.width as f32) as i32;
+        let y = (uv.y * self.dim.height as f32) as i32;
+
+        if x >= 0 && x < self.dim.width && y >= 0 && y < self.dim.height {
+            let pixel_index = (y * self.dim.width + x) as usize * 4;
+            Some(vec4f(
+                (self.buffer[pixel_index] as f32) / 255.0,
+                (self.buffer[pixel_index + 1] as f32) / 255.0,
+                (self.buffer[pixel_index + 2] as f32) / 255.0,
+                (self.buffer[pixel_index + 3] as f32) / 255.0,
+            ))
+        } else {
+            None
+        }
+    }
+
     /// Returns the pixel at the given UV coordinate.
     pub fn at_f(&self, uv: Vec2f) -> Option<[u8; 4]> {
         let x = (uv.x * self.dim.width as f32) as i32;

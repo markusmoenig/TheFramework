@@ -203,6 +203,17 @@ impl TheValue {
         }
     }
 
+    /// Returns the value as i32 if possible.
+    pub fn as_i32(&self) -> Option<i32> {
+        match self {
+            Float(v) => Some(*v as i32),
+            Int(v) => Some(*v),
+            Bool(v) => Some(*v as i32),
+            Text(t) => t.parse::<i32>().ok(),
+            _ => None,
+        }
+    }
+
     /// Test if two values are equal.
     pub fn is_equal(&self, other: &TheValue) -> bool {
         // First test if they are exactly the same value.

@@ -173,7 +173,7 @@ impl TheInterpolation {
     pub fn interpolate(&self, start: &TheValue, end: &TheValue, t: f32) -> TheValue {
         let t = t.clamp(0.0, 1.0);
 
-        match (start.to_f32(), end.to_f32()) {
+        match (start.as_f32(), end.as_f32()) {
             (Some(s), Some(e)) => match self {
                 TheInterpolation::Linear => TheValue::Float(s + (e - s) * t),
                 TheInterpolation::Spline => {

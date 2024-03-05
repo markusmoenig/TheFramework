@@ -71,30 +71,45 @@ where
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TheFlattenedMap3D<T> {
     data: Vec<Option<T>>,
-    width: i32,
-    height: i32,
-    depth: i32,
+    min_bounds: (i32, i32, i32),
+    max_bounds: (i32, i32, i32),
 }
 
 impl<T> TheFlattenedMap3D<T>
 where
     T: Clone,
 {
-    /// Creates a new `TheFlattenedMap3D` with specified width, height, and depth.
-    pub fn new(width: i32, height: i32, depth: i32) -> Self {
+    /// Creates a new `TheFlattenedMap3D` with specified bounds.
+    pub fn new(min_bounds: (i32, i32, i32), max_bounds: (i32, i32, i32)) -> Self {
+        let dimensions = (
+            (max_bounds.0 - min_bounds.0 + 1) as usize,
+            (max_bounds.1 - min_bounds.1 + 1) as usize,
+            (max_bounds.2 - min_bounds.2 + 1) as usize,
+        );
+
         TheFlattenedMap3D {
-            data: vec![None; (width * height * depth) as usize],
-            width,
-            height,
-            depth,
+            data: vec![None; dimensions.0 * dimensions.1 * dimensions.2],
+            min_bounds,
+            max_bounds,
         }
     }
 
     /// Converts a 3D key into a 1D index.
     fn key_to_index(&self, key: (i32, i32, i32)) -> Option<usize> {
         let (x, y, z) = key;
-        if x >= 0 && x < self.width && y >= 0 && y < self.height && z >= 0 && z < self.depth {
-            Some((z * self.width * self.height + y * self.width + x) as usize)
+        if x >= self.min_bounds.0
+            && x <= self.max_bounds.0
+            && y >= self.min_bounds.1
+            && y <= self.max_bounds.1
+            && z >= self.min_bounds.2
+            && z <= self.max_bounds.2
+        {
+            let index = ((z - self.min_bounds.2)
+                * (self.max_bounds.0 - self.min_bounds.0 + 1)
+                * (self.max_bounds.1 - self.min_bounds.1 + 1)
+                + (y - self.min_bounds.1) * (self.max_bounds.0 - self.min_bounds.0 + 1)
+                + (x - self.min_bounds.0)) as usize;
+            Some(index)
         } else {
             None
         }
