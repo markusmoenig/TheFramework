@@ -28,7 +28,7 @@ impl TheStyle for TheClassicStyle {
         let stride = buffer.stride();
 
         let border_color = if widget.id().equals(&ctx.ui.focus) {
-            self.theme().color(SelectedWidgetBorder)
+            self.theme().color(DefaultSelection)
         } else {
             self.theme().color(DefaultWidgetBorder)
         };

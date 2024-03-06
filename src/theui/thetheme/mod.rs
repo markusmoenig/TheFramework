@@ -33,8 +33,9 @@ pub enum TheThemeColors {
     Red,
 
     DefaultWidgetBorder,
-    SelectedWidgetBorder,
+    DefaultSelection,
     DefaultWidgetBackground,
+    DefaultWidgetDarkBackground,
 
     SwitchbarBorder,
 

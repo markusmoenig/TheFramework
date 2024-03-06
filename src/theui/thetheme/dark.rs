@@ -19,8 +19,9 @@ impl TheTheme for TheDarkTheme {
         colors.insert(Red, [209, 42, 42, 255]);
 
         colors.insert(DefaultWidgetBackground, [116, 116, 116, 255]);
+        colors.insert(DefaultWidgetDarkBackground, [82, 82, 82, 255]);
         colors.insert(DefaultWidgetBorder, [146, 146, 146, 255]);
-        colors.insert(SelectedWidgetBorder, [187, 122, 208, 255]);
+        colors.insert(DefaultSelection, [187, 122, 208, 255]);
 
         colors.insert(SwitchbarBorder, [86, 86, 86, 255]);
 

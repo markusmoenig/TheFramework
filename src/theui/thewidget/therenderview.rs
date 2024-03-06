@@ -49,6 +49,7 @@ impl TheWidget for TheRenderView {
                     self.state = TheWidgetState::Selected;
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
                 }
+                ctx.ui.set_focus(self.id());
                 self.is_dirty = true;
                 redraw = true;
             }
@@ -96,8 +97,8 @@ impl TheWidget for TheRenderView {
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
-        _style: &mut Box<dyn TheStyle>,
-        _ctx: &mut TheContext,
+        style: &mut Box<dyn TheStyle>,
+        ctx: &mut TheContext,
     ) {
         if !self.dim().is_valid() {
             return;
@@ -105,6 +106,16 @@ impl TheWidget for TheRenderView {
 
         self.render_buffer.scaled_into(buffer);
 
+        let stride = buffer.stride();
+        if Some(self.id.clone()) == ctx.ui.focus {
+            let tuple = self.dim().to_buffer_utuple();
+            ctx.draw.rect_outline(
+                buffer.pixels_mut(),
+                &tuple,
+                stride,
+                style.theme().color(DefaultSelection),
+            );
+        }
         self.is_dirty = false;
     }
 

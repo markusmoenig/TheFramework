@@ -460,7 +460,7 @@ impl TheWidget for TheRGBAView {
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
-        _style: &mut Box<dyn TheStyle>,
+        style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
         if !self.dim().is_valid() {
@@ -640,6 +640,16 @@ impl TheWidget for TheRGBAView {
                         .copy_from_slice(&[50, 50, 50, 255]);
                 }
             }
+        }
+
+        if Some(self.id.clone()) == ctx.ui.focus {
+            let tuple = self.dim().to_buffer_utuple();
+            ctx.draw.rect_outline(
+                target.pixels_mut(),
+                &tuple,
+                stride,
+                style.theme().color(DefaultSelection),
+            );
         }
 
         /*

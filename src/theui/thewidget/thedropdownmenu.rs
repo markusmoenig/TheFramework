@@ -300,7 +300,7 @@ impl TheWidget for TheDropdownMenu {
                     buffer.pixels_mut(),
                     &(x, y, width, 21),
                     width,
-                    style.theme().color(SelectedWidgetBorder),
+                    style.theme().color(DefaultSelection),
                 );
             }
 
