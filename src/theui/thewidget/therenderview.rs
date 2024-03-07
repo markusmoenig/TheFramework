@@ -6,6 +6,8 @@ pub struct TheRenderView {
     state: TheWidgetState,
 
     render_buffer: TheRGBABuffer,
+    wheel_scale: f32,
+    accumulated_wheel_delta: Vec2f,
 
     dim: TheDim,
 
@@ -25,6 +27,8 @@ impl TheWidget for TheRenderView {
             state: TheWidgetState::None,
 
             render_buffer: TheRGBABuffer::new(TheDim::new(0, 0, 20, 20)),
+            wheel_scale: -0.4,
+            accumulated_wheel_delta: Vec2f::zero(),
 
             dim: TheDim::zero(),
 
@@ -41,7 +45,7 @@ impl TheWidget for TheRenderView {
         let mut redraw = false;
         // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
-            TheEvent::MouseDown(_coord) => {
+            TheEvent::MouseDown(coord) => {
                 if self.state == TheWidgetState::Selected {
                     self.state = TheWidgetState::None;
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
@@ -50,8 +54,56 @@ impl TheWidget for TheRenderView {
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
                 }
                 ctx.ui.set_focus(self.id());
+
+                ctx.ui
+                    .send(TheEvent::RenderViewClicked(self.id().clone(), *coord));
+
                 self.is_dirty = true;
                 redraw = true;
+            }
+            TheEvent::Hover(coord) => {
+                if !self.id().equals(&ctx.ui.hover) {
+                    self.is_dirty = true;
+                    ctx.ui.set_hover(self.id());
+                    redraw = true;
+                }
+            }
+            TheEvent::MouseWheel(delta) => {
+                let scale_factor = self.wheel_scale; // * 1.0 / (self.zoom.powf(0.5));
+
+                let aspect_ratio = self.dim().width as f32 / self.dim().height as f32;
+
+                let scale_x = if aspect_ratio > 1.0 {
+                    1.0 / aspect_ratio
+                } else {
+                    1.0
+                };
+                let scale_y = if aspect_ratio < 1.0 {
+                    aspect_ratio
+                } else {
+                    1.0
+                };
+
+                // Update accumulated deltas
+                self.accumulated_wheel_delta.x += delta.x as f32 * scale_factor * scale_x;
+                self.accumulated_wheel_delta.y += delta.y as f32 * scale_factor * scale_y;
+
+                let minimum_delta_threshold = 2.0;
+
+                // Check if accumulated deltas exceed the threshold
+                if self.accumulated_wheel_delta.x.abs() > minimum_delta_threshold
+                    || self.accumulated_wheel_delta.y.abs() > minimum_delta_threshold
+                {
+                    // Convert accumulated deltas to integer and reset
+                    let d = vec2i(
+                        self.accumulated_wheel_delta.x as i32,
+                        self.accumulated_wheel_delta.y as i32,
+                    );
+                    self.accumulated_wheel_delta = Vec2f::zero();
+
+                    ctx.ui
+                        .send(TheEvent::RenderViewScrollBy(self.id().clone(), d));
+                }
             }
             _ => {}
         }
@@ -117,6 +169,10 @@ impl TheWidget for TheRenderView {
             );
         }
         self.is_dirty = false;
+    }
+
+    fn supports_hover(&mut self) -> bool {
+        true
     }
 
     fn as_any(&mut self) -> &mut dyn std::any::Any {

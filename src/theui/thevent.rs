@@ -51,6 +51,9 @@ pub enum TheEvent {
     TileEditorDelete(TheId, FxHashSet<(i32, i32)>),
     TileEditorUp(TheId),
 
+    RenderViewClicked(TheId, Vec2i),
+    RenderViewScrollBy(TheId, Vec2i),
+
     // CodeEditor
     #[cfg(feature = "code")]
     CodeEditorSelectionChanged(TheId, Option<(u16, u16)>),
