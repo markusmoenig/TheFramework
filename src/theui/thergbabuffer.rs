@@ -528,6 +528,7 @@ pub struct TheRGBATile {
     pub buffer: Vec<TheRGBABuffer>,
     pub role: u8,
     pub blocking: bool,
+    pub billboard: bool,
 }
 
 impl Default for TheRGBATile {
@@ -545,6 +546,7 @@ impl TheRGBATile {
             buffer: vec![],
             role: 0,
             blocking: false,
+            billboard: false,
         }
     }
 
@@ -555,6 +557,7 @@ impl TheRGBATile {
             buffer: vec![buffer],
             role: 0,
             blocking: false,
+            billboard: false,
         }
     }
 }

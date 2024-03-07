@@ -110,7 +110,7 @@ pub mod prelude {
     pub use crate::str;
     pub use crate::theui::thecollection::TheCollection;
     pub use crate::theui::thecurrency::TheCurrency;
-    pub use crate::theui::theflattenedmap::TheFlattenedMap;
+    pub use crate::theui::theflattenedmap::{TheFlattenedMap, TheFlattenedMap3D};
     pub use crate::theui::thetilemask::TheTileMask;
     pub use crate::theui::thetime::TheTime;
     pub use crate::theui::thetimeline::{TheInterpolation, TheTimeline};
