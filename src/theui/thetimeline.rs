@@ -116,6 +116,42 @@ impl TheTimeline {
         }
     }
 
+    /// Returns a Vec<TheCollection> with all values adjusted for the given time.
+    pub fn adjust_for_time(&self, at: &TheTime) -> Vec<TheCollection> {
+        let mut adjusted_collections = Vec::new();
+
+        // Track already processed collections to avoid duplicates
+        let mut processed_collections = std::collections::HashSet::new();
+
+        for (time, collections) in &self.events {
+            if time > at {
+                break;
+            }
+            for collection in collections {
+                // Check if the collection was already processed
+                if processed_collections.contains(&collection.name) {
+                    continue;
+                }
+
+                // Attempt to get an adjusted collection for the given time
+                if let Some(mut adjusted_collection) =
+                    self.get_collection_at(time, collection.name.clone())
+                {
+                    // Adjust the keys of the collection to the values at 'at'
+                    self.fill(at, &mut adjusted_collection);
+
+                    // Add to the result vector
+                    adjusted_collections.push(adjusted_collection);
+
+                    // Mark as processed
+                    processed_collections.insert(collection.name.clone());
+                }
+            }
+        }
+
+        adjusted_collections
+    }
+
     /// Returns the collection at the given time.
     pub fn get_collection_at(&self, time: &TheTime, name: String) -> Option<TheCollection> {
         for (t, list) in &self.events {
