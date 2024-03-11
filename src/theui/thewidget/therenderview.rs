@@ -61,7 +61,7 @@ impl TheWidget for TheRenderView {
                 self.is_dirty = true;
                 redraw = true;
             }
-            TheEvent::Hover(coord) => {
+            TheEvent::Hover(_coord) => {
                 if !self.id().equals(&ctx.ui.hover) {
                     self.is_dirty = true;
                     ctx.ui.set_hover(self.id());
