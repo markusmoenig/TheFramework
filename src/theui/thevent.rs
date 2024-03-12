@@ -52,6 +52,9 @@ pub enum TheEvent {
     TileEditorUp(TheId),
 
     RenderViewClicked(TheId, Vec2i),
+    RenderViewDragged(TheId, Vec2i),
+    RenderViewHoverChanged(TheId, Vec2i),
+    RenderViewLostHover(TheId),
     RenderViewScrollBy(TheId, Vec2i),
 
     // CodeEditor

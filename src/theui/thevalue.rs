@@ -312,8 +312,7 @@ impl TheValue {
             Char(c) => c.to_string(),
             #[cfg(feature = "code")]
             CodeObject(_) => "Object".to_string(),
-            #[cfg(feature = "code")]
-            List(_) => "List".to_string(),
+            List(list) => format!("List ({})", list.len()),
             KeyCode(k) => format!("KeyCode: {:?}", k),
             RangeI32(r) => format!("RangeI32: {:?}", r),
             RangeF32(r) => format!("RangeF32: {:?}", r),
