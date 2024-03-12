@@ -593,6 +593,12 @@ impl TheApp {
 
                         WindowEvent::ReceivedCharacter(char) => match char {
                             _ => {
+                                #[cfg(feature = "ui")]
+                                if !char.is_ascii_control()
+                                    && ui.key_down(Some(*char), None, &mut ctx)
+                                {
+                                    window.request_redraw();
+                                }
                                 if app.key_down(Some(*char), None, &mut ctx) {
                                     window.request_redraw();
                                 }
@@ -601,6 +607,16 @@ impl TheApp {
 
                         WindowEvent::ModifiersChanged(state) => match state {
                             _ => {
+                                #[cfg(feature = "ui")]
+                                if ui.modifier_changed(
+                                    state.shift(),
+                                    state.ctrl(),
+                                    state.alt(),
+                                    state.logo(),
+                                    &mut ctx,
+                                ) {
+                                    window.request_redraw();
+                                }
                                 if app.modifier_changed(
                                     state.shift(),
                                     state.ctrl(),
@@ -622,51 +638,91 @@ impl TheApp {
                             ..
                         } => match virtual_code {
                             VirtualKeyCode::Delete => {
+                                #[cfg(feature = "ui")]
+                                if ui.key_down(None, Some(TheKeyCode::Delete), &mut ctx) {
+                                    window.request_redraw();
+                                }
                                 if app.key_down(None, Some(TheKeyCode::Delete), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Back => {
+                                #[cfg(feature = "ui")]
+                                if ui.key_down(None, Some(TheKeyCode::Delete), &mut ctx) {
+                                    window.request_redraw();
+                                }
                                 if app.key_down(None, Some(TheKeyCode::Delete), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Up => {
+                                #[cfg(feature = "ui")]
+                                if ui.key_down(None, Some(TheKeyCode::Up), &mut ctx) {
+                                    window.request_redraw();
+                                }
                                 if app.key_down(None, Some(TheKeyCode::Up), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Right => {
+                                #[cfg(feature = "ui")]
+                                if ui.key_down(None, Some(TheKeyCode::Right), &mut ctx) {
+                                    window.request_redraw();
+                                }
                                 if app.key_down(None, Some(TheKeyCode::Right), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Down => {
+                                #[cfg(feature = "ui")]
+                                if ui.key_down(None, Some(TheKeyCode::Down), &mut ctx) {
+                                    window.request_redraw();
+                                }
                                 if app.key_down(None, Some(TheKeyCode::Down), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Left => {
+                                #[cfg(feature = "ui")]
+                                if ui.key_down(None, Some(TheKeyCode::Left), &mut ctx) {
+                                    window.request_redraw();
+                                }
                                 if app.key_down(None, Some(TheKeyCode::Left), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Space => {
+                                #[cfg(feature = "ui")]
+                                if ui.key_down(None, Some(TheKeyCode::Space), &mut ctx) {
+                                    window.request_redraw();
+                                }
                                 if app.key_down(None, Some(TheKeyCode::Space), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Tab => {
+                                #[cfg(feature = "ui")]
+                                if ui.key_down(None, Some(TheKeyCode::Tab), &mut ctx) {
+                                    window.request_redraw();
+                                }
                                 if app.key_down(None, Some(TheKeyCode::Tab), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Return => {
+                                #[cfg(feature = "ui")]
+                                if ui.key_down(None, Some(TheKeyCode::Return), &mut ctx) {
+                                    window.request_redraw();
+                                }
                                 if app.key_down(None, Some(TheKeyCode::Return), &mut ctx) {
                                     window.request_redraw();
                                 }
                             }
                             VirtualKeyCode::Escape => {
+                                #[cfg(feature = "ui")]
+                                if ui.key_down(None, Some(TheKeyCode::Escape), &mut ctx) {
+                                    window.request_redraw();
+                                }
                                 if app.key_down(None, Some(TheKeyCode::Escape), &mut ctx) {
                                     window.request_redraw();
                                 }
@@ -683,6 +739,12 @@ impl TheApp {
                         DeviceEvent::MouseWheel { delta } => match delta {
                             winit::event::MouseScrollDelta::LineDelta(x, y) => {
                                 //println!("mouse wheel Line Delta: ({},{})", x, y);
+
+                                #[cfg(feature = "ui")]
+                                if ui.mouse_wheel((*x as i32, *y as i32), &mut ctx) {
+                                    window.request_redraw();
+                                }
+
                                 if app.mouse_wheel(
                                     ((*x * 100.0) as isize, (*y * 100.0) as isize),
                                     &mut ctx,
@@ -697,6 +759,12 @@ impl TheApp {
                             }
                             winit::event::MouseScrollDelta::PixelDelta(p) => {
                                 //println!("mouse wheel Pixel Delta: ({},{})", p.x, p.y);
+
+                                #[cfg(feature = "ui")]
+                                if ui.mouse_wheel((p.x as i32, p.y as i32), &mut ctx) {
+                                    window.request_redraw();
+                                }
+
                                 if app.mouse_wheel((p.x as isize, p.y as isize), &mut ctx) {
                                     window.request_redraw();
                                     //mouse_wheel_ongoing = true;
@@ -720,18 +788,37 @@ impl TheApp {
                         return;
                     }
 
-                    if let Some(coords) = input.mouse() {
-                        let pixel_pos: (usize, usize) = pixels
-                            .window_pos_to_pixel(coords)
-                            .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+                    if input.mouse_pressed(0) {
+                        if let Some(coords) = input.mouse() {
+                            let pixel_pos: (usize, usize) = pixels
+                                .window_pos_to_pixel(coords)
+                                .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
 
-                        #[cfg(feature = "ui")]
-                        if ui.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
-                            window.request_redraw();
+                            #[cfg(feature = "ui")]
+                            if ui.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                                window.request_redraw();
+                            }
+
+                            if app.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                                window.request_redraw();
+                            }
                         }
+                    }
 
-                        if app.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
-                            window.request_redraw();
+                    if input.mouse_pressed(1) {
+                        if let Some(coords) = input.mouse() {
+                            let pixel_pos: (usize, usize) = pixels
+                                .window_pos_to_pixel(coords)
+                                .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+
+                            #[cfg(feature = "ui")]
+                            if ui.context(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                                window.request_redraw();
+                            }
+
+                            if app.touch_down(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                                window.request_redraw();
+                            }
                         }
                     }
 
@@ -740,6 +827,11 @@ impl TheApp {
                             let pixel_pos: (usize, usize) = pixels
                                 .window_pos_to_pixel(coords)
                                 .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+
+                            #[cfg(feature = "ui")]
+                            if ui.touch_up(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                                window.request_redraw();
+                            }
 
                             if app.touch_up(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
                                 window.request_redraw();
@@ -754,6 +846,15 @@ impl TheApp {
                                 let pixel_pos: (usize, usize) = pixels
                                     .window_pos_to_pixel(coords)
                                     .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+
+                                #[cfg(feature = "ui")]
+                                if ui.touch_dragged(
+                                    pixel_pos.0 as f32,
+                                    pixel_pos.1 as f32,
+                                    &mut ctx,
+                                ) {
+                                    window.request_redraw();
+                                }
 
                                 if app.touch_dragged(
                                     pixel_pos.0 as f32,
@@ -771,6 +872,11 @@ impl TheApp {
                                 let pixel_pos: (usize, usize) = pixels
                                     .window_pos_to_pixel(coords)
                                     .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+
+                                #[cfg(feature = "ui")]
+                                if ui.hover(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
+                                    window.request_redraw();
+                                }
 
                                 if app.hover(pixel_pos.0 as f32, pixel_pos.1 as f32, &mut ctx) {
                                     window.request_redraw();
