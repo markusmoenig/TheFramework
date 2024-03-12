@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use rust_pathtracer::prelude::*;
 use std::sync::mpsc;
+#[cfg(not(target_arch = "wasm32"))]
 use std::thread::{self, JoinHandle};
 
 // Define message types
@@ -16,6 +17,7 @@ pub struct Renderer {
     width: i32,
     height: i32,
 
+    #[cfg(not(target_arch = "wasm32"))]
     renderer_thread: Option<JoinHandle<()>>,
     pub renderer_command: Option<mpsc::Sender<RendererMessage>>,
     renderer_update: Option<mpsc::Receiver<TheRGBABuffer>>,
@@ -28,6 +30,7 @@ impl Renderer {
         let height = 596;
 
         Self {
+            #[cfg(not(target_arch = "wasm32"))]
             renderer_thread: None,
 
             renderer_command: None,
@@ -148,7 +151,63 @@ impl Renderer {
         scene.set_material(material);
         let mut tracer = Tracer::new(scene);
 
-        self.renderer_thread = Some(thread::spawn(move || loop {
+        #[cfg(target_arch = "wasm32")]
+        {
+            use std::cell::RefCell;
+            use wasm_bindgen::prelude::*;
+
+            let handler = Rc::new(RefCell::new(None));
+            let handler_clone = handler.clone();
+
+            *handler_clone.borrow_mut() = Some(Closure::new(move || {
+                handle_render(
+                    &command_receiver,
+                    &mut tracer,
+                    &mut buffer,
+                    width,
+                    height,
+                    &update_sender,
+                );
+
+                request_animation_frame(handler.borrow().as_ref().unwrap());
+            }));
+
+            request_animation_frame(handler_clone.borrow().as_ref().unwrap());
+
+            fn request_animation_frame(f: &Closure<dyn FnMut()>) {
+                web_sys::window()
+                    .unwrap()
+                    .request_animation_frame(f.as_ref().unchecked_ref())
+                    .unwrap();
+            }
+        }
+
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.renderer_thread = Some(thread::spawn(move || loop {
+                handle_render(
+                    &command_receiver,
+                    &mut tracer,
+                    &mut buffer,
+                    width,
+                    height,
+                    &update_sender,
+                );
+
+                thread::sleep(core::time::Duration::from_millis(10));
+            }));
+        }
+
+        return false;
+
+        fn handle_render(
+            command_receiver: &mpsc::Receiver<RendererMessage>,
+            tracer: &mut Tracer,
+            buffer: &mut ColorBuffer,
+            width: i32,
+            height: i32,
+            update_sender: &mpsc::Sender<TheRGBABuffer>,
+        ) {
             match command_receiver.try_recv() {
                 Ok(message) => match message {
                     RendererMessage::Start => {}
@@ -168,15 +227,12 @@ impl Renderer {
                 Err(_) => (),
             }
 
-            tracer.render(&mut buffer);
+            tracer.render(buffer);
 
             let mut rgba_buffer = TheRGBABuffer::new(TheDim::new(0, 0, width, height));
 
             buffer.convert_to_u8(rgba_buffer.pixels_mut());
             update_sender.send(rgba_buffer).unwrap();
-            thread::sleep(core::time::Duration::from_millis(10));
-        }));
-
-        false
+        }
     }
 }
