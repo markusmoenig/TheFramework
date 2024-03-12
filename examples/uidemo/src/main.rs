@@ -17,6 +17,7 @@ pub mod prelude {
 }
 
 fn main() {
+    #[cfg(not(target_arch = "wasm32"))]
     std::env::set_var("RUST_BACKTRACE", "1");
 
     let demo = UIDemo::new();
