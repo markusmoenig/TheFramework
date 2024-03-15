@@ -211,6 +211,31 @@ impl TheRGBABuffer {
         }
     }
 
+    /// Creates a scaled version of the buffer by writing into the other buffer while respecting the dimensions.
+    pub fn scaled_into_using_dim(&self, into: &mut TheRGBABuffer, dim: &TheDim) {
+        let new_width = dim.width;
+        let new_height = dim.height;
+
+        let scale_x = new_width as f32 / self.dim.width as f32;
+        let scale_y = new_height as f32 / self.dim.height as f32;
+
+        for y in 0..new_height {
+            for x in 0..new_width {
+                let src_x = (x as f32 / scale_x).round() as i32;
+                let src_y = (y as f32 / scale_y).round() as i32;
+
+                let pixel_index = (src_y * self.dim.width + src_x) as usize * 4;
+                let new_pixel_index =
+                    ((y + dim.buffer_y) * into.stride() as i32 + x + dim.buffer_x) as usize * 4;
+
+                if pixel_index < self.buffer.len() && new_pixel_index < into.buffer.len() {
+                    into.buffer[new_pixel_index..new_pixel_index + 4]
+                        .copy_from_slice(&self.buffer[pixel_index..pixel_index + 4]);
+                }
+            }
+        }
+    }
+
     /// Extracts a region from the buffer.
     pub fn extract_region(&self, region: &TheRGBARegion) -> TheRGBABuffer {
         let mut tile_buffer =

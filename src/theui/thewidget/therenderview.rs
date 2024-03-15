@@ -167,7 +167,7 @@ impl TheWidget for TheRenderView {
             return;
         }
 
-        self.render_buffer.scaled_into(buffer);
+        self.render_buffer.scaled_into_using_dim(buffer, &self.dim);
 
         let stride = buffer.stride();
         if Some(self.id.clone()) == ctx.ui.focus {
