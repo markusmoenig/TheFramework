@@ -73,7 +73,9 @@ pub enum TheEvent {
 
     // Show the given context menu at the given (global) coordinates.
     ShowContextMenu(TheId, Vec2i, TheContextMenu),
+    ShowMenu(TheId, Vec2i, TheContextMenu),
     ContextMenuSelected(TheId, TheId),
+    ContextMenuClosed(TheId),
 
     //
     DialogValueOnClose(TheDialogButtonRole, String, Uuid, TheValue),

@@ -135,6 +135,7 @@ pub enum TheThemeColors {
     ContextMenuHighlight,
     ContextMenuTextNormal,
     ContextMenuTextHighlight,
+    ContextMenuSeparator,
 
     WindowBorderOuter,
     WindowBorderInner,
@@ -148,4 +149,9 @@ pub enum TheThemeColors {
     TimeSliderMarker,
     TimeSliderLine,
     TimeSliderPosition,
+
+    MenuText,
+    MenuTextHighlighted,
+    MenuHover,
+    MenuSelected,
 }

@@ -25,6 +25,7 @@ impl TheContextMenuItem {
 
 #[derive(Clone, Debug)]
 pub struct TheContextMenu {
+    pub name: String,
     pub id: TheId,
     pub items: Vec<TheContextMenuItem>,
     pub width: i32,
@@ -44,6 +45,7 @@ impl Default for TheContextMenu {
 impl TheContextMenu {
     pub fn new() -> Self {
         Self {
+            name: "".to_string(),
             id: TheId::empty(),
 
             items: vec![],
@@ -56,9 +58,30 @@ impl TheContextMenu {
         }
     }
 
+    pub fn named(name: String) -> Self {
+        Self {
+            name,
+            id: TheId::empty(),
+
+            items: vec![],
+            width: 160,
+            item_height: 23,
+
+            dim: TheDim::zero(),
+
+            hovered: None,
+        }
+    }
+
     /// Add an item,
     pub fn add(&mut self, item: TheContextMenuItem) {
         self.items.push(item);
+    }
+
+    /// Add a separator.
+    pub fn add_separator(&mut self) {
+        self.items
+            .push(TheContextMenuItem::new("".to_string(), TheId::empty()));
     }
 
     /// Sets the position of the context menu while making it sure it fits on the screen.
@@ -132,7 +155,7 @@ impl TheContextMenu {
             );
 
             let mut text_color = style.theme().color(ContextMenuTextNormal);
-            if Some(item.id.clone()) == self.hovered {
+            if Some(item.id.clone()) == self.hovered && !item.name.is_empty() {
                 ctx.draw.rect(
                     pixels,
                     &rect,
@@ -142,7 +165,14 @@ impl TheContextMenu {
                 text_color = style.theme().color(ContextMenuTextHighlight);
             }
 
-            if let Some(font) = &ctx.ui.font {
+            if item.name.is_empty() {
+                ctx.draw.rect(
+                    pixels,
+                    &(rect.0, rect.1 + self.item_height as usize / 2, rect.2, 1),
+                    ctx.width,
+                    style.theme().color(ContextMenuSeparator),
+                );
+            } else if let Some(font) = &ctx.ui.font {
                 ctx.draw.text_rect_blend(
                     pixels,
                     &(rect.0 + 16, rect.1, &rect.2 - 16, rect.3),

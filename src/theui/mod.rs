@@ -173,6 +173,7 @@ pub struct TheUI {
     statusbar_name: Option<String>,
 
     pub context_menu: Option<TheContextMenu>,
+    pub menu_widget_id: Option<TheId>,
 
     pub is_dirty: bool,
 }
@@ -200,7 +201,7 @@ impl TheUI {
             statusbar_name: None,
 
             context_menu: None,
-
+            menu_widget_id: None,
             is_dirty: false,
         }
     }
@@ -271,10 +272,17 @@ impl TheUI {
                 }
 
                 match event {
+                    TheEvent::ShowMenu(id, coord, mut menu) => {
+                        menu.set_position(coord, ctx);
+                        menu.id = id.clone();
+                        self.context_menu = Some(menu);
+                        self.menu_widget_id = Some(id.clone());
+                    }
                     TheEvent::ShowContextMenu(id, coord, mut menu) => {
                         menu.set_position(coord, ctx);
                         menu.id = id;
                         self.context_menu = Some(menu);
+                        self.menu_widget_id = None;
                     }
                     TheEvent::RedirectWidgetValueToLayout(layout_id, widget_id, value) => {
                         if let Some(layout) = self.canvas.get_layout(None, Some(&layout_id.uuid)) {
@@ -484,12 +492,31 @@ impl TheUI {
                             context.id.clone(),
                             menu_id.clone(),
                         ));
+                        ctx.ui.send(TheEvent::StateChanged(
+                            menu_id.clone(),
+                            TheWidgetState::Clicked,
+                        ));
                     }
                     self.context_menu = None;
+                    let menu_widget_id = self.menu_widget_id.clone();
+                    if let Some(menu_widget_id) = menu_widget_id {
+                        if let Some(widget) = self.get_widget_abs(None, Some(&menu_widget_id.uuid))
+                        {
+                            widget.on_event(&TheEvent::ContextMenuClosed(menu_widget_id), ctx);
+                        }
+                    }
+                    self.menu_widget_id = None;
                     ctx.ui.clear_hover();
                 }
             } else {
                 self.context_menu = None;
+                let menu_widget_id = self.menu_widget_id.clone();
+                if let Some(menu_widget_id) = menu_widget_id {
+                    if let Some(widget) = self.get_widget_abs(None, Some(&menu_widget_id.uuid)) {
+                        widget.on_event(&TheEvent::ContextMenuClosed(menu_widget_id), ctx);
+                    }
+                }
+                self.menu_widget_id = None;
                 ctx.ui.clear_hover();
                 redraw = true;
             }
@@ -579,6 +606,15 @@ impl TheUI {
             if context.dim.contains(coord) {
                 let event = TheEvent::Hover(context.dim.to_local(coord));
                 redraw = context.on_event(&event, ctx);
+            }
+            let menu_widget_id = self.menu_widget_id.clone();
+            if self.menu_widget_id.is_some() {
+                if let Some(widget) = self.get_widget_at_coord(coord) {
+                    if Some(widget.id().clone()) == menu_widget_id {
+                        let event = TheEvent::Hover(widget.dim().to_local(coord));
+                        redraw = widget.on_event(&event, ctx);
+                    }
+                }
             }
             return redraw;
         }

@@ -26,6 +26,7 @@ pub mod thetext;
 // pub mod thetextedit;
 pub mod thecolorpicker;
 pub mod thedirectionpicker;
+pub mod themenu;
 pub mod thepalettepicker;
 pub mod therenderview;
 pub mod thesdfview;
@@ -45,7 +46,8 @@ pub mod prelude {
     pub use crate::theui::thewidget::thedropdownmenu::TheDropdownMenu;
     pub use crate::theui::thewidget::thedropdownmenu::TheDropdownMenuTrait;
 
-    pub use crate::theui::thewidget::themenubar::TheMenubar;
+    pub use crate::theui::thewidget::themenu::{TheMenu, TheMenuTrait};
+    pub use crate::theui::thewidget::themenubar::{TheMenubar, TheMenubarTrait};
     pub use crate::theui::thewidget::themenubarbutton::{TheMenubarButton, TheMenubarButtonTrait};
     pub use crate::theui::thewidget::themenubarseparator::TheMenubarSeparator;
 

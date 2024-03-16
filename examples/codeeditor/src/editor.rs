@@ -139,10 +139,41 @@ impl TheTrait for CodeEditor {
     }
 
     fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
+        // Menu
+        let mut menu_canvas = TheCanvas::new();
+        let mut menu = TheMenu::new(TheId::named("Menu"));
+
+        let mut file_menu = TheContextMenu::named(str!("File"));
+        file_menu.add(TheContextMenuItem::new(
+            str!("Open..."),
+            TheId::named("Open"),
+        ));
+        file_menu.add(TheContextMenuItem::new(str!("Save"), TheId::named("Save")));
+        file_menu.add(TheContextMenuItem::new(
+            str!("Save As ..."),
+            TheId::named("Save As"),
+        ));
+        let mut edit_menu = TheContextMenu::named(str!("Edit"));
+        edit_menu.add(TheContextMenuItem::new(str!("Undo"), TheId::named("Undo")));
+        edit_menu.add(TheContextMenuItem::new(str!("Redo"), TheId::named("Redo")));
+        edit_menu.add_separator();
+        edit_menu.add(TheContextMenuItem::new(str!("Cut"), TheId::named("Cut")));
+        edit_menu.add(TheContextMenuItem::new(str!("Copy"), TheId::named("Copy")));
+        edit_menu.add(TheContextMenuItem::new(
+            str!("Paste"),
+            TheId::named("Paste"),
+        ));
+
+        menu.add_context_menu(file_menu);
+        menu.add_context_menu(edit_menu);
+
+        menu_canvas.set_widget(menu);
+
         // Top
         let mut top_canvas = TheCanvas::new();
 
-        let menubar = TheMenubar::new(TheId::named("Menubar"));
+        let mut menubar = TheMenubar::new(TheId::named("Menubar"));
+        menubar.limiter_mut().set_max_height(43 + 22);
 
         let mut open_button = TheMenubarButton::new(TheId::named("Open"));
         open_button.set_icon_name("icon_role_load".to_string());
@@ -172,6 +203,7 @@ impl TheTrait for CodeEditor {
 
         top_canvas.set_widget(menubar);
         top_canvas.set_layout(hlayout);
+        top_canvas.set_top(menu_canvas);
 
         // Side
 

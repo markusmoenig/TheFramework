@@ -117,6 +117,7 @@ impl TheTheme for TheDarkTheme {
         colors.insert(DropItemText, [85, 81, 85, 255]);
 
         colors.insert(ContextMenuBackground, [149, 149, 149, 255]);
+        colors.insert(ContextMenuSeparator, [102, 102, 102, 255]);
         colors.insert(ContextMenuBorder, [130, 130, 130, 255]);
         colors.insert(ContextMenuHighlight, [187, 122, 208, 255]);
         colors.insert(ContextMenuTextNormal, [255, 255, 255, 255]);
@@ -134,6 +135,10 @@ impl TheTheme for TheDarkTheme {
         colors.insert(TimeSliderLine, [139, 139, 139, 255]);
         colors.insert(TimeSliderMarker, [202, 113, 230, 255]);
         colors.insert(TimeSliderPosition, [240, 240, 240, 255]);
+
+        colors.insert(MenuHover, [40, 40, 40, 255]);
+        colors.insert(MenuText, [200, 200, 200, 255]);
+        colors.insert(MenuTextHighlighted, [244, 244, 244, 255]);
 
         Self {
             temp_color: BLACK,
