@@ -11,6 +11,8 @@ pub struct TheMenu {
     hovered: Option<usize>,
     selected: Option<usize>,
 
+    opaque: bool,
+
     dim: TheDim,
     is_dirty: bool,
 }
@@ -35,6 +37,8 @@ impl TheWidget for TheMenu {
 
             hovered: None,
             selected: None,
+
+            opaque: true,
         }
     }
 
@@ -45,20 +49,24 @@ impl TheWidget for TheMenu {
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         match event {
-            TheEvent::MouseDown(_coord) => {
-                if self.hovered.is_some() {
-                    self.selected = self.hovered;
-                    if let Some(selected) = self.selected {
-                        ctx.ui.send(TheEvent::ShowMenu(
-                            self.id().clone(),
-                            vec2i(
-                                self.menus_text[selected].x,
-                                self.menus_text[selected].y + 22,
-                            ),
-                            self.menus[selected].clone(),
-                        ));
+            TheEvent::MouseDown(coord) => {
+                for i in 0..self.menus.len() {
+                    if self.menus_text[i].contains(*coord) {
+                        self.hovered = Some(i);
+                        self.selected = self.hovered;
+                        if let Some(selected) = self.selected {
+                            ctx.ui.send(TheEvent::ShowMenu(
+                                self.id().clone(),
+                                vec2i(
+                                    self.dim.x + self.menus_text[selected].x,
+                                    self.dim.y + self.menus_text[selected].y + 22,
+                                ),
+                                self.menus[selected].clone(),
+                            ));
+                            self.is_dirty = true;
+                            redraw = true;
+                        }
                     }
-                    redraw = true;
                 }
             }
             TheEvent::Hover(coord) => {
@@ -74,8 +82,8 @@ impl TheWidget for TheMenu {
                                 ctx.ui.send(TheEvent::ShowMenu(
                                     self.id().clone(),
                                     vec2i(
-                                        self.menus_text[selected].x,
-                                        self.menus_text[selected].y + 22,
+                                        self.dim.x + self.menus_text[selected].x,
+                                        self.dim.y + self.menus_text[selected].y + 22,
                                     ),
                                     self.menus[selected].clone(),
                                 ));
@@ -165,11 +173,13 @@ impl TheWidget for TheMenu {
         let stride = buffer.stride();
         let utuple: (usize, usize, usize, usize) = self.dim.to_buffer_utuple();
 
-        if let Some(icon) = ctx.ui.icon("dark_menu") {
-            for x in 0..utuple.2 {
-                let r = (utuple.0 + x, utuple.1, 1, icon.dim().height as usize);
-                ctx.draw
-                    .copy_slice_3(buffer.pixels_mut(), icon.pixels(), &r, stride);
+        if self.opaque {
+            if let Some(icon) = ctx.ui.icon("dark_menu") {
+                for x in 0..utuple.2 {
+                    let r = (utuple.0 + x, utuple.1, 1, icon.dim().height as usize);
+                    ctx.draw
+                        .copy_slice_3(buffer.pixels_mut(), icon.pixels(), &r, stride);
+                }
             }
         }
 
@@ -222,10 +232,15 @@ impl TheWidget for TheMenu {
 
 pub trait TheMenuTrait {
     fn add_context_menu(&mut self, context_menu: TheContextMenu);
+    fn set_opaque(&mut self, opaque: bool);
 }
 
 impl TheMenuTrait for TheMenu {
     fn add_context_menu(&mut self, context_menu: TheContextMenu) {
         self.menus.push(context_menu);
+    }
+    fn set_opaque(&mut self, opaque: bool) {
+        self.opaque = opaque;
+        self.is_dirty = true;
     }
 }
