@@ -86,12 +86,15 @@ impl TheContextMenu {
 
     /// Sets the position of the context menu while making it sure it fits on the screen.
     pub fn set_position(&mut self, position: Vec2i, _ctx: &mut TheContext) {
-        self.dim = TheDim::new(
-            position.x,
-            position.y,
-            self.width,
-            self.items.len() as i32 * self.item_height + 2 * 8,
-        );
+        let mut height = 2 * 8; // Borders
+        for item in self.items.iter() {
+            if item.name.is_empty() {
+                height += self.item_height / 2;
+            } else {
+                height += self.item_height;
+            }
+        }
+        self.dim = TheDim::new(position.x, position.y, self.width, height);
         self.dim.buffer_x = position.x;
         self.dim.buffer_y = position.y;
     }
@@ -146,12 +149,17 @@ impl TheContextMenu {
             style.theme().color(ContextMenuBackground),
         );
 
-        for (i, item) in self.items.iter_mut().enumerate() {
+        let mut y = tuple.1 + 7;
+        for item in self.items.iter_mut() {
             let rect = (
                 tuple.0,
-                tuple.1 + 7 + i * self.item_height as usize,
+                y,
                 self.width as usize - 2,
-                self.item_height as usize,
+                if item.name.is_empty() {
+                    self.item_height as usize / 2
+                } else {
+                    self.item_height as usize
+                },
             );
 
             let mut text_color = style.theme().color(ContextMenuTextNormal);
@@ -168,7 +176,7 @@ impl TheContextMenu {
             if item.name.is_empty() {
                 ctx.draw.rect(
                     pixels,
-                    &(rect.0, rect.1 + self.item_height as usize / 2, rect.2, 1),
+                    &(rect.0, rect.1 + rect.3 / 2, rect.2, 1),
                     ctx.width,
                     style.theme().color(ContextMenuSeparator),
                 );
@@ -185,6 +193,7 @@ impl TheContextMenu {
                     TheVerticalAlign::Center,
                 );
             }
+            y += rect.3;
         }
     }
 }
