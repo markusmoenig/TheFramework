@@ -93,6 +93,15 @@ impl TheWidget for TheMenu {
                 if *id == self.id {
                     self.selected = None;
                     self.hovered = None;
+                    self.is_dirty = true;
+                    redraw = true;
+                }
+            }
+            TheEvent::LostHover(_) => {
+                if self.hovered.is_some() && self.selected.is_none() {
+                    self.is_dirty = true;
+                    self.hovered = None;
+                    redraw = true;
                 }
             }
             _ => {}
@@ -174,7 +183,7 @@ impl TheWidget for TheMenu {
                 tr.height as usize,
             );
 
-            if self.hovered == Some(i) {
+            if self.hovered == Some(i) || self.selected == Some(i) {
                 ctx.draw.rounded_rect(
                     buffer.pixels_mut(),
                     &(rect.0, rect.1 - 2, rect.2, rect.3 + 2),
@@ -192,7 +201,7 @@ impl TheWidget for TheMenu {
                     font,
                     14.0,
                     &self.menus[i].name,
-                    if self.hovered == Some(i) {
+                    if self.hovered == Some(i) || self.selected == Some(i) {
                         style.theme().color(MenuTextHighlighted)
                     } else {
                         style.theme().color(MenuText)
