@@ -266,7 +266,7 @@ impl TheContextMenu {
                             .set_position(Vec2i::new((rect.0 + rect.2) as i32, rect.1 as i32), ctx);
                         sub_menu.draw(pixels, style, ctx);
                         sub_menu.is_open = true;
-                        sub_menu.cascading_y_offset = y as i32 - rect.1 as i32 + 7;
+                        sub_menu.cascading_y_offset = y as i32 - tuple.1 as i32;
                     } else {
                         sub_menu.is_open = false;
                         sub_menu.cascading_y_offset = 0;

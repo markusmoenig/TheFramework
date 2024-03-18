@@ -166,7 +166,9 @@ impl TheTrait for CodeEditor {
 
         let mut code_menu = TheContextMenu::named(str!("Code"));
         code_menu.add(self.editor.create_keywords_context_menu_item());
+        code_menu.add(self.editor.create_operators_context_menu_item());
         code_menu.add(self.editor.create_values_context_menu_item());
+        code_menu.add(self.editor.create_functions_context_menu_item());
 
         menu.add_context_menu(file_menu);
         menu.add_context_menu(edit_menu);
@@ -247,8 +249,7 @@ impl TheTrait for CodeEditor {
             while let Ok(event) = receiver.try_recv() {
                 redraw = self.editor.handle_event(&event, ui, ctx);
                 match event {
-                    TheEvent::ContextMenuSelected(id, action) => {
-                        println!("{:?}, {:?}", id, action);
+                    TheEvent::ContextMenuSelected(_, action) => {
                         if action.name.starts_with("Code") {
                             self.editor.insert_context_menu_id(action, ui, ctx);
                         }

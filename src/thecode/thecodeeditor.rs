@@ -189,10 +189,14 @@ impl TheCodeEditor {
                 if let Some(selection) = selection {
                     if selection.0 % 2 == 0 {
                         ctx.ui.set_enabled("Code Keywords Menu");
+                        ctx.ui.set_disabled("Code Operators Menu");
                         ctx.ui.set_enabled("Code Values Menu");
+                        ctx.ui.set_enabled("Code Functions Menu");
                     } else {
                         ctx.ui.set_disabled("Code Keywords Menu");
+                        ctx.ui.set_enabled("Code Operators Menu");
                         ctx.ui.set_disabled("Code Values Menu");
+                        ctx.ui.set_disabled("Code Functions Menu");
                     }
                 }
                 redraw = true;
@@ -784,6 +788,7 @@ impl TheCodeEditor {
     pub fn build_canvas(&self, ctx: &mut TheContext) -> TheCanvas {
         let mut canvas: TheCanvas = TheCanvas::new();
 
+        /*
         // Left code list
 
         let mut list_canvas: TheCanvas = TheCanvas::new();
@@ -839,7 +844,9 @@ impl TheCodeEditor {
         list_toolbar_canvas.set_layout(toolbar_hlayout);
         list_toolbar_canvas.set_widget(TheTraybar::new(TheId::empty()));
         list_canvas.set_top(list_toolbar_canvas);
+        canvas.set_left(list_canvas);
 
+        */
         // Top Toolbar
         let mut top_toolbar_canvas = TheCanvas::new();
         let mut toolbar_hlayout = TheHLayout::new(TheId::named("Code Top Toolbar"));
@@ -889,7 +896,6 @@ impl TheCodeEditor {
         let code_layout = TheCodeLayout::new(TheId::named("Code Editor"));
 
         canvas.set_layout(code_layout);
-        canvas.set_left(list_canvas);
         canvas.set_top(top_toolbar_canvas);
         canvas.set_bottom(bottom_toolbar_canvas);
         canvas.top_is_expanding = false;
@@ -1008,6 +1014,45 @@ impl TheCodeEditor {
         menu_item
     }
 
+    /// Returns the operators context menu.
+    pub fn create_operators_context_menu_item(&self) -> TheContextMenuItem {
+        let mut menu_item =
+            TheContextMenuItem::new(str!("Operators"), TheId::named("Code Operators Menu"));
+
+        let mut menu = TheContextMenu::named(str!("Operators"));
+        menu.id = TheId::named("Code Operators Menu");
+        menu.add(TheContextMenuItem::new(
+            str!("Assignment"),
+            TheId::named("Code Operator Assignment"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Comparison"),
+            TheId::named("Code Operator Comparison"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Add"),
+            TheId::named("Code Operator Add"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Subtract"),
+            TheId::named("Code Operator Subtract"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Multiply"),
+            TheId::named("Code Operator Multiply"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Divide"),
+            TheId::named("Code Operator Divide"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Modulus"),
+            TheId::named("Code Operator Modulus"),
+        ));
+        menu_item.set_sub_menu(menu);
+        menu_item
+    }
+
     /// Returns the values context menu.
     pub fn create_values_context_menu_item(&self) -> TheContextMenuItem {
         let mut menu_item =
@@ -1072,24 +1117,64 @@ impl TheCodeEditor {
         menu_item
     }
 
+    /// Returns the functions context menu.
+    pub fn create_functions_context_menu_item(&self) -> TheContextMenuItem {
+        let mut menu_item =
+            TheContextMenuItem::new(str!("Functions"), TheId::named("Code Functions Menu"));
+
+        let mut menu = TheContextMenu::named(str!("Functions"));
+        menu.id = TheId::named("Code Functions Menu");
+
+        for e in &self.externals {
+            menu.add(TheContextMenuItem::new(
+                e.name.clone(),
+                TheId::named(&format!("Code Functions {}", e.name.clone())),
+            ));
+        }
+
+        menu_item.set_sub_menu(menu);
+        menu_item
+    }
+
     /// Set the default state of the menu selection.
     pub fn init_menu_selection(&mut self, ctx: &mut TheContext) {
         ctx.ui.set_disabled("Code Keywords Menu");
         ctx.ui.set_disabled("Code Values Menu");
+        ctx.ui.set_disabled("Code Operators Menu");
+        ctx.ui.set_disabled("Code Functions Menu");
     }
 
     /// Insert a selected context menu item.
     pub fn insert_context_menu_id(&mut self, id: TheId, ui: &mut TheUI, ctx: &mut TheContext) {
-        if id.name == "Code Keyword Get" {
-            self.start_undo(ui);
-            self.set_selected_atom(ui, TheCodeAtom::Get(str!("")));
-            self.finish_undo(ui, ctx);
-        } else if id.name == "Code Keyword Set" {
-            self.start_undo(ui);
-            self.set_selected_atom(ui, TheCodeAtom::Set(str!(""), TheValueAssignment::Assign));
-            self.finish_undo(ui, ctx);
+        if let Some(last) = id.name.split(' ').last() {
+            let atom = self.create_atom(last, id.uuid);
+
+            if atom != TheCodeAtom::EndOfCode {
+                self.start_undo(ui);
+
+                if let TheCodeAtom::ExternalCall(_, _, _, arg_values, _) = &atom {
+                    if let Some((x, y)) = self.grid_selection {
+                        for (index, value) in arg_values.iter().enumerate() {
+                            let off = x + (index + 1) as u16 * 2;
+
+                            if let Some(layout) = ui.get_code_layout("Code Editor") {
+                                if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                                    let codegrid = code_view.codegrid_mut();
+                                    codegrid
+                                        .code
+                                        .entry((off, y))
+                                        .or_insert_with(|| TheCodeAtom::Value(value.clone()));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                self.set_selected_atom(ui, atom);
+                self.finish_undo(ui, ctx);
+                self.set_grid_selection_ui(ui, ctx);
+            }
         }
-        self.set_grid_selection_ui(ui, ctx);
     }
 
     pub fn get_code_list_items(

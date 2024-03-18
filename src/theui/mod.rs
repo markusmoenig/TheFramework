@@ -680,6 +680,19 @@ impl TheUI {
         let event = if let Some(c) = char {
             TheEvent::KeyDown(TheValue::Char(c))
         } else {
+            if key.clone().unwrap().clone() == TheKeyCode::Escape && self.context_menu.is_some() {
+                self.context_menu = None;
+                let menu_widget_id = self.menu_widget_id.clone();
+                if let Some(menu_widget_id) = menu_widget_id {
+                    if let Some(widget) = self.get_widget_abs(None, Some(&menu_widget_id.uuid)) {
+                        widget.on_event(&TheEvent::ContextMenuClosed(menu_widget_id), ctx);
+                    }
+                }
+                self.menu_widget_id = None;
+                ctx.ui.clear_hover();
+                return true;
+            }
+
             TheEvent::KeyCodeDown(TheValue::KeyCode(key.unwrap()))
         };
         ctx.ui.send(event.clone());
