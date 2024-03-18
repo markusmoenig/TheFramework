@@ -211,7 +211,7 @@ impl TheWidget for TheMenu {
                     font,
                     14.0,
                     &self.menus[i].name,
-                    if self.hovered == Some(i) || self.selected == Some(i) {
+                    if self.selected == Some(i) {
                         style.theme().color(MenuTextHighlighted)
                     } else {
                         style.theme().color(MenuText)

@@ -184,8 +184,17 @@ impl TheCodeEditor {
             }
             TheEvent::CodeEditorSelectionChanged(_id, selection) => {
                 self.grid_selection = *selection;
-
                 self.set_grid_selection_ui(ui, ctx);
+
+                if let Some(selection) = selection {
+                    if selection.0 % 2 == 0 {
+                        ctx.ui.set_enabled("Code Keywords Menu");
+                        ctx.ui.set_enabled("Code Values Menu");
+                    } else {
+                        ctx.ui.set_disabled("Code Keywords Menu");
+                        ctx.ui.set_disabled("Code Values Menu");
+                    }
+                }
                 redraw = true;
             }
             TheEvent::StateChanged(id, state) => {
@@ -825,6 +834,7 @@ impl TheCodeEditor {
         sdf_view.set_status(3, "Show all available functions.".to_string());
 
         sdf_view.set_canvas(sdf_canvas);
+
         toolbar_hlayout.add_widget(Box::new(sdf_view));
         list_toolbar_canvas.set_layout(toolbar_hlayout);
         list_toolbar_canvas.set_widget(TheTraybar::new(TheId::empty()));
@@ -968,6 +978,118 @@ impl TheCodeEditor {
         canvas.set_bottom(toolbar_canvas);
 
         canvas
+    }
+
+    /// Returns the keywords context menu.
+    pub fn create_keywords_context_menu_item(&self) -> TheContextMenuItem {
+        let mut menu_item =
+            TheContextMenuItem::new(str!("Keywords"), TheId::named("Code Keywords Menu"));
+
+        let mut menu = TheContextMenu::named(str!("Keywords"));
+        menu.id = TheId::named("Code Keywords Menu");
+        menu.add(TheContextMenuItem::new(
+            str!("Argument"),
+            TheId::named("Code Keyword Argument"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Return"),
+            TheId::named("Code Keyword Return"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Get"),
+            TheId::named("Code Keyword Get"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Set"),
+            TheId::named("Code Keyword Set"),
+        ));
+
+        menu_item.set_sub_menu(menu);
+        menu_item
+    }
+
+    /// Returns the values context menu.
+    pub fn create_values_context_menu_item(&self) -> TheContextMenuItem {
+        let mut menu_item =
+            TheContextMenuItem::new(str!("Values"), TheId::named("Code Values Menu"));
+
+        let mut menu = TheContextMenu::named(str!("Values"));
+        menu.id = TheId::named("Code Values Menu");
+        menu.add(TheContextMenuItem::new(
+            str!("Empty"),
+            TheId::named("Code Value Empty"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Integer"),
+            TheId::named("Code Value Integer"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Float"),
+            TheId::named("Code Value Float"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Bool"),
+            TheId::named("Code Value Bool"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Text"),
+            TheId::named("Code Value Text"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Object"),
+            TheId::named("Code Value Object"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("List"),
+            TheId::named("Code Value List"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Tile"),
+            TheId::named("Code Value Tile"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Position"),
+            TheId::named("Code Value Position"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Direction"),
+            TheId::named("Code Value Direction"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Random Int"),
+            TheId::named("Code Value RInt"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Random Float"),
+            TheId::named("Code Value RFloat"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Color"),
+            TheId::named("Code Value Color"),
+        ));
+
+        menu_item.set_sub_menu(menu);
+        menu_item
+    }
+
+    /// Set the default state of the menu selection.
+    pub fn init_menu_selection(&mut self, ctx: &mut TheContext) {
+        ctx.ui.set_disabled("Code Keywords Menu");
+        ctx.ui.set_disabled("Code Values Menu");
+    }
+
+    /// Insert a selected context menu item.
+    pub fn insert_context_menu_id(&mut self, id: TheId, ui: &mut TheUI, ctx: &mut TheContext) {
+        if id.name == "Code Keyword Get" {
+            self.start_undo(ui);
+            self.set_selected_atom(ui, TheCodeAtom::Get(str!("")));
+            self.finish_undo(ui, ctx);
+        } else if id.name == "Code Keyword Set" {
+            self.start_undo(ui);
+            self.set_selected_atom(ui, TheCodeAtom::Set(str!(""), TheValueAssignment::Assign));
+            self.finish_undo(ui, ctx);
+        }
+        self.set_grid_selection_ui(ui, ctx);
     }
 
     pub fn get_code_list_items(

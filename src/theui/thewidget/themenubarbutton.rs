@@ -51,28 +51,35 @@ impl TheWidget for TheMenubarButton {
         // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
             TheEvent::MouseDown(_coord) => {
-                if self.state != TheWidgetState::Clicked {
-                    self.state = TheWidgetState::Clicked;
-                    ctx.ui.set_focus(self.id());
-                    ctx.ui.send_widget_state_changed(self.id(), self.state);
+                if !ctx.ui.is_disabled(&self.id.name) {
+                    if self.state != TheWidgetState::Clicked {
+                        self.state = TheWidgetState::Clicked;
+                        ctx.ui.set_focus(self.id());
+                        ctx.ui.send_widget_state_changed(self.id(), self.state);
+                    }
+                    self.is_dirty = true;
+                    redraw = true;
                 }
-                self.is_dirty = true;
-                redraw = true;
             }
             TheEvent::Hover(_coord) => {
-                if self.state != TheWidgetState::Clicked && !self.id().equals(&ctx.ui.hover) {
+                if self.state != TheWidgetState::Clicked
+                    && !self.id().equals(&ctx.ui.hover)
+                    && !ctx.ui.is_disabled(&self.id.name)
+                {
                     self.is_dirty = true;
                     ctx.ui.set_hover(self.id());
                     redraw = true;
                 }
             }
             TheEvent::MouseUp(_coord) => {
-                if self.state == TheWidgetState::Clicked {
-                    self.state = TheWidgetState::None;
-                    ctx.ui.clear_focus();
+                if !ctx.ui.is_disabled(&self.id.name) {
+                    if self.state == TheWidgetState::Clicked {
+                        self.state = TheWidgetState::None;
+                        ctx.ui.clear_focus();
+                    }
+                    self.is_dirty = true;
+                    redraw = true;
                 }
-                self.is_dirty = true;
-                redraw = true;
             }
             _ => {}
         }
@@ -145,7 +152,9 @@ impl TheWidget for TheMenubarButton {
             return;
         }
 
-        if self.state != TheWidgetState::None || self.id().equals(&ctx.ui.hover) {
+        let is_disabled = ctx.ui.is_disabled(&self.id.name);
+
+        if self.state != TheWidgetState::None || self.id().equals(&ctx.ui.hover) && !is_disabled {
             if self.state == TheWidgetState::Clicked {
                 ctx.draw.rect_outline_border(
                     buffer.pixels_mut(),
@@ -183,6 +192,8 @@ impl TheWidget for TheMenubarButton {
             }
         }
 
+        let alpha = if is_disabled { 0.3 } else { 1.0 };
+
         if let Some(icon) = ctx.ui.icon(&self.icon_name) {
             let utuple = self.dim.to_buffer_shrunk_utuple(&shrinker);
             if let Some(fixed_size) = self.fixed_size {
@@ -204,12 +215,13 @@ impl TheWidget for TheMenubarButton {
                     fixed_size.x as usize,
                     fixed_size.y as usize,
                 );
-                ctx.draw.blend_scale_chunk(
+                ctx.draw.blend_scale_chunk_alpha(
                     buffer.pixels_mut(),
                     &r,
                     stride,
                     icon.pixels(),
                     &(icon.dim().width as usize, icon.dim().height as usize),
+                    alpha,
                 );
             } else {
                 let r = (
@@ -231,7 +243,7 @@ impl TheWidget for TheMenubarButton {
                     icon.dim().height as usize,
                 );
                 ctx.draw
-                    .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
+                    .blend_slice_alpha(buffer.pixels_mut(), icon.pixels(), &r, stride, alpha);
             }
         }
 

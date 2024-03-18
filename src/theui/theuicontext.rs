@@ -28,6 +28,8 @@ pub struct TheUIContext {
     pub overlay: Option<TheId>,
     pub context_menu: Option<TheContextMenu>,
 
+    pub disabled_ids: FxHashSet<String>,
+
     pub state_events_sender: Option<Sender<TheEvent>>,
 
     pub redraw_all: bool,
@@ -103,6 +105,7 @@ impl TheUIContext {
             code_font,
             icons,
 
+            disabled_ids: FxHashSet::default(),
             state_events_sender: None,
 
             redraw_all: false,
@@ -114,6 +117,21 @@ impl TheUIContext {
 
             file_requester_receiver: None,
         }
+    }
+
+    /// Set the given id as disabled.
+    pub fn set_disabled(&mut self, id: &str) {
+        self.disabled_ids.insert(id.to_string());
+    }
+
+    /// Check if the given id is disabled.
+    pub fn is_disabled(&self, id: &str) -> bool {
+        self.disabled_ids.contains(id)
+    }
+
+    /// Remove the given id from the disabled list.
+    pub fn set_enabled(&mut self, id: &str) {
+        self.disabled_ids.remove(id);
     }
 
     /// Adds an icon to the library.

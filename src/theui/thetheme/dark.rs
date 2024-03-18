@@ -121,6 +121,7 @@ impl TheTheme for TheDarkTheme {
         colors.insert(ContextMenuBorder, [130, 130, 130, 255]);
         colors.insert(ContextMenuHighlight, [187, 122, 208, 255]);
         colors.insert(ContextMenuTextNormal, [255, 255, 255, 255]);
+        colors.insert(ContextMenuTextDisabled, [100, 100, 100, 255]);
         colors.insert(ContextMenuTextHighlight, [82, 82, 82, 255]);
 
         colors.insert(WindowBorderOuter, [147, 147, 147, 255]);

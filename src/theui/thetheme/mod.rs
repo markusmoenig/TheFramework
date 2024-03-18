@@ -134,6 +134,7 @@ pub enum TheThemeColors {
     ContextMenuBorder,
     ContextMenuHighlight,
     ContextMenuTextNormal,
+    ContextMenuTextDisabled,
     ContextMenuTextHighlight,
     ContextMenuSeparator,
 

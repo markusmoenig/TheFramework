@@ -449,6 +449,22 @@ impl TheUI {
         }
     }
 
+    /// Set the given id as disabled.
+    pub fn set_disabled(&mut self, id: &str, ctx: &mut TheContext) {
+        ctx.ui.set_disabled(id);
+        if let Some(widget) = self.get_widget(id) {
+            widget.set_needs_redraw(true);
+        }
+    }
+
+    /// Remove the given id from the disabled list.
+    pub fn set_enabled(&mut self, id: &str, ctx: &mut TheContext) {
+        ctx.ui.set_enabled(id);
+        if let Some(widget) = self.get_widget(id) {
+            widget.set_needs_redraw(true);
+        }
+    }
+
     pub fn update(&mut self, ctx: &mut TheContext) -> bool {
         // Check if the result of an FileRequester is available, and if yes, send the result
         if let Some(rx) = &ctx.ui.file_requester_receiver {
@@ -483,17 +499,17 @@ impl TheUI {
         ctx.ui.clear_focus();
 
         if let Some(context) = &mut self.context_menu {
-            if context.dim.contains(coord) {
+            if context.contains(coord) {
                 let event = TheEvent::MouseDown(context.dim.to_local(coord));
                 if context.on_event(&event, ctx) {
                     redraw = true;
-                    if let Some(menu_id) = &context.hovered {
+                    if let Some((menu_id, menu_item_id)) = context.get_hovered_id() {
                         ctx.ui.send(TheEvent::ContextMenuSelected(
-                            context.id.clone(),
                             menu_id.clone(),
+                            menu_item_id.clone(),
                         ));
                         ctx.ui.send(TheEvent::StateChanged(
-                            menu_id.clone(),
+                            menu_item_id.clone(),
                             TheWidgetState::Clicked,
                         ));
                     }
@@ -603,7 +619,7 @@ impl TheUI {
         let coord = vec2i(x as i32, y as i32);
 
         if let Some(context) = &mut self.context_menu {
-            if context.dim.contains(coord) {
+            if context.contains(coord) {
                 let event = TheEvent::Hover(context.dim.to_local(coord));
                 redraw = context.on_event(&event, ctx);
             }

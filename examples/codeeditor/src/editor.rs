@@ -164,10 +164,17 @@ impl TheTrait for CodeEditor {
             TheId::named("Paste"),
         ));
 
+        let mut code_menu = TheContextMenu::named(str!("Code"));
+        code_menu.add(self.editor.create_keywords_context_menu_item());
+        code_menu.add(self.editor.create_values_context_menu_item());
+
         menu.add_context_menu(file_menu);
         menu.add_context_menu(edit_menu);
+        menu.add_context_menu(code_menu);
 
         menu_canvas.set_widget(menu);
+
+        self.editor.init_menu_selection(ctx);
 
         // Top
         let mut top_canvas = TheCanvas::new();
@@ -224,6 +231,11 @@ impl TheTrait for CodeEditor {
         ui.canvas.set_center(self.editor.build_canvas(ctx));
         ui.set_statusbar_name("Statusbar".to_string());
 
+        ctx.ui.set_disabled("Save");
+        ctx.ui.set_disabled("Save As");
+        ctx.ui.set_disabled("Undo");
+        ctx.ui.set_disabled("Redo");
+
         self.event_receiver = Some(ui.add_state_listener("Main Receiver".into()));
     }
 
@@ -235,6 +247,12 @@ impl TheTrait for CodeEditor {
             while let Ok(event) = receiver.try_recv() {
                 redraw = self.editor.handle_event(&event, ui, ctx);
                 match event {
+                    TheEvent::ContextMenuSelected(id, action) => {
+                        println!("{:?}, {:?}", id, action);
+                        if action.name.starts_with("Code") {
+                            self.editor.insert_context_menu_id(action, ui, ctx);
+                        }
+                    }
                     TheEvent::FileRequesterResult(id, paths) => {
                         if id.name == "Open" {
                             for p in paths {
