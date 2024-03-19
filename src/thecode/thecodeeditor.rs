@@ -192,11 +192,13 @@ impl TheCodeEditor {
                         ctx.ui.set_disabled("Code Operators Menu");
                         ctx.ui.set_enabled("Code Values Menu");
                         ctx.ui.set_enabled("Code Functions Menu");
+                        ctx.ui.set_enabled("Code Modules Menu");
                     } else {
                         ctx.ui.set_disabled("Code Keywords Menu");
                         ctx.ui.set_enabled("Code Operators Menu");
                         ctx.ui.set_disabled("Code Values Menu");
                         ctx.ui.set_disabled("Code Functions Menu");
+                        ctx.ui.set_disabled("Code Modules Menu");
                     }
                 }
                 redraw = true;
@@ -785,12 +787,11 @@ impl TheCodeEditor {
     }
 
     /// Builds the UI canvas
-    pub fn build_canvas(&self, ctx: &mut TheContext) -> TheCanvas {
+    pub fn build_canvas(&self, _ctx: &mut TheContext) -> TheCanvas {
         let mut canvas: TheCanvas = TheCanvas::new();
 
-        /*
         // Left code list
-
+        /*
         let mut list_canvas: TheCanvas = TheCanvas::new();
 
         let mut code_layout = TheListLayout::new(TheId::named("Code Editor Code List"));
@@ -1136,12 +1137,45 @@ impl TheCodeEditor {
         menu_item
     }
 
+    /// Returns the modules context menu.
+    pub fn create_modules_context_menu_item(&self) -> TheContextMenuItem {
+        let mut menu_item =
+            TheContextMenuItem::new(str!("Modules"), TheId::named("Code Modules Menu"));
+
+        let mut menu = TheContextMenu::named(str!("Modules"));
+        menu.id = TheId::named("Code Functions Menu");
+
+        for (bundle_name, _bundle_id, module) in self.modules.values() {
+            menu.add(TheContextMenuItem::new(
+                module.name.clone(),
+                TheId::named(&format!("{}: {}", bundle_name, module.name.clone()).to_string()),
+            ));
+            /*
+            let mut item = TheListItem::new(TheId::named_with_id(
+                "Code Editor Code List Item",
+                module.codegrid_id,
+            ));
+            item.set_text(module.name.clone());
+            item.set_status_text(
+                format!("{}: {}", bundle_name, module.name.clone())
+                    .to_string()
+                    .as_str(),
+            );
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);*/
+        }
+
+        menu_item.set_sub_menu(menu);
+        menu_item
+    }
+
     /// Set the default state of the menu selection.
     pub fn init_menu_selection(&mut self, ctx: &mut TheContext) {
         ctx.ui.set_disabled("Code Keywords Menu");
         ctx.ui.set_disabled("Code Values Menu");
         ctx.ui.set_disabled("Code Operators Menu");
         ctx.ui.set_disabled("Code Functions Menu");
+        ctx.ui.set_disabled("Code Modules Menu");
     }
 
     /// Insert a selected context menu item.

@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 #[derive(Clone, Debug)]
 pub struct TheContextMenuItem {
-    name: String,
+    pub name: String,
     pub id: TheId,
     pub value: Option<TheValue>,
     pub sub_menu: Option<TheContextMenu>,

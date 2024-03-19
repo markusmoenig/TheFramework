@@ -228,16 +228,32 @@ impl TheWidget for TheMenu {
     fn as_any(&mut self) -> &mut dyn std::any::Any {
         self
     }
+
+    fn as_menu(&mut self) -> Option<&mut dyn TheMenuTrait> {
+        Some(self)
+    }
 }
 
 pub trait TheMenuTrait {
+    /// Add a context menu to the menu.
     fn add_context_menu(&mut self, context_menu: TheContextMenu);
+    /// Replace a context menu in the menu.
+    fn replace_context_menu(&mut self, context_menu: TheContextMenu);
+    /// Set the menu background to opaque.
     fn set_opaque(&mut self, opaque: bool);
 }
 
 impl TheMenuTrait for TheMenu {
     fn add_context_menu(&mut self, context_menu: TheContextMenu) {
         self.menus.push(context_menu);
+    }
+    fn replace_context_menu(&mut self, context_menu: TheContextMenu) {
+        for i in 0..self.menus.len() {
+            if self.menus[i].name == context_menu.name {
+                self.menus[i] = context_menu;
+                return;
+            }
+        }
     }
     fn set_opaque(&mut self, opaque: bool) {
         self.opaque = opaque;

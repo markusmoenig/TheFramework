@@ -783,6 +783,14 @@ impl TheUI {
         None
     }
 
+    /// Gets a given menu by name
+    pub fn get_menu(&mut self, name: &str) -> Option<&mut dyn TheMenuTrait> {
+        if let Some(menu) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            return menu.as_menu();
+        }
+        None
+    }
+
     /// Gets a given render view by name
     pub fn get_render_view(&mut self, name: &str) -> Option<&mut dyn TheRenderViewTrait> {
         if let Some(render_view) = self.canvas.get_widget(Some(&name.to_string()), None) {

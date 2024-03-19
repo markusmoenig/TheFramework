@@ -288,6 +288,11 @@ pub trait TheWidget: Send {
         None
     }
 
+    /// Attempts to cast to TheMenuTrait. Only valid for TheMenu.
+    fn as_menu(&mut self) -> Option<&mut dyn TheMenuTrait> {
+        None
+    }
+
     /// Attempts to cast to TheCodeViewTrait. Only valid for TheCodeView.
     #[cfg(feature = "code")]
     fn as_code_view(&mut self) -> Option<&mut dyn TheCodeViewTrait> {
