@@ -64,7 +64,7 @@ impl TheWidget for TheCodeView {
             buffer: TheRGBABuffer::empty(),
 
             codegrid: TheCodeGrid::new(),
-            grid_size: 70,
+            grid_size: 75,
 
             debug_module: TheDebugModule::default(),
 

@@ -364,6 +364,14 @@ impl TheWidget for TheTextLineEdit {
                 self.text = text.clone();
                 self.is_dirty = true;
             }
+            TheValue::Float(v) => {
+                self.text = v.to_string().clone();
+                self.is_dirty = true;
+            }
+            TheValue::Int(v) => {
+                self.text = v.to_string().clone();
+                self.is_dirty = true;
+            }
             _ => {}
         }
     }
@@ -386,12 +394,42 @@ impl TheWidget for TheTextLineEdit {
         style.draw_text_edit_border(buffer, self, &mut shrinker, ctx, embedded, disabled);
 
         if !self.is_disabled {
+            let rect = self.dim.to_buffer_shrunk_utuple(&shrinker);
+
             ctx.draw.rect(
                 buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                &rect,
                 stride,
                 style.theme().color(TextEditBackground),
             );
+
+            let mut pos = None;
+
+            if let Some(range) = &self.range {
+                if let Some(range_f32) = range.to_range_f32() {
+                    if let Ok(value) = self.text.parse::<f32>() {
+                        let normalized =
+                            (value - range_f32.start()) / (range_f32.end() - range_f32.start());
+                        pos = Some((normalized * rect.2 as f32) as usize);
+                    }
+                } else if let Some(range_i32) = range.to_range_i32() {
+                    if let Ok(value) = self.text.parse::<i32>() {
+                        let range_diff = range_i32.end() - range_i32.start();
+                        let normalized = (value - range_i32.start()) * rect.2 as i32 / range_diff;
+                        pos = Some(normalized as usize);
+                    }
+                }
+            }
+
+            if let Some(mut pos) = pos {
+                pos = pos.clamp(0, rect.2);
+                ctx.draw.rect(
+                    buffer.pixels_mut(),
+                    &(rect.0, rect.1, pos, rect.3),
+                    stride,
+                    style.theme().color(TextEditRange),
+                );
+            }
         } else {
             ctx.draw.blend_rect(
                 buffer.pixels_mut(),
@@ -424,7 +462,11 @@ impl TheWidget for TheTextLineEdit {
                 r.2 = 2;
 
                 if !self.text.is_empty() && self.position > 0 {
-                    let txt = &self.text[0..self.position];
+                    let txt = if self.position < self.text.len() {
+                        &self.text[0..self.position]
+                    } else {
+                        &self.text
+                    };
                     let size = ctx.draw.get_text_size(font, self.font_size, txt);
                     r.0 += size.0;
                 }
