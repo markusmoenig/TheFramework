@@ -466,6 +466,13 @@ impl TheRGBABuffer {
             None
         }
     }
+
+    /// Sets the color of a pixel at (x, y).
+    pub fn set_pixel(&mut self, x: i32, y: i32, color: [u8; 4]) {
+        if let Some(index) = self.pixel_index(x, y) {
+            self.buffer[index..index + 4].copy_from_slice(&color);
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]
