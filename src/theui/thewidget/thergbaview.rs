@@ -700,6 +700,7 @@ pub trait TheRGBAViewTrait: TheWidget {
     fn set_background(&mut self, color: RGBA);
     fn zoom(&self) -> f32;
     fn set_zoom(&mut self, zoom: f32);
+    fn visible_rect(&mut self) -> TheDim;
     fn set_scroll_offset(&mut self, offset: Vec2i);
     fn grid(&self) -> Option<i32>;
     fn set_grid(&mut self, grid: Option<i32>);
@@ -795,6 +796,14 @@ impl TheRGBAViewTrait for TheRGBAView {
     fn set_zoom(&mut self, zoom: f32) {
         self.zoom = zoom;
         self.is_dirty = true;
+    }
+    fn visible_rect(&mut self) -> TheDim {
+        TheDim::new(
+            (self.scroll_offset.x as f32 / self.zoom()) as i32,
+            ((self.scroll_offset.y as f32) / self.zoom()) as i32,
+            self.dim.width,
+            self.dim.height,
+        )
     }
     fn set_scroll_offset(&mut self, offset: Vec2i) {
         self.scroll_offset = offset;
