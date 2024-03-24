@@ -681,8 +681,12 @@ impl TheCodeAtom {
                 let mut parts: Vec<String> = path.split('.').map(|s| s.to_string()).collect();
 
                 if let Some(first) = parts.get_mut(0) {
-                    if first.starts_with(':') {
-                        *first = first.strip_prefix(':').unwrap_or(first).to_string();
+                    // if first.starts_with(':') {
+                    //     *first = first.strip_prefix(':').unwrap_or(first).to_string();
+                    //     is_object = true;
+                    // }
+                    if first.starts_with('@') {
+                        *first = first.strip_prefix('@').unwrap_or(first).to_string();
                         is_object = true;
                     }
                 }
@@ -856,8 +860,12 @@ impl TheCodeAtom {
                 let mut parts: Vec<String> = path.split('.').map(|s| s.to_string()).collect();
 
                 if let Some(first) = parts.get_mut(0) {
-                    if first.starts_with(':') {
-                        *first = first.strip_prefix(':').unwrap_or(first).to_string();
+                    // if first.starts_with(':') {
+                    //     *first = first.strip_prefix(':').unwrap_or(first).to_string();
+                    //     is_object = true;
+                    // }
+                    if first.starts_with('@') {
+                        *first = first.strip_prefix('@').unwrap_or(first).to_string();
                         is_object = true;
                     }
                 }
