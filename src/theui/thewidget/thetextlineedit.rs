@@ -1,3 +1,7 @@
+use std::ops::Range;
+
+use fontdue::Font;
+
 use crate::prelude::*;
 
 pub struct TheTextLineEdit {
@@ -10,6 +14,8 @@ pub struct TheTextLineEdit {
     text: String,
     original: String,
     position: usize,
+    drag_start_position: usize,
+    selection: Option<Range<usize>>,
 
     font_size: f32,
 
@@ -42,6 +48,8 @@ impl TheWidget for TheTextLineEdit {
             text: "".to_string(),
             original: "".to_string(),
             position: 0,
+            drag_start_position: 0,
+            selection: None,
 
             font_size: 14.0,
 
@@ -130,26 +138,16 @@ impl TheWidget for TheTextLineEdit {
                 self.original = self.text.clone();
 
                 self.position = 0;
-                let x = coord.x - 7;
-                let mut offset = 0;
-                let mut found = false;
-                if !self.text.is_empty() && x >= 0 {
-                    for i in 1..self.text.len() {
-                        let txt = &self.text[0..i];
-                        if let Some(font) = &ctx.ui.font {
-                            let size = ctx.draw.get_text_size(font, self.font_size, txt);
-                            if size.0 as i32 >= x {
-                                offset = i;
-                                found = true;
-                                break;
-                            }
-                        }
-                    }
-                    if found {
-                        self.position = offset;
-                    } else {
-                        self.position = self.text.len();
-                    }
+                self.selection = None;
+                if !self.text.is_empty() {
+                    self.position = find_cursor_position(
+                        &self.text,
+                        &ctx.ui.font,
+                        self.font_size,
+                        coord.x,
+                        &ctx.draw
+                    );
+                    self.drag_start_position = self.position;
                 }
             }
             TheEvent::MouseDragged(coord) => {
@@ -176,29 +174,34 @@ impl TheWidget for TheTextLineEdit {
                             TheValue::Text(self.text.clone()),
                         );
                     }
-                } else {
-                    let x = coord.x - 7;
-                    let mut offset = 0;
-                    let mut found = false;
-                    if !self.text.is_empty() && x >= 0 {
-                        for i in 1..self.text.len() {
-                            let txt = &self.text[0..i];
-                            if let Some(font) = &ctx.ui.font {
-                                let size = ctx.draw.get_text_size(font, self.font_size, txt);
-                                if size.0 as i32 >= x {
-                                    offset = i;
-                                    found = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if found {
-                            self.position = offset;
-                        } else {
+                } else if !self.text.is_empty() {
+                    self.position = find_cursor_position(
+                        &self.text,
+                        &ctx.ui.font,
+                        self.font_size,
+                        coord.x,
+                        &ctx.draw
+                    );
+
+                    // Select all chars in the left if dragging up
+                    if coord.y < 0 {
+                        self.position = 0;
+                    // Select all chars in the right if dragging down
+                    } else if coord.y > self.dim.height {
                             self.position = self.text.len();
                         }
+
+                    if self.drag_start_position != self.position {
+                        let left = self.drag_start_position.min(self.position);
+                        let right = self.drag_start_position.max(self.position);
+                        self.selection = Some(left..right);
+                    } else {
+                        self.selection = None;
                     }
                 }
+            }
+            TheEvent::MouseUp(_coord) => {
+                self.drag_start_position = 0;
             }
             TheEvent::KeyDown(key) => {
                 if let Some(c) = key.to_char() {
@@ -405,6 +408,35 @@ impl TheWidget for TheTextLineEdit {
 
         if let Some(font) = &ctx.ui.font {
             if !self.text.is_empty() {
+                if let Some(selection) = &self.selection {
+                    let text_width = ctx.draw.get_text_size(font, self.font_size, &self.text).0;
+
+                    let left_spacing = if selection.start == 0 {
+                        0
+                    } else {
+                        let txt = &self.text[..selection.start];
+                        ctx.draw.get_text_size(font, self.font_size, txt).0
+                    };
+
+                    let right_spacing = if selection.end == self.text.len() {
+                        0
+                    } else {
+                        let txt = &self.text[selection.end..];
+                        ctx.draw.get_text_size(font, self.font_size, txt).0
+                    };
+
+                    let mut rect = self.dim.to_buffer_shrunk_utuple(&shrinker);
+                    rect.0 += left_spacing;
+                    rect.2 = text_width - left_spacing - right_spacing;
+
+                    ctx.draw.blend_rect(
+                        buffer.pixels_mut(),
+                        &rect,
+                        stride,
+                        style.theme().color(SelectedTextEditBorder1)
+                    );
+                }
+
                 let r = self.dim.to_buffer_shrunk_utuple(&shrinker);
                 ctx.draw.text_blend(
                     buffer.pixels_mut(),
@@ -486,5 +518,36 @@ impl TheTextLineEditTrait for TheTextLineEdit {
     }
     fn set_continuous(&mut self, continuous: bool) {
         self.continuous = continuous;
+    }
+}
+
+fn find_cursor_position(
+    text: &str,
+    font: &Option<Font>,
+    font_size: f32,
+    coord: i32,
+    draw: &TheDraw2D
+) -> usize {
+    if coord < 0 {
+        return 0;
+    }
+
+    let mut offset = 0;
+    let mut found = false;
+    for i in 1..text.len() {
+        let txt = &text[0..i];
+        if let Some(font) = font {
+            let size = draw.get_text_size(font, font_size, txt);
+            if size.0 as i32 >= coord {
+                offset = i;
+                found = true;
+                break;
+            }
+        }
+    }
+    if found {
+        offset
+    } else {
+        text.len()
     }
 }
