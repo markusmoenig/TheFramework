@@ -41,6 +41,10 @@ pub enum TheEvent {
     // Tabbar, Groupbutton
     IndexChanged(TheId, usize),
 
+    // The index of the palette has changed.
+    PaletteIndexChanged(TheId, u16),
+    ColorButtonClicked(TheId),
+
     // Tile / Code Editor
     TileSelectionChanged(TheId),
     TilePicked(TheId, Vec2i),

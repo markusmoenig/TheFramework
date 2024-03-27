@@ -4,6 +4,8 @@ use std::ops::{Index, IndexMut};
 /// Holds an array of colors.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct ThePalette {
+    #[serde(default)]
+    pub current_index: u16,
     pub colors: Vec<Option<TheColor>>,
 }
 
@@ -15,7 +17,10 @@ impl Default for ThePalette {
 
 impl ThePalette {
     pub fn new(colors: Vec<Option<TheColor>>) -> Self {
-        Self { colors }
+        Self {
+            current_index: 0,
+            colors,
+        }
     }
 
     pub fn empty_256() -> Self {
@@ -23,7 +28,15 @@ impl ThePalette {
         for _ in 0..256 {
             colors.push(None);
         }
-        Self { colors }
+        Self {
+            current_index: 0,
+            colors,
+        }
+    }
+
+    /// Get the color at the current index
+    pub fn get_current_color(&self) -> Option<TheColor> {
+        self.colors[self.current_index as usize].clone()
     }
 }
 

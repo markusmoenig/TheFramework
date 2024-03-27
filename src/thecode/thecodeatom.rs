@@ -1230,6 +1230,7 @@ impl TheCodeAtom {
                 TheValue::RangeI32(_v) => "Range value.".to_string(),
                 TheValue::RangeF32(_v) => "Range value.".to_string(),
                 TheValue::ColorObject(_, _) => "Color.".to_string(),
+                TheValue::PaletteIndex(_) => "Palette index.".to_string(),
                 TheValue::Empty => "Empty value.".to_string(),
                 TheValue::Id(id) => format!("Id ({}).", id),
                 TheValue::Direction(v) => format!("Direction ({}).", v),
