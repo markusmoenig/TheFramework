@@ -194,7 +194,7 @@ impl Sidebar {
             }
             TheEvent::ValueChanged(id, value) => {
                 if id.name == "Color Picker" {
-                    if let TheValue::ColorObject(v, _) = value {
+                    if let TheValue::ColorObject(v) = value {
                         let c = v.to_vec3f();
                         project.material.rgb = rust_pathtracer::prelude::F3::new(c.x, c.y, c.z);
                         self.send_material(project.material.clone());

@@ -879,7 +879,7 @@ impl TheWidget for TheCodeView {
                                 }
                             }
 
-                            if let TheCodeAtom::Value(TheValue::ColorObject(color, _)) = atom {
+                            if let TheCodeAtom::Value(TheValue::ColorObject(color)) = atom {
                                 let off = zoom_const(4, zoom);
                                 ctx.draw.rounded_rect(
                                     self.buffer.pixels_mut(),

@@ -476,32 +476,18 @@ impl TheCodeEditor {
                 } else if id.name == "Atom Color Hex" {
                     if let Some(hex_color) = value.to_string() {
                         if !hex_color.is_empty() {
-                            if let Some(TheCodeAtom::Value(TheValue::ColorObject(_, randomness))) =
+                            if let Some(TheCodeAtom::Value(TheValue::ColorObject(_))) =
                                 self.get_selected_atom(ui)
                             {
                                 self.start_undo(ui);
                                 self.set_selected_atom(
                                     ui,
-                                    TheCodeAtom::Value(TheValue::ColorObject(
-                                        TheColor::from_hex(hex_color.as_str()),
-                                        randomness,
-                                    )),
+                                    TheCodeAtom::Value(TheValue::ColorObject(TheColor::from_hex(
+                                        hex_color.as_str(),
+                                    ))),
                                 );
                                 self.finish_undo(ui, ctx);
                             }
-                        }
-                    }
-                } else if id.name == "Atom Color Randomness" {
-                    if let Some(randomness) = value.to_f32() {
-                        if let Some(TheCodeAtom::Value(TheValue::ColorObject(color, _))) =
-                            self.get_selected_atom(ui)
-                        {
-                            self.start_undo(ui);
-                            self.set_selected_atom(
-                                ui,
-                                TheCodeAtom::Value(TheValue::ColorObject(color, randomness)),
-                            );
-                            self.finish_undo(ui, ctx);
                         }
                     }
                 } else if id.name == "Atom Direction Float2" {
@@ -757,7 +743,7 @@ impl TheCodeEditor {
             "Modulus" => TheCodeAtom::Modulus,
             "RInt" => TheCodeAtom::RandInt(vec2i(0, 3)),
             "RFloat" => TheCodeAtom::RandFloat(vec2f(0.0, 1.0)),
-            "Color" => TheCodeAtom::Value(TheValue::ColorObject(TheColor::default(), 0.0)),
+            "Color" => TheCodeAtom::Value(TheValue::ColorObject(TheColor::default())),
             "Direction" => TheCodeAtom::Value(TheValue::Direction(vec3f(0.0, 0.0, -1.0))),
             _ => {
                 if let Some((bundle_name, bundle_id, module)) = self.modules.get(&id) {

@@ -115,7 +115,7 @@ impl TheWidget for TheColorButton {
     }
 
     fn set_value(&mut self, value: TheValue) {
-        if let TheValue::ColorObject(color, _) = value {
+        if let TheValue::ColorObject(color) = value {
             self.color = color.to_u8_array();
             self.is_dirty = true;
         }
