@@ -278,9 +278,9 @@ impl TheWidget for TheRGBAView {
                     redraw = true;
                 }
 
-                if (self.mode == TheRGBAViewMode::TileEditor
+                if self.mode == TheRGBAViewMode::TileEditor
                     || self.mode == TheRGBAViewMode::TilePicker
-                    || self.mode == TheRGBAViewMode::TileSelection)
+                    || self.mode == TheRGBAViewMode::TileSelection
                 //&& self.hover_color.is_some()
                 {
                     if let Some(grid) = self.grid {

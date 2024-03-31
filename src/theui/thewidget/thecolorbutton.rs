@@ -27,7 +27,7 @@ impl TheWidget for TheColorButton {
             status: None,
 
             dim: TheDim::zero(),
-            color: WHITE,
+            color: BLACK,
             is_dirty: false,
         }
     }
