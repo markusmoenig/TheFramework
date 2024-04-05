@@ -20,6 +20,15 @@ impl TheContextMenuItem {
         }
     }
 
+    pub fn new_submenu(name: String, id: TheId, sub_menu: TheContextMenu) -> Self {
+        Self {
+            name,
+            id,
+            value: None,
+            sub_menu: Some(sub_menu),
+        }
+    }
+
     /// Sets the sub menu.
     pub fn set_sub_menu(&mut self, menu: TheContextMenu) {
         self.sub_menu = Some(menu);

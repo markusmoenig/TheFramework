@@ -5,6 +5,7 @@ pub struct TheSectionbarButton {
     limiter: TheSizeLimiter,
 
     state: TheWidgetState,
+    status: Option<String>,
 
     dim: TheDim,
     text: String,
@@ -24,6 +25,7 @@ impl TheWidget for TheSectionbarButton {
             limiter,
 
             state: TheWidgetState::None,
+            status: None,
 
             dim: TheDim::zero(),
             text: String::new(),
@@ -48,7 +50,7 @@ impl TheWidget for TheSectionbarButton {
                 redraw = true;
             }
             TheEvent::Hover(_coord) => {
-                if self.state != TheWidgetState::Selected && !self.id().equals(&ctx.ui.hover) {
+                if !self.id().equals(&ctx.ui.hover) {
                     self.is_dirty = true;
                     ctx.ui.set_hover(self.id());
                     redraw = true;
@@ -72,6 +74,15 @@ impl TheWidget for TheSectionbarButton {
             self.dim = dim;
             self.is_dirty = true;
         }
+    }
+
+    fn status_text(&self) -> Option<String> {
+        self.status.clone()
+    }
+
+    /// Sets the status text for the widget.
+    fn set_status_text(&mut self, text: &str) {
+        self.status = Some(text.to_string());
     }
 
     fn limiter(&self) -> &TheSizeLimiter {
