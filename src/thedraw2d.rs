@@ -1,5 +1,5 @@
 use fontdue::layout::{
-    CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle, VerticalAlign,
+    CoordinateSystem, GlyphPosition, HorizontalAlign, Layout, LayoutSettings, TextStyle, VerticalAlign
 };
 use fontdue::Font;
 use maths_rs::prelude::*;
@@ -587,6 +587,77 @@ impl TheDraw2D {
     }
 
     #[allow(clippy::too_many_arguments)]
+    /// Draws a text aligned inside a rect
+    pub fn text_rect_clip(
+        &self,
+        frame: &mut [u8],
+        top_left: &Vec2<usize>,
+        clip_rect: &(usize, usize, usize, usize),
+        stride: usize,
+        font: &Font,
+        size: f32,
+        text: &str,
+        color: &[u8; 4],
+        background: &[u8; 4],
+        halign: TheHorizontalAlign,
+        valign: TheVerticalAlign,
+    ) {
+        let mut text_to_use = text.trim_end().to_string().clone();
+        text_to_use = text_to_use.replace('\n', "");
+        if text_to_use.trim_end().is_empty() {
+            return;
+        }
+
+        let fonts = &[font];
+
+        let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
+        layout.reset(&LayoutSettings {
+            horizontal_align: if halign == TheHorizontalAlign::Left {
+                HorizontalAlign::Left
+            } else if halign == TheHorizontalAlign::Right {
+                HorizontalAlign::Right
+            } else {
+                HorizontalAlign::Center
+            },
+            vertical_align: if valign == TheVerticalAlign::Top {
+                VerticalAlign::Top
+            } else if valign == TheVerticalAlign::Bottom {
+                VerticalAlign::Bottom
+            } else {
+                VerticalAlign::Middle
+            },
+            wrap_hard_breaks: false,
+            ..LayoutSettings::default()
+        });
+        layout.append(fonts, &TextStyle::new(text_to_use.as_str(), size, 0));
+
+        for glyph in layout.glyphs() {
+            let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
+
+            for y in 0..metrics.height {
+                for x in 0..metrics.width {
+                    let coord_x = x + top_left.x + glyph.x as usize;
+                    let coord_y = y + top_left.y + glyph.y as usize;
+
+                    if coord_x < clip_rect.0 || coord_x > clip_rect.0 + clip_rect.2 ||
+                        coord_y < clip_rect.1 || coord_y > clip_rect.1 + clip_rect.3 {
+                            continue;
+                        }
+
+                    let i = coord_x * 4 + coord_y * stride * 4;
+                    let m = alphamap[x + y * metrics.width];
+
+                    frame[i..i + 4].copy_from_slice(&self.mix_color(
+                        background,
+                        color,
+                        m as f32 / 255.0,
+                    ));
+                }
+            }
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
     /// Blends a text aligned inside a rect and blends it with the existing background
     pub fn text_rect_blend(
         &self,
@@ -657,6 +728,75 @@ impl TheDraw2D {
 
                     let i = (x + rect.0 + glyph.x as usize) * 4
                         + (y + rect.1 + glyph.y as usize) * stride * 4;
+                    let m = alphamap[x + y * metrics.width];
+
+                    let background = &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
+                    frame[i..i + 4].copy_from_slice(&self.mix_color(
+                        background,
+                        color,
+                        m as f32 / 255.0,
+                    ));
+                }
+            }
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    /// Blends a text aligned inside a rect and blends it with the existing background
+    pub fn text_rect_blend_clip(
+        &self,
+        frame: &mut [u8],
+        top_left: &Vec2<usize>,
+        clip_rect: &(usize, usize, usize, usize),
+        stride: usize,
+        font: &Font,
+        size: f32,
+        text: &str,
+        color: &[u8; 4],
+        halign: TheHorizontalAlign,
+        valign: TheVerticalAlign,
+    ) {
+        let text_to_use = text.trim_end().to_string().clone();
+        if text_to_use.trim_end().is_empty() {
+            return;
+        }
+
+        let fonts = &[font];
+
+        let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
+        layout.reset(&LayoutSettings {
+            horizontal_align: if halign == TheHorizontalAlign::Left {
+                HorizontalAlign::Left
+            } else if halign == TheHorizontalAlign::Right {
+                HorizontalAlign::Right
+            } else {
+                HorizontalAlign::Center
+            },
+            vertical_align: if valign == TheVerticalAlign::Top {
+                VerticalAlign::Top
+            } else if valign == TheVerticalAlign::Bottom {
+                VerticalAlign::Bottom
+            } else {
+                VerticalAlign::Middle
+            },
+            ..LayoutSettings::default()
+        });
+        layout.append(fonts, &TextStyle::new(text_to_use.as_str(), size, 0));
+
+        for glyph in layout.glyphs() {
+            let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
+
+            for y in 0..metrics.height {
+                for x in 0..metrics.width {
+                    let coord_x = x + top_left.x + glyph.x as usize;
+                    let coord_y = y + top_left.y + glyph.y as usize;
+
+                    if coord_x < clip_rect.0 || coord_x > clip_rect.0 + clip_rect.2 ||
+                        coord_y < clip_rect.1 || coord_y > clip_rect.1 + clip_rect.3 {
+                            continue;
+                        }
+
+                    let i = coord_x * 4 + coord_y * stride * 4;
                     let m = alphamap[x + y * metrics.width];
 
                     let background = &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
@@ -760,8 +900,8 @@ impl TheDraw2D {
         }
     }
 
-    /// Returns the size of the given text
-    pub fn get_text_size(&self, font: &Font, size: f32, text: &str) -> (usize, usize) {
+    /// Returns the layout of the given text
+    pub fn get_text_layout(&self, font: &Font, size: f32, text: &str) -> Layout {
         let fonts = &[font];
 
         let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
@@ -770,8 +910,20 @@ impl TheDraw2D {
         });
         layout.append(fonts, &TextStyle::new(text, size, 0));
 
-        let x = layout.glyphs()[layout.glyphs().len() - 1].x.ceil() as usize
-            + layout.glyphs()[layout.glyphs().len() - 1].width
+        layout
+    }
+
+    /// Returns the size of the given text
+    pub fn get_text_size(&self, font: &Font, size: f32, text: &str) -> (usize, usize) {
+        if text.is_empty() {
+            return (0, 0);
+        }
+
+        let layout = self.get_text_layout(font, size, text);
+        let glyphs = layout.glyphs();
+
+        let x = glyphs[glyphs.len() - 1].x.ceil() as usize
+            + glyphs[glyphs.len() - 1].width
             + 1;
         (x, layout.height() as usize)
     }

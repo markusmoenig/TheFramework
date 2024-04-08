@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::{ops::Range, time::Instant};
 
 use fontdue::Font;
 
@@ -12,14 +12,24 @@ pub struct TheTextLineEdit {
     is_disabled: bool,
 
     text: String,
+    text_last_tick: String,
     original: String,
-    position: usize,
+
+    cursor_position: usize,
     drag_start_position: usize,
+    last_mouse_down_time: Option<Instant>,
+    last_mouse_down_coord: Vec2<i32>,
+
     selection: Option<Range<usize>>,
 
     font_size: f32,
+    // x, width
+    glyph_positions: Vec<(f32, usize)>,
 
     dim: TheDim,
+    // left top right bottom
+    padding: (i32, i32, i32, i32),
+    scroll_offset: Vec2<i32>,
     is_dirty: bool,
     embedded: bool,
 
@@ -46,16 +56,23 @@ impl TheWidget for TheTextLineEdit {
             is_disabled: false,
 
             text: "".to_string(),
+            text_last_tick: "".to_string(),
             original: "".to_string(),
-            position: 0,
+
+            cursor_position: 0,
             drag_start_position: 0,
+            last_mouse_down_time: None,
+            last_mouse_down_coord: Vec2::new(0, 0),
+
             selection: None,
 
             font_size: 14.0,
+            glyph_positions: vec![],
 
             dim: TheDim::zero(),
+            padding: (5, 0, 5, 0),
+            scroll_offset: Vec2::zero(),
             is_dirty: false,
-
             embedded: false,
 
             range: None,
@@ -137,17 +154,27 @@ impl TheWidget for TheTextLineEdit {
                 redraw = true;
                 self.original = self.text.clone();
 
-                self.position = 0;
+                self.cursor_position = 0;
                 self.selection = None;
                 if !self.text.is_empty() {
-                    self.position = find_cursor_position(
+                    self.cursor_position = find_cursor_position(
                         &self.text,
                         &ctx.ui.font,
                         self.font_size,
-                        coord.x,
+                        coord.x - self.padding.0 + self.scroll_offset.x,
                         &ctx.draw
                     );
-                    self.drag_start_position = self.position;
+                    self.drag_start_position = self.cursor_position;
+
+                    // Select all if double click
+                    if let Some(last_time) = self.last_mouse_down_time {
+                        if last_time.elapsed().as_millis() < 500
+                            && self.last_mouse_down_coord == *coord {
+                            self.selection = Some(0..self.text.len());
+                        }
+                    }
+                    self.last_mouse_down_time = Some(Instant::now());
+                    self.last_mouse_down_coord = *coord;
                 }
             }
             TheEvent::MouseDragged(coord) => {
@@ -175,25 +202,25 @@ impl TheWidget for TheTextLineEdit {
                         );
                     }
                 } else if !self.text.is_empty() {
-                    self.position = find_cursor_position(
+                    self.cursor_position = find_cursor_position(
                         &self.text,
                         &ctx.ui.font,
                         self.font_size,
-                        coord.x,
+                        coord.x - self.padding.0 + self.scroll_offset.x,
                         &ctx.draw
                     );
 
                     // Select all chars in the left if dragging up
                     if coord.y < 0 {
-                        self.position = 0;
+                        self.cursor_position = 0;
                     // Select all chars in the right if dragging down
                     } else if coord.y > self.dim.height {
-                            self.position = self.text.len();
-                        }
+                        self.cursor_position = self.text.len();
+                    }
 
-                    if self.drag_start_position != self.position {
-                        let left = self.drag_start_position.min(self.position);
-                        let right = self.drag_start_position.max(self.position);
+                    if self.drag_start_position != self.cursor_position {
+                        let left = self.drag_start_position.min(self.cursor_position);
+                        let right = self.drag_start_position.max(self.cursor_position);
                         self.selection = Some(left..right);
                     } else {
                         self.selection = None;
@@ -218,19 +245,12 @@ impl TheWidget for TheTextLineEdit {
                     }
 
                     let mut txt = self.text.clone();
-                    insert_at_char_position(&mut txt, c, self.position);
+                    insert_at_char_position(&mut txt, c, self.cursor_position);
 
-                    // For now limit the input to the available widget width
-                    // Have to implement scrolling
-                    if let Some(font) = &ctx.ui.font {
-                        let size = ctx.draw.get_text_size(font, self.font_size, txt.as_str());
-                        if (size.0 as i32) < self.dim().width - 12 {
-                            self.text = txt;
-                            self.position += 1;
-                            self.is_dirty = true;
-                            redraw = true;
-                        }
-                    }
+                    self.text = txt;
+                    self.cursor_position += 1;
+                    self.is_dirty = true;
+                    redraw = true;
 
                     if self.continuous {
                         if let Some(layout_id) = &self.layout_id {
@@ -260,18 +280,18 @@ impl TheWidget for TheTextLineEdit {
                                 s.push_str(&remaining);
                             }
                         }
-                        if self.position > 0 {
-                            delete_at_char_position(&mut self.text, self.position - 1);
-                            self.position -= 1;
+                        if self.cursor_position > 0 {
+                            delete_at_char_position(&mut self.text, self.cursor_position - 1);
+                            self.cursor_position -= 1;
                             self.is_dirty = true;
                             redraw = true;
                         }
-                    } else if key == TheKeyCode::Left && self.position > 0 {
-                        self.position -= 1;
+                    } else if key == TheKeyCode::Left && self.cursor_position > 0 {
+                        self.cursor_position -= 1;
                         self.is_dirty = true;
                         redraw = true;
-                    } else if key == TheKeyCode::Right && self.position < self.text.len() {
-                        self.position += 1;
+                    } else if key == TheKeyCode::Right && self.cursor_position < self.text.len() {
+                        self.cursor_position += 1;
                         self.is_dirty = true;
                         redraw = true;
                     } else if key == TheKeyCode::Return && self.text != self.original {
@@ -404,73 +424,133 @@ impl TheWidget for TheTextLineEdit {
             );
         }
 
-        shrinker.shrink_by(5, 0, 5, 0);
-
+        shrinker.shrink_by(self.padding.0, self.padding.1, self.padding.2, self.padding.3);
+        
         if let Some(font) = &ctx.ui.font {
+            if self.text != self.text_last_tick {
+                self.glyph_positions = ctx.draw.get_text_layout(
+                    font,
+                    self.font_size,
+                    &self.text
+                )
+                .glyphs()
+                .iter()
+                .map(|g| (g.x, g.width))
+                .collect::<Vec<(f32, usize)>>();
+            }
+
+            let visible_area = self.dim.to_buffer_shrunk_utuple(&shrinker);
+            let text_width_before_cursor = get_text_left(&self.glyph_positions, self.cursor_position);
+
+            // Check if the widget should be scrolled in order to display the cursor
+            // Scroll right
+            let leftmost = text_width_before_cursor as i32;
+            self.scroll_offset.x = self.scroll_offset.x.min(leftmost);
+            // Scroll left
+            let rightmost = text_width_before_cursor as i32 - visible_area.2 as i32;
+            self.scroll_offset.x = self.scroll_offset.x.max(rightmost);
+
+            let text_start_x = visible_area.0 as i32 - self.scroll_offset.x;
+
             if !self.text.is_empty() {
+                // Render selection
                 if let Some(selection) = &self.selection {
-                    let text_width = ctx.draw.get_text_size(font, self.font_size, &self.text).0;
+                    let leftside_nonselection_text_width = get_text_left(&self.glyph_positions, selection.start);
+                    let selection_width = get_text_width(&self.glyph_positions, selection.start, selection.end);
 
-                    let left_spacing = if selection.start == 0 {
-                        0
-                    } else {
-                        let txt = &self.text[..selection.start];
-                        ctx.draw.get_text_size(font, self.font_size, txt).0
-                    };
+                    let highlight_area_left = (text_start_x + leftside_nonselection_text_width as i32).max(0) as usize;
+                    let highlight_area_left = highlight_area_left.max(visible_area.0);
+                    let highlight_area_left = highlight_area_left.min(visible_area.0 + visible_area.2);
 
-                    let right_spacing = if selection.end == self.text.len() {
-                        0
-                    } else {
-                        let txt = &self.text[selection.end..];
-                        ctx.draw.get_text_size(font, self.font_size, txt).0
-                    };
+                    let mut highlight_area_width = selection_width;
+                    if highlight_area_left + highlight_area_width > visible_area.0 + visible_area.2 {
+                        highlight_area_width = visible_area.0 + visible_area.2 - highlight_area_left;
+                    }
 
-                    let mut rect = self.dim.to_buffer_shrunk_utuple(&shrinker);
-                    rect.0 += left_spacing;
-                    rect.2 = text_width - left_spacing - right_spacing;
-
+                    let highlight_area = (highlight_area_left, visible_area.1, highlight_area_width, visible_area.3);
                     ctx.draw.blend_rect(
                         buffer.pixels_mut(),
-                        &rect,
+                        &highlight_area,
                         stride,
-                        style.theme().color(SelectedTextEditBorder1)
+                        style.theme().color(TextEditSelectionBackground)
                     );
                 }
 
-                let r = self.dim.to_buffer_shrunk_utuple(&shrinker);
-                ctx.draw.text_blend(
+                // Find the visible text
+                let mut visible_text_start_position = 0;
+                let mut visible_text_end_position = self.text.len();
+                let mut chars_acc_width = 0;
+                for i in 0..self.text.len() {
+                    let is_start_position_found = chars_acc_width > self.scroll_offset.x.unsigned_abs() as usize;
+                    chars_acc_width = get_text_left(&self.glyph_positions, i + 1);
+                    if is_start_position_found {
+                        if chars_acc_width >= self.scroll_offset.x.unsigned_abs() as usize + visible_area.2 {
+                            visible_text_end_position = i + 1;
+                            break;
+                        }
+                    } else if chars_acc_width >= self.scroll_offset.x.unsigned_abs() as usize {
+                        visible_text_start_position = i;
+                    }
+                }
+                let visible_text = &self.text[visible_text_start_position..visible_text_end_position];
+
+                // Render text and clip
+                let leftside_invisible_chars_width = self.glyph_positions[visible_text_start_position].0;
+                let visible_text_top_left = Vec2::new(
+                    (text_start_x + leftside_invisible_chars_width as i32).max(0) as usize,
+                    visible_area.1 - 1
+                );
+                ctx.draw.text_rect_blend_clip(
                     buffer.pixels_mut(),
-                    &(r.0, r.1 - 1),
+                    &visible_text_top_left,
+                    &visible_area,
                     stride,
                     font,
                     self.font_size,
-                    &self.text,
+                    visible_text,
                     style.theme().color(TextEditTextColor),
+                    TheHorizontalAlign::Center,
+                    TheVerticalAlign::Center,
                 );
             }
 
             if ctx.ui.has_focus(self.id()) {
-                let mut shr = shrinker;
-                shr.shrink_by(0, 1, 0, 1);
-                let mut r = self.dim.to_buffer_shrunk_utuple(&shr);
-                r.2 = 2;
-
-                if !self.text.is_empty() && self.position > 0 {
-                    let txt = &self.text[0..self.position];
-                    let size = ctx.draw.get_text_size(font, self.font_size, txt);
-                    r.0 += size.0;
+                let cursor_width = 2;
+                let cursor_vertical_shrink = 1;
+                let cursor_left = (text_start_x + text_width_before_cursor as i32 - 1).max(0) as usize;
+                if cursor_left >= visible_area.0 - cursor_width / 2 && cursor_left < visible_area.0 + visible_area.2 {
+                    ctx.draw.rect(
+                        buffer.pixels_mut(),
+                        &(cursor_left, visible_area.1 + cursor_vertical_shrink, cursor_width, visible_area.3 - cursor_vertical_shrink * 2),
+                        stride,
+                        style.theme().color(TextEditCursorColor),
+                    );
                 }
-
-                ctx.draw.rect(
-                    buffer.pixels_mut(),
-                    &r,
-                    stride,
-                    style.theme().color(TextEditCursorColor),
-                );
             }
         }
 
+        self.text_last_tick = self.text.clone();
+
         self.is_dirty = false;
+
+        fn get_text_left(glyphs: &[(f32, usize)], index: usize) -> usize {
+            if index >= glyphs.len() {
+                return glyphs[glyphs.len() - 1].0.ceil() as usize + glyphs[glyphs.len() - 1].1 + 1;
+            }
+
+            glyphs[index].0.ceil() as usize
+        }
+
+        fn get_text_width(glyphs: &[(f32, usize)], start: usize, end: usize) -> usize {
+            let left = start.min(end);
+            let right = start.max(end);
+
+            if right >= glyphs.len() {
+                return get_text_left(glyphs, right) - glyphs[left].0.ceil() as usize;
+            }
+
+            (glyphs[right].0 - glyphs[left].0).ceil() as usize
+        }
     }
 
     fn as_text_line_edit(&mut self) -> Option<&mut dyn TheTextLineEditTrait> {
@@ -498,7 +578,7 @@ impl TheTextLineEditTrait for TheTextLineEdit {
     }
     fn set_text(&mut self, text: String) {
         self.text = text;
-        self.position = 0;
+        self.cursor_position = 0;
         self.is_dirty = true;
     }
     fn set_font_size(&mut self, font_size: f32) {
