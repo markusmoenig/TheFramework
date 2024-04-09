@@ -1,8 +1,10 @@
 use super::{compress, decompress};
 use crate::prelude::*;
+use arboard::{Clipboard, ImageData};
 use fontdue::layout::{
     CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle, VerticalAlign,
 };
+use png::{BitDepth, ColorType, Encoder};
 use std::ops::{Index, IndexMut, Range};
 
 #[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]
@@ -471,6 +473,34 @@ impl TheRGBABuffer {
     pub fn set_pixel(&mut self, x: i32, y: i32, color: &[u8; 4]) {
         if let Some(index) = self.pixel_index(x, y) {
             self.buffer[index..index + 4].copy_from_slice(color);
+        }
+    }
+
+    /// Convert the buffer to an RGBA PNG image.
+    pub fn to_png(&self) -> Result<Vec<u8>, png::EncodingError> {
+        let mut png_data = Vec::new();
+        {
+            let width = self.dim.width as u32;
+            let height = self.dim.height as u32;
+            let mut encoder = Encoder::new(&mut png_data, width, height);
+            encoder.set_color(ColorType::Rgba);
+            encoder.set_depth(BitDepth::Eight);
+
+            let mut writer = encoder.write_header()?;
+            writer.write_image_data(&self.buffer)?;
+        }
+        Ok(png_data)
+    }
+
+    /// Copy the buffer to the clipboard.
+    pub fn to_clipboard(&self) {
+        let img_data = ImageData {
+            width: self.dim.width as usize,
+            height: self.dim.height as usize,
+            bytes: self.buffer.clone().into(),
+        };
+        if let Ok(mut ctx) = Clipboard::new() {
+            ctx.set_image(img_data).unwrap();
         }
     }
 }
