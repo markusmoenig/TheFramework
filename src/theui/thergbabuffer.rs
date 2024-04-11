@@ -15,6 +15,12 @@ pub struct TheRGBABuffer {
     buffer: Vec<u8>,
 }
 
+impl Default for TheRGBABuffer {
+    fn default() -> Self {
+        Self::empty()
+    }
+}
+
 /// TheRGBABuffer contains the pixel buffer for a canvas or icon.
 impl TheRGBABuffer {
     /// Create an empty buffer.
