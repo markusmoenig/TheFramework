@@ -99,17 +99,12 @@ impl TheLayout for TheSharedHLayout {
             return None;
         }
 
-        if self.mode == TheSharedHLayoutMode::Left {
-            return self.canvas[0].get_widget(name, uuid);
-        } else if self.mode == TheSharedHLayoutMode::Right {
-            return self.canvas[1].get_widget(name, uuid);
-        } else {
-            for c in &mut self.canvas {
-                if let Some(w) = c.get_widget(name, uuid) {
-                    return Some(w);
-                }
+        for c in &mut self.canvas {
+            if let Some(w) = c.get_widget(name, uuid) {
+                return Some(w);
             }
         }
+
         None
     }
 
@@ -121,15 +116,10 @@ impl TheLayout for TheSharedHLayout {
         if self.canvas.len() < 2 {
             return None;
         }
-        if self.mode == TheSharedHLayoutMode::Left {
-            return self.canvas[0].get_layout(name, uuid);
-        } else if self.mode == TheSharedHLayoutMode::Right {
-            return self.canvas[1].get_layout(name, uuid);
-        } else {
-            for c in &mut self.canvas {
-                if let Some(w) = c.get_layout(name, uuid) {
-                    return Some(w);
-                }
+
+        for c in &mut self.canvas {
+            if let Some(w) = c.get_layout(name, uuid) {
+                return Some(w);
             }
         }
         None
