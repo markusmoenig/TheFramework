@@ -122,6 +122,7 @@ impl TheUIContext {
     /// Set the given id as disabled.
     pub fn set_disabled(&mut self, id: &str) {
         self.disabled_ids.insert(id.to_string());
+        self.set_widget_state(id.to_string(), TheWidgetState::None);
     }
 
     /// Check if the given id is disabled.
@@ -132,6 +133,7 @@ impl TheUIContext {
     /// Remove the given id from the disabled list.
     pub fn set_enabled(&mut self, id: &str) {
         self.disabled_ids.remove(id);
+        self.set_widget_state(id.to_string(), TheWidgetState::None);
     }
 
     /// Adds an icon to the library.
