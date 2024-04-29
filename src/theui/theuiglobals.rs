@@ -116,6 +116,27 @@ pub fn open_text_dialog(
     ui.show_dialog(window_title, canvas, vec![TheDialogButtonRole::Accept], ctx);
 }
 
+/// Opens a new info dialog.
+pub fn open_info_dialog(window_title: &str, text: &str, ui: &mut TheUI, ctx: &mut TheContext) {
+    let width = 300;
+    let height = 100;
+
+    let mut canvas = TheCanvas::new();
+    canvas.limiter_mut().set_max_size(vec2i(width, height));
+
+    let mut hlayout: TheHLayout = TheHLayout::new(TheId::empty());
+    // text_layout.set_margin(vec4i(20, 20, 20, 20));
+
+    hlayout.limiter_mut().set_max_width(width);
+    let mut text_widget = TheText::new(TheId::empty());
+    text_widget.set_text(text.to_string());
+    text_widget.limiter_mut().set_max_width(200);
+    hlayout.add_widget(Box::new(text_widget));
+
+    canvas.set_layout(hlayout);
+    ui.show_dialog(window_title, canvas, vec![TheDialogButtonRole::Accept], ctx);
+}
+
 /// Opens a new dialog with a deletion confirmation text.
 pub fn open_delete_confirmation_dialog(
     window_title: &str,
