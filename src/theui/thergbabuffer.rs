@@ -106,7 +106,7 @@ impl TheRGBABuffer {
         for h in 0..other.dim.height {
             let s = (h * other.dim.width * 4) as usize;
             let d = ((h + y) * self.dim.width * 4 + x * 4) as usize;
-            if d + width < dlen && s + width < other.buffer.len() {
+            if d + width <= dlen && s + width <= other.buffer.len() {
                 dest[d..d + width].copy_from_slice(&other.buffer[s..s + width]);
             }
         }
@@ -131,7 +131,7 @@ impl TheRGBABuffer {
                     if src_index + 3 < other.buffer.len() {
                         let dst_index = (dest_y as usize * stride + dest_x as usize) * 4;
 
-                        if dst_index + 3 < dest.len() && src_index + 3 < other.buffer.len() {
+                        if dst_index + 3 <= dest.len() && src_index + 3 <= other.buffer.len() {
                             let src_pixel = &other.buffer[src_index..src_index + 4];
                             let dst_pixel = &mut dest[dst_index..dst_index + 4];
 
