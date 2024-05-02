@@ -100,12 +100,15 @@ impl TheRGBABuffer {
 
     /// Copy the other buffer into this buffer at the given coordinates.
     pub fn copy_into(&mut self, x: i32, y: i32, other: &TheRGBABuffer) {
+        let dlen = self.buffer.len();
         let dest = &mut self.buffer[..];
         let width = (other.dim.width * 4) as usize;
         for h in 0..other.dim.height {
             let s = (h * other.dim.width * 4) as usize;
             let d = ((h + y) * self.dim.width * 4 + x * 4) as usize;
-            dest[d..d + width].copy_from_slice(&other.buffer[s..s + width]);
+            if d + width < dlen && s + width < other.buffer.len() {
+                dest[d..d + width].copy_from_slice(&other.buffer[s..s + width]);
+            }
         }
     }
 
@@ -125,24 +128,29 @@ impl TheRGBABuffer {
                 if dest_x >= 0 && dest_x < self.dim.width && dest_y >= 0 && dest_y < self.dim.height
                 {
                     let src_index = (h as usize * width + w) * 4;
-                    let dst_index = (dest_y as usize * stride + dest_x as usize) * 4;
+                    if src_index + 3 < other.buffer.len() {
+                        let dst_index = (dest_y as usize * stride + dest_x as usize) * 4;
 
-                    if dst_index + 3 < dest.len() && src_index + 3 < other.buffer.len() {
-                        let src_pixel = &other.buffer[src_index..src_index + 4];
-                        let dst_pixel = &mut dest[dst_index..dst_index + 4];
+                        if dst_index + 3 < dest.len() && src_index + 3 < other.buffer.len() {
+                            let src_pixel = &other.buffer[src_index..src_index + 4];
+                            let dst_pixel = &mut dest[dst_index..dst_index + 4];
 
-                        // Alpha blending
-                        let alpha = src_pixel[3] as f32 / 255.0;
-                        let inv_alpha = 1.0 - alpha;
+                            // Alpha blending
+                            let alpha = src_pixel[3] as f32 / 255.0;
+                            let inv_alpha = 1.0 - alpha;
 
-                        dst_pixel[0] =
-                            (alpha * src_pixel[0] as f32 + inv_alpha * dst_pixel[0] as f32) as u8;
-                        dst_pixel[1] =
-                            (alpha * src_pixel[1] as f32 + inv_alpha * dst_pixel[1] as f32) as u8;
-                        dst_pixel[2] =
-                            (alpha * src_pixel[2] as f32 + inv_alpha * dst_pixel[2] as f32) as u8;
-                        // Optionally blend the alpha itself
-                        // dst_pixel[3] = (alpha * src_pixel[3] as f32 + inv_alpha * dst_pixel[3] as f32) as u8;
+                            dst_pixel[0] = (alpha * src_pixel[0] as f32
+                                + inv_alpha * dst_pixel[0] as f32)
+                                as u8;
+                            dst_pixel[1] = (alpha * src_pixel[1] as f32
+                                + inv_alpha * dst_pixel[1] as f32)
+                                as u8;
+                            dst_pixel[2] = (alpha * src_pixel[2] as f32
+                                + inv_alpha * dst_pixel[2] as f32)
+                                as u8;
+                            // Optionally blend the alpha itself
+                            // dst_pixel[3] = (alpha * src_pixel[3] as f32 + inv_alpha * dst_pixel[3] as f32) as u8;
+                        }
                     }
                 }
             }
