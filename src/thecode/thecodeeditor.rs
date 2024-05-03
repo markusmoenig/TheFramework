@@ -547,6 +547,12 @@ impl TheCodeEditor {
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Bool(v > 0.0)));
                         self.finish_undo(ui, ctx);
                     }
+                } else if id.name == "Atom Int2" {
+                    if let Some(v) = value.to_vec2i() {
+                        self.start_undo(ui);
+                        self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Int2(v)));
+                        self.finish_undo(ui, ctx);
+                    }
                 } else if id.name == "Atom Float2" {
                     if let Some(v) = value.to_vec2f() {
                         self.start_undo(ui);
@@ -733,6 +739,7 @@ impl TheCodeEditor {
             "Object" => TheCodeAtom::Value(TheValue::CodeObject(TheCodeObject::default())),
             "List" => TheCodeAtom::Value(TheValue::List(vec![])),
             "Tile" => TheCodeAtom::Value(TheValue::Tile("name".into(), Uuid::nil())),
+            "Int2" => TheCodeAtom::Value(TheValue::Int2(vec2i(0, 0))),
             "Float2" => TheCodeAtom::Value(TheValue::Float2(vec2f(0.0, 0.0))),
             "Float3" => TheCodeAtom::Value(TheValue::Float3(vec3f(0.0, 0.0, 0.0))),
             "Position" => TheCodeAtom::Value(TheValue::Position(vec3f(0.0, 0.0, 0.0))),

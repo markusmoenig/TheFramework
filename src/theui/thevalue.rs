@@ -101,6 +101,7 @@ pub enum TheValue {
     Time(TheTime),
     TimeDuration(TheTime, TheTime),
     TileMask(TheTileMask),
+    Image(TheRGBABuffer),
     #[cfg(feature = "code")]
     CodeObject(TheCodeObject),
 }
@@ -256,7 +257,7 @@ impl TheValue {
             Text(_s) => "Text".to_string(),
             TextList(index, list) => list[*index as usize].clone(),
             Int2(v) => format!("Int2: {:?}", v),
-            Float2(v) => format!("Float22: {:?}", v),
+            Float2(v) => format!("Float2: {:?}", v),
             Int3(v) => format!("Int3: {:?}", v),
             Float3(v) => format!("Float3: {:?}", v),
             Int4(v) => format!("Int4: {:?}", v),
@@ -279,6 +280,7 @@ impl TheValue {
             Time(t) => format!("Time: {:?}", t.to_time24()),
             TimeDuration(s, e) => format!("Time Duration: {:?} {:?}", s.to_time24(), e.to_time24()),
             TileMask(_) => str!("Pixels in a tile"),
+            Image(b) => format!("Image ({}, {})", b.dim().width, b.dim().height),
         }
     }
 
@@ -327,6 +329,7 @@ impl TheValue {
             Time(t) => t.to_time24(),
             TimeDuration(s, e) => format!("{} - {}", s.to_time24(), e.to_time24()),
             TileMask(_) => str!("Pixels"),
+            Image(b) => format!("Image ({}, {})", b.dim().width, b.dim().height),
         }
     }
 }

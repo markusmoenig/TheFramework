@@ -98,6 +98,31 @@ impl TheRGBABuffer {
         }
     }
 
+    /// Extracts a sub-buffer of given dimensions from the current buffer.
+    pub fn extract(&self, dim: &TheDim) -> Self {
+        let mut new_buffer = Self::new(*dim);
+
+        for y in 0..dim.height {
+            for x in 0..dim.width {
+                let src_x = dim.x + x;
+                let src_y = dim.y + y;
+
+                if src_x >= 0 && src_x < self.dim.width && src_y >= 0 && src_y < self.dim.height {
+                    let src_index = ((src_y * self.dim.width) + src_x) as usize * 4;
+                    let dest_index = ((y * dim.width) + x) as usize * 4;
+
+                    if src_index + 3 < self.buffer.len() && dest_index + 3 < new_buffer.buffer.len()
+                    {
+                        new_buffer.buffer[dest_index..dest_index + 4]
+                            .copy_from_slice(&self.buffer[src_index..src_index + 4]);
+                    }
+                }
+            }
+        }
+
+        new_buffer
+    }
+
     /// Copy the other buffer into this buffer at the given coordinates.
     pub fn copy_into(&mut self, x: i32, y: i32, other: &TheRGBABuffer) {
         let dlen = self.buffer.len();

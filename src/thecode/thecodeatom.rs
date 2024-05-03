@@ -1237,6 +1237,7 @@ impl TheCodeAtom {
                 TheValue::Time(_) => self.describe(),
                 TheValue::TimeDuration(_, _) => self.describe(),
                 TheValue::TileMask(_) => self.describe(),
+                TheValue::Image(_) => self.describe(),
             },
             TheCodeAtom::Add => "Operator ('+')".to_string(),
             TheCodeAtom::Subtract => "Operator ('-')".to_string(),
@@ -1414,6 +1415,9 @@ impl TheCodeAtom {
                         vec2f(v.x, v.z),
                         vec!["X", "Y"],
                     );
+                }
+                TheValue::Int2(v) => {
+                    create_int2_widgets(layout, TheId::named("Atom Int2"), *v, vec!["X", "Y"]);
                 }
                 TheValue::Float2(v) => {
                     create_float2_widgets(layout, TheId::named("Atom Float2"), *v, vec!["X", "Y"]);
