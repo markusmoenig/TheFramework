@@ -882,6 +882,12 @@ impl TheUI {
         }
     }
 
+    pub fn select_list_item_at(&mut self, name: &str, index: i32, ctx: &mut TheContext) {
+        if let Some(layout) = self.get_list_layout(name) {
+            layout.select_item_at(index, ctx, true);
+        }
+    }
+
     /// Gets a given TheRGBALayout by name
     pub fn get_rgba_layout(&mut self, name: &str) -> Option<&mut dyn TheRGBALayoutTrait> {
         if let Some(layout) = self.canvas.get_layout(Some(&name.to_string()), None) {

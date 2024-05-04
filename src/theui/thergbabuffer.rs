@@ -408,6 +408,21 @@ impl TheRGBABuffer {
         }
     }
 
+    /// Draws the outline of a given rectangle
+    pub fn rect_outline(&mut self, rect: &TheDim, color: &[u8; 4]) {
+        let y = rect.y;
+        for x in rect.x..rect.x + rect.width {
+            self.set_pixel(x, y, color);
+            self.set_pixel(x, y + rect.height - 1, color);
+        }
+
+        let x = rect.x;
+        for y in rect.y..rect.y + rect.height {
+            self.set_pixel(x, y, color);
+            self.set_pixel(x + rect.width - 1, y, color);
+        }
+    }
+
     /// Renders text using a fondue::Font.
     pub fn draw_text(&mut self, font: &fontdue::Font, text: &str, size: f32, color: [u8; 4]) {
         pub fn mix_color(a: &[u8; 4], b: &[u8; 4], v: f32) -> [u8; 4] {
