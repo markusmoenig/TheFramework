@@ -252,6 +252,50 @@ impl TheRGBABuffer {
         }
     }
 
+    /// Creates a scaled version of the buffer by writing into the other buffer.
+    pub fn scaled_into_linear(&self, into: &mut TheRGBABuffer) {
+        let new_width = into.dim().width;
+        let new_height = into.dim().height;
+
+        let scale_x = self.dim.width as f32 / new_width as f32;
+        let scale_y = self.dim.height as f32 / new_height as f32;
+
+        for y in 0..new_height {
+            for x in 0..new_width {
+                let src_x = x as f32 * scale_x;
+                let src_y = y as f32 * scale_y;
+
+                let src_x0 = src_x.floor() as i32;
+                let src_y0 = src_y.floor() as i32;
+                let src_x1 = (src_x0 + 1).min(self.dim.width - 1);
+                let src_y1 = (src_y0 + 1).min(self.dim.height - 1);
+
+                let t_x = src_x - src_x0 as f32;
+                let t_y = src_y - src_y0 as f32;
+
+                let pixel_index00 = (src_y0 * self.dim.width + src_x0) as usize * 4;
+                let pixel_index10 = (src_y0 * self.dim.width + src_x1) as usize * 4;
+                let pixel_index01 = (src_y1 * self.dim.width + src_x0) as usize * 4;
+                let pixel_index11 = (src_y1 * self.dim.width + src_x1) as usize * 4;
+
+                let new_pixel_index = (y * new_width + x) as usize * 4;
+
+                for i in 0..4 {
+                    let v00 = self.buffer[pixel_index00 + i] as f32;
+                    let v10 = self.buffer[pixel_index10 + i] as f32;
+                    let v01 = self.buffer[pixel_index01 + i] as f32;
+                    let v11 = self.buffer[pixel_index11 + i] as f32;
+
+                    let v0 = v00 + (v10 - v00) * t_x;
+                    let v1 = v01 + (v11 - v01) * t_x;
+                    let v = v0 + (v1 - v0) * t_y;
+
+                    into.buffer[new_pixel_index + i] = v.round() as u8;
+                }
+            }
+        }
+    }
+
     /// Creates a scaled version of the buffer by writing into the other buffer while respecting the dimensions.
     pub fn scaled_into_using_dim(&self, into: &mut TheRGBABuffer, dim: &TheDim) {
         let new_width = dim.width;
