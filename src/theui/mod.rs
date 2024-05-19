@@ -496,6 +496,8 @@ impl TheUI {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
 
+        ctx.ui.send(TheEvent::MouseDown(coord));
+
         ctx.ui.clear_focus();
 
         if let Some(context) = &mut self.context_menu {
@@ -584,6 +586,8 @@ impl TheUI {
     pub fn touch_up(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
+
+        ctx.ui.send(TheEvent::MouseUp(coord));
 
         if let Some(context) = &mut self.context_menu {
             return redraw;
