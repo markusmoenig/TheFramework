@@ -190,7 +190,7 @@ impl TheWidget for TheTabbar {
                     icon.dim().height as usize,
                 );
                 ctx.draw
-                    .copy_slice_3(buffer.pixels_mut(), icon.pixels(), &r, stride);
+                    .copy_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
 
                 if let Some(font) = &ctx.ui.font {
                     ctx.draw.text_rect_blend(

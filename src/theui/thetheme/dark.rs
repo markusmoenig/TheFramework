@@ -142,6 +142,11 @@ impl TheTheme for TheDarkTheme {
         colors.insert(MenuText, [200, 200, 200, 255]);
         colors.insert(MenuTextHighlighted, [244, 244, 244, 255]);
 
+        colors.insert(NodeBorder, [160, 160, 160, 255]);
+        colors.insert(NodeBorderSelected, [230, 230, 230, 255]);
+        colors.insert(NodeBody, [84, 84, 84, 255]);
+        colors.insert(NodeBodySelected, [65, 65, 65, 255]);
+
         Self {
             temp_color: BLACK,
             colors,

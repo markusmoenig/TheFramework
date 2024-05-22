@@ -70,7 +70,9 @@ impl TheTrait for UIDemo {
         self.renderer.init_ui(ui, ctx, &mut self.project);
 
         // Copy the command command from the renderer to the sidebar.
-        self.sidebar.renderer_command = self.renderer.renderer_command.clone();
+        self.sidebar
+            .renderer_command
+            .clone_from(&self.renderer.renderer_command);
 
         // Statusbar
 

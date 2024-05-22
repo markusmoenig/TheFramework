@@ -306,7 +306,7 @@ impl TheCodeEditor {
                                     if let Some(widget) = ui.get_widget_id(codegrid_selection.uuid)
                                     {
                                         widget.set_value(TheValue::Text(text.clone()));
-                                        codegrid.name = text.clone();
+                                        codegrid.name.clone_from(&text);
 
                                         cg_for_rename_clone = Some(codegrid.clone());
 

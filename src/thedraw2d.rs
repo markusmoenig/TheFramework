@@ -791,29 +791,6 @@ impl TheDraw2D {
         }
     }
 
-    /// Copies rect from the source frame into the dest frame
-    pub fn copy_slice_3(
-        &self,
-        dest: &mut [u8],
-        source: &[u8],
-        rect: &(usize, usize, usize, usize),
-        dest_stride: usize,
-    ) {
-        for y in 0..rect.3 {
-            let d = rect.0 * 4 + (y + rect.1) * dest_stride * 4;
-            let s = y * rect.2 * 3;
-
-            let mut p: Vec<u8> = vec![0; rect.2 * 4];
-            for x in 0..rect.2 {
-                let o = x * 4;
-                let o3 = x * 3;
-                let t = [source[s + o3], source[s + o3 + 1], source[s + o3 + 2], 255];
-                p[o..o + 4].copy_from_slice(&t);
-            }
-            dest[d..d + rect.2 * 4].copy_from_slice(&p[0..rect.2 * 4]);
-        }
-    }
-
     /// Blends rect from the source frame into the dest frame
     pub fn blend_slice(
         &self,

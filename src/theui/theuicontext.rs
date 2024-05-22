@@ -83,11 +83,28 @@ impl TheUIContext {
                         let info = reader.next_frame(&mut buf).unwrap();
                         let bytes = &buf[..info.buffer_size()];
 
+                        // Ensure the image data has 4 channels (RGBA)
+                        let rgba_bytes = if info.color_type.samples() == 3 {
+                            // Image is RGB, expand to RGBA
+                            let mut expanded_buf =
+                                Vec::with_capacity(info.width as usize * info.height as usize * 4);
+                            for chunk in bytes.chunks(3) {
+                                expanded_buf.push(chunk[0]); // R
+                                expanded_buf.push(chunk[1]); // G
+                                expanded_buf.push(chunk[2]); // B
+                                expanded_buf.push(255); // A (opaque)
+                            }
+                            expanded_buf
+                        } else {
+                            // Image is already RGBA
+                            bytes.to_vec()
+                        };
+
                         let mut cut_name = name.replace("icons/", "");
                         cut_name = cut_name.replace(".png", "");
                         icons.insert(
                             cut_name.to_string(),
-                            TheRGBABuffer::from(bytes.to_vec(), info.width, info.height),
+                            TheRGBABuffer::from(rgba_bytes, info.width, info.height),
                         );
                     }
                 }
@@ -143,7 +160,7 @@ impl TheUIContext {
 
     /// Returns an icon of the given name from the embedded style icons
     pub fn icon(&self, name: &str) -> Option<&TheRGBABuffer> {
-        if let Some(icon) = self.icons.get(&name.to_string()) {
+        if let Some(icon) = self.icons.get(name) {
             return Some(icon);
         }
         None

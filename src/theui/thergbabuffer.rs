@@ -124,60 +124,124 @@ impl TheRGBABuffer {
     }
 
     /// Copy the other buffer into this buffer at the given coordinates.
-    pub fn copy_into(&mut self, x: i32, y: i32, other: &TheRGBABuffer) {
-        let dlen = self.buffer.len();
-        let dest = &mut self.buffer[..];
-        let width = (other.dim.width * 4) as usize;
-        for h in 0..other.dim.height {
-            let s = (h * other.dim.width * 4) as usize;
-            let d = ((h + y) * self.dim.width * 4 + x * 4) as usize;
-            if d + width <= dlen && s + width <= other.buffer.len() {
-                dest[d..d + width].copy_from_slice(&other.buffer[s..s + width]);
-            }
+    pub fn copy_into(&mut self, mut x: i32, mut y: i32, other: &TheRGBABuffer) {
+        // Early return if the whole other buffer is outside this buffer
+        if x + other.dim.width <= 0
+            || y + other.dim.height <= 0
+            || x >= self.dim.width
+            || y >= self.dim.height
+        {
+            return;
+        }
+
+        // Adjust source and destination coordinates and dimensions
+        let mut source_offset_x = 0;
+        let mut source_y_start = 0;
+        let mut copy_width = other.dim.width;
+        let mut copy_height = other.dim.height;
+
+        // Adjust for negative x
+        if x < 0 {
+            source_offset_x = (-x * 4) as usize;
+            copy_width += x;
+            x = 0;
+        }
+
+        // Adjust for negative y
+        if y < 0 {
+            source_y_start = -y;
+            copy_height += y;
+            y = 0;
+        }
+
+        // Adjust for width overflow
+        if x + copy_width > self.dim.width {
+            copy_width = self.dim.width - x;
+        }
+
+        // Adjust for height overflow
+        if y + copy_height > self.dim.height {
+            copy_height = self.dim.height - y;
+        }
+
+        // Calculate the byte width to copy per row
+        let byte_width = (copy_width * 4) as usize;
+
+        // Copy the buffer
+        for src_y in source_y_start..source_y_start + copy_height {
+            let src_start = (src_y * other.dim.width * 4) as usize + source_offset_x;
+            let dst_start = ((src_y + y - source_y_start) * self.dim.width * 4 + x * 4) as usize;
+
+            // Perform the copy
+            self.buffer[dst_start..dst_start + byte_width]
+                .copy_from_slice(&other.buffer[src_start..src_start + byte_width]);
         }
     }
 
-    /// Blends the other buffer into this buffer at the given coordinates.
-    pub fn blend_into(&mut self, x: i32, y: i32, other: &TheRGBABuffer) {
-        let width = other.dim.width as usize;
+    /// Blend the other buffer into this buffer at the given coordinates.
+    pub fn blend_into(&mut self, mut x: i32, mut y: i32, other: &TheRGBABuffer) {
+        // Early return if the whole other buffer is outside this buffer
+        if x + other.dim.width <= 0
+            || y + other.dim.height <= 0
+            || x >= self.dim.width
+            || y >= self.dim.height
+        {
+            return;
+        }
 
-        let stride = self.stride();
-        let dest = &mut self.buffer[..];
+        // Adjust source and destination coordinates and dimensions
+        let mut source_offset_x = 0;
+        let mut source_y_start = 0;
+        let mut copy_width = other.dim.width;
+        let mut copy_height = other.dim.height;
 
-        for h in 0..other.dim.height {
-            for w in 0..width {
-                let dest_x = w as i32 + x;
-                let dest_y = h + y;
+        // Adjust for negative x
+        if x < 0 {
+            source_offset_x = (-x * 4) as usize;
+            copy_width += x;
+            x = 0;
+        }
 
-                // Check if the destination coordinates are within the bounds of the destination buffer
-                if dest_x >= 0 && dest_x < self.dim.width && dest_y >= 0 && dest_y < self.dim.height
-                {
-                    let src_index = (h as usize * width + w) * 4;
-                    if src_index + 3 < other.buffer.len() {
-                        let dst_index = (dest_y as usize * stride + dest_x as usize) * 4;
+        // Adjust for negative y
+        if y < 0 {
+            source_y_start = -y;
+            copy_height += y;
+            y = 0;
+        }
 
-                        if dst_index + 3 <= dest.len() && src_index + 3 <= other.buffer.len() {
-                            let src_pixel = &other.buffer[src_index..src_index + 4];
-                            let dst_pixel = &mut dest[dst_index..dst_index + 4];
+        // Adjust for width overflow
+        if x + copy_width > self.dim.width {
+            copy_width = self.dim.width - x;
+        }
 
-                            // Alpha blending
-                            let alpha = src_pixel[3] as f32 / 255.0;
-                            let inv_alpha = 1.0 - alpha;
+        // Adjust for height overflow
+        if y + copy_height > self.dim.height {
+            copy_height = self.dim.height - y;
+        }
 
-                            dst_pixel[0] = (alpha * src_pixel[0] as f32
-                                + inv_alpha * dst_pixel[0] as f32)
-                                as u8;
-                            dst_pixel[1] = (alpha * src_pixel[1] as f32
-                                + inv_alpha * dst_pixel[1] as f32)
-                                as u8;
-                            dst_pixel[2] = (alpha * src_pixel[2] as f32
-                                + inv_alpha * dst_pixel[2] as f32)
-                                as u8;
-                            // Optionally blend the alpha itself
-                            // dst_pixel[3] = (alpha * src_pixel[3] as f32 + inv_alpha * dst_pixel[3] as f32) as u8;
-                        }
-                    }
+        // Blend the buffer
+        for src_y in source_y_start..source_y_start + copy_height {
+            let src_start = (src_y * other.dim.width * 4) as usize + source_offset_x;
+            let dst_start = ((src_y + y - source_y_start) * self.dim.width * 4 + x * 4) as usize;
+
+            for i in 0..copy_width {
+                let src_idx = src_start + i as usize * 4;
+                let dst_idx = dst_start + i as usize * 4;
+
+                let src_pixel = &other.buffer[src_idx..src_idx + 4];
+                let dst_pixel = &mut self.buffer[dst_idx..dst_idx + 4];
+
+                let src_alpha = src_pixel[3] as f32 / 255.0;
+                let inv_alpha = 1.0 - src_alpha;
+
+                for j in 0..3 {
+                    dst_pixel[j] =
+                        (src_pixel[j] as f32 * src_alpha + dst_pixel[j] as f32 * inv_alpha) as u8;
                 }
+
+                // Update alpha if necessary (e.g., for premultiplied alpha)
+                dst_pixel[3] =
+                    (src_pixel[3] as f32 * src_alpha + dst_pixel[3] as f32 * inv_alpha) as u8;
             }
         }
     }
@@ -453,7 +517,7 @@ impl TheRGBABuffer {
     }
 
     /// Draws the outline of a given rectangle
-    pub fn rect_outline(&mut self, rect: &TheDim, color: &[u8; 4]) {
+    pub fn draw_rect_outline(&mut self, rect: &TheDim, color: &[u8; 4]) {
         let y = rect.y;
         for x in rect.x..rect.x + rect.width {
             self.set_pixel(x, y, color);
@@ -467,8 +531,96 @@ impl TheRGBABuffer {
         }
     }
 
+    /// Draws a rounded rect with a border
+    pub fn draw_rounded_rect_with_border(
+        &mut self,
+        dim: &TheDim,
+        color: &[u8; 4],
+        rounding: &(f32, f32, f32, f32),
+        border_color: &[u8; 4],
+        border_size: f32,
+    ) {
+        let hb = border_size / 2.0;
+        let center = (
+            (dim.x as f32 + dim.width as f32 / 2.0 - hb).round(),
+            (dim.y as f32 + dim.height as f32 / 2.0 - hb).round(),
+        );
+        for y in dim.y..dim.y + dim.height {
+            for x in dim.x..dim.x + dim.width {
+                //let i = x * 4 + y * stride * 4;
+
+                let p = (x as f32 - center.0, y as f32 - center.1);
+                let mut r: (f32, f32);
+
+                if p.0 > 0.0 {
+                    r = (rounding.0, rounding.1);
+                } else {
+                    r = (rounding.2, rounding.3);
+                }
+
+                if p.1 <= 0.0 {
+                    r.0 = r.1;
+                }
+
+                let q: (f32, f32) = (
+                    p.0.abs() - dim.width as f32 / 2.0 + hb + r.0,
+                    p.1.abs() - dim.height as f32 / 2.0 + hb + r.0,
+                );
+                let d = f32::min(f32::max(q.0, q.1), 0.0)
+                    + self.length((f32::max(q.0, 0.0), f32::max(q.1, 0.0)))
+                    - r.0;
+
+                if d < 1.0 {
+                    let t = self.fill_mask(d);
+
+                    if let Some(background) = self.at(vec2i(x, y)) {
+                        let mut mixed_color =
+                            self.mix_color(&background, color, t * (color[3] as f32 / 255.0));
+
+                        let b = self.border_mask(d, border_size);
+                        mixed_color = self.mix_color(&mixed_color, border_color, b);
+
+                        self.set_pixel(x, y, &mixed_color)
+                    }
+                }
+            }
+        }
+    }
+
+    /// The fill mask for an SDF distance
+    fn fill_mask(&self, dist: f32) -> f32 {
+        (-dist).clamp(0.0, 1.0)
+    }
+
+    /// The border mask for an SDF distance
+    fn border_mask(&self, dist: f32, width: f32) -> f32 {
+        (dist + width).clamp(0.0, 1.0) - dist.clamp(0.0, 1.0)
+    }
+
+    /// Mixes two colors based on v
+    fn mix_color(&self, a: &[u8; 4], b: &[u8; 4], v: f32) -> [u8; 4] {
+        [
+            (((1.0 - v) * (a[0] as f32 / 255.0) + b[0] as f32 / 255.0 * v) * 255.0) as u8,
+            (((1.0 - v) * (a[1] as f32 / 255.0) + b[1] as f32 / 255.0 * v) * 255.0) as u8,
+            (((1.0 - v) * (a[2] as f32 / 255.0) + b[2] as f32 / 255.0 * v) * 255.0) as u8,
+            (((1.0 - v) * (a[3] as f32 / 255.0) + b[3] as f32 / 255.0 * v) * 255.0) as u8,
+        ]
+    }
+
+    // Length of a 2d vector
+    fn length(&self, v: (f32, f32)) -> f32 {
+        ((v.0).powf(2.0) + (v.1).powf(2.0)).sqrt()
+    }
+
     /// Renders text using a fondue::Font.
-    pub fn draw_text(&mut self, font: &fontdue::Font, text: &str, size: f32, color: [u8; 4]) {
+    pub fn draw_text(
+        &mut self,
+        position: Vec2i,
+        font: &fontdue::Font,
+        text: &str,
+        size: f32,
+        color: [u8; 4],
+    ) {
         pub fn mix_color(a: &[u8; 4], b: &[u8; 4], v: f32) -> [u8; 4] {
             [
                 (((1.0 - v) * (a[0] as f32 / 255.0) + b[0] as f32 / 255.0 * v) * 255.0) as u8,
@@ -497,8 +649,8 @@ impl TheRGBABuffer {
 
         let fonts = &[font];
 
-        let halign = TheHorizontalAlign::Center;
-        let valign = TheVerticalAlign::Center;
+        let halign = TheHorizontalAlign::Left;
+        let valign = TheVerticalAlign::Top;
 
         let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
         layout.reset(&LayoutSettings {
@@ -538,9 +690,10 @@ impl TheRGBABuffer {
                     //     + (y + glyph.y as usize) * stride * 4;
                     let m = alphamap[x + y * metrics.width];
 
-                    if let Some(index) =
-                        self.pixel_index(x as i32 + glyph.x as i32, y as i32 + glyph.y as i32)
-                    {
+                    if let Some(index) = self.pixel_index(
+                        x as i32 + glyph.x as i32 + position.x,
+                        y as i32 + glyph.y as i32 + position.y,
+                    ) {
                         let background = &[
                             self.buffer[index],
                             self.buffer[index + 1],

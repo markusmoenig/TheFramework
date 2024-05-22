@@ -127,7 +127,7 @@ impl TheWidget for TheTextLineEdit {
                 ctx.ui.set_focus(self.id());
                 self.is_dirty = true;
                 redraw = true;
-                self.original = self.text.clone();
+                self.original.clone_from(&self.text);
 
                 self.position = 0;
                 let x = coord.x - 7;
@@ -284,7 +284,7 @@ impl TheWidget for TheTextLineEdit {
                         ctx.ui.clear_focus();
                         redraw = true;
                         self.is_dirty = true;
-                        self.original = self.text.clone();
+                        self.original.clone_from(&self.text);
                     }
 
                     if self.continuous {
@@ -361,15 +361,15 @@ impl TheWidget for TheTextLineEdit {
                 self.is_dirty = true;
             }
             TheValue::Text(text) => {
-                self.text = text.clone();
+                self.text.clone_from(&text);
                 self.is_dirty = true;
             }
             TheValue::Float(v) => {
-                self.text = v.to_string().clone();
+                self.text.clone_from(&v.to_string());
                 self.is_dirty = true;
             }
             TheValue::Int(v) => {
-                self.text = v.to_string().clone();
+                self.text.clone_from(&v.to_string());
                 self.is_dirty = true;
             }
             _ => {}

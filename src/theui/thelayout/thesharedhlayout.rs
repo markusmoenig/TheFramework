@@ -3,11 +3,8 @@ use crate::prelude::*;
 /// The layout mode.
 #[derive(PartialEq, Clone, Debug)]
 pub enum TheSharedHLayoutMode {
-    ///
     Left,
-    ////
     Shared,
-    ///
     Right,
 }
 

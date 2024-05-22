@@ -81,6 +81,9 @@ pub enum TheEvent {
     ContextMenuSelected(TheId, TheId),
     ContextMenuClosed(TheId),
 
+    // Nodes
+    NodeSelectedIndexChanged(TheId, Option<usize>),
+
     //
     DialogValueOnClose(TheDialogButtonRole, String, Uuid, TheValue),
 

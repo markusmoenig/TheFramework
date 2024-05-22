@@ -156,4 +156,10 @@ pub enum TheThemeColors {
     MenuTextHighlighted,
     MenuHover,
     MenuSelected,
+
+    NodeBackground,
+    NodeBorder,
+    NodeBorderSelected,
+    NodeBody,
+    NodeBodySelected,
 }

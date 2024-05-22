@@ -27,6 +27,8 @@ pub mod thetext;
 pub mod thecolorpicker;
 pub mod thedirectionpicker;
 pub mod themenu;
+pub mod thenodecanvas;
+pub mod thenodecanvasview;
 pub mod thepalettepicker;
 pub mod therenderview;
 pub mod thesdfview;
@@ -91,6 +93,10 @@ pub mod prelude {
 
     pub use crate::theui::thewidget::thecolorpicker::{TheColorPicker, TheColorPickerTrait};
     pub use crate::theui::thewidget::thedirectionpicker::TheDirectionPicker;
+    pub use crate::theui::thewidget::thenodecanvas::*;
+    pub use crate::theui::thewidget::thenodecanvasview::{
+        TheNodeCanvasView, TheNodeCanvasViewTrait,
+    };
     pub use crate::theui::thewidget::thepalettepicker::{ThePalettePicker, ThePalettePickerTrait};
     pub use crate::theui::thewidget::thetimeslider::{TheTimeSlider, TheTimeSliderTrait};
     pub use crate::theui::thewidget::TheWidget;
@@ -240,6 +246,11 @@ pub trait TheWidget: Send {
 
     /// Attempts to cast to TheRenderViewTrait. Only valid for TheRenderView.
     fn as_render_view(&mut self) -> Option<&mut dyn TheRenderViewTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheNodeViewTrait. Only valid for TheNodeView.
+    fn as_node_canvas_view(&mut self) -> Option<&mut dyn TheNodeCanvasViewTrait> {
         None
     }
 

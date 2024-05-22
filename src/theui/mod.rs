@@ -940,6 +940,23 @@ impl TheUI {
         None
     }
 
+    /// Sets the nodes for a node canvas.
+    pub fn set_node_canvas(&mut self, name: &str, canvas: TheNodeCanvas) {
+        if let Some(view) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            if let Some(nodes) = view.as_node_canvas_view() {
+                nodes.set_canvas(canvas);
+            }
+        }
+    }
+
+    /// Gets a given TheNodeCanvasView by name
+    pub fn get_node_canvas_view(&mut self, name: &str) -> Option<&mut dyn TheNodeCanvasViewTrait> {
+        if let Some(view) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            return view.as_node_canvas_view();
+        }
+        None
+    }
+
     /// Gets a given TheRGBALayout by name
     #[cfg(feature = "code")]
     pub fn get_code_layout(&mut self, name: &str) -> Option<&mut dyn TheCodeLayoutTrait> {
