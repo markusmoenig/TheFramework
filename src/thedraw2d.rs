@@ -38,6 +38,28 @@ impl TheDraw2D {
         }
     }
 
+    /// Draws the mask
+    pub fn blend_mask(
+        &self,
+        frame: &mut [u8],
+        rect: &(usize, usize, usize, usize),
+        stride: usize,
+        mask_frame: &[u8],
+        mask_size: &(usize, usize),
+        color: &[u8; 4],
+    ) {
+        for y in 0..mask_size.1 {
+            for x in 0..mask_size.0 {
+                let i = (x + rect.0) * 4 + (y + rect.1) * stride * 4;
+                let m = mask_frame[x + y * mask_size.0];
+                let c: [u8; 4] = [color[0], color[1], color[2], m];
+
+                let background = &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
+                frame[i..i + 4].copy_from_slice(&self.mix_color(background, &c, m as f32 / 255.0));
+            }
+        }
+    }
+
     /// Draws the given rectangle
     pub fn rect(
         &self,

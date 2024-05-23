@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
+use zeno::{Mask, Stroke};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum TheNodeUIImages {
@@ -124,9 +125,10 @@ impl TheWidget for TheNodeCanvasView {
                         ));
                     }
 
-                    if let Some(terminal) =
-                        self.terminal_at(index, *coord - self.canvas.nodes[index].position)
-                    {
+                    if let Some(terminal) = self.terminal_at(
+                        index,
+                        *coord + self.canvas.offset - self.canvas.nodes[index].position,
+                    ) {
                         self.drag_start = *coord;
                         self.drag_offset = *coord;
                         if let Some(rect) = self.terminal_rect_for(index, terminal.0, terminal.1) {
@@ -181,7 +183,8 @@ impl TheWidget for TheNodeCanvasView {
                     if let Some(dest_node_index) = self.node_index_at(coord) {
                         if let Some((dest_output, dest_terminal_index)) = self.terminal_at(
                             dest_node_index,
-                            *coord - self.canvas.nodes[dest_node_index].position,
+                            *coord + self.canvas.offset
+                                - self.canvas.nodes[dest_node_index].position,
                         ) {
                             if source_node_index != dest_node_index && source_output != dest_output
                             {
@@ -236,7 +239,8 @@ impl TheWidget for TheNodeCanvasView {
                             true,
                             *source_output_index,
                         ) {
-                            output.x += output.width / 2;
+                            output.x += 10 + 6 - self.canvas.offset.x;
+                            output.y -= self.canvas.offset.y;
                             output.y += output.height / 2;
                             output.x += self.canvas.nodes[*source_node_index as usize].position.x;
                             output.y += self.canvas.nodes[*source_node_index as usize].position.y;
@@ -245,7 +249,8 @@ impl TheWidget for TheNodeCanvasView {
                                 false,
                                 *dest_input_index,
                             ) {
-                                input.x += input.width / 2;
+                                input.x -= 6 + self.canvas.offset.x;
+                                input.y -= self.canvas.offset.y;
                                 input.y += input.height / 2;
                                 input.x += self.canvas.nodes[*dest_node_index as usize].position.x;
                                 input.y += self.canvas.nodes[*dest_node_index as usize].position.y;
@@ -274,9 +279,9 @@ impl TheWidget for TheNodeCanvasView {
                             self.id().clone(),
                             self.canvas.connections.clone(),
                         ));
-                        self.is_dirty = true;
-                        redraw = true;
                     }
+                    self.is_dirty = true;
+                    redraw = true;
                 }
 
                 self.action = TheNodeAction::None;
@@ -393,8 +398,10 @@ impl TheWidget for TheNodeCanvasView {
         }
 
         self.render_buffer.fill([128, 128, 128, 255]);
+        let rbw = self.render_buffer.dim().width as usize;
+        let rbh = self.render_buffer.dim().height as usize;
 
-        let node_width = 95;
+        let node_width = 128;
         let node_rects = Arc::new(Mutex::new(Vec::new()));
 
         // Draw a node
@@ -635,38 +642,85 @@ impl TheWidget for TheNodeCanvasView {
 
         // Draw Connections
 
+        let mut line_mask: Vec<u8> =
+            vec![0; (self.render_buffer.dim().width * self.render_buffer.dim().height) as usize];
+        let mut line_path: String = str!("");
+
         for (source_node_index, source_output_index, dest_node_index, dest_input_index) in
             self.canvas.connections.iter()
         {
             if let Some(mut output) =
                 self.terminal_rect_for(*source_node_index as usize, true, *source_output_index)
             {
-                output.x += output.width / 2;
+                output.x += 10 + 6 - self.canvas.offset.x;
+                output.y -= self.canvas.offset.y;
                 output.y += output.height / 2;
                 output.x += self.canvas.nodes[*source_node_index as usize].position.x;
                 output.y += self.canvas.nodes[*source_node_index as usize].position.y;
                 if let Some(mut input) =
                     self.terminal_rect_for(*dest_node_index as usize, false, *dest_input_index)
                 {
-                    input.x += input.width / 2;
+                    input.x -= 6 + self.canvas.offset.x;
+                    input.y -= self.canvas.offset.y;
                     input.y += input.height / 2;
                     input.x += self.canvas.nodes[*dest_node_index as usize].position.x;
                     input.y += self.canvas.nodes[*dest_node_index as usize].position.y;
 
-                    self.render_buffer
-                        .draw_line(output.x, output.y, input.x, input.y, BLACK);
+                    let dx = output.x - input.x;
+                    let dy = output.y - input.y;
+
+                    let d = ((dx * dx + dy * dy) as f32).sqrt().clamp(0.0, 50.0) as i32;
+
+                    let control_start_x = output.x + d;
+                    let control_start_y = output.y as isize;
+
+                    let control_end_x = input.x - d;
+                    let control_end_y = input.y as isize;
+
+                    line_path += format!(
+                        "M {},{} C {},{} {},{} {},{}",
+                        output.x,
+                        output.y,
+                        control_start_x,
+                        control_start_y,
+                        control_end_x,
+                        control_end_y,
+                        input.x,
+                        input.y
+                    )
+                    .as_str();
                 }
             }
         }
 
         // Draw ongoing connection attempt
         if let TheNodeAction::ConnectingTerminal(_, _, _) = self.action {
-            self.render_buffer.draw_line(
-                self.drag_start.x,
-                self.drag_start.y,
+            line_path += format!(
+                "M {},{} L {},{}",
+                self.drag_start.x - self.canvas.offset.x,
+                self.drag_start.y - self.canvas.offset.y,
                 self.drag_offset.x,
-                self.drag_offset.y,
-                WHITE,
+                self.drag_offset.y
+            )
+            .as_str();
+        }
+
+        if !line_path.is_empty() {
+            Mask::new(line_path.as_str())
+                .size(
+                    self.render_buffer.dim().width as u32,
+                    self.render_buffer.dim().height as u32,
+                )
+                .style(Stroke::new(1.5))
+                .render_into(&mut line_mask, None);
+
+            ctx.draw.blend_mask(
+                self.render_buffer.pixels_mut(),
+                &(0, 0, rbw, rbh),
+                rbw,
+                &line_mask[..],
+                &(rbw, rbh),
+                &[90, 90, 90, 255],
             );
         }
 
