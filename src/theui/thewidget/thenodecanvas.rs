@@ -20,6 +20,9 @@ pub struct TheNodeCanvas {
     /// The nodes in the canvas, identified by their index.
     pub nodes: Vec<TheNode>,
 
+    /// The width of a node.
+    pub node_width: i32,
+
     /// The node connections: Source node index, source terminal, dest node index, dest terminal
     pub connections: Vec<(u16, u8, u16, u8)>,
 
@@ -43,6 +46,7 @@ impl TheNodeCanvas {
     pub fn new() -> Self {
         Self {
             nodes: Vec::new(),
+            node_width: 128,
             connections: Vec::new(),
             offset: Vec2i::zero(),
             selected_node: None,
