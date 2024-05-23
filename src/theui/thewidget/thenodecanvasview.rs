@@ -18,6 +18,15 @@ enum TheNodeUIImages {
     SelectedBottomRight,
 }
 
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq)]
+pub enum TheNodeAction {
+    #[default]
+    None,
+    DragNode,
+    ConnectingTerminal(usize, bool, u8),
+    CutConnection,
+}
+
 use TheNodeUIImages::*;
 
 pub struct TheNodeCanvasView {
@@ -25,18 +34,26 @@ pub struct TheNodeCanvasView {
     limiter: TheSizeLimiter,
     state: TheWidgetState,
 
+    action: TheNodeAction,
+
     render_buffer: TheRGBABuffer,
     wheel_scale: f32,
     accumulated_wheel_delta: Vec2f,
 
     canvas: TheNodeCanvas,
     node_rects: Vec<TheDim>,
+    terminal_rects: Vec<(Vec<TheDim>, Vec<TheDim>)>,
 
     dim: TheDim,
 
     is_dirty: bool,
 
     node_ui_images: FxHashMap<TheNodeUIImages, TheRGBABuffer>,
+
+    drag_start: Vec2i,
+    drag_offset: Vec2i,
+
+    action_changed: bool,
 }
 
 impl TheWidget for TheNodeCanvasView {
@@ -51,18 +68,26 @@ impl TheWidget for TheNodeCanvasView {
             limiter,
             state: TheWidgetState::None,
 
+            action: TheNodeAction::None,
+
             render_buffer: TheRGBABuffer::new(TheDim::new(0, 0, 20, 20)),
             wheel_scale: -0.4,
             accumulated_wheel_delta: Vec2f::zero(),
 
             canvas: TheNodeCanvas::default(),
             node_rects: Vec::new(),
+            terminal_rects: Vec::new(),
 
             dim: TheDim::zero(),
 
             is_dirty: false,
 
             node_ui_images: FxHashMap::default(),
+
+            drag_start: Vec2i::zero(),
+            drag_offset: Vec2i::zero(),
+
+            action_changed: false,
         }
     }
 
@@ -84,22 +109,177 @@ impl TheWidget for TheNodeCanvasView {
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
                 }
                 ctx.ui.set_focus(self.id());
+                self.action_changed = false;
 
                 let selected = self.node_index_at(coord);
-                if selected.is_some() && selected != self.canvas.selected_node {
-                    self.canvas.selected_node = selected;
-                    self.is_dirty = true;
-                    redraw = true;
+                if let Some(index) = selected {
+                    if selected != self.canvas.selected_node {
+                        self.canvas.selected_node = Some(index);
+                        self.is_dirty = true;
+                        redraw = true;
 
-                    ctx.ui.send(TheEvent::NodeSelectedIndexChanged(
-                        self.id().clone(),
-                        selected,
-                    ));
+                        ctx.ui.send(TheEvent::NodeSelectedIndexChanged(
+                            self.id().clone(),
+                            self.canvas.selected_node,
+                        ));
+                    }
+
+                    if let Some(terminal) =
+                        self.terminal_at(index, *coord - self.canvas.nodes[index].position)
+                    {
+                        self.drag_start = *coord;
+                        self.drag_offset = *coord;
+                        if let Some(rect) = self.terminal_rect_for(index, terminal.0, terminal.1) {
+                            self.drag_start = vec2i(
+                                self.canvas.nodes[index].position.x + rect.x + rect.width / 2,
+                                self.canvas.nodes[index].position.y + rect.y + rect.height / 2,
+                            );
+                            self.drag_offset = self.drag_start;
+                        }
+                        self.action =
+                            TheNodeAction::ConnectingTerminal(index, terminal.0, terminal.1);
+                    } else {
+                        self.drag_start = *coord;
+                        self.action = TheNodeAction::DragNode;
+                    }
+                } else {
+                    self.action = TheNodeAction::CutConnection;
+                    self.drag_start = *coord;
                 }
             }
             TheEvent::MouseDragged(coord) => {
-                ctx.ui
-                    .send(TheEvent::RenderViewDragged(self.id().clone(), *coord));
+                if let TheNodeAction::CutConnection = self.action {
+                    self.drag_offset = *coord;
+                    self.is_dirty = true;
+                    self.action_changed = true;
+                    redraw = true;
+                } else if let TheNodeAction::ConnectingTerminal(_, _, _) = self.action {
+                    self.drag_offset = *coord;
+                    self.is_dirty = true;
+                    self.action_changed = true;
+                    redraw = true;
+                } else if self.action == TheNodeAction::DragNode {
+                    if let Some(index) = self.canvas.selected_node {
+                        let mut v = self.canvas.nodes[index].position;
+                        v.x += coord.x - self.drag_start.x;
+                        v.y += coord.y - self.drag_start.y;
+                        self.canvas.nodes[index].position = v;
+                        self.drag_start = *coord;
+                        self.is_dirty = true;
+                        self.action_changed = true;
+                        redraw = true;
+                    }
+                }
+            }
+            TheEvent::MouseUp(coord) => {
+                if let TheNodeAction::ConnectingTerminal(
+                    source_node_index,
+                    source_output,
+                    source_terminal_index,
+                ) = self.action
+                {
+                    if let Some(dest_node_index) = self.node_index_at(coord) {
+                        if let Some((dest_output, dest_terminal_index)) = self.terminal_at(
+                            dest_node_index,
+                            *coord - self.canvas.nodes[dest_node_index].position,
+                        ) {
+                            if source_node_index != dest_node_index && source_output != dest_output
+                            {
+                                if source_output {
+                                    self.canvas.connections.push((
+                                        source_node_index as u16,
+                                        source_terminal_index,
+                                        dest_node_index as u16,
+                                        dest_terminal_index,
+                                    ));
+                                } else {
+                                    self.canvas.connections.push((
+                                        dest_node_index as u16,
+                                        dest_terminal_index,
+                                        source_node_index as u16,
+                                        source_terminal_index,
+                                    ));
+                                }
+
+                                ctx.ui.send(TheEvent::NodeConnectionAdded(
+                                    self.id().clone(),
+                                    self.canvas.connections.clone(),
+                                ));
+                            }
+                        }
+                    }
+
+                    self.is_dirty = true;
+                    redraw = true;
+                } else if self.action == TheNodeAction::DragNode && self.action_changed {
+                    if let Some(index) = self.canvas.selected_node {
+                        ctx.ui.send(TheEvent::NodeDragged(
+                            self.id().clone(),
+                            index,
+                            self.canvas.nodes[index].position,
+                        ));
+                    }
+                } else if self.action == TheNodeAction::CutConnection && self.action_changed {
+                    let mut new_connections = vec![];
+                    let cut_start = (self.drag_start.x, self.drag_start.y);
+                    let cut_end = (self.drag_offset.x, self.drag_offset.y);
+                    let mut changed = false;
+                    for (
+                        source_node_index,
+                        source_output_index,
+                        dest_node_index,
+                        dest_input_index,
+                    ) in self.canvas.connections.iter()
+                    {
+                        if let Some(mut output) = self.terminal_rect_for(
+                            *source_node_index as usize,
+                            true,
+                            *source_output_index,
+                        ) {
+                            output.x += output.width / 2;
+                            output.y += output.height / 2;
+                            output.x += self.canvas.nodes[*source_node_index as usize].position.x;
+                            output.y += self.canvas.nodes[*source_node_index as usize].position.y;
+                            if let Some(mut input) = self.terminal_rect_for(
+                                *dest_node_index as usize,
+                                false,
+                                *dest_input_index,
+                            ) {
+                                input.x += input.width / 2;
+                                input.y += input.height / 2;
+                                input.x += self.canvas.nodes[*dest_node_index as usize].position.x;
+                                input.y += self.canvas.nodes[*dest_node_index as usize].position.y;
+
+                                if !do_intersect(
+                                    (output.x, output.y),
+                                    (input.x, input.y),
+                                    cut_start,
+                                    cut_end,
+                                ) {
+                                    new_connections.push((
+                                        *source_node_index,
+                                        *source_output_index,
+                                        *dest_node_index,
+                                        *dest_input_index,
+                                    ));
+                                } else {
+                                    changed = true;
+                                }
+                            }
+                        }
+                    }
+                    if changed {
+                        self.canvas.connections = new_connections;
+                        ctx.ui.send(TheEvent::NodeConnectionRemoved(
+                            self.id().clone(),
+                            self.canvas.connections.clone(),
+                        ));
+                        self.is_dirty = true;
+                        redraw = true;
+                    }
+                }
+
+                self.action = TheNodeAction::None;
             }
             TheEvent::Hover(coord) => {
                 if !self.id().equals(&ctx.ui.hover) {
@@ -214,9 +394,7 @@ impl TheWidget for TheNodeCanvasView {
 
         self.render_buffer.fill([128, 128, 128, 255]);
 
-        let node_width = 60;
-        self.node_rects.clear();
-        let dest = Arc::new(Mutex::new(&mut self.render_buffer));
+        let node_width = 95;
         let node_rects = Arc::new(Mutex::new(Vec::new()));
 
         // Draw a node
@@ -269,7 +447,15 @@ impl TheWidget for TheNodeCanvasView {
             }
 
             if let Some(font) = &ctx.ui.font {
-                nb.draw_text(vec2i(12, 4), font, &node.name, 10.0, [188, 188, 188, 255]);
+                nb.draw_text(
+                    vec2i(12, 4),
+                    font,
+                    &node.name,
+                    10.0,
+                    [188, 188, 188, 255],
+                    TheHorizontalAlign::Left,
+                    TheVerticalAlign::Top,
+                );
             }
 
             // Body
@@ -316,6 +502,59 @@ impl TheWidget for TheNodeCanvasView {
                 }
             }
 
+            // Terminals
+
+            let mut terminal_rects: (Vec<TheDim>, Vec<TheDim>) = (Vec::new(), Vec::new());
+
+            let mut y = 19 + 7;
+            for i in &node.inputs {
+                let dim = TheDim::new(2 + 5, y, 10, 10);
+
+                if let Some(font) = &ctx.ui.font {
+                    let text_width = 40;
+                    let mut tb = TheRGBABuffer::new(TheDim::sized(text_width, 10));
+                    tb.draw_text(
+                        vec2i(0, 0),
+                        font,
+                        &i.name,
+                        9.5,
+                        [82, 82, 82, 255],
+                        TheHorizontalAlign::Left,
+                        TheVerticalAlign::Center,
+                    );
+                    nb.blend_into(dim.x + 10 + 2, y, &tb)
+                }
+
+                nb.draw_disc(&dim, &i.color.to_u8_array(), 1.0, &[105, 105, 105, 255]);
+                terminal_rects.0.push(dim);
+                y += 10 + 4;
+            }
+
+            let mut y = 19 + 7;
+            for o in &node.outputs {
+                let dim = TheDim::new(node_width - 2 - 5 - 10, y, 10, 10);
+
+                if let Some(font) = &ctx.ui.font {
+                    let text_width = 40;
+                    let mut tb = TheRGBABuffer::new(TheDim::sized(text_width, 10));
+                    tb.draw_text(
+                        vec2i(0, 0),
+                        font,
+                        &o.name,
+                        9.5,
+                        [82, 82, 82, 255],
+                        TheHorizontalAlign::Right,
+                        TheVerticalAlign::Center,
+                    );
+                    nb.blend_into(dim.x - 40 - 2, y, &tb)
+                }
+
+                // nb.draw_disc(&dim, &[245, 245, 245, 255], 1.0, &[105, 105, 105, 255]);
+                nb.draw_disc(&dim, &o.color.to_u8_array(), 1.0, &[105, 105, 105, 255]);
+                terminal_rects.1.push(dim);
+                y += 10 + 4;
+            }
+
             // Footer
             if is_selected {
                 nb.copy_into(
@@ -359,36 +598,88 @@ impl TheWidget for TheNodeCanvasView {
                 );
             }
 
-            // Finished write back to dest
-            let mut dest = dest.lock().unwrap();
-            dest.blend_into(dim.x, dim.y, &nb);
-
             let mut node_rects = node_rects.lock().unwrap();
-            node_rects.push((index, dim));
+            node_rects.push((index, dim, nb, terminal_rects));
         };
 
-        // Parallel iteration over the nodes except the selected node
+        // Parallel iteration over the nodes to draw them
         self.canvas
             .nodes
             .par_iter()
             .enumerate()
             .for_each(|(index, node)| {
-                if Some(index) != self.canvas.selected_node {
-                    draw_node(index, node);
-                }
+                draw_node(index, node);
             });
 
-        // Draw the selected node afterwards to draw it is always on top
-        if let Some(selected_index) = self.canvas.selected_node {
-            if let Some(node) = self.canvas.nodes.get(selected_index) {
-                draw_node(selected_index, node);
+        // Sort the node rects by index
+        let mut sorted_node_rects = Arc::try_unwrap(node_rects).unwrap().into_inner().unwrap();
+        sorted_node_rects.sort_by_key(|&(index, _, _, _)| index);
+
+        // First pass to draw all nodes except the selected one
+        self.node_rects.clear();
+        self.terminal_rects.clear();
+        for (index, dim, nb, tr) in &sorted_node_rects {
+            if Some(*index) != self.canvas.selected_node {
+                self.render_buffer.blend_into(dim.x, dim.y, nb);
+            }
+            self.node_rects.push(*dim);
+            self.terminal_rects.push(tr.clone());
+        }
+
+        // Second pass to draw the selected node
+        for (index, dim, nb, _) in &sorted_node_rects {
+            if Some(*index) == self.canvas.selected_node {
+                self.render_buffer.blend_into(dim.x, dim.y, nb);
             }
         }
 
-        // Copy and sort node_rects back to self.node_rects
-        let mut sorted_node_rects = Arc::try_unwrap(node_rects).unwrap().into_inner().unwrap();
-        sorted_node_rects.sort_by_key(|&(index, _)| index);
-        self.node_rects = sorted_node_rects.into_iter().map(|(_, dim)| dim).collect();
+        // Draw Connections
+
+        for (source_node_index, source_output_index, dest_node_index, dest_input_index) in
+            self.canvas.connections.iter()
+        {
+            if let Some(mut output) =
+                self.terminal_rect_for(*source_node_index as usize, true, *source_output_index)
+            {
+                output.x += output.width / 2;
+                output.y += output.height / 2;
+                output.x += self.canvas.nodes[*source_node_index as usize].position.x;
+                output.y += self.canvas.nodes[*source_node_index as usize].position.y;
+                if let Some(mut input) =
+                    self.terminal_rect_for(*dest_node_index as usize, false, *dest_input_index)
+                {
+                    input.x += input.width / 2;
+                    input.y += input.height / 2;
+                    input.x += self.canvas.nodes[*dest_node_index as usize].position.x;
+                    input.y += self.canvas.nodes[*dest_node_index as usize].position.y;
+
+                    self.render_buffer
+                        .draw_line(output.x, output.y, input.x, input.y, BLACK);
+                }
+            }
+        }
+
+        // Draw ongoing connection attempt
+        if let TheNodeAction::ConnectingTerminal(_, _, _) = self.action {
+            self.render_buffer.draw_line(
+                self.drag_start.x,
+                self.drag_start.y,
+                self.drag_offset.x,
+                self.drag_offset.y,
+                WHITE,
+            );
+        }
+
+        // Draw ongoing cut connection attempt
+        if let TheNodeAction::CutConnection = self.action {
+            self.render_buffer.draw_line(
+                self.drag_start.x,
+                self.drag_start.y,
+                self.drag_offset.x,
+                self.drag_offset.y,
+                [209, 42, 42, 255],
+            );
+        }
 
         // Copy the render buffer to the main buffer
         buffer.copy_into(self.dim.buffer_x, self.dim.buffer_y, &self.render_buffer);
@@ -422,8 +713,10 @@ impl TheWidget for TheNodeCanvasView {
 
 pub trait TheNodeCanvasViewTrait: TheWidget {
     fn set_canvas(&mut self, canvas: TheNodeCanvas);
-    fn node_index_at(&self, coord: &Vec2i) -> Option<usize>;
     fn fill_node_ui_images(&mut self, ctx: &mut TheContext);
+    fn node_index_at(&self, coord: &Vec2i) -> Option<usize>;
+    fn terminal_at(&self, node_index: usize, coord: Vec2i) -> Option<(bool, u8)>;
+    fn terminal_rect_for(&self, node_index: usize, input: bool, index: u8) -> Option<TheDim>;
 }
 
 impl TheNodeCanvasViewTrait for TheNodeCanvasView {
@@ -495,11 +788,103 @@ impl TheNodeCanvasViewTrait for TheNodeCanvasView {
         );
     }
     fn node_index_at(&self, coord: &Vec2i) -> Option<usize> {
-        for (i, r) in self.node_rects.iter().enumerate() {
+        for (i, r) in self.node_rects.iter().enumerate().rev() {
             if r.contains(*coord) {
                 return Some(i);
             }
         }
         None
     }
+    fn terminal_at(&self, node_index: usize, coord: Vec2i) -> Option<(bool, u8)> {
+        if let Some((i_vec, o_vec)) = self.terminal_rects.get(node_index) {
+            for (i, r) in i_vec.iter().enumerate() {
+                if r.contains(coord) {
+                    return Some((false, i as u8));
+                }
+            }
+            for (i, r) in o_vec.iter().enumerate() {
+                if r.contains(coord) {
+                    return Some((true, i as u8));
+                }
+            }
+        }
+        None
+    }
+
+    fn terminal_rect_for(&self, node_index: usize, output: bool, index: u8) -> Option<TheDim> {
+        if let Some((i_vec, o_vec)) = self.terminal_rects.get(node_index) {
+            if !output {
+                if let Some(r) = i_vec.get(index as usize) {
+                    return Some(*r);
+                }
+            } else if let Some(r) = o_vec.get(index as usize) {
+                return Some(*r);
+            }
+        }
+        None
+    }
+}
+
+// https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
+fn do_intersect(p1: (i32, i32), q1: (i32, i32), p2: (i32, i32), q2: (i32, i32)) -> bool {
+    // Given three collinear points p, q, r, the function checks if
+    // point q lies on line segment 'pr'
+    fn on_segment(p: (i32, i32), q: (i32, i32), r: (i32, i32)) -> bool {
+        q.0 <= std::cmp::max(p.0, r.0)
+            && q.0 >= std::cmp::min(p.0, r.0)
+            && q.1 <= std::cmp::max(p.1, r.1)
+            && q.1 >= std::cmp::min(p.1, r.1)
+    }
+
+    // To find orientation of ordered triplet (p, q, r).
+    // The function returns following values
+    // 0 --> p, q and r are collinear
+    // 1 --> Clockwise
+    // 2 --> Counterclockwise
+    fn orientation(p: (i32, i32), q: (i32, i32), r: (i32, i32)) -> i32 {
+        let val = (q.1 - p.1) * (r.0 - q.0) - (q.0 - p.0) * (r.1 - q.1);
+        if val == 0 {
+            return 0;
+        } // collinear
+        if val > 0 {
+            1
+        } else {
+            2
+        } // clock or counterclock wise
+    }
+
+    // Check if line segments 'p1q1' and 'p2q2' intersect.
+    let o1 = orientation(p1, q1, p2);
+    let o2 = orientation(p1, q1, q2);
+    let o3 = orientation(p2, q2, p1);
+    let o4 = orientation(p2, q2, q1);
+
+    // General case
+    if o1 != o2 && o3 != o4 {
+        return true;
+    }
+
+    // Special Cases
+    // p1, q1 and p2 are collinear and p2 lies on segment p1q1
+    if o1 == 0 && on_segment(p1, p2, q1) {
+        return true;
+    }
+
+    // p1, q1 and q2 are collinear and q2 lies on segment p1q1
+    if o2 == 0 && on_segment(p1, q2, q1) {
+        return true;
+    }
+
+    // p2, q2 and p1 are collinear and p1 lies on segment p2q2
+    if o3 == 0 && on_segment(p2, p1, q2) {
+        return true;
+    }
+
+    // p2, q2 and q1 are collinear and q1 lies on segment p2q2
+    if o4 == 0 && on_segment(p2, q1, q2) {
+        return true;
+    }
+
+    // Doesn't fall in any of the above cases
+    false
 }

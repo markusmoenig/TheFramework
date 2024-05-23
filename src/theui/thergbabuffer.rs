@@ -532,13 +532,13 @@ impl TheRGBABuffer {
     }
 
     /// Draws a rounded rect with a border
-    pub fn draw_rounded_rect_with_border(
+    pub fn draw_rounded_rect(
         &mut self,
         dim: &TheDim,
         color: &[u8; 4],
         rounding: &(f32, f32, f32, f32),
-        border_color: &[u8; 4],
         border_size: f32,
+        border_color: &[u8; 4],
     ) {
         let hb = border_size / 2.0;
         let center = (
@@ -547,8 +547,6 @@ impl TheRGBABuffer {
         );
         for y in dim.y..dim.y + dim.height {
             for x in dim.x..dim.x + dim.width {
-                //let i = x * 4 + y * stride * 4;
-
                 let p = (x as f32 - center.0, y as f32 - center.1);
                 let mut r: (f32, f32);
 
@@ -569,6 +567,43 @@ impl TheRGBABuffer {
                 let d = f32::min(f32::max(q.0, q.1), 0.0)
                     + self.length((f32::max(q.0, 0.0), f32::max(q.1, 0.0)))
                     - r.0;
+
+                if d < 1.0 {
+                    let t = self.fill_mask(d);
+
+                    if let Some(background) = self.at(vec2i(x, y)) {
+                        let mut mixed_color =
+                            self.mix_color(&background, color, t * (color[3] as f32 / 255.0));
+
+                        let b = self.border_mask(d, border_size);
+                        mixed_color = self.mix_color(&mixed_color, border_color, b);
+
+                        self.set_pixel(x, y, &mixed_color)
+                    }
+                }
+            }
+        }
+    }
+
+    /// Draws a rounded rect with a border
+    pub fn draw_disc(
+        &mut self,
+        dim: &TheDim,
+        color: &[u8; 4],
+        border_size: f32,
+        border_color: &[u8; 4],
+    ) {
+        let hb = border_size / 2.0;
+        let center = (
+            (dim.x as f32 + dim.width as f32 / 2.0 - hb).round(),
+            (dim.y as f32 + dim.height as f32 / 2.0 - hb).round(),
+        );
+        for y in dim.y..dim.y + dim.height {
+            for x in dim.x..dim.x + dim.width {
+                let p = vec2f(x as f32 - center.0, y as f32 - center.1);
+                let r = dim.width as f32 / 2.0 - hb;
+
+                let d = length(p) - r;
 
                 if d < 1.0 {
                     let t = self.fill_mask(d);
@@ -612,7 +647,8 @@ impl TheRGBABuffer {
         ((v.0).powf(2.0) + (v.1).powf(2.0)).sqrt()
     }
 
-    /// Renders text using a fondue::Font.
+    #[allow(clippy::too_many_arguments)]
+    /// Render an aligned text in the buffer.
     pub fn draw_text(
         &mut self,
         position: Vec2i,
@@ -620,6 +656,8 @@ impl TheRGBABuffer {
         text: &str,
         size: f32,
         color: [u8; 4],
+        halign: TheHorizontalAlign,
+        valign: TheVerticalAlign,
     ) {
         pub fn mix_color(a: &[u8; 4], b: &[u8; 4], v: f32) -> [u8; 4] {
             [
@@ -649,9 +687,6 @@ impl TheRGBABuffer {
 
         let fonts = &[font];
 
-        let halign = TheHorizontalAlign::Left;
-        let valign = TheVerticalAlign::Top;
-
         let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
         layout.reset(&LayoutSettings {
             max_width: Some(self.dim.width as f32),
@@ -676,18 +711,8 @@ impl TheRGBABuffer {
 
         for glyph in layout.glyphs() {
             let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
-            //println!("Metrics: {:?}", glyph);
-
             for y in 0..metrics.height {
                 for x in 0..metrics.width {
-                    // if (y + rect.1) >= rect.1
-                    //     && (y + rect.1) < (rect.1 + rect.3)
-                    //     && (x + rect.0) >= rect.0
-                    //     && (x + rect.0) < (rect.0 + rect.2)
-                    // {
-
-                    // let i = (x + glyph.x as usize) * 4
-                    //     + (y + glyph.y as usize) * stride * 4;
                     let m = alphamap[x + y * metrics.width];
 
                     if let Some(index) = self.pixel_index(

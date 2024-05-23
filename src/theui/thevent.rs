@@ -83,6 +83,9 @@ pub enum TheEvent {
 
     // Nodes
     NodeSelectedIndexChanged(TheId, Option<usize>),
+    NodeDragged(TheId, usize, Vec2i),
+    NodeConnectionAdded(TheId, Vec<(u16, u8, u16, u8)>),
+    NodeConnectionRemoved(TheId, Vec<(u16, u8, u16, u8)>),
 
     //
     DialogValueOnClose(TheDialogButtonRole, String, Uuid, TheValue),
