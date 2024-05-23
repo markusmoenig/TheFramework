@@ -96,8 +96,8 @@ impl TheDim {
         (
             (self.buffer_x + shrinker.left) as usize,
             (self.buffer_y + shrinker.top) as usize,
-            (self.width - shrinker.right) as usize,
-            (self.height - shrinker.bottom) as usize,
+            (self.width - shrinker.left - shrinker.right) as usize,
+            (self.height - shrinker.top - shrinker.bottom) as usize,
         )
     }
 
@@ -138,16 +138,16 @@ impl TheDimShrinker {
     pub fn shrink(&mut self, value: i32) {
         self.left += value;
         self.top += value;
-        self.right += value * 2;
-        self.bottom += value * 2;
+        self.right += value;
+        self.bottom += value;
     }
 
     /// Shrink by the given amounts.
     pub fn shrink_by(&mut self, left: i32, top: i32, right: i32, bottom: i32) {
         self.left += left;
         self.top += top;
-        self.right += right * 2;
-        self.bottom += bottom * 2;
+        self.right += right;
+        self.bottom += bottom;
     }
 
     /// Resets the shrinker, i.e. sets all fields to 0.

@@ -95,7 +95,7 @@ impl TheWidget for TheColorPicker {
                 if self.continuous {
                     ctx.ui.send(TheEvent::ValueChanged(
                         self.id.clone(),
-                        TheValue::ColorObject(TheColor::from_vec3f(self.color), 0.0),
+                        TheValue::ColorObject(TheColor::from_vec3f(self.color)),
                     ));
                 }
                 self.is_dirty = true;
@@ -105,7 +105,7 @@ impl TheWidget for TheColorPicker {
                 self.calc_color(*coord, false);
                 ctx.ui.send(TheEvent::ValueChanged(
                     self.id.clone(),
-                    TheValue::ColorObject(TheColor::from_vec3f(self.color), 0.0),
+                    TheValue::ColorObject(TheColor::from_vec3f(self.color)),
                 ));
                 self.is_dirty = true;
                 redraw = true;
@@ -297,7 +297,7 @@ impl TheWidget for TheColorPicker {
     #[allow(clippy::single_match)]
     fn set_value(&mut self, value: TheValue) {
         match value {
-            TheValue::ColorObject(color, _) => {
+            TheValue::ColorObject(color) => {
                 self.color = color.to_vec3f();
                 let hsl = color.as_hsl();
                 self.h = hsl.x * 360.0;

@@ -28,6 +28,8 @@ pub struct TheUIContext {
     pub overlay: Option<TheId>,
     pub context_menu: Option<TheContextMenu>,
 
+    pub disabled_ids: FxHashSet<String>,
+
     pub state_events_sender: Option<Sender<TheEvent>>,
 
     pub redraw_all: bool,
@@ -81,11 +83,28 @@ impl TheUIContext {
                         let info = reader.next_frame(&mut buf).unwrap();
                         let bytes = &buf[..info.buffer_size()];
 
+                        // Ensure the image data has 4 channels (RGBA)
+                        let rgba_bytes = if info.color_type.samples() == 3 {
+                            // Image is RGB, expand to RGBA
+                            let mut expanded_buf =
+                                Vec::with_capacity(info.width as usize * info.height as usize * 4);
+                            for chunk in bytes.chunks(3) {
+                                expanded_buf.push(chunk[0]); // R
+                                expanded_buf.push(chunk[1]); // G
+                                expanded_buf.push(chunk[2]); // B
+                                expanded_buf.push(255); // A (opaque)
+                            }
+                            expanded_buf
+                        } else {
+                            // Image is already RGBA
+                            bytes.to_vec()
+                        };
+
                         let mut cut_name = name.replace("icons/", "");
                         cut_name = cut_name.replace(".png", "");
                         icons.insert(
                             cut_name.to_string(),
-                            TheRGBABuffer::from(bytes.to_vec(), info.width, info.height),
+                            TheRGBABuffer::from(rgba_bytes, info.width, info.height),
                         );
                     }
                 }
@@ -103,6 +122,7 @@ impl TheUIContext {
             code_font,
             icons,
 
+            disabled_ids: FxHashSet::default(),
             state_events_sender: None,
 
             redraw_all: false,
@@ -116,6 +136,23 @@ impl TheUIContext {
         }
     }
 
+    /// Set the given id as disabled.
+    pub fn set_disabled(&mut self, id: &str) {
+        self.disabled_ids.insert(id.to_string());
+        self.set_widget_state(id.to_string(), TheWidgetState::None);
+    }
+
+    /// Check if the given id is disabled.
+    pub fn is_disabled(&self, id: &str) -> bool {
+        self.disabled_ids.contains(id)
+    }
+
+    /// Remove the given id from the disabled list.
+    pub fn set_enabled(&mut self, id: &str) {
+        self.disabled_ids.remove(id);
+        self.set_widget_state(id.to_string(), TheWidgetState::None);
+    }
+
     /// Adds an icon to the library.
     pub fn add_icon(&mut self, name: String, icon: TheRGBABuffer) {
         self.icons.insert(name, icon);
@@ -123,7 +160,7 @@ impl TheUIContext {
 
     /// Returns an icon of the given name from the embedded style icons
     pub fn icon(&self, name: &str) -> Option<&TheRGBABuffer> {
-        if let Some(icon) = self.icons.get(&name.to_string()) {
+        if let Some(icon) = self.icons.get(name) {
             return Some(icon);
         }
         None

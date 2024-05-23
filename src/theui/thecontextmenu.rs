@@ -4,10 +4,10 @@ use crate::prelude::*;
 
 #[derive(Clone, Debug)]
 pub struct TheContextMenuItem {
-    name: String,
+    pub name: String,
     pub id: TheId,
     pub value: Option<TheValue>,
-    pub disabled: bool,
+    pub sub_menu: Option<TheContextMenu>,
 }
 
 impl TheContextMenuItem {
@@ -16,8 +16,22 @@ impl TheContextMenuItem {
             name,
             id,
             value: None,
-            disabled: false,
+            sub_menu: None,
         }
+    }
+
+    pub fn new_submenu(name: String, id: TheId, sub_menu: TheContextMenu) -> Self {
+        Self {
+            name,
+            id,
+            value: None,
+            sub_menu: Some(sub_menu),
+        }
+    }
+
+    /// Sets the sub menu.
+    pub fn set_sub_menu(&mut self, menu: TheContextMenu) {
+        self.sub_menu = Some(menu);
     }
 }
 
@@ -25,6 +39,7 @@ impl TheContextMenuItem {
 
 #[derive(Clone, Debug)]
 pub struct TheContextMenu {
+    pub name: String,
     pub id: TheId,
     pub items: Vec<TheContextMenuItem>,
     pub width: i32,
@@ -33,6 +48,8 @@ pub struct TheContextMenu {
     pub dim: TheDim,
 
     pub hovered: Option<TheId>,
+    pub is_open: bool,
+    pub cascading_y_offset: i32,
 }
 
 impl Default for TheContextMenu {
@@ -44,6 +61,7 @@ impl Default for TheContextMenu {
 impl TheContextMenu {
     pub fn new() -> Self {
         Self {
+            name: "".to_string(),
             id: TheId::empty(),
 
             items: vec![],
@@ -53,27 +71,55 @@ impl TheContextMenu {
             dim: TheDim::zero(),
 
             hovered: None,
+            is_open: false,
+            cascading_y_offset: 0,
         }
     }
 
-    /// Add an item,
+    pub fn named(name: String) -> Self {
+        Self {
+            name,
+            id: TheId::empty(),
+
+            items: vec![],
+            width: 160,
+            item_height: 23,
+
+            dim: TheDim::zero(),
+
+            hovered: None,
+            is_open: false,
+            cascading_y_offset: 0,
+        }
+    }
+
+    /// Add an item.
     pub fn add(&mut self, item: TheContextMenuItem) {
         self.items.push(item);
     }
 
+    /// Add a separator.
+    pub fn add_separator(&mut self) {
+        self.items
+            .push(TheContextMenuItem::new("".to_string(), TheId::empty()));
+    }
+
     /// Sets the position of the context menu while making it sure it fits on the screen.
     pub fn set_position(&mut self, position: Vec2i, _ctx: &mut TheContext) {
-        self.dim = TheDim::new(
-            position.x,
-            position.y,
-            self.width,
-            self.items.len() as i32 * self.item_height + 2 * 8,
-        );
+        let mut height = 2 * 8; // Borders
+        for item in self.items.iter() {
+            if item.name.is_empty() {
+                height += self.item_height / 2;
+            } else {
+                height += self.item_height;
+            }
+        }
+        self.dim = TheDim::new(position.x, position.y, self.width, height);
         self.dim.buffer_x = position.x;
         self.dim.buffer_y = position.y;
     }
 
-    pub fn on_event(&mut self, event: &TheEvent, _ctx: &mut TheContext) -> bool {
+    pub fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
 
         match event {
@@ -83,22 +129,69 @@ impl TheContextMenu {
                 }
             }
             TheEvent::Hover(coord) => {
-                if coord.y >= 7 && coord.y < self.dim.height - 7 {
-                    let index = (coord.y - 7) / self.item_height;
-                    if index < self.items.len() as i32 {
-                        self.hovered = Some(self.items[index as usize].id.clone());
+                for item in self.items.iter_mut() {
+                    if let Some(sub_menu) = item.sub_menu.as_mut() {
+                        if sub_menu.is_open {
+                            let local = Vec2i::new(
+                                coord.x - sub_menu.dim.width,
+                                coord.y - sub_menu.cascading_y_offset,
+                            );
+                            redraw = sub_menu.on_event(&TheEvent::Hover(local), ctx);
+                        }
+                    }
+                }
+                if coord.x >= 0 && coord.x < self.dim.width {
+                    if coord.y >= 7 && coord.y < self.dim.height - 7 {
+                        let index = (coord.y - 7) / self.item_height;
+                        if index < self.items.len() as i32 {
+                            if !ctx.ui.is_disabled(&self.items[index as usize].id.name) {
+                                self.hovered = Some(self.items[index as usize].id.clone());
+                            }
+                        } else {
+                            self.hovered = None;
+                        }
                     } else {
                         self.hovered = None;
                     }
-                } else {
-                    self.hovered = None;
+                    redraw = true;
                 }
-                redraw = true;
             }
             _ => {}
         }
 
         redraw
+    }
+
+    /// Returns true if the context menu (or its sub_menus) contains the given coordinate.
+    pub fn contains(&mut self, coord: Vec2i) -> bool {
+        if self.dim.contains(coord) {
+            return true;
+        }
+        for item in self.items.iter_mut() {
+            if let Some(sub_menu) = item.sub_menu.as_mut() {
+                if sub_menu.is_open && sub_menu.contains(coord) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    /// Recursively returns the currently hovered menu id / item id.
+    pub fn get_hovered_id(&mut self) -> Option<(TheId, TheId)> {
+        for item in self.items.iter_mut() {
+            if let Some(sub_menu) = item.sub_menu.as_mut() {
+                if sub_menu.is_open {
+                    if let Some(rc) = sub_menu.get_hovered_id() {
+                        return Some(rc);
+                    }
+                }
+            }
+        }
+        if let Some(hovered) = &self.hovered {
+            return Some((self.id.clone(), hovered.clone()));
+        }
+        None
     }
 
     /// Draw the menu
@@ -123,16 +216,28 @@ impl TheContextMenu {
             style.theme().color(ContextMenuBackground),
         );
 
-        for (i, item) in self.items.iter_mut().enumerate() {
+        let mut y = tuple.1 + 7;
+        for item in self.items.iter_mut() {
+            let is_disabled = ctx.ui.is_disabled(&item.id.name);
+
             let rect = (
                 tuple.0,
-                tuple.1 + 7 + i * self.item_height as usize,
+                y,
                 self.width as usize - 2,
-                self.item_height as usize,
+                if item.name.is_empty() {
+                    self.item_height as usize / 2
+                } else {
+                    self.item_height as usize
+                },
             );
 
-            let mut text_color = style.theme().color(ContextMenuTextNormal);
-            if Some(item.id.clone()) == self.hovered {
+            let mut text_color = if is_disabled {
+                style.theme().color(ContextMenuTextDisabled)
+            } else {
+                style.theme().color(ContextMenuTextNormal)
+            };
+
+            if Some(item.id.clone()) == self.hovered && !item.name.is_empty() && !is_disabled {
                 ctx.draw.rect(
                     pixels,
                     &rect,
@@ -142,7 +247,14 @@ impl TheContextMenu {
                 text_color = style.theme().color(ContextMenuTextHighlight);
             }
 
-            if let Some(font) = &ctx.ui.font {
+            if item.name.is_empty() {
+                ctx.draw.rect(
+                    pixels,
+                    &(rect.0, rect.1 + rect.3 / 2, rect.2, 1),
+                    ctx.width,
+                    style.theme().color(ContextMenuSeparator),
+                );
+            } else if let Some(font) = &ctx.ui.font {
                 ctx.draw.text_rect_blend(
                     pixels,
                     &(rect.0 + 16, rect.1, &rect.2 - 16, rect.3),
@@ -155,6 +267,41 @@ impl TheContextMenu {
                     TheVerticalAlign::Center,
                 );
             }
+
+            if let Some(sub_menu) = &mut item.sub_menu {
+                if !is_disabled {
+                    if Some(item.id.clone()) == self.hovered {
+                        sub_menu
+                            .set_position(Vec2i::new((rect.0 + rect.2) as i32, rect.1 as i32), ctx);
+                        sub_menu.draw(pixels, style, ctx);
+                        sub_menu.is_open = true;
+                        sub_menu.cascading_y_offset = y as i32 - tuple.1 as i32;
+                    } else {
+                        sub_menu.is_open = false;
+                        sub_menu.cascading_y_offset = 0;
+                    }
+                }
+
+                let mut alpha = if is_disabled { 0.3 } else { 0.8 };
+                let mut icon_name = "menu_sub";
+                if Some(item.id.clone()) == self.hovered {
+                    icon_name = "menu_sub_highlight";
+                    alpha = 0.5;
+                }
+
+                if let Some(icon) = ctx.ui.icon(icon_name) {
+                    let r = (
+                        rect.0 + rect.2 - 25,
+                        rect.1 + 4,
+                        icon.dim().width as usize,
+                        icon.dim().height as usize,
+                    );
+                    ctx.draw
+                        .blend_slice_alpha(pixels, icon.pixels(), &r, ctx.width, alpha);
+                }
+            }
+
+            y += rect.3;
         }
     }
 }

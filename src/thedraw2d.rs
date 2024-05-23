@@ -38,6 +38,28 @@ impl TheDraw2D {
         }
     }
 
+    /// Draws the mask
+    pub fn blend_mask(
+        &self,
+        frame: &mut [u8],
+        rect: &(usize, usize, usize, usize),
+        stride: usize,
+        mask_frame: &[u8],
+        mask_size: &(usize, usize),
+        color: &[u8; 4],
+    ) {
+        for y in 0..mask_size.1 {
+            for x in 0..mask_size.0 {
+                let i = (x + rect.0) * 4 + (y + rect.1) * stride * 4;
+                let m = mask_frame[x + y * mask_size.0];
+                let c: [u8; 4] = [color[0], color[1], color[2], m];
+
+                let background = &[frame[i], frame[i + 1], frame[i + 2], frame[i + 3]];
+                frame[i..i + 4].copy_from_slice(&self.mix_color(background, &c, m as f32 / 255.0));
+            }
+        }
+    }
+
     /// Draws the given rectangle
     pub fn rect(
         &self,
@@ -943,29 +965,6 @@ impl TheDraw2D {
         }
     }
 
-    /// Copies rect from the source frame into the dest frame
-    pub fn copy_slice_3(
-        &self,
-        dest: &mut [u8],
-        source: &[u8],
-        rect: &(usize, usize, usize, usize),
-        dest_stride: usize,
-    ) {
-        for y in 0..rect.3 {
-            let d = rect.0 * 4 + (y + rect.1) * dest_stride * 4;
-            let s = y * rect.2 * 3;
-
-            let mut p: Vec<u8> = vec![0; rect.2 * 4];
-            for x in 0..rect.2 {
-                let o = x * 4;
-                let o3 = x * 3;
-                let t = [source[s + o3], source[s + o3 + 1], source[s + o3 + 2], 255];
-                p[o..o + 4].copy_from_slice(&t);
-            }
-            dest[d..d + rect.2 * 4].copy_from_slice(&p[0..rect.2 * 4]);
-        }
-    }
-
     /// Blends rect from the source frame into the dest frame
     pub fn blend_slice(
         &self,
@@ -988,6 +987,34 @@ impl TheDraw2D {
                     background,
                     color,
                     (color[3] as f32) / 255.0,
+                ));
+            }
+        }
+    }
+
+    /// Blends rect from the source frame into the dest frame
+    pub fn blend_slice_alpha(
+        &self,
+        dest: &mut [u8],
+        source: &[u8],
+        rect: &(usize, usize, usize, usize),
+        dest_stride: usize,
+        alpha: f32,
+    ) {
+        for y in 0..rect.3 {
+            let d = rect.0 * 4 + (y + rect.1) * dest_stride * 4;
+            let s = y * rect.2 * 4;
+
+            for x in 0..rect.2 {
+                let dd = d + x * 4;
+                let ss = s + x * 4;
+
+                let background = &[dest[dd], dest[dd + 1], dest[dd + 2], dest[dd + 3]];
+                let color = &[source[ss], source[ss + 1], source[ss + 2], source[ss + 3]];
+                dest[dd..dd + 4].copy_from_slice(&self.mix_color(
+                    background,
+                    color,
+                    (color[3] as f32 * alpha) / 255.0,
                 ));
             }
         }
@@ -1156,6 +1183,44 @@ impl TheDraw2D {
                     background,
                     color,
                     (color[3] as f32) / 255.0,
+                ));
+            }
+        }
+    }
+
+    /// Scale a chunk to the destination size with a global alpha
+    pub fn blend_scale_chunk_alpha(
+        &self,
+        frame: &mut [u8],
+        rect: &(usize, usize, usize, usize),
+        stride: usize,
+        source_frame: &[u8],
+        source_size: &(usize, usize),
+        alpha: f32,
+    ) {
+        let x_ratio = source_size.0 as f32 / rect.2 as f32;
+        let y_ratio = source_size.1 as f32 / rect.3 as f32;
+
+        for sy in 0..rect.3 {
+            let y = (sy as f32 * y_ratio) as usize;
+
+            for sx in 0..rect.2 {
+                let x = (sx as f32 * x_ratio) as usize;
+
+                let d = (rect.0 + sx) * 4 + (sy + rect.1) * stride * 4;
+                let s = x * 4 + y * source_size.0 * 4;
+
+                let color = &[
+                    source_frame[s],
+                    source_frame[s + 1],
+                    source_frame[s + 2],
+                    source_frame[s + 3],
+                ];
+                let background = &[frame[d], frame[d + 1], frame[d + 2], frame[d + 3]];
+                frame[d..d + 4].copy_from_slice(&self.mix_color(
+                    background,
+                    color,
+                    (color[3] as f32 * alpha) / 255.0,
                 ));
             }
         }

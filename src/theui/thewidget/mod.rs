@@ -26,6 +26,9 @@ pub mod thetext;
 // pub mod thetextedit;
 pub mod thecolorpicker;
 pub mod thedirectionpicker;
+pub mod themenu;
+pub mod thenodecanvas;
+pub mod thenodecanvasview;
 pub mod thepalettepicker;
 pub mod therenderview;
 pub mod thesdfview;
@@ -45,7 +48,8 @@ pub mod prelude {
     pub use crate::theui::thewidget::thedropdownmenu::TheDropdownMenu;
     pub use crate::theui::thewidget::thedropdownmenu::TheDropdownMenuTrait;
 
-    pub use crate::theui::thewidget::themenubar::TheMenubar;
+    pub use crate::theui::thewidget::themenu::{TheMenu, TheMenuTrait};
+    pub use crate::theui::thewidget::themenubar::{TheMenubar, TheMenubarTrait};
     pub use crate::theui::thewidget::themenubarbutton::{TheMenubarButton, TheMenubarButtonTrait};
     pub use crate::theui::thewidget::themenubarseparator::TheMenubarSeparator;
 
@@ -89,6 +93,10 @@ pub mod prelude {
 
     pub use crate::theui::thewidget::thecolorpicker::{TheColorPicker, TheColorPickerTrait};
     pub use crate::theui::thewidget::thedirectionpicker::TheDirectionPicker;
+    pub use crate::theui::thewidget::thenodecanvas::*;
+    pub use crate::theui::thewidget::thenodecanvasview::{
+        TheNodeCanvasView, TheNodeCanvasViewTrait,
+    };
     pub use crate::theui::thewidget::thepalettepicker::{ThePalettePicker, ThePalettePickerTrait};
     pub use crate::theui::thewidget::thetimeslider::{TheTimeSlider, TheTimeSliderTrait};
     pub use crate::theui::thewidget::TheWidget;
@@ -241,6 +249,11 @@ pub trait TheWidget: Send {
         None
     }
 
+    /// Attempts to cast to TheNodeViewTrait. Only valid for TheNodeView.
+    fn as_node_canvas_view(&mut self) -> Option<&mut dyn TheNodeCanvasViewTrait> {
+        None
+    }
+
     /// Attempts to cast to TheTextTrait. Only valid for TheText.
     fn as_text(&mut self) -> Option<&mut dyn TheTextTrait> {
         None
@@ -283,6 +296,11 @@ pub trait TheWidget: Send {
 
     /// Attempts to cast to ThePalettePickerTrait. Only valid for ThePalettePicker.
     fn as_palette_picker(&mut self) -> Option<&mut dyn ThePalettePickerTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheMenuTrait. Only valid for TheMenu.
+    fn as_menu(&mut self) -> Option<&mut dyn TheMenuTrait> {
         None
     }
 

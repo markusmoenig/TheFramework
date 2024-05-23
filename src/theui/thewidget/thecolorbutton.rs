@@ -27,7 +27,7 @@ impl TheWidget for TheColorButton {
             status: None,
 
             dim: TheDim::zero(),
-            color: WHITE,
+            color: BLACK,
             is_dirty: false,
         }
     }
@@ -50,13 +50,15 @@ impl TheWidget for TheColorButton {
         // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
             TheEvent::MouseDown(_coord) => {
-                if self.state == TheWidgetState::Selected {
-                    self.state = TheWidgetState::None;
-                    ctx.ui.send_widget_state_changed(self.id(), self.state);
-                } else if self.state != TheWidgetState::Selected {
-                    self.state = TheWidgetState::Selected;
-                    ctx.ui.send_widget_state_changed(self.id(), self.state);
-                }
+                self.state = TheWidgetState::Clicked;
+                ctx.ui.send_widget_state_changed(self.id(), self.state);
+                self.is_dirty = true;
+                ctx.ui.send(TheEvent::ColorButtonClicked(self.id.clone()));
+                redraw = true;
+            }
+            TheEvent::MouseUp(_coord) => {
+                self.state = TheWidgetState::None;
+                ctx.ui.send_widget_state_changed(self.id(), self.state);
                 self.is_dirty = true;
                 redraw = true;
             }
@@ -112,6 +114,13 @@ impl TheWidget for TheColorButton {
         true
     }
 
+    fn set_value(&mut self, value: TheValue) {
+        if let TheValue::ColorObject(color) = value {
+            self.color = color.to_u8_array();
+            self.is_dirty = true;
+        }
+    }
+
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
@@ -127,29 +136,31 @@ impl TheWidget for TheColorButton {
 
         //style.draw_widget_border(buffer, self, &mut shrinker, ctx);
 
-        ctx.draw.rect_outline_border(
+        if self.state == TheWidgetState::None {
+            ctx.draw.rect_outline_border(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                stride,
+                &[80, 80, 80, 255],
+                1,
+            );
+        } else {
+            ctx.draw.rect_outline_border(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                stride,
+                &BLACK,
+                1,
+            );
+        }
+
+        shrinker.shrink(1);
+        ctx.draw.rect(
             buffer.pixels_mut(),
             &self.dim.to_buffer_shrunk_utuple(&shrinker),
             stride,
             &self.color,
-            1,
         );
-
-        if self.state == TheWidgetState::Selected {
-            shrinker.shrink(1);
-            ctx.draw.rect(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                &self.color,
-            );
-            ctx.draw.rect(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                &self.color,
-            );
-        }
 
         self.is_dirty = false;
     }

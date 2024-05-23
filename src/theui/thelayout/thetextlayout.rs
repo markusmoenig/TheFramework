@@ -13,6 +13,7 @@ pub struct TheTextLayout {
 
     text_size: f32,
     text_margin: i32,
+    fixed_text_width: Option<i32>,
 
     margin: Vec4i,
     padding: i32,
@@ -38,6 +39,7 @@ impl TheLayout for TheTextLayout {
 
             text_size: 13.0,
             text_margin: 10,
+            fixed_text_width: None,
 
             margin: vec4i(10, 10, 10, 10),
             padding: 10,
@@ -107,6 +109,10 @@ impl TheLayout for TheTextLayout {
                         text_width = size.0;
                     }
                 }
+            }
+
+            if let Some(fixed_text_width) = self.fixed_text_width {
+                text_width = fixed_text_width as usize;
             }
 
             text_width += self.text_margin as usize;
@@ -234,6 +240,8 @@ pub trait TheTextLayoutTrait {
     fn clear(&mut self);
     /// Add a text / widget pair.
     fn add_pair(&mut self, text: String, widget: Box<dyn TheWidget>);
+    /// Set the fixed text width.
+    fn set_fixed_text_width(&mut self, text_width: i32);
     /// Set the text size to use for the left handed text.
     fn set_text_size(&mut self, text_size: f32);
     /// Set the text margin between the text and the widget.
@@ -248,6 +256,9 @@ impl TheTextLayoutTrait for TheTextLayout {
     fn add_pair(&mut self, text: String, widget: Box<dyn TheWidget>) {
         self.text.push(text);
         self.widgets.push(widget);
+    }
+    fn set_fixed_text_width(&mut self, text_width: i32) {
+        self.fixed_text_width = Some(text_width);
     }
     fn set_text_size(&mut self, text_size: f32) {
         self.text_size = text_size;

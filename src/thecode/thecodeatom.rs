@@ -681,8 +681,12 @@ impl TheCodeAtom {
                 let mut parts: Vec<String> = path.split('.').map(|s| s.to_string()).collect();
 
                 if let Some(first) = parts.get_mut(0) {
-                    if first.starts_with(':') {
-                        *first = first.strip_prefix(':').unwrap_or(first).to_string();
+                    // if first.starts_with(':') {
+                    //     *first = first.strip_prefix(':').unwrap_or(first).to_string();
+                    //     is_object = true;
+                    // }
+                    if first.starts_with('@') {
+                        *first = first.strip_prefix('@').unwrap_or(first).to_string();
                         is_object = true;
                     }
                 }
@@ -856,8 +860,12 @@ impl TheCodeAtom {
                 let mut parts: Vec<String> = path.split('.').map(|s| s.to_string()).collect();
 
                 if let Some(first) = parts.get_mut(0) {
-                    if first.starts_with(':') {
-                        *first = first.strip_prefix(':').unwrap_or(first).to_string();
+                    // if first.starts_with(':') {
+                    //     *first = first.strip_prefix(':').unwrap_or(first).to_string();
+                    //     is_object = true;
+                    // }
+                    if first.starts_with('@') {
+                        *first = first.strip_prefix('@').unwrap_or(first).to_string();
                         is_object = true;
                     }
                 }
@@ -1221,13 +1229,15 @@ impl TheCodeAtom {
                 TheValue::KeyCode(_v) => "Key Code value.".to_string(),
                 TheValue::RangeI32(_v) => "Range value.".to_string(),
                 TheValue::RangeF32(_v) => "Range value.".to_string(),
-                TheValue::ColorObject(_, _) => "Color.".to_string(),
+                TheValue::ColorObject(_) => "Color.".to_string(),
+                TheValue::PaletteIndex(_) => "Palette index.".to_string(),
                 TheValue::Empty => "Empty value.".to_string(),
                 TheValue::Id(id) => format!("Id ({}).", id),
                 TheValue::Direction(v) => format!("Direction ({}).", v),
                 TheValue::Time(_) => self.describe(),
                 TheValue::TimeDuration(_, _) => self.describe(),
                 TheValue::TileMask(_) => self.describe(),
+                TheValue::Image(_) => self.describe(),
             },
             TheCodeAtom::Add => "Operator ('+')".to_string(),
             TheCodeAtom::Subtract => "Operator ('-')".to_string(),
@@ -1370,7 +1380,7 @@ impl TheCodeAtom {
                 );
             }
             TheCodeAtom::Value(value) => match value {
-                TheValue::ColorObject(color, randomness) => {
+                TheValue::ColorObject(color) => {
                     let mut text = TheText::new(TheId::empty());
                     text.set_text("Color #".to_string());
 
@@ -1379,19 +1389,8 @@ impl TheCodeAtom {
                     name_edit.set_text(color.to_hex());
                     name_edit.set_needs_redraw(true);
 
-                    let mut text2 = TheText::new(TheId::empty());
-                    text2.set_text("R".to_string());
-
-                    let mut random = TheSlider::new(TheId::named("Atom Color Randomness"));
-                    random.set_status_text("The randomness of the color. From 0.0 (no randomness) to 1.0 (full randomness).");
-                    random.set_value(TheValue::Float(*randomness));
-                    random.set_range(TheValue::RangeF32(0.0..=1.0));
-                    random.limiter_mut().set_max_width(120);
-
                     layout.add_widget(Box::new(text));
                     layout.add_widget(Box::new(name_edit));
-                    layout.add_widget(Box::new(text2));
-                    layout.add_widget(Box::new(random));
                 }
                 TheValue::Direction(value) => {
                     create_float2_widgets(
@@ -1416,6 +1415,9 @@ impl TheCodeAtom {
                         vec2f(v.x, v.z),
                         vec!["X", "Y"],
                     );
+                }
+                TheValue::Int2(v) => {
+                    create_int2_widgets(layout, TheId::named("Atom Int2"), *v, vec!["X", "Y"]);
                 }
                 TheValue::Float2(v) => {
                     create_float2_widgets(layout, TheId::named("Atom Float2"), *v, vec!["X", "Y"]);

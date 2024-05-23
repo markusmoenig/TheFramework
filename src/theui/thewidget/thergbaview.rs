@@ -278,10 +278,10 @@ impl TheWidget for TheRGBAView {
                     redraw = true;
                 }
 
-                if (self.mode == TheRGBAViewMode::TileEditor
+                if self.mode == TheRGBAViewMode::TileEditor
                     || self.mode == TheRGBAViewMode::TilePicker
-                    || self.mode == TheRGBAViewMode::TileSelection)
-                    && self.hover_color.is_some()
+                    || self.mode == TheRGBAViewMode::TileSelection
+                //&& self.hover_color.is_some()
                 {
                     if let Some(grid) = self.grid {
                         let centered_offset_x = if (self.zoom * self.buffer.dim().width as f32)
@@ -637,7 +637,7 @@ impl TheWidget for TheRGBAView {
                     // Set the pixel to black if it's out of the source bounds
                     // target.pixels_mut()[target_index..target_index + 4].fill(0);
                     target.pixels_mut()[target_index..target_index + 4]
-                        .copy_from_slice(&[50, 50, 50, 255]);
+                        .copy_from_slice(&self.background);
                 }
             }
         }
@@ -700,6 +700,7 @@ pub trait TheRGBAViewTrait: TheWidget {
     fn set_background(&mut self, color: RGBA);
     fn zoom(&self) -> f32;
     fn set_zoom(&mut self, zoom: f32);
+    fn visible_rect(&mut self) -> TheDim;
     fn set_scroll_offset(&mut self, offset: Vec2i);
     fn grid(&self) -> Option<i32>;
     fn set_grid(&mut self, grid: Option<i32>);
@@ -795,6 +796,14 @@ impl TheRGBAViewTrait for TheRGBAView {
     fn set_zoom(&mut self, zoom: f32) {
         self.zoom = zoom;
         self.is_dirty = true;
+    }
+    fn visible_rect(&mut self) -> TheDim {
+        TheDim::new(
+            (self.scroll_offset.x as f32 / self.zoom()) as i32,
+            ((self.scroll_offset.y as f32) / self.zoom()) as i32,
+            self.dim.width,
+            self.dim.height,
+        )
     }
     fn set_scroll_offset(&mut self, offset: Vec2i) {
         self.scroll_offset = offset;

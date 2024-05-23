@@ -3,11 +3,8 @@ use crate::prelude::*;
 /// The layout mode.
 #[derive(PartialEq, Clone, Debug)]
 pub enum TheSharedVLayoutMode {
-    ///
     Top,
-    ////
     Shared,
-    ///
     Bottom,
 }
 
@@ -100,13 +97,6 @@ impl TheLayout for TheSharedVLayout {
             return None;
         }
 
-        if self.mode == TheSharedVLayoutMode::Top {
-            return self.canvas[0].get_widget(name, uuid);
-        }
-        if self.mode == TheSharedVLayoutMode::Bottom {
-            return self.canvas[1].get_widget(name, uuid);
-        }
-
         for c in self.canvas.iter_mut() {
             if let Some(w) = c.get_widget(name, uuid) {
                 return Some(w);
@@ -122,12 +112,6 @@ impl TheLayout for TheSharedVLayout {
     ) -> Option<&mut Box<dyn TheLayout>> {
         if self.canvas.len() < 2 {
             return None;
-        }
-        if self.mode == TheSharedVLayoutMode::Top {
-            return self.canvas[0].get_layout(name, uuid);
-        }
-        if self.mode == TheSharedVLayoutMode::Bottom {
-            return self.canvas[1].get_layout(name, uuid);
         }
 
         for c in self.canvas.iter_mut() {

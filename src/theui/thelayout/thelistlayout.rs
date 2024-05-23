@@ -277,6 +277,8 @@ pub trait TheListLayoutTrait: TheLayout {
     fn select_first_item(&mut self, ctx: &mut TheContext);
     /// Selects the item of the given uuid.
     fn select_item(&mut self, uuid: Uuid, ctx: &mut TheContext, send_event: bool) -> bool;
+    /// Selects the item at the given index.
+    fn select_item_at(&mut self, index: i32, ctx: &mut TheContext, send_event: bool) -> bool;
     /// Scroll by the given amount.
     fn scroll_by(&mut self, delta: Vec2i);
 }
@@ -316,6 +318,19 @@ impl TheListLayoutTrait for TheListLayout {
                 }
                 return true;
             }
+        }
+        false
+    }
+
+    fn select_item_at(&mut self, index: i32, ctx: &mut TheContext, send_event: bool) -> bool {
+        self.deselect_all();
+        if let Some(w) = self.widgets.get_mut(index as usize) {
+            w.set_state(TheWidgetState::Selected);
+            if send_event {
+                ctx.ui
+                    .send_widget_state_changed(w.id(), TheWidgetState::Selected);
+            }
+            return true;
         }
         false
     }

@@ -173,6 +173,7 @@ pub struct TheUI {
     statusbar_name: Option<String>,
 
     pub context_menu: Option<TheContextMenu>,
+    pub menu_widget_id: Option<TheId>,
 
     pub is_dirty: bool,
 }
@@ -200,7 +201,7 @@ impl TheUI {
             statusbar_name: None,
 
             context_menu: None,
-
+            menu_widget_id: None,
             is_dirty: false,
         }
     }
@@ -271,10 +272,17 @@ impl TheUI {
                 }
 
                 match event {
+                    TheEvent::ShowMenu(id, coord, mut menu) => {
+                        menu.set_position(coord, ctx);
+                        menu.id = id.clone();
+                        self.context_menu = Some(menu);
+                        self.menu_widget_id = Some(id.clone());
+                    }
                     TheEvent::ShowContextMenu(id, coord, mut menu) => {
                         menu.set_position(coord, ctx);
                         menu.id = id;
                         self.context_menu = Some(menu);
+                        self.menu_widget_id = None;
                     }
                     TheEvent::RedirectWidgetValueToLayout(layout_id, widget_id, value) => {
                         if let Some(layout) = self.canvas.get_layout(None, Some(&layout_id.uuid)) {
@@ -441,6 +449,22 @@ impl TheUI {
         }
     }
 
+    /// Set the given id as disabled.
+    pub fn set_disabled(&mut self, id: &str, ctx: &mut TheContext) {
+        ctx.ui.set_disabled(id);
+        if let Some(widget) = self.get_widget(id) {
+            widget.set_needs_redraw(true);
+        }
+    }
+
+    /// Remove the given id from the disabled list.
+    pub fn set_enabled(&mut self, id: &str, ctx: &mut TheContext) {
+        ctx.ui.set_enabled(id);
+        if let Some(widget) = self.get_widget(id) {
+            widget.set_needs_redraw(true);
+        }
+    }
+
     pub fn update(&mut self, ctx: &mut TheContext) -> bool {
         // Check if the result of an FileRequester is available, and if yes, send the result
         if let Some(rx) = &ctx.ui.file_requester_receiver {
@@ -472,24 +496,45 @@ impl TheUI {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
 
+        ctx.ui.send(TheEvent::MouseDown(coord));
+
         ctx.ui.clear_focus();
 
         if let Some(context) = &mut self.context_menu {
-            if context.dim.contains(coord) {
+            if context.contains(coord) {
                 let event = TheEvent::MouseDown(context.dim.to_local(coord));
                 if context.on_event(&event, ctx) {
                     redraw = true;
-                    if let Some(menu_id) = &context.hovered {
+                    if let Some((menu_id, menu_item_id)) = context.get_hovered_id() {
                         ctx.ui.send(TheEvent::ContextMenuSelected(
-                            context.id.clone(),
                             menu_id.clone(),
+                            menu_item_id.clone(),
+                        ));
+                        ctx.ui.send(TheEvent::StateChanged(
+                            menu_item_id.clone(),
+                            TheWidgetState::Clicked,
                         ));
                     }
                     self.context_menu = None;
+                    let menu_widget_id = self.menu_widget_id.clone();
+                    if let Some(menu_widget_id) = menu_widget_id {
+                        if let Some(widget) = self.get_widget_abs(None, Some(&menu_widget_id.uuid))
+                        {
+                            widget.on_event(&TheEvent::ContextMenuClosed(menu_widget_id), ctx);
+                        }
+                    }
+                    self.menu_widget_id = None;
                     ctx.ui.clear_hover();
                 }
             } else {
                 self.context_menu = None;
+                let menu_widget_id = self.menu_widget_id.clone();
+                if let Some(menu_widget_id) = menu_widget_id {
+                    if let Some(widget) = self.get_widget_abs(None, Some(&menu_widget_id.uuid)) {
+                        widget.on_event(&TheEvent::ContextMenuClosed(menu_widget_id), ctx);
+                    }
+                }
+                self.menu_widget_id = None;
                 ctx.ui.clear_hover();
                 redraw = true;
             }
@@ -542,6 +587,8 @@ impl TheUI {
         let mut redraw = false;
         let coord = vec2i(x as i32, y as i32);
 
+        ctx.ui.send(TheEvent::MouseUp(coord));
+
         if let Some(context) = &mut self.context_menu {
             return redraw;
         }
@@ -576,9 +623,18 @@ impl TheUI {
         let coord = vec2i(x as i32, y as i32);
 
         if let Some(context) = &mut self.context_menu {
-            if context.dim.contains(coord) {
+            if context.contains(coord) {
                 let event = TheEvent::Hover(context.dim.to_local(coord));
                 redraw = context.on_event(&event, ctx);
+            }
+            let menu_widget_id = self.menu_widget_id.clone();
+            if self.menu_widget_id.is_some() {
+                if let Some(widget) = self.get_widget_at_coord(coord) {
+                    if Some(widget.id().clone()) == menu_widget_id {
+                        let event = TheEvent::Hover(widget.dim().to_local(coord));
+                        redraw = widget.on_event(&event, ctx);
+                    }
+                }
             }
             return redraw;
         }
@@ -628,6 +684,19 @@ impl TheUI {
         let event = if let Some(c) = char {
             TheEvent::KeyDown(TheValue::Char(c))
         } else {
+            if key.clone().unwrap().clone() == TheKeyCode::Escape && self.context_menu.is_some() {
+                self.context_menu = None;
+                let menu_widget_id = self.menu_widget_id.clone();
+                if let Some(menu_widget_id) = menu_widget_id {
+                    if let Some(widget) = self.get_widget_abs(None, Some(&menu_widget_id.uuid)) {
+                        widget.on_event(&TheEvent::ContextMenuClosed(menu_widget_id), ctx);
+                    }
+                }
+                self.menu_widget_id = None;
+                ctx.ui.clear_hover();
+                return true;
+            }
+
             TheEvent::KeyCodeDown(TheValue::KeyCode(key.unwrap()))
         };
         ctx.ui.send(event.clone());
@@ -714,6 +783,14 @@ impl TheUI {
     pub fn get_icon_view(&mut self, name: &str) -> Option<&mut dyn TheIconViewTrait> {
         if let Some(text_line_edit) = self.canvas.get_widget(Some(&name.to_string()), None) {
             return text_line_edit.as_icon_view();
+        }
+        None
+    }
+
+    /// Gets a given menu by name
+    pub fn get_menu(&mut self, name: &str) -> Option<&mut dyn TheMenuTrait> {
+        if let Some(menu) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            return menu.as_menu();
         }
         None
     }
@@ -809,6 +886,12 @@ impl TheUI {
         }
     }
 
+    pub fn select_list_item_at(&mut self, name: &str, index: i32, ctx: &mut TheContext) {
+        if let Some(layout) = self.get_list_layout(name) {
+            layout.select_item_at(index, ctx, true);
+        }
+    }
+
     /// Gets a given TheRGBALayout by name
     pub fn get_rgba_layout(&mut self, name: &str) -> Option<&mut dyn TheRGBALayoutTrait> {
         if let Some(layout) = self.canvas.get_layout(Some(&name.to_string()), None) {
@@ -853,6 +936,23 @@ impl TheUI {
     pub fn get_text_layout(&mut self, name: &str) -> Option<&mut dyn TheTextLayoutTrait> {
         if let Some(layout) = self.canvas.get_layout(Some(&name.to_string()), None) {
             return layout.as_text_layout();
+        }
+        None
+    }
+
+    /// Sets the nodes for a node canvas.
+    pub fn set_node_canvas(&mut self, name: &str, canvas: TheNodeCanvas) {
+        if let Some(view) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            if let Some(nodes) = view.as_node_canvas_view() {
+                nodes.set_canvas(canvas);
+            }
+        }
+    }
+
+    /// Gets a given TheNodeCanvasView by name
+    pub fn get_node_canvas_view(&mut self, name: &str) -> Option<&mut dyn TheNodeCanvasViewTrait> {
+        if let Some(view) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            return view.as_node_canvas_view();
         }
         None
     }

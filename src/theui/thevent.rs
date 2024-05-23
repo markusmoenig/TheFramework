@@ -41,6 +41,10 @@ pub enum TheEvent {
     // Tabbar, Groupbutton
     IndexChanged(TheId, usize),
 
+    // The index of the palette has changed.
+    PaletteIndexChanged(TheId, u16),
+    ColorButtonClicked(TheId),
+
     // Tile / Code Editor
     TileSelectionChanged(TheId),
     TilePicked(TheId, Vec2i),
@@ -73,7 +77,15 @@ pub enum TheEvent {
 
     // Show the given context menu at the given (global) coordinates.
     ShowContextMenu(TheId, Vec2i, TheContextMenu),
+    ShowMenu(TheId, Vec2i, TheContextMenu),
     ContextMenuSelected(TheId, TheId),
+    ContextMenuClosed(TheId),
+
+    // Nodes
+    NodeSelectedIndexChanged(TheId, Option<usize>),
+    NodeDragged(TheId, usize, Vec2i),
+    NodeConnectionAdded(TheId, Vec<(u16, u8, u16, u8)>),
+    NodeConnectionRemoved(TheId, Vec<(u16, u8, u16, u8)>),
 
     //
     DialogValueOnClose(TheDialogButtonRole, String, Uuid, TheValue),

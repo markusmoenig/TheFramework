@@ -186,7 +186,7 @@ impl TheWidget for TheListItem {
                 self.is_dirty = true;
             }
             TheValue::Text(text) => {
-                self.text = text.clone();
+                self.text.clone_from(&text);
                 self.is_dirty = true;
             }
             _ => {}

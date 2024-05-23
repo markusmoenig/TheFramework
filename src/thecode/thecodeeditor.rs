@@ -184,8 +184,23 @@ impl TheCodeEditor {
             }
             TheEvent::CodeEditorSelectionChanged(_id, selection) => {
                 self.grid_selection = *selection;
-
                 self.set_grid_selection_ui(ui, ctx);
+
+                if let Some(selection) = selection {
+                    if selection.0 % 2 == 0 {
+                        ctx.ui.set_enabled("Code Keywords Menu");
+                        ctx.ui.set_disabled("Code Operators Menu");
+                        ctx.ui.set_enabled("Code Values Menu");
+                        ctx.ui.set_enabled("Code Functions Menu");
+                        ctx.ui.set_enabled("Code Modules Menu");
+                    } else {
+                        ctx.ui.set_disabled("Code Keywords Menu");
+                        ctx.ui.set_enabled("Code Operators Menu");
+                        ctx.ui.set_disabled("Code Values Menu");
+                        ctx.ui.set_disabled("Code Functions Menu");
+                        ctx.ui.set_disabled("Code Modules Menu");
+                    }
+                }
                 redraw = true;
             }
             TheEvent::StateChanged(id, state) => {
@@ -291,7 +306,7 @@ impl TheCodeEditor {
                                     if let Some(widget) = ui.get_widget_id(codegrid_selection.uuid)
                                     {
                                         widget.set_value(TheValue::Text(text.clone()));
-                                        codegrid.name = text.clone();
+                                        codegrid.name.clone_from(&text);
 
                                         cg_for_rename_clone = Some(codegrid.clone());
 
@@ -461,32 +476,18 @@ impl TheCodeEditor {
                 } else if id.name == "Atom Color Hex" {
                     if let Some(hex_color) = value.to_string() {
                         if !hex_color.is_empty() {
-                            if let Some(TheCodeAtom::Value(TheValue::ColorObject(_, randomness))) =
+                            if let Some(TheCodeAtom::Value(TheValue::ColorObject(_))) =
                                 self.get_selected_atom(ui)
                             {
                                 self.start_undo(ui);
                                 self.set_selected_atom(
                                     ui,
-                                    TheCodeAtom::Value(TheValue::ColorObject(
-                                        TheColor::from_hex(hex_color.as_str()),
-                                        randomness,
-                                    )),
+                                    TheCodeAtom::Value(TheValue::ColorObject(TheColor::from_hex(
+                                        hex_color.as_str(),
+                                    ))),
                                 );
                                 self.finish_undo(ui, ctx);
                             }
-                        }
-                    }
-                } else if id.name == "Atom Color Randomness" {
-                    if let Some(randomness) = value.to_f32() {
-                        if let Some(TheCodeAtom::Value(TheValue::ColorObject(color, _))) =
-                            self.get_selected_atom(ui)
-                        {
-                            self.start_undo(ui);
-                            self.set_selected_atom(
-                                ui,
-                                TheCodeAtom::Value(TheValue::ColorObject(color, randomness)),
-                            );
-                            self.finish_undo(ui, ctx);
                         }
                     }
                 } else if id.name == "Atom Direction Float2" {
@@ -544,6 +545,12 @@ impl TheCodeEditor {
                     if let Some(v) = value.as_f32() {
                         self.start_undo(ui);
                         self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Bool(v > 0.0)));
+                        self.finish_undo(ui, ctx);
+                    }
+                } else if id.name == "Atom Int2" {
+                    if let Some(v) = value.to_vec2i() {
+                        self.start_undo(ui);
+                        self.set_selected_atom(ui, TheCodeAtom::Value(TheValue::Int2(v)));
                         self.finish_undo(ui, ctx);
                     }
                 } else if id.name == "Atom Float2" {
@@ -732,6 +739,7 @@ impl TheCodeEditor {
             "Object" => TheCodeAtom::Value(TheValue::CodeObject(TheCodeObject::default())),
             "List" => TheCodeAtom::Value(TheValue::List(vec![])),
             "Tile" => TheCodeAtom::Value(TheValue::Tile("name".into(), Uuid::nil())),
+            "Int2" => TheCodeAtom::Value(TheValue::Int2(vec2i(0, 0))),
             "Float2" => TheCodeAtom::Value(TheValue::Float2(vec2f(0.0, 0.0))),
             "Float3" => TheCodeAtom::Value(TheValue::Float3(vec3f(0.0, 0.0, 0.0))),
             "Position" => TheCodeAtom::Value(TheValue::Position(vec3f(0.0, 0.0, 0.0))),
@@ -742,7 +750,7 @@ impl TheCodeEditor {
             "Modulus" => TheCodeAtom::Modulus,
             "RInt" => TheCodeAtom::RandInt(vec2i(0, 3)),
             "RFloat" => TheCodeAtom::RandFloat(vec2f(0.0, 1.0)),
-            "Color" => TheCodeAtom::Value(TheValue::ColorObject(TheColor::default(), 0.0)),
+            "Color" => TheCodeAtom::Value(TheValue::ColorObject(TheColor::default())),
             "Direction" => TheCodeAtom::Value(TheValue::Direction(vec3f(0.0, 0.0, -1.0))),
             _ => {
                 if let Some((bundle_name, bundle_id, module)) = self.modules.get(&id) {
@@ -772,11 +780,11 @@ impl TheCodeEditor {
     }
 
     /// Builds the UI canvas
-    pub fn build_canvas(&self, ctx: &mut TheContext) -> TheCanvas {
+    pub fn build_canvas(&self, _ctx: &mut TheContext) -> TheCanvas {
         let mut canvas: TheCanvas = TheCanvas::new();
 
         // Left code list
-
+        /*
         let mut list_canvas: TheCanvas = TheCanvas::new();
 
         let mut code_layout = TheListLayout::new(TheId::named("Code Editor Code List"));
@@ -825,11 +833,14 @@ impl TheCodeEditor {
         sdf_view.set_status(3, "Show all available functions.".to_string());
 
         sdf_view.set_canvas(sdf_canvas);
+
         toolbar_hlayout.add_widget(Box::new(sdf_view));
         list_toolbar_canvas.set_layout(toolbar_hlayout);
         list_toolbar_canvas.set_widget(TheTraybar::new(TheId::empty()));
         list_canvas.set_top(list_toolbar_canvas);
+        canvas.set_left(list_canvas);
 
+        */
         // Top Toolbar
         let mut top_toolbar_canvas = TheCanvas::new();
         let mut toolbar_hlayout = TheHLayout::new(TheId::named("Code Top Toolbar"));
@@ -879,7 +890,6 @@ impl TheCodeEditor {
         let code_layout = TheCodeLayout::new(TheId::named("Code Editor"));
 
         canvas.set_layout(code_layout);
-        canvas.set_left(list_canvas);
         canvas.set_top(top_toolbar_canvas);
         canvas.set_bottom(bottom_toolbar_canvas);
         canvas.top_is_expanding = false;
@@ -968,6 +978,230 @@ impl TheCodeEditor {
         canvas.set_bottom(toolbar_canvas);
 
         canvas
+    }
+
+    /// Returns the keywords context menu.
+    pub fn create_keywords_context_menu_item(&self) -> TheContextMenuItem {
+        let mut menu_item =
+            TheContextMenuItem::new(str!("Keywords"), TheId::named("Code Keywords Menu"));
+
+        let mut menu = TheContextMenu::named(str!("Keywords"));
+        menu.id = TheId::named("Code Keywords Menu");
+        menu.add(TheContextMenuItem::new(
+            str!("Argument"),
+            TheId::named("Code Keyword Argument"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Return"),
+            TheId::named("Code Keyword Return"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Get"),
+            TheId::named("Code Keyword Get"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Set"),
+            TheId::named("Code Keyword Set"),
+        ));
+
+        menu_item.set_sub_menu(menu);
+        menu_item
+    }
+
+    /// Returns the operators context menu.
+    pub fn create_operators_context_menu_item(&self) -> TheContextMenuItem {
+        let mut menu_item =
+            TheContextMenuItem::new(str!("Operators"), TheId::named("Code Operators Menu"));
+
+        let mut menu = TheContextMenu::named(str!("Operators"));
+        menu.id = TheId::named("Code Operators Menu");
+        menu.add(TheContextMenuItem::new(
+            str!("Assignment"),
+            TheId::named("Code Operator Assignment"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Comparison"),
+            TheId::named("Code Operator Comparison"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Add"),
+            TheId::named("Code Operator Add"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Subtract"),
+            TheId::named("Code Operator Subtract"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Multiply"),
+            TheId::named("Code Operator Multiply"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Divide"),
+            TheId::named("Code Operator Divide"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Modulus"),
+            TheId::named("Code Operator Modulus"),
+        ));
+        menu_item.set_sub_menu(menu);
+        menu_item
+    }
+
+    /// Returns the values context menu.
+    pub fn create_values_context_menu_item(&self) -> TheContextMenuItem {
+        let mut menu_item =
+            TheContextMenuItem::new(str!("Values"), TheId::named("Code Values Menu"));
+
+        let mut menu = TheContextMenu::named(str!("Values"));
+        menu.id = TheId::named("Code Values Menu");
+        menu.add(TheContextMenuItem::new(
+            str!("Empty"),
+            TheId::named("Code Value Empty"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Integer"),
+            TheId::named("Code Value Integer"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Float"),
+            TheId::named("Code Value Float"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Bool"),
+            TheId::named("Code Value Bool"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Text"),
+            TheId::named("Code Value Text"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Object"),
+            TheId::named("Code Value Object"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("List"),
+            TheId::named("Code Value List"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Tile"),
+            TheId::named("Code Value Tile"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Position"),
+            TheId::named("Code Value Position"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Direction"),
+            TheId::named("Code Value Direction"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Random Int"),
+            TheId::named("Code Value RInt"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Random Float"),
+            TheId::named("Code Value RFloat"),
+        ));
+        menu.add(TheContextMenuItem::new(
+            str!("Color"),
+            TheId::named("Code Value Color"),
+        ));
+
+        menu_item.set_sub_menu(menu);
+        menu_item
+    }
+
+    /// Returns the functions context menu.
+    pub fn create_functions_context_menu_item(&self) -> TheContextMenuItem {
+        let mut menu_item =
+            TheContextMenuItem::new(str!("Functions"), TheId::named("Code Functions Menu"));
+
+        let mut menu = TheContextMenu::named(str!("Functions"));
+        menu.id = TheId::named("Code Functions Menu");
+
+        for e in &self.externals {
+            menu.add(TheContextMenuItem::new(
+                e.name.clone(),
+                TheId::named(&format!("Code Functions {}", e.name.clone())),
+            ));
+        }
+
+        menu_item.set_sub_menu(menu);
+        menu_item
+    }
+
+    /// Returns the modules context menu.
+    pub fn create_modules_context_menu_item(&self) -> TheContextMenuItem {
+        let mut menu_item =
+            TheContextMenuItem::new(str!("Modules"), TheId::named("Code Modules Menu"));
+
+        let mut menu = TheContextMenu::named(str!("Modules"));
+        menu.id = TheId::named("Code Functions Menu");
+
+        for (bundle_name, _bundle_id, module) in self.modules.values() {
+            menu.add(TheContextMenuItem::new(
+                module.name.clone(),
+                TheId::named(&format!("{}: {}", bundle_name, module.name.clone()).to_string()),
+            ));
+            /*
+            let mut item = TheListItem::new(TheId::named_with_id(
+                "Code Editor Code List Item",
+                module.codegrid_id,
+            ));
+            item.set_text(module.name.clone());
+            item.set_status_text(
+                format!("{}: {}", bundle_name, module.name.clone())
+                    .to_string()
+                    .as_str(),
+            );
+            item.set_associated_layout(code_layout.id().clone());
+            code_layout.add_item(item, ctx);*/
+        }
+
+        menu_item.set_sub_menu(menu);
+        menu_item
+    }
+
+    /// Set the default state of the menu selection.
+    pub fn init_menu_selection(&mut self, ctx: &mut TheContext) {
+        ctx.ui.set_disabled("Code Keywords Menu");
+        ctx.ui.set_disabled("Code Values Menu");
+        ctx.ui.set_disabled("Code Operators Menu");
+        ctx.ui.set_disabled("Code Functions Menu");
+        ctx.ui.set_disabled("Code Modules Menu");
+    }
+
+    /// Insert a selected context menu item.
+    pub fn insert_context_menu_id(&mut self, id: TheId, ui: &mut TheUI, ctx: &mut TheContext) {
+        if let Some(last) = id.name.split(' ').last() {
+            let atom = self.create_atom(last, id.uuid);
+
+            if atom != TheCodeAtom::EndOfCode {
+                self.start_undo(ui);
+
+                if let TheCodeAtom::ExternalCall(_, _, _, arg_values, _) = &atom {
+                    if let Some((x, y)) = self.grid_selection {
+                        for (index, value) in arg_values.iter().enumerate() {
+                            let off = x + (index + 1) as u16 * 2;
+
+                            if let Some(layout) = ui.get_code_layout("Code Editor") {
+                                if let Some(code_view) = layout.code_view_mut().as_code_view() {
+                                    let codegrid = code_view.codegrid_mut();
+                                    codegrid
+                                        .code
+                                        .entry((off, y))
+                                        .or_insert_with(|| TheCodeAtom::Value(value.clone()));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                self.set_selected_atom(ui, atom);
+                self.finish_undo(ui, ctx);
+                self.set_grid_selection_ui(ui, ctx);
+            }
+        }
     }
 
     pub fn get_code_list_items(

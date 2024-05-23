@@ -366,7 +366,7 @@ impl TheCompiler {
                 self.ctx.module.set_function(f);
             }
 
-            self.ctx.module.name = grid.name.clone();
+            self.ctx.module.name.clone_from(&grid.name);
             self.ctx.module.codegrid_id = grid.id;
             Ok(self.ctx.module.clone())
         }

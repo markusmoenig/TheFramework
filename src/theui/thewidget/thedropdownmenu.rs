@@ -15,6 +15,8 @@ pub struct TheDropdownMenu {
 
     dim: TheDim,
     is_dirty: bool,
+
+    safety_offset: Vec2i,
 }
 
 impl TheWidget for TheDropdownMenu {
@@ -41,6 +43,8 @@ impl TheWidget for TheDropdownMenu {
 
             dim: TheDim::zero(),
             is_dirty: false,
+
+            safety_offset: vec2i(0, 0),
         }
     }
 
@@ -100,7 +104,7 @@ impl TheWidget for TheDropdownMenu {
             }
             TheEvent::MouseDragged(coord) => {
                 if !self.options.is_empty() {
-                    let y: i32 = coord.y - 20;
+                    let y: i32 = coord.y - 20 + self.safety_offset.y;
                     if y >= 0 {
                         let index = y / 20;
                         if index < self.options.len() as i32 && index != self.selected {
@@ -274,7 +278,21 @@ impl TheWidget for TheDropdownMenu {
         let width = 142;
         let height = 2 + len * 20 + (if len > 1 { len - 1 } else { 0 });
 
-        let dim = TheDim::new(self.dim.x, self.dim.y + 20, width as i32, height as i32);
+        let mut dim = TheDim::new(self.dim.x, self.dim.y + 20, width as i32, height as i32);
+
+        self.safety_offset = Vec2i::zero();
+
+        // Safety check for width being larger than the window width
+        if dim.x + width as i32 > ctx.width as i32 {
+            self.safety_offset.x = dim.x + width as i32 - ctx.width as i32 + 5;
+            dim.x -= self.safety_offset.x;
+        }
+
+        // Safety check for height being larger than the window height
+        if dim.y + height as i32 > ctx.height as i32 {
+            self.safety_offset.y = dim.y + height as i32 - ctx.height as i32 + 5;
+            dim.y -= self.safety_offset.y;
+        }
 
         let mut buffer = TheRGBABuffer::new(dim);
         ctx.draw.rect(

@@ -324,6 +324,13 @@ impl TheWidget for TheTraybarButton {
         self.is_dirty = false;
     }
 
+    fn set_value(&mut self, value: TheValue) {
+        if let TheValue::Text(text) = value {
+            self.text = text;
+            self.is_dirty = true;
+        }
+    }
+
     fn as_any(&mut self) -> &mut dyn std::any::Any {
         self
     }

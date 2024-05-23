@@ -164,6 +164,29 @@ impl TheLayout for TheVLayout {
                         y -= self.padding;
                     }
                 }
+            } else if self.mode == TheVLayoutMode::SizeBased {
+                let count = self.widgets.len() as i32;
+                let total_height =
+                    dim.height - self.margin.y - self.margin.w - (count - 1) * self.padding;
+                let height = total_height / count;
+                let width = dim.width - self.margin.x - self.margin.z;
+                let mut y = self.margin.y;
+
+                for w in &mut self.widgets {
+                    w.calculate_size(ctx);
+
+                    // Limit to visible area
+                    if y + height > dim.height {
+                        break;
+                    }
+
+                    let x = self.margin.x;
+
+                    w.set_dim(TheDim::new(dim.x + x, dim.y + y, width, height));
+                    w.dim_mut()
+                        .set_buffer_offset(self.dim.buffer_x + x, self.dim.buffer_y + y);
+                    y += height + self.padding;
+                }
             }
         }
     }
@@ -215,6 +238,8 @@ pub trait TheVLayoutTrait {
     fn clear(&mut self);
     /// Add a widget to the layout.
     fn add_widget(&mut self, widget: Box<dyn TheWidget>);
+    /// Set the layout mode.
+    fn set_mode(&mut self, mode: TheVLayoutMode);
     /// Set the top / bottom alingnment split index
     fn set_reverse_index(&mut self, reverse_index: Option<i32>);
     /// Set the horizontal alignment.
@@ -227,6 +252,9 @@ impl TheVLayoutTrait for TheVLayout {
     }
     fn add_widget(&mut self, widget: Box<dyn TheWidget>) {
         self.widgets.push(widget);
+    }
+    fn set_mode(&mut self, mode: TheVLayoutMode) {
+        self.mode = mode;
     }
     fn set_reverse_index(&mut self, reverse_index: Option<i32>) {
         self.reverse_index = reverse_index;

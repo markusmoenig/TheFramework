@@ -49,6 +49,7 @@ pub enum TheThemeColors {
 
     TextEditBackground,
     TextEditSelectionBackground,
+    TextEditRange,
     TextEditBorder,
     SelectedTextEditBorder1,
     SelectedTextEditBorder2,
@@ -135,7 +136,9 @@ pub enum TheThemeColors {
     ContextMenuBorder,
     ContextMenuHighlight,
     ContextMenuTextNormal,
+    ContextMenuTextDisabled,
     ContextMenuTextHighlight,
+    ContextMenuSeparator,
 
     WindowBorderOuter,
     WindowBorderInner,
@@ -149,4 +152,15 @@ pub enum TheThemeColors {
     TimeSliderMarker,
     TimeSliderLine,
     TimeSliderPosition,
+
+    MenuText,
+    MenuTextHighlighted,
+    MenuHover,
+    MenuSelected,
+
+    NodeBackground,
+    NodeBorder,
+    NodeBorderSelected,
+    NodeBody,
+    NodeBodySelected,
 }

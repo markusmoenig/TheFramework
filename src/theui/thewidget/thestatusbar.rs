@@ -87,7 +87,7 @@ impl TheWidget for TheStatusbar {
             for x in 1..utuple.2 {
                 let r = (utuple.0 + x, utuple.1, 1, icon.dim().height as usize);
                 ctx.draw
-                    .copy_slice_3(buffer.pixels_mut(), icon.pixels(), &r, stride);
+                    .copy_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
             }
         }
 

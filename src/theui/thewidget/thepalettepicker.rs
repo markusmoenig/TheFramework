@@ -57,6 +57,10 @@ impl TheWidget for ThePalettePicker {
                 for (i, rect) in self.rectangles.iter().enumerate() {
                     if rect.contains(*coord) {
                         self.index = i;
+                        ctx.ui.send(TheEvent::PaletteIndexChanged(
+                            self.id().clone(),
+                            self.index as u16,
+                        ));
                         break;
                     }
                 }
@@ -72,6 +76,10 @@ impl TheWidget for ThePalettePicker {
                         self.index -= 1;
                         self.is_dirty = true;
                         redraw = true;
+                        ctx.ui.send(TheEvent::PaletteIndexChanged(
+                            self.id().clone(),
+                            self.index as u16,
+                        ));
                     }
                 }
                 TheKeyCode::Right => {
@@ -79,6 +87,10 @@ impl TheWidget for ThePalettePicker {
                         self.index += 1;
                         self.is_dirty = true;
                         redraw = true;
+                        ctx.ui.send(TheEvent::PaletteIndexChanged(
+                            self.id().clone(),
+                            self.index as u16,
+                        ));
                     }
                 }
                 _ => {}

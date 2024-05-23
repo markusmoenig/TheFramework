@@ -221,7 +221,7 @@ impl TheWidget for TheHorizontalScrollbar {
                 );
                 for _ in 0..scroll_bar_width - 10 {
                     ctx.draw
-                        .copy_slice_3(buffer.pixels_mut(), icon.pixels(), &r, stride);
+                        .copy_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
                     r.0 += 1;
                 }
             }

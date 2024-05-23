@@ -35,6 +35,7 @@ impl TheTheme for TheDarkTheme {
 
         colors.insert(TextEditBackground, [148, 148, 148, 255]);
         colors.insert(TextEditSelectionBackground, [45, 133, 200, 255]);
+        colors.insert(TextEditRange, [178, 178, 178, 255]);
         colors.insert(SelectedTextEditBorder1, [202, 113, 230, 255]);
         colors.insert(SelectedTextEditBorder2, [187, 122, 208, 255]);
         colors.insert(TextEditBorder, [209, 209, 209, 255]);
@@ -118,9 +119,11 @@ impl TheTheme for TheDarkTheme {
         colors.insert(DropItemText, [85, 81, 85, 255]);
 
         colors.insert(ContextMenuBackground, [149, 149, 149, 255]);
+        colors.insert(ContextMenuSeparator, [102, 102, 102, 255]);
         colors.insert(ContextMenuBorder, [130, 130, 130, 255]);
         colors.insert(ContextMenuHighlight, [187, 122, 208, 255]);
         colors.insert(ContextMenuTextNormal, [255, 255, 255, 255]);
+        colors.insert(ContextMenuTextDisabled, [100, 100, 100, 255]);
         colors.insert(ContextMenuTextHighlight, [82, 82, 82, 255]);
 
         colors.insert(WindowBorderOuter, [147, 147, 147, 255]);
@@ -135,6 +138,15 @@ impl TheTheme for TheDarkTheme {
         colors.insert(TimeSliderLine, [139, 139, 139, 255]);
         colors.insert(TimeSliderMarker, [202, 113, 230, 255]);
         colors.insert(TimeSliderPosition, [240, 240, 240, 255]);
+
+        colors.insert(MenuHover, [40, 40, 40, 255]);
+        colors.insert(MenuText, [200, 200, 200, 255]);
+        colors.insert(MenuTextHighlighted, [244, 244, 244, 255]);
+
+        colors.insert(NodeBorder, [160, 160, 160, 255]);
+        colors.insert(NodeBorderSelected, [230, 230, 230, 255]);
+        colors.insert(NodeBody, [84, 84, 84, 255]);
+        colors.insert(NodeBodySelected, [65, 65, 65, 255]);
 
         Self {
             temp_color: BLACK,

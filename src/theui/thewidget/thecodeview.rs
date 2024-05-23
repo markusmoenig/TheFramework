@@ -64,7 +64,7 @@ impl TheWidget for TheCodeView {
             buffer: TheRGBABuffer::empty(),
 
             codegrid: TheCodeGrid::new(),
-            grid_size: 70,
+            grid_size: 75,
 
             debug_module: TheDebugModule::default(),
 
@@ -517,34 +517,6 @@ impl TheWidget for TheCodeView {
                 1.5 * zoom,
             );
 
-            // let pattern_selected = ThePattern::SolidWithBorder(
-            //     crate::thecolor::TheColor::from_u8_array(selected),
-            //     crate::thecolor::TheColor::from_u8_array(dark),
-            //     1.5 * zoom,
-            // );
-
-            // let pattern_hover = ThePattern::SolidWithBorder(
-            //     crate::thecolor::TheColor::from_u8_array(hover),
-            //     crate::thecolor::TheColor::from_u8_array(dark),
-            //     1.5 * zoom,
-            // );
-
-            // fn check_selection(x: u16, y: u16, canvas: &mut TheSDFCanvas) {
-            //     // if Some((x, y)) == self.selected {
-            //     //     pattern_selected.clone()
-            //     // } else if Some((x, y)) == self.hover {
-            //     //     pattern_hover.clone()
-            //     // } else {
-            //     //     pattern_normal.clone()
-            //     // }
-
-            //     if Some((x, y)) == self.selected {
-            //         canvas.selected = Some(canvas.sdfs.len());
-            //     } else if Some((x, y)) == self.hover {
-            //         canvas.hover = Some(canvas.sdfs.len());
-            //     }
-            // };
-
             let mut func_args_hash: FxHashMap<(u16, u16), (String, bool)> = FxHashMap::default();
 
             for y in 0..grid_y {
@@ -569,11 +541,39 @@ impl TheWidget for TheCodeView {
                     if let Some(atom) = self.codegrid.code.get(&(x, y)) {
                         let mut sdf = atom.to_sdf(dim, zoom);
 
-                        // let pattern = ThePattern::SolidWithBorder(
-                        //     crate::thecolor::TheColor::from_u8_array(atom.to_color()),
-                        //     crate::thecolor::TheColor::from_u8_array(dark),
-                        //     1.5 * zoom,
-                        // );
+                        let mut pattern = pattern_normal.clone();
+
+                        if let TheCodeAtom::Set(_, _) = atom {
+                            pattern = ThePattern::SolidWithBorder(
+                                crate::thecolor::TheColor::from_hex("#d4804d"),
+                                crate::thecolor::TheColor::from_u8_array(dark),
+                                1.5 * zoom,
+                            );
+                        } else if let TheCodeAtom::Get(_) = atom {
+                            pattern = ThePattern::SolidWithBorder(
+                                crate::thecolor::TheColor::from_hex("#d9ac8b"),
+                                crate::thecolor::TheColor::from_u8_array(dark),
+                                1.5 * zoom,
+                            );
+                        } else if let TheCodeAtom::Value(_) = atom {
+                            pattern = ThePattern::SolidWithBorder(
+                                crate::thecolor::TheColor::from_hex("#b1a58d"),
+                                crate::thecolor::TheColor::from_u8_array(dark),
+                                1.5 * zoom,
+                            );
+                        } else if let TheCodeAtom::ExternalCall(_, _, _, _, _) = atom {
+                            pattern = ThePattern::SolidWithBorder(
+                                crate::thecolor::TheColor::from_hex("#e0c872"),
+                                crate::thecolor::TheColor::from_u8_array(dark),
+                                1.5 * zoom,
+                            );
+                        } else if let TheCodeAtom::ModuleCall(_, _, _, _) = atom {
+                            pattern = ThePattern::SolidWithBorder(
+                                crate::thecolor::TheColor::from_hex("#e0c872"),
+                                crate::thecolor::TheColor::from_u8_array(dark),
+                                1.5 * zoom,
+                            );
+                        }
 
                         // Insert the functions arguments into the hash map.
                         if let TheCodeAtom::ExternalCall(_, _, arg_names, _, _) = &atom {
@@ -601,7 +601,7 @@ impl TheWidget for TheCodeView {
                             }
                         }
 
-                        canvas.add(sdf, pattern_normal.clone());
+                        canvas.add(sdf, pattern);
 
                         if Some((x, y)) == self.selected {
                             canvas.selected = Some(0);
@@ -626,7 +626,24 @@ impl TheWidget for TheCodeView {
                             );
 
                             let sdf = atom.to_sdf(dim, zoom);
-                            canvas.add(sdf, pattern_normal.clone());
+
+                            let mut pattern = pattern_normal.clone();
+
+                            if let TheCodeAtom::Comparison(_) = atom {
+                                pattern = ThePattern::SolidWithBorder(
+                                    crate::thecolor::TheColor::from_hex("#e3cfb4"),
+                                    crate::thecolor::TheColor::from_u8_array(dark),
+                                    1.5 * zoom,
+                                );
+                            } else if let TheCodeAtom::Assignment(_) = atom {
+                                pattern = ThePattern::SolidWithBorder(
+                                    crate::thecolor::TheColor::from_hex("#d4804d"),
+                                    crate::thecolor::TheColor::from_u8_array(dark),
+                                    1.5 * zoom,
+                                );
+                            }
+
+                            canvas.add(sdf, pattern.clone());
 
                             if Some((x - 1, y)) == self.selected {
                                 canvas.selected = Some(canvas.sdfs.len() - 1);
@@ -646,7 +663,24 @@ impl TheWidget for TheCodeView {
                         );
 
                         let sdf = atom.to_sdf(dim, zoom);
-                        canvas.add(sdf, pattern_normal.clone());
+
+                        let mut pattern = pattern_normal.clone();
+
+                        if let TheCodeAtom::Comparison(_) = atom {
+                            pattern = ThePattern::SolidWithBorder(
+                                crate::thecolor::TheColor::from_hex("#e3cfb4"),
+                                crate::thecolor::TheColor::from_u8_array(dark),
+                                1.5 * zoom,
+                            );
+                        } else if let TheCodeAtom::Assignment(_) = atom {
+                            pattern = ThePattern::SolidWithBorder(
+                                crate::thecolor::TheColor::from_hex("#d4804d"),
+                                crate::thecolor::TheColor::from_u8_array(dark),
+                                1.5 * zoom,
+                            );
+                        }
+
+                        canvas.add(sdf, pattern.clone());
 
                         if Some((x + 1, y)) == self.selected {
                             canvas.selected = Some(canvas.sdfs.len() - 1);
@@ -845,7 +879,7 @@ impl TheWidget for TheCodeView {
                                 }
                             }
 
-                            if let TheCodeAtom::Value(TheValue::ColorObject(color, _)) = atom {
+                            if let TheCodeAtom::Value(TheValue::ColorObject(color)) = atom {
                                 let off = zoom_const(4, zoom);
                                 ctx.draw.rounded_rect(
                                     self.buffer.pixels_mut(),
@@ -1111,8 +1145,8 @@ impl TheCodeViewTrait for TheCodeView {
         let grid_y;
 
         if let Some(size) = size {
-            grid_x = size.0 as i32 + 3;
-            grid_y = size.1 as i32 + 3;
+            grid_x = size.0 as i32 + 4;
+            grid_y = size.1 as i32 + 4;
         } else {
             grid_x = 2;
             grid_y = 2;
