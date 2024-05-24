@@ -33,6 +33,7 @@ pub enum TheEvent {
     LostFocus(TheId),
     GainedHover(TheId),
     LostHover(TheId),
+    SizeChanged(TheId),
 
     RedirectWidgetValueToLayout(TheId, TheId, TheValue),
 

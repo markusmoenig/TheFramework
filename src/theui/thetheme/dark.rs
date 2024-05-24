@@ -100,7 +100,7 @@ impl TheTheme for TheDarkTheme {
         colors.insert(DividerEnd, [148, 148, 148, 255]);
 
         colors.insert(GroupButtonNormalBorder, [108, 108, 108, 255]);
-        colors.insert(GroupButtonNormalBackground, [123, 123, 123, 255]);
+        colors.insert(GroupButtonNormalBackground, [103, 103, 103, 255]);
         colors.insert(GroupButtonHoverBorder, [179, 179, 179, 255]);
         colors.insert(GroupButtonHoverBackground, [157, 157, 157, 255]);
         colors.insert(GroupButtonSelectedBorder, [204, 204, 204, 255]);

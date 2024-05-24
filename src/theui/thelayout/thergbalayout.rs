@@ -219,6 +219,8 @@ impl TheLayout for TheRGBALayout {
             self.rgba_view
                 .dim_mut()
                 .set_buffer_offset(self.dim.buffer_x, self.dim.buffer_y);
+
+            ctx.ui.send(TheEvent::SizeChanged(self.id.clone()));
         }
     }
 
