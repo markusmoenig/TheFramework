@@ -613,7 +613,7 @@ impl TheDraw2D {
     pub fn text_rect_clip(
         &self,
         frame: &mut [u8],
-        top_left: &Vec2<usize>,
+        top_left: &Vec2<i32>,
         clip_rect: &(usize, usize, usize, usize),
         stride: usize,
         font: &Font,
@@ -658,9 +658,14 @@ impl TheDraw2D {
 
             for y in 0..metrics.height {
                 for x in 0..metrics.width {
-                    let coord_x = x + top_left.x + glyph.x as usize;
-                    let coord_y = y + top_left.y + glyph.y as usize;
+                    let coord_x = top_left.x + (x + glyph.x.ceil() as usize) as i32;
+                    let coord_y = top_left.y + (y + glyph.y.ceil() as usize) as i32;
+                    if coord_x < 0 || coord_y < 0 {
+                        continue;
+                    }
 
+                    let coord_x = coord_x as usize;
+                    let coord_y = coord_y as usize;
                     if coord_x < clip_rect.0
                         || coord_x > clip_rect.0 + clip_rect.2
                         || coord_y < clip_rect.1
@@ -771,7 +776,7 @@ impl TheDraw2D {
     pub fn text_rect_blend_clip(
         &self,
         frame: &mut [u8],
-        top_left: &Vec2<usize>,
+        top_left: &Vec2<i32>,
         clip_rect: &(usize, usize, usize, usize),
         stride: usize,
         font: &Font,
@@ -813,9 +818,14 @@ impl TheDraw2D {
 
             for y in 0..metrics.height {
                 for x in 0..metrics.width {
-                    let coord_x = x + top_left.x + glyph.x as usize;
-                    let coord_y = y + top_left.y + glyph.y as usize;
+                    let coord_x = top_left.x + (x + glyph.x.ceil() as usize) as i32;
+                    let coord_y = top_left.y + (y + glyph.y.ceil() as usize) as i32;
+                    if coord_x < 0 || coord_y < 0 {
+                        continue;
+                    }
 
+                    let coord_x = coord_x as usize;
+                    let coord_y = coord_y as usize;
                     if coord_x < clip_rect.0
                         || coord_x > clip_rect.0 + clip_rect.2
                         || coord_y < clip_rect.1
