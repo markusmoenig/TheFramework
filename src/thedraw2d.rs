@@ -1,5 +1,5 @@
 use fontdue::layout::{
-    CoordinateSystem, GlyphPosition, HorizontalAlign, Layout, LayoutSettings, TextStyle, VerticalAlign
+    CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle, VerticalAlign,
 };
 use fontdue::Font;
 use maths_rs::prelude::*;
@@ -661,10 +661,13 @@ impl TheDraw2D {
                     let coord_x = x + top_left.x + glyph.x as usize;
                     let coord_y = y + top_left.y + glyph.y as usize;
 
-                    if coord_x < clip_rect.0 || coord_x > clip_rect.0 + clip_rect.2 ||
-                        coord_y < clip_rect.1 || coord_y > clip_rect.1 + clip_rect.3 {
-                            continue;
-                        }
+                    if coord_x < clip_rect.0
+                        || coord_x > clip_rect.0 + clip_rect.2
+                        || coord_y < clip_rect.1
+                        || coord_y > clip_rect.1 + clip_rect.3
+                    {
+                        continue;
+                    }
 
                     let i = coord_x * 4 + coord_y * stride * 4;
                     let m = alphamap[x + y * metrics.width];
@@ -813,10 +816,13 @@ impl TheDraw2D {
                     let coord_x = x + top_left.x + glyph.x as usize;
                     let coord_y = y + top_left.y + glyph.y as usize;
 
-                    if coord_x < clip_rect.0 || coord_x > clip_rect.0 + clip_rect.2 ||
-                        coord_y < clip_rect.1 || coord_y > clip_rect.1 + clip_rect.3 {
-                            continue;
-                        }
+                    if coord_x < clip_rect.0
+                        || coord_x > clip_rect.0 + clip_rect.2
+                        || coord_y < clip_rect.1
+                        || coord_y > clip_rect.1 + clip_rect.3
+                    {
+                        continue;
+                    }
 
                     let i = coord_x * 4 + coord_y * stride * 4;
                     let m = alphamap[x + y * metrics.width];
@@ -944,9 +950,7 @@ impl TheDraw2D {
         let layout = self.get_text_layout(font, size, text);
         let glyphs = layout.glyphs();
 
-        let x = glyphs[glyphs.len() - 1].x.ceil() as usize
-            + glyphs[glyphs.len() - 1].width
-            + 1;
+        let x = glyphs[glyphs.len() - 1].x.ceil() as usize + glyphs[glyphs.len() - 1].width + 1;
         (x, layout.height() as usize)
     }
 

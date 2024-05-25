@@ -21,6 +21,12 @@ impl TheTimeline {
         }
     }
 
+    pub fn collection(coll: TheCollection) -> Self {
+        let mut events: BTreeMap<TheTime, Vec<TheCollection>> = BTreeMap::default();
+        events.insert(TheTime::default(), vec![coll]);
+        Self { events }
+    }
+
     /// Returns true if the timeline is empty.
     pub fn is_empty(&self) -> bool {
         self.events.is_empty()

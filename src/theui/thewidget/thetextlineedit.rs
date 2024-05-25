@@ -162,14 +162,15 @@ impl TheWidget for TheTextLineEdit {
                         &ctx.ui.font,
                         self.font_size,
                         coord.x - self.padding.0 + self.scroll_offset.x,
-                        &ctx.draw
+                        &ctx.draw,
                     );
                     self.drag_start_position = self.cursor_position;
 
                     // Select all if double click
                     if let Some(last_time) = self.last_mouse_down_time {
                         if last_time.elapsed().as_millis() < 500
-                            && self.last_mouse_down_coord == *coord {
+                            && self.last_mouse_down_coord == *coord
+                        {
                             self.selection = Some(0..self.text.len());
                         }
                     }
@@ -207,7 +208,7 @@ impl TheWidget for TheTextLineEdit {
                         &ctx.ui.font,
                         self.font_size,
                         coord.x - self.padding.0 + self.scroll_offset.x,
-                        &ctx.draw
+                        &ctx.draw,
                     );
 
                     // Select all chars in the left if dragging up
@@ -462,23 +463,27 @@ impl TheWidget for TheTextLineEdit {
             );
         }
 
-        shrinker.shrink_by(self.padding.0, self.padding.1, self.padding.2, self.padding.3);
-        
+        shrinker.shrink_by(
+            self.padding.0,
+            self.padding.1,
+            self.padding.2,
+            self.padding.3,
+        );
+
         if let Some(font) = &ctx.ui.font {
             if self.text != self.text_last_tick {
-                self.glyph_positions = ctx.draw.get_text_layout(
-                    font,
-                    self.font_size,
-                    &self.text
-                )
-                .glyphs()
-                .iter()
-                .map(|g| (g.x, g.width))
-                .collect::<Vec<(f32, usize)>>();
+                self.glyph_positions = ctx
+                    .draw
+                    .get_text_layout(font, self.font_size, &self.text)
+                    .glyphs()
+                    .iter()
+                    .map(|g| (g.x, g.width))
+                    .collect::<Vec<(f32, usize)>>();
             }
 
             let visible_area = self.dim.to_buffer_shrunk_utuple(&shrinker);
-            let text_width_before_cursor = get_text_left(&self.glyph_positions, self.cursor_position);
+            let text_width_before_cursor =
+                get_text_left(&self.glyph_positions, self.cursor_position);
 
             // Check if the widget should be scrolled in order to display the cursor
             // Scroll right
@@ -493,24 +498,35 @@ impl TheWidget for TheTextLineEdit {
             if !self.text.is_empty() {
                 // Render selection
                 if let Some(selection) = &self.selection {
-                    let leftside_nonselection_text_width = get_text_left(&self.glyph_positions, selection.start);
-                    let selection_width = get_text_width(&self.glyph_positions, selection.start, selection.end);
+                    let leftside_nonselection_text_width =
+                        get_text_left(&self.glyph_positions, selection.start);
+                    let selection_width =
+                        get_text_width(&self.glyph_positions, selection.start, selection.end);
 
-                    let highlight_area_left = (text_start_x + leftside_nonselection_text_width as i32).max(0) as usize;
+                    let highlight_area_left =
+                        (text_start_x + leftside_nonselection_text_width as i32).max(0) as usize;
                     let highlight_area_left = highlight_area_left.max(visible_area.0);
-                    let highlight_area_left = highlight_area_left.min(visible_area.0 + visible_area.2);
+                    let highlight_area_left =
+                        highlight_area_left.min(visible_area.0 + visible_area.2);
 
                     let mut highlight_area_width = selection_width;
-                    if highlight_area_left + highlight_area_width > visible_area.0 + visible_area.2 {
-                        highlight_area_width = visible_area.0 + visible_area.2 - highlight_area_left;
+                    if highlight_area_left + highlight_area_width > visible_area.0 + visible_area.2
+                    {
+                        highlight_area_width =
+                            visible_area.0 + visible_area.2 - highlight_area_left;
                     }
 
-                    let highlight_area = (highlight_area_left, visible_area.1, highlight_area_width, visible_area.3);
+                    let highlight_area = (
+                        highlight_area_left,
+                        visible_area.1,
+                        highlight_area_width,
+                        visible_area.3,
+                    );
                     ctx.draw.blend_rect(
                         buffer.pixels_mut(),
                         &highlight_area,
                         stride,
-                        style.theme().color(TextEditSelectionBackground)
+                        style.theme().color(TextEditSelectionBackground),
                     );
                 }
 
@@ -519,10 +535,13 @@ impl TheWidget for TheTextLineEdit {
                 let mut visible_text_end_position = self.text.len();
                 let mut chars_acc_width = 0;
                 for i in 0..self.text.len() {
-                    let is_start_position_found = chars_acc_width > self.scroll_offset.x.unsigned_abs() as usize;
+                    let is_start_position_found =
+                        chars_acc_width > self.scroll_offset.x.unsigned_abs() as usize;
                     chars_acc_width = get_text_left(&self.glyph_positions, i + 1);
                     if is_start_position_found {
-                        if chars_acc_width >= self.scroll_offset.x.unsigned_abs() as usize + visible_area.2 {
+                        if chars_acc_width
+                            >= self.scroll_offset.x.unsigned_abs() as usize + visible_area.2
+                        {
                             visible_text_end_position = i + 1;
                             break;
                         }
@@ -530,13 +549,15 @@ impl TheWidget for TheTextLineEdit {
                         visible_text_start_position = i;
                     }
                 }
-                let visible_text = &self.text[visible_text_start_position..visible_text_end_position];
+                let visible_text =
+                    &self.text[visible_text_start_position..visible_text_end_position];
 
                 // Render text and clip
-                let leftside_invisible_chars_width = self.glyph_positions[visible_text_start_position].0;
+                let leftside_invisible_chars_width =
+                    self.glyph_positions[visible_text_start_position].0;
                 let visible_text_top_left = Vec2::new(
                     (text_start_x + leftside_invisible_chars_width as i32).max(0) as usize,
-                    visible_area.1 - 1
+                    visible_area.1 - 1,
                 );
                 ctx.draw.text_rect_blend_clip(
                     buffer.pixels_mut(),
@@ -555,11 +576,19 @@ impl TheWidget for TheTextLineEdit {
             if ctx.ui.has_focus(self.id()) {
                 let cursor_width = 2;
                 let cursor_vertical_shrink = 1;
-                let cursor_left = (text_start_x + text_width_before_cursor as i32 - 1).max(0) as usize;
-                if cursor_left >= visible_area.0 - cursor_width / 2 && cursor_left < visible_area.0 + visible_area.2 {
+                let cursor_left =
+                    (text_start_x + text_width_before_cursor as i32 - 1).max(0) as usize;
+                if cursor_left >= visible_area.0 - cursor_width / 2
+                    && cursor_left < visible_area.0 + visible_area.2
+                {
                     ctx.draw.rect(
                         buffer.pixels_mut(),
-                        &(cursor_left, visible_area.1 + cursor_vertical_shrink, cursor_width, visible_area.3 - cursor_vertical_shrink * 2),
+                        &(
+                            cursor_left,
+                            visible_area.1 + cursor_vertical_shrink,
+                            cursor_width,
+                            visible_area.3 - cursor_vertical_shrink * 2,
+                        ),
                         stride,
                         style.theme().color(TextEditCursorColor),
                     );
@@ -567,16 +596,20 @@ impl TheWidget for TheTextLineEdit {
             }
         }
 
-        self.text_last_tick = self.text.clone();
-
+        self.text_last_tick.clone_from(&self.text);
         self.is_dirty = false;
 
         fn get_text_left(glyphs: &[(f32, usize)], index: usize) -> usize {
-            if index >= glyphs.len() {
-                return glyphs[glyphs.len() - 1].0.ceil() as usize + glyphs[glyphs.len() - 1].1 + 1;
+            if !glyphs.is_empty() {
+                if index >= glyphs.len() {
+                    return glyphs[glyphs.len() - 1].0.ceil() as usize
+                        + glyphs[glyphs.len() - 1].1
+                        + 1;
+                }
+                glyphs[index].0.ceil() as usize
+            } else {
+                0
             }
-
-            glyphs[index].0.ceil() as usize
         }
 
         fn get_text_width(glyphs: &[(f32, usize)], start: usize, end: usize) -> usize {
@@ -644,7 +677,7 @@ fn find_cursor_position(
     font: &Option<Font>,
     font_size: f32,
     coord: i32,
-    draw: &TheDraw2D
+    draw: &TheDraw2D,
 ) -> usize {
     if coord < 0 {
         return 0;
