@@ -1382,7 +1382,7 @@ impl TheWidget for TheTextLineEdit {
                 self.padding.3.as_i32(),
             );
 
-            if self.modified_since_last_tick {
+            if self.modified_since_last_tick || self.renderer.row_count() == 0 {
                 let visible_area = self.dim.to_buffer_shrunk_utuple(&shrinker);
                 self.renderer.set_dim(
                     visible_area.0,
