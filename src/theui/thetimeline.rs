@@ -107,6 +107,26 @@ impl TheTimeline {
         self.events.insert(time, vec![collection]);
     }
 
+    /// Sets a value at the given time.
+    pub fn set(&mut self, time: &TheTime, key: &str, collection: &str, value: TheValue) {
+        if let Some(existing_list) = self.events.get_mut(time) {
+            for existing in existing_list.iter_mut() {
+                if existing.name == collection {
+                    if let Some(TheValue::FloatRange(_, range)) = existing.get(key) {
+                        if let Some(v) = value.to_f32() {
+                            existing
+                                .keys
+                                .insert(key.to_string(), TheValue::FloatRange(v, range.clone()));
+                        }
+                    } else {
+                        existing.keys.insert(key.to_string(), value);
+                    }
+                    return;
+                }
+            }
+        }
+    }
+
     /// Replaces the keys of the collection with the keys at the given time.
     pub fn fill(&self, time: &TheTime, collection: &mut TheCollection) {
         let keys = collection.keys.keys().cloned().collect::<Vec<String>>();

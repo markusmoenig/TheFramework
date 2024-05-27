@@ -33,6 +33,7 @@ pub struct TheRGBAView {
     rectangle_start: Option<(i32, i32)>,
 
     last_loc: (i32, i32),
+    float_pos: Vec2f,
 
     hscrollbar: TheId,
     vscrollbar: TheId,
@@ -82,6 +83,7 @@ impl TheWidget for TheRGBAView {
             rectangle_start: None,
 
             last_loc: (0, 0),
+            float_pos: Vec2f::zero(),
 
             hscrollbar: TheId::empty(),
             vscrollbar: TheId::empty(),
@@ -139,6 +141,9 @@ impl TheWidget for TheRGBAView {
                 if self.mode != TheRGBAViewMode::Display {
                     if let Some(loc) = self.get_grid_location(*coord) {
                         self.last_loc = loc;
+                        if let Some(fgrid) = self.get_grid_location_f(*coord) {
+                            self.float_pos = vec2f(fgrid.0, fgrid.1);
+                        }
                         if self.mode == TheRGBAViewMode::TileSelection {
                             if self.rectangular_selection {
                                 self.rectangle_start = Some(loc);
@@ -184,6 +189,9 @@ impl TheWidget for TheRGBAView {
                     if let Some(loc) = self.get_grid_location(*coord) {
                         if loc != self.last_loc {
                             self.last_loc = loc;
+                            if let Some(fgrid) = self.get_grid_location_f(*coord) {
+                                self.float_pos = vec2f(fgrid.0, fgrid.1);
+                            }
                             if self.mode == TheRGBAViewMode::TileSelection {
                                 if self.rectangular_selection {
                                     if let Some(rectangle_start) = self.rectangle_start {
@@ -693,6 +701,9 @@ impl TheWidget for TheRGBAView {
 
 pub trait TheRGBAViewTrait: TheWidget {
     fn get_grid_location(&self, coord: Vec2i) -> Option<(i32, i32)>;
+    fn get_grid_location_f(&self, coord: Vec2i) -> Option<(f32, f32)>;
+
+    fn float_pos(&self) -> Vec2f;
 
     fn buffer(&self) -> &TheRGBABuffer;
     fn buffer_mut(&mut self) -> &mut TheRGBABuffer;
@@ -771,6 +782,44 @@ impl TheRGBAViewTrait for TheRGBAView {
             }
         }
         None
+    }
+
+    fn get_grid_location_f(&self, coord: Vec2i) -> Option<(f32, f32)> {
+        if let Some(grid) = self.grid {
+            let centered_offset_x =
+                if (self.zoom * self.buffer.dim().width as f32) < self.dim.width as f32 {
+                    (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32) / 2.0
+                } else {
+                    0.0
+                };
+            let centered_offset_y =
+                if (self.zoom * self.buffer.dim().height as f32) < self.dim.height as f32 {
+                    (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32) / 2.0
+                } else {
+                    0.0
+                };
+
+            let source_x =
+                ((coord.x as f32 - centered_offset_x) + self.scroll_offset.x as f32) / self.zoom;
+            let source_y =
+                ((coord.y as f32 - centered_offset_y) + self.scroll_offset.y as f32) / self.zoom;
+
+            if source_x >= 0.0
+                && source_x < self.buffer.dim().width as f32
+                && source_y >= 0.0
+                && source_y < self.buffer.dim().height as f32
+            {
+                let grid_x = source_x / grid as f32;
+                let grid_y = source_y / grid as f32;
+
+                return Some((grid_x, grid_y));
+            }
+        }
+        None
+    }
+
+    fn float_pos(&self) -> Vec2f {
+        self.float_pos
     }
 
     fn buffer(&self) -> &TheRGBABuffer {
