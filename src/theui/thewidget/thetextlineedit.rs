@@ -577,7 +577,7 @@ impl TheTextRenderer {
         };
 
         let layout = draw.get_text_layout(font, self.font_size, text);
-        self.glyphs = layout.glyphs().clone();
+        self.glyphs.clone_from(layout.glyphs());
 
         self.row_info = layout
             .lines()
@@ -1304,6 +1304,16 @@ impl TheWidget for TheTextLineEdit {
             }
             TheValue::Text(text) => {
                 self.state.set_text(text);
+                self.modified_since_last_tick = true;
+                self.is_dirty = true;
+            }
+            TheValue::Int(v) => {
+                self.state.set_text(v.to_string());
+                self.modified_since_last_tick = true;
+                self.is_dirty = true;
+            }
+            TheValue::Float(v) => {
+                self.state.set_text(v.to_string());
                 self.modified_since_last_tick = true;
                 self.is_dirty = true;
             }
