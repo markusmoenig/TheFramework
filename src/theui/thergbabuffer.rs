@@ -472,6 +472,23 @@ impl TheRGBABuffer {
         }
     }
 
+    pub fn at_vec4(&self, position: Vec2i) -> Option<Vec4f> {
+        let x = position.x;
+        let y = position.y;
+
+        if x >= 0 && x < self.dim.width && y >= 0 && y < self.dim.height {
+            let pixel_index = (y * self.dim.width + x) as usize * 4;
+            Some(vec4f(
+                (self.buffer[pixel_index] as f32) / 255.0,
+                (self.buffer[pixel_index + 1] as f32) / 255.0,
+                (self.buffer[pixel_index + 2] as f32) / 255.0,
+                (self.buffer[pixel_index + 3] as f32) / 255.0,
+            ))
+        } else {
+            None
+        }
+    }
+
     /// Fills the entire buffer with the given RGBA color.
     pub fn fill(&mut self, color: [u8; 4]) {
         for y in 0..self.dim.height {

@@ -161,6 +161,7 @@ impl TheLayout for TheRGBALayout {
 
     fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {
         if self.dim != dim || ctx.ui.relayout {
+            let resized = self.dim != dim;
             self.dim = dim;
 
             let mut width: i32 = dim.width;
@@ -220,7 +221,9 @@ impl TheLayout for TheRGBALayout {
                 .dim_mut()
                 .set_buffer_offset(self.dim.buffer_x, self.dim.buffer_y);
 
-            ctx.ui.send(TheEvent::SizeChanged(self.id.clone()));
+            if resized {
+                ctx.ui.send(TheEvent::SizeChanged(self.id.clone()));
+            }
         }
     }
 
