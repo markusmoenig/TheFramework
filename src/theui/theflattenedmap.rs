@@ -65,6 +65,26 @@ where
             *element = None;
         }
     }
+
+    /// Copies the content of another `TheFlattenedMap` into this map at the specified (x, y) offset.
+    pub fn copy_into(&mut self, x: i32, y: i32, other: &TheFlattenedMap<T>) {
+        for other_y in 0..other.height {
+            for other_x in 0..other.width {
+                let target_x = x + other_x;
+                let target_y = y + other_y;
+
+                // Check if the target position is within the bounds of the current map.
+                if target_x >= 0 && target_x < self.width && target_y >= 0 && target_y < self.height
+                {
+                    if let Some(src_index) = other.key_to_index((other_x, other_y)) {
+                        if let Some(dest_index) = self.key_to_index((target_x, target_y)) {
+                            self.data[dest_index].clone_from(&other.data[src_index]);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 /// A 3D map with a flat storage structure.
