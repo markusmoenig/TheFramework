@@ -336,14 +336,7 @@ impl TheTextEditState {
     }
 
     pub fn to_text(&self) -> String {
-        let mut text = self.rows.join("\n");
-
-        // Indicate a new line
-        if text.ends_with('\n') || text.is_empty() {
-            text.push('\n');
-        }
-
-        text
+        self.rows.join("\n")
     }
 
     fn delete_char_by_cursor(&mut self) -> bool {
@@ -1141,6 +1134,12 @@ impl TheWidget for TheTextLineEdit {
             }
             TheEvent::MouseUp(_coord) => {
                 self.drag_start_index = 0;
+                // Send an event if in slider mode and not continuous
+                if self.range.is_some() && !self.continuous && self.state.to_text() != self.original
+                {
+                    ctx.ui
+                        .send_widget_value_changed(self.id(), TheValue::Text(self.state.to_text()));
+                }
             }
             TheEvent::MouseWheel(delta) => {
                 if self.renderer.scroll(&vec2i(delta.x / 4, delta.y / 4)) {
@@ -1401,8 +1400,12 @@ impl TheWidget for TheTextLineEdit {
                     visible_area.3,
                 );
 
-                self.renderer
-                    .prepare_glyphs(&self.state.to_text(), font, &ctx.draw);
+                let mut text = self.state.to_text();
+                // Indicate a new line, for render and interaction only
+                if text.ends_with('\n') || text.is_empty() {
+                    text.push('\n');
+                }
+                self.renderer.prepare_glyphs(&text, font, &ctx.draw);
                 self.renderer
                     .scroll_to_cursor(self.state.find_cursor_index(), self.state.cursor.row);
             }
