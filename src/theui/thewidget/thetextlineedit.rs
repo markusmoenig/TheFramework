@@ -1088,10 +1088,21 @@ impl TheWidget for TheTextLineEdit {
                         self.modified_since_last_tick = true;
                     }
                     if self.continuous {
-                        ctx.ui.send_widget_value_changed(
-                            self.id(),
-                            TheValue::Text(self.state.to_text()),
-                        );
+                        if let Some(range_f32) = range.to_range_f32() {
+                            if let Ok(v) = self.state.to_text().parse::<f32>() {
+                                ctx.ui.send_widget_value_changed(
+                                    self.id(),
+                                    TheValue::FloatRange(v, range_f32),
+                                );
+                            }
+                        } else if let Some(range_i32) = range.to_range_i32() {
+                            if let Ok(v) = self.state.to_text().parse::<i32>() {
+                                ctx.ui.send_widget_value_changed(
+                                    self.id(),
+                                    TheValue::IntRange(v, range_i32),
+                                );
+                            }
+                        }
                     }
                 } else if !self.state.is_empty() {
                     let delta_x = if coord.x < 0 {
@@ -1137,8 +1148,23 @@ impl TheWidget for TheTextLineEdit {
                 // Send an event if in slider mode and not continuous
                 if self.range.is_some() && !self.continuous && self.state.to_text() != self.original
                 {
-                    ctx.ui
-                        .send_widget_value_changed(self.id(), TheValue::Text(self.state.to_text()));
+                    if let Some(range) = &self.range {
+                        if let Some(range_f32) = range.to_range_f32() {
+                            if let Ok(v) = self.state.to_text().parse::<f32>() {
+                                ctx.ui.send_widget_value_changed(
+                                    self.id(),
+                                    TheValue::FloatRange(v, range_f32),
+                                );
+                            }
+                        } else if let Some(range_i32) = range.to_range_i32() {
+                            if let Ok(v) = self.state.to_text().parse::<i32>() {
+                                ctx.ui.send_widget_value_changed(
+                                    self.id(),
+                                    TheValue::IntRange(v, range_i32),
+                                );
+                            }
+                        }
+                    }
                 }
             }
             TheEvent::MouseWheel(delta) => {
