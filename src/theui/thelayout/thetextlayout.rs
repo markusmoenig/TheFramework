@@ -235,7 +235,7 @@ impl TheLayout for TheTextLayout {
 }
 
 /// TheTextLayout specific functions.
-pub trait TheTextLayoutTrait {
+pub trait TheTextLayoutTrait: TheLayout {
     /// Clear the text and widget pairs.
     fn clear(&mut self);
     /// Add a text / widget pair.
