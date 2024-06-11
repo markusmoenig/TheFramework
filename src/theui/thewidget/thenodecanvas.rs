@@ -14,6 +14,9 @@ pub struct TheNode {
     pub outputs: Vec<TheNodeTerminal>,
 
     pub preview: TheRGBABuffer,
+
+    pub supports_preview: bool,
+    pub preview_is_open: bool,
 }
 
 pub struct TheNodeCanvas {

@@ -17,6 +17,7 @@ enum TheNodeUIImages {
     SelectedBottomLeft,
     SelectedBottomMiddle,
     SelectedBottomRight,
+    PreviewArea,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq)]
@@ -448,8 +449,15 @@ impl TheWidget for TheNodeCanvasView {
         // Draw a node
         let draw_node = |index: usize, node: &TheNode| {
             let max_terminals = max(node.inputs.len(), node.outputs.len()) as i32;
-            let body_height = 7 + max_terminals * 10 + (max_terminals - 1) * 4 + 7;
-            let node_height = 19 + body_height + 19;
+            let mut body_height = 7 + max_terminals * 10 + (max_terminals - 1) * 4 + 7;
+            let mut node_height = 19 + body_height + 19;
+            let mut preview_height = 0;
+
+            if node.supports_preview && node.preview_is_open {
+                preview_height = 118;
+                node_height += preview_height;
+                body_height += preview_height;
+            }
 
             let dim = TheDim::new(
                 node.position.x - self.canvas.offset.x,
@@ -559,7 +567,7 @@ impl TheWidget for TheNodeCanvasView {
                 let dim = TheDim::new(2 + 5, y, 10, 10);
 
                 if let Some(font) = &ctx.ui.font {
-                    let text_width = 40;
+                    let text_width = 80;
                     let mut tb = TheRGBABuffer::new(TheDim::sized(text_width, 10));
                     tb.draw_text(
                         vec2i(0, 0),
@@ -583,7 +591,7 @@ impl TheWidget for TheNodeCanvasView {
                 let dim = TheDim::new(node_width - 2 - 5 - 10, y, 10, 10);
 
                 if let Some(font) = &ctx.ui.font {
-                    let text_width = 40;
+                    let text_width = 80;
                     let mut tb = TheRGBABuffer::new(TheDim::sized(text_width, 10));
                     tb.draw_text(
                         vec2i(0, 0),
@@ -594,13 +602,25 @@ impl TheWidget for TheNodeCanvasView {
                         TheHorizontalAlign::Right,
                         TheVerticalAlign::Center,
                     );
-                    nb.blend_into(dim.x - 40 - 2, y, &tb)
+                    nb.blend_into(dim.x - 80 - 2, y, &tb)
                 }
 
                 // nb.draw_disc(&dim, &[245, 245, 245, 255], 1.0, &[105, 105, 105, 255]);
                 nb.draw_disc(&dim, &o.color.to_u8_array(), 1.0, &[105, 105, 105, 255]);
                 terminal_rects.1.push(dim);
                 y += 10 + 4;
+            }
+
+            // Preview
+
+            if preview_height > 0 {
+                let mut y = node_height - 19 - preview_height;
+                nb.copy_into(2, y, self.node_ui_images.get(&PreviewArea).unwrap());
+                if node.preview.is_valid() {
+                    let x = 2 + (node_width - 4 - node.preview.dim().width) / 2;
+                    y += (preview_height - node.preview.dim().height) / 2;
+                    nb.blend_into(x, y, &node.preview);
+                }
             }
 
             // Footer
@@ -808,6 +828,7 @@ impl TheWidget for TheNodeCanvasView {
 
 pub trait TheNodeCanvasViewTrait: TheWidget {
     fn set_canvas(&mut self, canvas: TheNodeCanvas);
+    fn set_node_preview(&mut self, index: usize, buffer: TheRGBABuffer);
     fn fill_node_ui_images(&mut self, ctx: &mut TheContext);
     fn node_index_at(&self, coord: &Vec2i) -> Option<usize>;
     fn terminal_at(&self, node_index: usize, coord: Vec2i) -> Option<(bool, u8)>;
@@ -818,6 +839,12 @@ impl TheNodeCanvasViewTrait for TheNodeCanvasView {
     fn set_canvas(&mut self, canvas: TheNodeCanvas) {
         self.canvas = canvas;
         self.is_dirty = true;
+    }
+    fn set_node_preview(&mut self, index: usize, buffer: TheRGBABuffer) {
+        if !self.canvas.nodes.is_empty() {
+            self.canvas.nodes[index].preview = buffer;
+            self.is_dirty = true;
+        }
     }
     fn fill_node_ui_images(&mut self, ctx: &mut TheContext) {
         self.node_ui_images.clear();
@@ -880,6 +907,10 @@ impl TheNodeCanvasViewTrait for TheNodeCanvasView {
         self.node_ui_images.insert(
             NormalBottomRight,
             ctx.ui.icon("dark_node_normal_bottomright").unwrap().clone(),
+        );
+        self.node_ui_images.insert(
+            PreviewArea,
+            ctx.ui.icon("dark_node_preview_area").unwrap().clone(),
         );
     }
     fn node_index_at(&self, coord: &Vec2i) -> Option<usize> {

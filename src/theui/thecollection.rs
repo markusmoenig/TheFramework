@@ -73,6 +73,14 @@ impl TheCollection {
         default
     }
 
+    /// Get a bool value, if not found return the default.
+    pub fn get_bool_default(&self, key: &str, default: bool) -> bool {
+        if let Some(TheValue::Bool(v)) = self.keys.get(key) {
+            return *v;
+        }
+        default
+    }
+
     /// Sets the given key with the given value.
     pub fn set(&mut self, key: &str, value: TheValue) {
         self.keys.insert(key.to_string(), value);
