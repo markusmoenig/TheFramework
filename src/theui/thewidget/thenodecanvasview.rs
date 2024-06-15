@@ -617,8 +617,8 @@ impl TheWidget for TheNodeCanvasView {
                 let mut y = node_height - 19 - preview_height;
                 nb.copy_into(2, y, self.node_ui_images.get(&PreviewArea).unwrap());
                 if node.preview.is_valid() {
-                    let x = 2 + (node_width - 4 - node.preview.dim().width) / 2;
-                    y += (preview_height - node.preview.dim().height) / 2;
+                    let x = 3 + (node_width - 4 - node.preview.dim().width) / 2;
+                    y += (preview_height - node.preview.dim().height) / 2 - 1;
                     nb.blend_into(x, y, &node.preview);
                 }
             }
