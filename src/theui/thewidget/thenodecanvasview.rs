@@ -287,20 +287,13 @@ impl TheWidget for TheNodeCanvasView {
 
                 self.action = TheNodeAction::None;
             }
-            // TheEvent::Hover(coord) => {
-            //     if !self.id().equals(&ctx.ui.hover) {
-            //         self.is_dirty = true;
-            //         ctx.ui.set_hover(self.id());
-            //         redraw = true;
-            //     }
-
-            //     ctx.ui
-            //         .send(TheEvent::RenderViewHoverChanged(self.id().clone(), *coord));
-            // }
-            // TheEvent::LostHover(_) => {
-            //     ctx.ui
-            //         .send(TheEvent::RenderViewLostHover(self.id().clone()));
-            // }
+            TheEvent::Hover(_coord) => {
+                if !self.id().equals(&ctx.ui.hover) {
+                    self.is_dirty = true;
+                    ctx.ui.set_hover(self.id());
+                    redraw = true;
+                }
+            }
             TheEvent::MouseWheel(delta) => {
                 let scale_factor = self.wheel_scale; // * 1.0 / (self.zoom.powf(0.5));
 
