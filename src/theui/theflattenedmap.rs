@@ -21,6 +21,15 @@ where
         }
     }
 
+    pub fn resize(&mut self, width: i32, height: i32) {
+        if self.width == width && self.height == height {
+            return;
+        }
+        self.data = vec![None; (width * height) as usize];
+        self.width = width;
+        self.height = height;
+    }
+
     /// Converts a 2D key into a 1D index.
     fn key_to_index(&self, key: (i32, i32)) -> Option<usize> {
         let (x, y) = key;
