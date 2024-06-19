@@ -1294,7 +1294,7 @@ impl TheWidget for TheTextLineEdit {
             if let Some(range_f32) = range.to_range_f32() {
                 if let Ok(value) = self.state.to_text().parse::<f32>() {
                     if range_f32.contains(&value) {
-                        return TheValue::Float(value);
+                        return TheValue::FloatRange(value, range_f32);
                     }
                 }
                 let original = self.original.clone();
@@ -1306,7 +1306,7 @@ impl TheWidget for TheTextLineEdit {
             } else if let Some(range_i32) = range.to_range_i32() {
                 if let Ok(value) = self.state.to_text().parse::<i32>() {
                     if range_i32.contains(&value) {
-                        return TheValue::Int(value);
+                        return TheValue::IntRange(value, range_i32);
                     }
                 }
                 let original = self.original.clone();
