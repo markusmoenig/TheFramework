@@ -327,9 +327,12 @@ impl TheWidget for TheNodeCanvasView {
                     );
                     self.accumulated_wheel_delta = Vec2f::zero();
 
-                    //ctx.ui
-                    //    .send(TheEvent::RenderViewScrollBy(self.id().clone(), d));
                     self.canvas.offset += d;
+
+                    ctx.ui.send(TheEvent::NodeViewScrolled(
+                        self.id().clone(),
+                        self.canvas.offset,
+                    ));
 
                     self.is_dirty = true;
                     redraw = true;

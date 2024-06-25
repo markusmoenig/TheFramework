@@ -88,6 +88,7 @@ pub enum TheEvent {
     NodeConnectionAdded(TheId, Vec<(u16, u8, u16, u8)>),
     NodeConnectionRemoved(TheId, Vec<(u16, u8, u16, u8)>),
     NodeDeleted(TheId, usize, Vec<(u16, u8, u16, u8)>),
+    NodeViewScrolled(TheId, Vec2i),
 
     //
     DialogValueOnClose(TheDialogButtonRole, String, Uuid, TheValue),
