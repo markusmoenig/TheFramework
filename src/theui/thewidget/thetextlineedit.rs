@@ -1317,6 +1317,12 @@ impl TheWidget for TheTextLineEdit {
                 }
             }
         }
+        if let Ok(value) = self.state.to_text().parse::<f32>() {
+            return TheValue::Float(value);
+        }
+        if let Ok(value) = self.state.to_text().parse::<i32>() {
+            return TheValue::Int(value);
+        }
         TheValue::Text(self.state.to_text())
     }
 

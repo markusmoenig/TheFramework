@@ -423,17 +423,14 @@ impl TheRGBABuffer {
         let x = (uv.x * self.dim.width as f32) as i32;
         let y = (uv.y * self.dim.height as f32) as i32;
 
-        if x >= 0 && x < self.dim.width && y >= 0 && y < self.dim.height {
-            let pixel_index = (y * self.dim.width + x) as usize * 4;
-            Some(vec4f(
+        self.pixel_index(x, y).map(|pixel_index| {
+            vec4f(
                 (self.buffer[pixel_index] as f32) / 255.0,
                 (self.buffer[pixel_index + 1] as f32) / 255.0,
                 (self.buffer[pixel_index + 2] as f32) / 255.0,
                 (self.buffer[pixel_index + 3] as f32) / 255.0,
-            ))
-        } else {
-            None
-        }
+            )
+        })
     }
 
     /// Returns the pixel at the given UV coordinate.
