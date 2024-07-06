@@ -48,7 +48,6 @@ pub enum TheThemeColors {
     TextLayoutBorder,
 
     TextEditBackground,
-    TextEditSelectionBackground,
     TextEditRange,
     TextEditBorder,
     SelectedTextEditBorder1,

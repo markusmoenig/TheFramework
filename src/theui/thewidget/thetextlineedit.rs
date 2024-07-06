@@ -735,7 +735,7 @@ impl TheTextRenderer {
             buffer.pixels_mut(),
             &(left, top, right - left, bottom - top),
             stride,
-            style.theme().color(TextEditSelectionBackground),
+            style.theme().color(DefaultSelection),
         );
     }
 
