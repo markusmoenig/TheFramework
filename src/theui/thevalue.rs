@@ -137,6 +137,7 @@ impl TheValue {
             IntRange(v, _) => Some(*v),
             Text(t) => t.parse::<i32>().ok(),
             TextList(index, _) => Some(*index),
+            PaletteIndex(index) => Some(*index as i32),
             _ => None,
         }
     }
