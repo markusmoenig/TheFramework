@@ -11,6 +11,11 @@ pub struct TheTextLayout {
 
     widgets: Vec<Box<dyn TheWidget>>,
 
+    list_buffer: TheRGBABuffer,
+
+    vertical_scrollbar: Box<dyn TheWidget>,
+    vertical_scrollbar_visible: bool,
+
     text_size: f32,
     text_margin: i32,
     fixed_text_width: Option<i32>,
@@ -36,6 +41,12 @@ impl TheLayout for TheTextLayout {
             text_rect: vec![],
 
             widgets: vec![],
+            list_buffer: TheRGBABuffer::empty(),
+
+            vertical_scrollbar: Box::new(TheVerticalScrollbar::new(TheId::named(
+                "Vertical Scrollbar",
+            ))),
+            vertical_scrollbar_visible: false,
 
             text_size: 13.0,
             text_margin: 10,
@@ -69,8 +80,22 @@ impl TheLayout for TheTextLayout {
     }
 
     fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+        if !self.dim.contains(coord) {
+            return None;
+        }
+        if self.vertical_scrollbar_visible && self.vertical_scrollbar.dim().contains(coord) {
+            return Some(&mut self.vertical_scrollbar);
+        }
+
+        let mut scroll_offset = vec2i(0, 0);
+        if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+            scroll_offset = vec2i(0, scroll_bar.scroll_offset());
+        }
+
         let widgets = self.widgets();
-        widgets.iter_mut().find(|w| w.dim().contains(coord))
+        widgets
+            .iter_mut()
+            .find(|w| w.dim().contains(coord + scroll_offset))
     }
 
     fn get_widget(
@@ -78,7 +103,24 @@ impl TheLayout for TheTextLayout {
         name: Option<&String>,
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheWidget>> {
+        if self.vertical_scrollbar_visible && self.vertical_scrollbar.id().matches(name, uuid) {
+            return Some(&mut self.vertical_scrollbar);
+        }
         self.widgets.iter_mut().find(|w| w.id().matches(name, uuid))
+    }
+
+    fn needs_redraw(&mut self) -> bool {
+        if self.vertical_scrollbar_visible && self.vertical_scrollbar.needs_redraw() {
+            return true;
+        }
+
+        for i in 0..self.widgets.len() {
+            if self.widgets[i].needs_redraw() {
+                return true;
+            }
+        }
+
+        false
     }
 
     fn dim(&self) -> &TheDim {
@@ -96,6 +138,31 @@ impl TheLayout for TheTextLayout {
             let x = self.margin.x;
             let mut y = self.margin.y;
 
+            // First pass calculate height to see if we need vertical scrollbar
+
+            for w in &mut self.widgets.iter_mut() {
+                w.calculate_size(ctx);
+                let height = w.limiter().get_height(dim.height);
+                y += height + self.padding;
+            }
+            let total_height = y - self.padding + self.margin.w;
+
+            let width = dim.width;
+
+            self.vertical_scrollbar
+                .set_dim(TheDim::new(dim.x + width - 13, dim.y, 13, dim.height));
+            self.vertical_scrollbar
+                .dim_mut()
+                .set_buffer_offset(self.dim.buffer_x + width - 13, self.dim.buffer_y);
+
+            if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+                scroll_bar.set_total_height(total_height);
+                self.vertical_scrollbar_visible = scroll_bar.needs_scrollbar();
+            }
+
+            y = self.margin.y;
+
+            // Calculate text width
             let mut text_width = 0;
 
             for t in &mut self.text {
@@ -117,8 +184,14 @@ impl TheLayout for TheTextLayout {
 
             text_width += self.text_margin as usize;
 
+            // --
+
             let mut texts_rect: Vec<(usize, usize, usize, usize)> = vec![];
-            let max_width = dim.width - text_width as i32 - self.margin.x - self.margin.z;
+            let mut max_width = dim.width - text_width as i32 - self.margin.x - self.margin.z;
+
+            if self.vertical_scrollbar_visible {
+                max_width -= 13;
+            }
 
             for (index, w) in &mut self.widgets.iter_mut().enumerate() {
                 w.calculate_size(ctx);
@@ -165,6 +238,21 @@ impl TheLayout for TheTextLayout {
                 y += height + self.padding;
             }
 
+            let mut total_height = y - self.padding + self.margin.w;
+
+            if total_height < dim.height {
+                total_height = dim.height;
+            }
+
+            let mut width = dim.width;
+
+            if self.vertical_scrollbar_visible {
+                width -= 13;
+            }
+
+            self.list_buffer
+                .set_dim(TheDim::new(0, 0, width, total_height));
+
             self.text_rect = texts_rect;
         }
     }
@@ -197,12 +285,35 @@ impl TheLayout for TheTextLayout {
                 style.theme().color(background),
             );
 
+            // ctx.draw.rect_outline(
+            //     buffer.pixels_mut(),
+            //     &self.dim.to_buffer_utuple(),
+            //     stride,
+            //     style.theme().color(TextLayoutBorder),
+            // );
+        }
+
+        let stride = self.list_buffer.stride();
+        let utuple: (usize, usize, usize, usize) = self.list_buffer.dim().to_buffer_utuple();
+
+        if let Some(background) = self.background {
+            ctx.draw.rect(
+                self.list_buffer.pixels_mut(),
+                &utuple,
+                stride,
+                style.theme().color(background),
+            );
+
             ctx.draw.rect_outline(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_utuple(),
+                self.list_buffer.pixels_mut(),
+                &utuple,
                 stride,
                 style.theme().color(TextLayoutBorder),
             );
+        }
+
+        if self.vertical_scrollbar_visible {
+            self.vertical_scrollbar.draw(buffer, style, ctx);
         }
 
         for i in 0..self.text.len() {
@@ -211,7 +322,7 @@ impl TheLayout for TheTextLayout {
             }
             if let Some(font) = &ctx.ui.font {
                 ctx.draw.text_rect_blend(
-                    buffer.pixels_mut(),
+                    self.list_buffer.pixels_mut(),
                     &self.text_rect[i],
                     stride,
                     font,
@@ -225,7 +336,28 @@ impl TheLayout for TheTextLayout {
         }
 
         for w in &mut self.widgets {
-            w.draw(buffer, style, ctx);
+            w.draw(&mut self.list_buffer, style, ctx);
+        }
+
+        if self.vertical_scrollbar_visible {
+            if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+                let offset = scroll_bar.scroll_offset();
+                let range = offset..offset + self.dim.height;
+                buffer.copy_vertical_range_into(
+                    self.dim.buffer_x,
+                    self.dim.buffer_y,
+                    &self.list_buffer,
+                    range,
+                );
+            }
+        } else if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+            let range = 0..scroll_bar.total_height();
+            buffer.copy_vertical_range_into(
+                self.dim.buffer_x,
+                self.dim.buffer_y,
+                &self.list_buffer,
+                range,
+            );
         }
     }
 
