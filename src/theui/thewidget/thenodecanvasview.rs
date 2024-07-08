@@ -341,41 +341,43 @@ impl TheWidget for TheNodeCanvasView {
             TheEvent::KeyCodeDown(code) => {
                 if code.to_key_code().unwrap() == TheKeyCode::Delete {
                     if let Some(deleted_node_index) = self.canvas.selected_node {
-                        self.canvas.nodes.remove(deleted_node_index);
-                        self.node_rects.remove(deleted_node_index);
+                        if self.canvas.nodes[deleted_node_index].can_be_deleted {
+                            self.canvas.nodes.remove(deleted_node_index);
+                            self.node_rects.remove(deleted_node_index);
 
-                        // Filter out connections involving the deleted node and adjust indices for others
-                        self.canvas.connections.retain_mut(
-                            |(src_node_idx, _, dest_node_idx, _)| {
-                                let src_index = *src_node_idx as usize;
-                                let dest_index = *dest_node_idx as usize;
+                            // Filter out connections involving the deleted node and adjust indices for others
+                            self.canvas.connections.retain_mut(
+                                |(src_node_idx, _, dest_node_idx, _)| {
+                                    let src_index = *src_node_idx as usize;
+                                    let dest_index = *dest_node_idx as usize;
 
-                                if src_index == deleted_node_index
-                                    || dest_index == deleted_node_index
-                                {
-                                    // Connection involves the deleted node, so remove it
-                                    false
-                                } else {
-                                    // Adjust indices for remaining connections
-                                    if src_index > deleted_node_index {
-                                        *src_node_idx -= 1;
+                                    if src_index == deleted_node_index
+                                        || dest_index == deleted_node_index
+                                    {
+                                        // Connection involves the deleted node, so remove it
+                                        false
+                                    } else {
+                                        // Adjust indices for remaining connections
+                                        if src_index > deleted_node_index {
+                                            *src_node_idx -= 1;
+                                        }
+                                        if dest_index > deleted_node_index {
+                                            *dest_node_idx -= 1;
+                                        }
+                                        true
                                     }
-                                    if dest_index > deleted_node_index {
-                                        *dest_node_idx -= 1;
-                                    }
-                                    true
-                                }
-                            },
-                        );
+                                },
+                            );
 
-                        ctx.ui.send(TheEvent::NodeDeleted(
-                            self.id().clone(),
-                            deleted_node_index,
-                            self.canvas.connections.clone(),
-                        ));
+                            ctx.ui.send(TheEvent::NodeDeleted(
+                                self.id().clone(),
+                                deleted_node_index,
+                                self.canvas.connections.clone(),
+                            ));
 
-                        self.is_dirty = true;
-                        redraw = true;
+                            self.is_dirty = true;
+                            redraw = true;
+                        }
                     }
                 }
             }

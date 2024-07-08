@@ -17,6 +17,8 @@ pub struct TheNode {
 
     pub supports_preview: bool,
     pub preview_is_open: bool,
+
+    pub can_be_deleted: bool,
 }
 
 pub struct TheNodeCanvas {
