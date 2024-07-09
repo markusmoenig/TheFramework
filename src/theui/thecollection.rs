@@ -29,6 +29,11 @@ impl TheCollection {
         }
     }
 
+    /// Clears the keys.
+    pub fn clear(&mut self) {
+        self.keys.clear();
+    }
+
     /// Returns the given key.
     pub fn get(&self, key: &str) -> Option<&TheValue> {
         self.keys.get(key)

@@ -127,6 +127,17 @@ impl TheTimeline {
         }
     }
 
+    /// Clears the collection with the given name and at the given time.
+    pub fn clear_collection(&mut self, time: &TheTime, collection: &str) {
+        if let Some(existing_list) = self.events.get_mut(time) {
+            for existing in existing_list.iter_mut() {
+                if existing.name == collection {
+                    existing.clear();
+                }
+            }
+        }
+    }
+
     /// Replaces the keys of the collection with the keys at the given time.
     pub fn fill(&self, time: &TheTime, collection: &mut TheCollection) {
         let keys = collection.keys.keys().cloned().collect::<Vec<String>>();
