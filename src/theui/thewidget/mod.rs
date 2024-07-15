@@ -1,19 +1,28 @@
 use crate::prelude::*;
 
 pub mod thecheckbutton;
+pub mod thecodehighlighter;
 #[cfg(feature = "code")]
 pub mod thecodeview;
 pub mod thecolorbutton;
+pub mod thecolorpicker;
+pub mod thedirectionpicker;
 pub mod thedropdownmenu;
 pub mod thegroupbutton;
 pub mod thehdivider;
 pub mod thehorizontalscrollbar;
 pub mod theiconview;
 pub mod thelistitem;
+pub mod themenu;
 pub mod themenubar;
 pub mod themenubarbutton;
 pub mod themenubarseparator;
+pub mod thenodecanvas;
+pub mod thenodecanvasview;
+pub mod thepalettepicker;
+pub mod therenderview;
 pub mod thergbaview;
+pub mod thesdfview;
 pub mod thesectionbar;
 pub mod thesectionbarbutton;
 pub mod theslider;
@@ -23,15 +32,8 @@ pub mod thestatusbar;
 pub mod theswitchbar;
 pub mod thetabbar;
 pub mod thetext;
-// pub mod thetextedit;
-pub mod thecolorpicker;
-pub mod thedirectionpicker;
-pub mod themenu;
-pub mod thenodecanvas;
-pub mod thenodecanvasview;
-pub mod thepalettepicker;
-pub mod therenderview;
-pub mod thesdfview;
+pub mod thetextareaedit;
+pub mod thetextedit;
 pub mod thetextlineedit;
 pub mod thetimeslider;
 pub mod thetoolbar;
@@ -74,16 +76,19 @@ pub mod prelude {
     pub use crate::theui::thewidget::thegroupbutton::{TheGroupButton, TheGroupButtonTrait};
 
     pub use crate::theui::thewidget::thecheckbutton::TheCheckButton;
+    pub use crate::theui::thewidget::thecodehighlighter::{
+        TheCodeHighlighter, TheCodeHighlighterTrait,
+    };
     pub use crate::theui::thewidget::thehdivider::TheHDivider;
     pub use crate::theui::thewidget::theiconview::{TheIconView, TheIconViewTrait};
     pub use crate::theui::thewidget::thergbaview::{
         TheRGBAView, TheRGBAViewMode, TheRGBAViewTrait,
     };
+    pub use crate::theui::thewidget::thesdfview::{TheSDFView, TheSDFViewTrait};
     pub use crate::theui::thewidget::thespacer::TheSpacer;
     pub use crate::theui::thewidget::thestatusbar::{TheStatusbar, TheStatusbarTrait};
     pub use crate::theui::thewidget::thetabbar::{TheTabbar, TheTabbarTrait};
-    // pub use crate::theui::thewidget::thetextedit::{TheTextEdit, TheTextEditTrait};
-    pub use crate::theui::thewidget::thesdfview::{TheSDFView, TheSDFViewTrait};
+    pub use crate::theui::thewidget::thetextareaedit::{TheTextAreaEdit, TheTextAreaEditTrait};
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
     pub use crate::theui::thewidget::thetraybar::TheTraybar;
     pub use crate::theui::thewidget::thetraybarbutton::{TheTraybarButton, TheTraybarButtonTrait};
@@ -261,6 +266,11 @@ pub trait TheWidget: Send {
 
     /// Attempts to cast to TheTabbarTrait. Only valid for TheTabbar.
     fn as_tabbar(&mut self) -> Option<&mut dyn TheTabbarTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheTextAreaEditTrait. Only valid for TheTextAreaEdit.
+    fn as_text_area_edit(&mut self) -> Option<&mut dyn TheTextAreaEditTrait> {
         None
     }
 
