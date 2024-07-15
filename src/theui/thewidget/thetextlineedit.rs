@@ -1038,22 +1038,26 @@ impl TheWidget for TheTextLineEdit {
                     self.state.set_cursor(self.find_cursor(coord));
                     self.drag_start_index = self.state.find_cursor_index();
 
-                    let is_double_click = self.last_mouse_down_time.elapsed().as_millis() < 500
-                        && self.last_mouse_down_coord == *coord;
+                    if self.is_range() && self.state.selection.is_none() {
+                        self.state.select_row();
+                    } else {
+                        let is_double_click = self.last_mouse_down_time.elapsed().as_millis() < 500
+                            && self.last_mouse_down_coord == *coord;
 
-                    if !self.state.selection.is_none() {
-                        if is_double_click {
-                            if self.state.is_row_all_selected(self.state.cursor.row) {
-                                self.state.reset_selection();
+                        if !self.state.selection.is_none() {
+                            if is_double_click {
+                                if self.state.is_row_all_selected(self.state.cursor.row) {
+                                    self.state.reset_selection();
+                                } else {
+                                    self.state.select_row();
+                                }
                             } else {
-                                self.state.select_row();
+                                self.state.reset_selection();
                             }
-                        } else {
-                            self.state.reset_selection();
+                        } else if is_double_click {
+                            // Select a word, a whole row or a spacing etc.
+                            self.state.quick_select();
                         }
-                    } else if is_double_click {
-                        // Select a word, a whole row or a spacing etc.
-                        self.state.quick_select();
                     }
                 }
 
