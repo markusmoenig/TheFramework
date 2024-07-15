@@ -1038,22 +1038,26 @@ impl TheWidget for TheTextLineEdit {
                     self.state.set_cursor(self.find_cursor(coord));
                     self.drag_start_index = self.state.find_cursor_index();
 
-                    let is_double_click = self.last_mouse_down_time.elapsed().as_millis() < 500
-                        && self.last_mouse_down_coord == *coord;
+                    if self.is_range() && self.state.selection.is_none() {
+                        self.state.select_row();
+                    } else {
+                        let is_double_click = self.last_mouse_down_time.elapsed().as_millis() < 500
+                            && self.last_mouse_down_coord == *coord;
 
-                    if !self.state.selection.is_none() {
-                        if is_double_click {
-                            if self.state.is_row_all_selected(self.state.cursor.row) {
-                                self.state.reset_selection();
+                        if !self.state.selection.is_none() {
+                            if is_double_click {
+                                if self.state.is_row_all_selected(self.state.cursor.row) {
+                                    self.state.reset_selection();
+                                } else {
+                                    self.state.select_row();
+                                }
                             } else {
-                                self.state.select_row();
+                                self.state.reset_selection();
                             }
-                        } else {
-                            self.state.reset_selection();
+                        } else if is_double_click {
+                            // Select a word, a whole row or a spacing etc.
+                            self.state.quick_select();
                         }
-                    } else if is_double_click {
-                        // Select a word, a whole row or a spacing etc.
-                        self.state.quick_select();
                     }
                 }
 
@@ -1146,8 +1150,7 @@ impl TheWidget for TheTextLineEdit {
             TheEvent::MouseUp(_coord) => {
                 self.drag_start_index = 0;
                 // Send an event if in slider mode and not continuous
-                if self.range.is_some() && !self.continuous && self.state.to_text() != self.original
-                {
+                if self.is_range() && !self.continuous && self.state.to_text() != self.original {
                     if let Some(range) = &self.range {
                         if let Some(range_f32) = range.to_range_f32() {
                             if let Ok(v) = self.state.to_text().parse::<f32>() {
@@ -1334,19 +1337,13 @@ impl TheWidget for TheTextLineEdit {
                 self.is_dirty = true;
             }
             TheValue::Text(text) => {
-                self.state.set_text(text);
-                self.modified_since_last_tick = true;
-                self.is_dirty = true;
+                self.set_text(text);
             }
             TheValue::Int(v) => {
-                self.state.set_text(v.to_string());
-                self.modified_since_last_tick = true;
-                self.is_dirty = true;
+                self.set_text(v.to_string());
             }
             TheValue::Float(v) => {
-                self.state.set_text(v.to_string());
-                self.modified_since_last_tick = true;
-                self.is_dirty = true;
+                self.set_text(v.to_string());
             }
             _ => {}
         }
@@ -1500,18 +1497,45 @@ impl TheTextLineEditTrait for TheTextLineEdit {
         self.state.to_text()
     }
     fn set_text(&mut self, text: String) {
-        self.state.set_text(text);
+        if let Some(range) = &self.range {
+            if let Some(range) = range.to_range_f32() {
+                let v = text.parse::<f32>().unwrap_or(*range.start());
+                self.state.set_text(format!("{:.3}", v));
+            } else if let Some(range) = range.to_range_i32() {
+                let v = text.parse::<i32>().unwrap_or(*range.start());
+                self.state.set_text(v.to_string());
+            }
+        } else {
+            self.state.set_text(text);
+        }
         self.modified_since_last_tick = true;
         self.is_dirty = true;
     }
     fn set_font_size(&mut self, font_size: f32) {
         self.renderer.font_size = font_size;
+        self.modified_since_last_tick = true;
+        self.is_dirty = true;
     }
     fn set_embedded(&mut self, embedded: bool) {
         self.embedded = embedded;
     }
     fn set_range(&mut self, range: TheValue) {
         if Some(range.clone()) != self.range {
+            if let Some(range) = range.to_range_f32() {
+                let v = self
+                    .state
+                    .to_text()
+                    .parse::<f32>()
+                    .unwrap_or(*range.start());
+                self.state.set_text(format!("{:.3}", v));
+            } else if let Some(range) = range.to_range_i32() {
+                let v = self
+                    .state
+                    .to_text()
+                    .parse::<i32>()
+                    .unwrap_or(*range.start());
+                self.state.set_text(v.to_string());
+            }
             self.range = Some(range);
             self.is_dirty = true;
         }
