@@ -62,7 +62,7 @@ impl TheSDFCanvas {
                     let y = height - (i / width) as i32 - 1;
 
                     let mut color = self.background.clone();
-                    let mut distance = std::f32::MAX;
+                    let mut distance = f32::MAX;
 
                     let p = vec2f(x as f32, y as f32);
                     let mut i: Option<usize> = None;

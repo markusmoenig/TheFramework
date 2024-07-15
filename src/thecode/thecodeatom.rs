@@ -1428,10 +1428,10 @@ impl TheCodeAtom {
                     let mut name_edit = TheTextLineEdit::new(TheId::named(
                         format!("Atom {}", value.to_kind()).as_str(),
                     ));
-                    name_edit.set_range(TheValue::RangeI32(core::ops::RangeInclusive::new(
-                        std::i32::MIN,
-                        std::i32::MAX,
-                    )));
+                    // name_edit.set_range(TheValue::RangeI32(core::ops::RangeInclusive::new(
+                    //     std::i32::MIN,
+                    //     std::i32::MAX,
+                    // )));
                     name_edit.set_text(v.to_string());
                     name_edit.set_needs_redraw(true);
                     layout.add_widget(Box::new(text));
@@ -1443,10 +1443,10 @@ impl TheCodeAtom {
                     let mut name_edit = TheTextLineEdit::new(TheId::named(
                         format!("Atom {}", value.to_kind()).as_str(),
                     ));
-                    name_edit.set_range(TheValue::RangeF32(core::ops::RangeInclusive::new(
-                        std::f32::MIN,
-                        std::f32::MAX,
-                    )));
+                    // name_edit.set_range(TheValue::RangeF32(core::ops::RangeInclusive::new(
+                    //     std::f32::MIN,
+                    //     std::f32::MAX,
+                    // )));
                     name_edit.set_text(v.to_string());
                     name_edit.set_needs_redraw(true);
                     layout.add_widget(Box::new(text));

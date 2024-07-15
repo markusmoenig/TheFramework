@@ -889,6 +889,13 @@ impl TheTextRenderer {
         self.font_size.ceil().as_usize()
     }
 }
+#[derive(Debug, PartialEq)]
+pub enum TheTextLineEditContentType {
+    Unknown,
+    Text,
+    Float,
+    Int,
+}
 
 pub struct TheTextLineEdit {
     // Widget Basic
@@ -925,6 +932,8 @@ pub struct TheTextLineEdit {
 
     layout_id: Option<TheId>,
     continuous: bool,
+
+    content_type: TheTextLineEditContentType,
 }
 
 impl TheWidget for TheTextLineEdit {
@@ -964,6 +973,8 @@ impl TheWidget for TheTextLineEdit {
 
             layout_id: None,
             continuous: false,
+
+            content_type: TheTextLineEditContentType::Unknown,
         }
     }
 
@@ -1320,11 +1331,15 @@ impl TheWidget for TheTextLineEdit {
                 }
             }
         }
-        if let Ok(value) = self.state.to_text().parse::<f32>() {
-            return TheValue::Float(value);
+        if self.content_type == TheTextLineEditContentType::Float {
+            if let Ok(value) = self.state.to_text().parse::<f32>() {
+                return TheValue::Float(value);
+            }
         }
-        if let Ok(value) = self.state.to_text().parse::<i32>() {
-            return TheValue::Int(value);
+        if self.content_type == TheTextLineEditContentType::Int {
+            if let Ok(value) = self.state.to_text().parse::<i32>() {
+                return TheValue::Int(value);
+            }
         }
         TheValue::Text(self.state.to_text())
     }
@@ -1337,12 +1352,15 @@ impl TheWidget for TheTextLineEdit {
                 self.is_dirty = true;
             }
             TheValue::Text(text) => {
+                self.content_type = TheTextLineEditContentType::Text;
                 self.set_text(text);
             }
             TheValue::Int(v) => {
+                self.content_type = TheTextLineEditContentType::Int;
                 self.set_text(v.to_string());
             }
             TheValue::Float(v) => {
+                self.content_type = TheTextLineEditContentType::Float;
                 self.set_text(v.to_string());
             }
             _ => {}
@@ -1508,6 +1526,7 @@ impl TheTextLineEditTrait for TheTextLineEdit {
         } else {
             self.state.set_text(text);
         }
+        self.content_type = TheTextLineEditContentType::Text;
         self.modified_since_last_tick = true;
         self.is_dirty = true;
     }
@@ -1528,6 +1547,7 @@ impl TheTextLineEditTrait for TheTextLineEdit {
                     .parse::<f32>()
                     .unwrap_or(*range.start());
                 self.state.set_text(format!("{:.3}", v));
+                self.content_type = TheTextLineEditContentType::Float;
             } else if let Some(range) = range.to_range_i32() {
                 let v = self
                     .state
@@ -1535,6 +1555,7 @@ impl TheTextLineEditTrait for TheTextLineEdit {
                     .parse::<i32>()
                     .unwrap_or(*range.start());
                 self.state.set_text(v.to_string());
+                self.content_type = TheTextLineEditContentType::Int;
             }
             self.range = Some(range);
             self.is_dirty = true;

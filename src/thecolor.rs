@@ -289,7 +289,7 @@ impl TheColor {
     /// Lights or darken the color by the given amount.
     pub fn lighten_darken(&self, amount: f32) -> Self {
         let hsl = self.as_hsl();
-        let new_l = (hsl.z + amount).max(0.0).min(1.0);
+        let new_l = (hsl.z + amount).clamp(0.0, 1.0);
 
         Self::from_hsl(hsl.x * 360.0, hsl.y, new_l)
     }
