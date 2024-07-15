@@ -1513,6 +1513,8 @@ impl TheTextLineEditTrait for TheTextLineEdit {
     }
     fn set_font_size(&mut self, font_size: f32) {
         self.renderer.font_size = font_size;
+        self.modified_since_last_tick = true;
+        self.is_dirty = true;
     }
     fn set_embedded(&mut self, embedded: bool) {
         self.embedded = embedded;
