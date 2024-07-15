@@ -20,6 +20,8 @@ pub struct TheTraybarButton {
     is_dirty: bool,
 
     context_menu: Option<TheContextMenu>,
+
+    fixed_size: bool,
 }
 
 impl TheWidget for TheTraybarButton {
@@ -49,6 +51,7 @@ impl TheWidget for TheTraybarButton {
             is_disabled: false,
 
             context_menu: None,
+            fixed_size: false,
         }
     }
 
@@ -176,7 +179,7 @@ impl TheWidget for TheTraybarButton {
     }
 
     fn calculate_size(&mut self, ctx: &mut TheContext) {
-        if !self.text.is_empty() {
+        if !self.text.is_empty() && !self.fixed_size {
             if let Some(font) = &ctx.ui.font {
                 let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
                 self.limiter_mut()
@@ -341,6 +344,7 @@ pub trait TheTraybarButtonTrait {
     fn set_icon_offset(&mut self, offset: Vec2i);
     fn set_text(&mut self, text: String);
     fn set_icon(&mut self, icon: TheRGBABuffer);
+    fn set_fixed_size(&mut self, fixed_size: bool);
 }
 
 impl TheTraybarButtonTrait for TheTraybarButton {
@@ -355,5 +359,8 @@ impl TheTraybarButtonTrait for TheTraybarButton {
     }
     fn set_text(&mut self, text: String) {
         self.text = text;
+    }
+    fn set_fixed_size(&mut self, fixed_size: bool) {
+        self.fixed_size = fixed_size;
     }
 }
