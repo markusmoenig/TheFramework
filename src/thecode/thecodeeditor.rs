@@ -44,6 +44,9 @@ pub struct TheCodeEditor {
     curr_list_index: u32,
 
     undo: Option<TheUndo>,
+
+    // Id set by the app to identify the type of the current code
+    pub code_id: String,
 }
 
 impl Default for TheCodeEditor {
@@ -70,6 +73,7 @@ impl TheCodeEditor {
             allow_modules: false,
 
             undo: None,
+            code_id: str!(""),
         }
     }
 

@@ -279,6 +279,8 @@ pub trait TheListLayoutTrait: TheLayout {
     fn select_item(&mut self, uuid: Uuid, ctx: &mut TheContext, send_event: bool) -> bool;
     /// Selects the item at the given index.
     fn select_item_at(&mut self, index: i32, ctx: &mut TheContext, send_event: bool) -> bool;
+    /// Sets the text for an item
+    fn set_item_text(&mut self, id: Uuid, text: String);
     /// Scroll by the given amount.
     fn scroll_by(&mut self, delta: Vec2i);
 }
@@ -363,6 +365,14 @@ impl TheListLayoutTrait for TheListLayout {
     fn set_item_size(&mut self, item_size: i32) {
         self.item_size = item_size;
         self.is_dirty = true;
+    }
+    fn set_item_text(&mut self, id: Uuid, text: String) {
+        for w in &mut self.widgets {
+            if w.id().uuid == id {
+                w.set_value(TheValue::Text(text.clone()));
+                self.is_dirty = true;
+            }
+        }
     }
     fn scroll_by(&mut self, delta: Vec2i) {
         if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
