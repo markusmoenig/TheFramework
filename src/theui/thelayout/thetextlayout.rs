@@ -24,6 +24,8 @@ pub struct TheTextLayout {
     padding: i32,
 
     background: Option<TheThemeColors>,
+
+    text_align: TheHorizontalAlign,
 }
 
 impl TheLayout for TheTextLayout {
@@ -56,6 +58,7 @@ impl TheLayout for TheTextLayout {
             padding: 10,
 
             background: Some(TextLayoutBackground),
+            text_align: TheHorizontalAlign::Left,
         }
     }
 
@@ -182,7 +185,7 @@ impl TheLayout for TheTextLayout {
                 text_width = fixed_text_width as usize;
             }
 
-            text_width += self.text_margin as usize;
+            text_width += self.text_margin as usize + 5;
 
             // --
 
@@ -213,7 +216,12 @@ impl TheLayout for TheTextLayout {
                 texts_rect.push((
                     (self.dim.buffer_x + x) as usize,
                     (self.dim.buffer_y + y) as usize,
-                    text_width,
+                    text_width
+                        - if text_width > self.text_margin as usize {
+                            self.text_margin as usize
+                        } else {
+                            0
+                        },
                     self.text_size as usize,
                 ));
 
@@ -322,7 +330,7 @@ impl TheLayout for TheTextLayout {
                     self.text_size,
                     &self.text[i],
                     &WHITE,
-                    TheHorizontalAlign::Left,
+                    self.text_align.clone(),
                     TheVerticalAlign::Top,
                 );
             }
@@ -378,6 +386,8 @@ pub trait TheTextLayoutTrait: TheLayout {
     fn set_text_size(&mut self, text_size: f32);
     /// Set the text margin between the text and the widget.
     fn set_text_margin(&mut self, text_margin: i32);
+    /// The horizontal text alignment
+    fn set_text_align(&mut self, align: TheHorizontalAlign);
 }
 
 impl TheTextLayoutTrait for TheTextLayout {
@@ -397,5 +407,8 @@ impl TheTextLayoutTrait for TheTextLayout {
     }
     fn set_text_margin(&mut self, text_margin: i32) {
         self.text_margin = text_margin;
+    }
+    fn set_text_align(&mut self, align: TheHorizontalAlign) {
+        self.text_align = align;
     }
 }
