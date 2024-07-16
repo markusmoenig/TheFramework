@@ -303,13 +303,6 @@ impl TheLayout for TheTextLayout {
                 stride,
                 style.theme().color(background),
             );
-
-            ctx.draw.rect_outline(
-                self.list_buffer.pixels_mut(),
-                &utuple,
-                stride,
-                style.theme().color(TextLayoutBorder),
-            );
         }
 
         if self.vertical_scrollbar_visible {
@@ -359,6 +352,13 @@ impl TheLayout for TheTextLayout {
                 range,
             );
         }
+
+        ctx.draw.rect_outline(
+            buffer.pixels_mut(),
+            &self.dim.to_buffer_utuple(),
+            stride,
+            style.theme().color(TextLayoutBorder),
+        );
     }
 
     fn as_text_layout(&mut self) -> Option<&mut dyn TheTextLayoutTrait> {

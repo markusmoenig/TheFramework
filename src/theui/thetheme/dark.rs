@@ -31,7 +31,7 @@ impl TheTheme for TheDarkTheme {
         colors.insert(SectionbarSelectedTextColor, [96, 96, 96, 255]);
 
         colors.insert(TextLayoutBackground, [82, 82, 82, 255]);
-        colors.insert(TextLayoutBorder, [95, 95, 95, 255]);
+        colors.insert(TextLayoutBorder, [139, 139, 139, 255]);
 
         colors.insert(TextEditBackground, [148, 148, 148, 255]);
         colors.insert(TextEditRange, [178, 178, 178, 255]);
