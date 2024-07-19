@@ -1059,14 +1059,20 @@ impl TheTextRenderer {
             width
         };
 
-        let left = (self.left + self.get_text_left(start)).saturating_sub(self.scroll_offset.x);
-        let top = (self.top + row.top).saturating_sub(self.scroll_offset.y);
+        let left = (self.left + self.get_text_left(start)).as_i32() - self.scroll_offset.x.as_i32();
+        let top = (self.top + row.top).as_i32() - self.scroll_offset.y.as_i32();
 
-        let right = (left + width).min(self.left + self.width);
-        let bottom = (top + height).min(self.top + self.height);
+        let right = (left + width.as_i32())
+            .max(0)
+            .as_usize()
+            .min(self.left + self.width);
+        let bottom = (top + height.as_i32())
+            .max(0)
+            .as_usize()
+            .min(self.top + self.height);
 
-        let left = left.max(self.left);
-        let top = top.max(self.top);
+        let left = left.max(0).as_usize().max(self.left);
+        let top = top.max(0).as_usize().max(self.top);
 
         let stride = buffer.stride();
         draw.blend_rect(
