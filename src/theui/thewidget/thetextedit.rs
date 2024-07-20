@@ -396,35 +396,32 @@ impl TheTextEditState {
         let start_row = self.find_row_number_of_index(self.selection.start);
         let end_row = self.find_row_number_of_index(self.selection.end);
 
+        // Find selection range of first row,
+        // to be used in the future
+        let (row_start, row_end) = self.find_range_of_row(start_row);
+        let (start, end) = self
+            .find_selected_range_of_row(start_row)
+            .unwrap_or((row_end, row_end + 1));
+
         if start_row != end_row {
             // Handle last row
             self.delete_range_of_row(
                 end_row,
                 0,
-                // -1 here to manually eliminate the linebreak of last row,
-                // which is already removed in the previous step
                 self.selection.end - self.find_start_index_of_row(end_row),
             );
             let text = self.rows.remove(end_row);
             self.rows[start_row].push_str(&text);
 
             // Remove inter rows
-            for row_number in start_row + 1..end_row {
+            for row_number in (start_row + 1..end_row).rev() {
                 self.rows.remove(row_number);
             }
         }
 
         // Handle first row
-        let (row_start, row_end) = self.find_range_of_row(start_row);
-        let (start, end) = self
-            .find_selected_range_of_row(start_row)
-            .unwrap_or((row_end, row_end + 1));
-
         let left = start - row_start;
-        let mut right = end - row_start;
-        if start_row != end_row {
-            right -= 1;
-        }
+        let right = end - row_start;
         self.delete_range_of_row(start_row, left, right);
 
         // Reset cursor
