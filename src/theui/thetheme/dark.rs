@@ -147,6 +147,12 @@ impl TheTheme for TheDarkTheme {
         colors.insert(NodeBody, [84, 84, 84, 255]);
         colors.insert(NodeBodySelected, [65, 65, 65, 255]);
 
+        colors.insert(ToolListButtonNormalBorder, [108, 108, 108, 255]);
+        colors.insert(ToolListButtonHoverBorder, [170, 170, 170, 255]);
+        colors.insert(ToolListButtonSelectedBorder, [204, 204, 204, 255]);
+        colors.insert(ToolListButtonHoverBackground, [157, 157, 157, 255]);
+        colors.insert(ToolListButtonSelectedBackground, [149, 149, 149, 255]);
+
         Self {
             temp_color: BLACK,
             colors,

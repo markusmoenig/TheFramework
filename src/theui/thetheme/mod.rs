@@ -162,4 +162,10 @@ pub enum TheThemeColors {
     NodeBorderSelected,
     NodeBody,
     NodeBodySelected,
+
+    ToolListButtonNormalBorder,
+    ToolListButtonSelectedBorder,
+    ToolListButtonHoverBorder,
+    ToolListButtonHoverBackground,
+    ToolListButtonSelectedBackground,
 }
