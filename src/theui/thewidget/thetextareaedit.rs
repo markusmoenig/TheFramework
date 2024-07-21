@@ -559,7 +559,7 @@ impl TheWidget for TheTextAreaEdit {
 
             let mut visible_area = self.dim.to_buffer_shrunk_utuple(&shrinker);
             self.renderer
-                .prepare_glyphs(&self.state.to_text(), font, &ctx.draw);
+                .prepare(&self.state.to_text(), font, &ctx.draw);
 
             let is_hoverflow = self.renderer.is_horizontal_overflow();
             let is_voverflow = self.renderer.is_vertical_overflow();

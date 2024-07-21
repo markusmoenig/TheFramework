@@ -611,7 +611,7 @@ impl TheTextRenderer {
         self.actual_size.y > self.height
     }
 
-    pub fn prepare_glyphs(&mut self, text: &str, font: &Font, draw: &TheDraw2D) {
+    pub fn prepare(&mut self, text: &str, font: &Font, draw: &TheDraw2D) {
         self.actual_size = Vec2::zero();
         self.glyphs.clear();
         self.row_info.clear();
@@ -678,6 +678,9 @@ impl TheTextRenderer {
                 }
             }
         }
+
+        // Re-calculate scroll offset
+        self.scroll(&Vec2::zero(), false);
     }
 
     pub fn render_text(

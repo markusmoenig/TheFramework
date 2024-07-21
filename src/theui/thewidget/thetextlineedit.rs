@@ -510,7 +510,7 @@ impl TheWidget for TheTextLineEdit {
         let font = ctx.ui.font.as_ref().unwrap();
         if self.modified_since_last_tick || self.renderer.row_count() == 0 {
             self.renderer
-                .prepare_glyphs(&self.state.to_text(), font, &ctx.draw);
+                .prepare(&self.state.to_text(), font, &ctx.draw);
             let visible_area = self.dim.to_buffer_shrunk_utuple(&shrinker);
             self.renderer.set_dim(
                 visible_area.0,
