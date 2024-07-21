@@ -24,6 +24,7 @@ pub struct TheTextAreaEdit {
     // Text render
     renderer: TheTextRenderer,
     scrollbar_size: usize,
+    tab_spaces: usize,
 
     // Interaction
     drag_start_index: usize,
@@ -76,6 +77,7 @@ impl TheWidget for TheTextAreaEdit {
 
             renderer: TheTextRenderer::default(),
             scrollbar_size: 13,
+            tab_spaces: 4,
 
             drag_start_index: 0,
             hover_coord: Vec2::zero(),
@@ -369,6 +371,11 @@ impl TheWidget for TheTextAreaEdit {
                         }
                     } else if key == TheKeyCode::Return {
                         self.state.insert_row();
+                        self.modified_since_last_tick = true;
+                        self.is_dirty = true;
+                        redraw = true;
+                    } else if key == TheKeyCode::Tab {
+                        self.state.insert_text(" ".repeat(self.tab_spaces));
                         self.modified_since_last_tick = true;
                         self.is_dirty = true;
                         redraw = true;

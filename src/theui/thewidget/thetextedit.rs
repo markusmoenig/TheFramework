@@ -166,6 +166,29 @@ impl TheTextEditState {
         self.move_cursor_right();
     }
 
+    pub fn insert_text(&mut self, text: String) {
+        if !self.selection.is_none() {
+            self.delete_text_by_selection();
+        }
+
+        if !text.contains('\n') {
+            self.rows[self.cursor.row].insert_str(self.cursor.column, &text);
+            self.cursor.column += text.len();
+            return;
+        }
+
+        let (first_row, rest_text) = text.split_at(text.find('\n').unwrap());
+        let leftover = self.rows[self.cursor.row].split_off(self.cursor.column);
+        self.rows[self.cursor.row].insert_str(self.cursor.column, first_row);
+
+        for str in rest_text.split('\n') {
+            self.cursor.row += 1;
+            self.rows.insert(self.cursor.row, str.to_owned());
+            self.cursor.column = str.len();
+        }
+        self.rows[self.cursor.row].insert_str(self.cursor.column, &leftover);
+    }
+
     pub fn insert_row(&mut self) {
         if !self.selection.is_none() {
             self.delete_text_by_selection();
