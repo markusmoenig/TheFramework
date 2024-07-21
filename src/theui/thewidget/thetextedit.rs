@@ -622,6 +622,13 @@ impl TheTextRenderer {
             text.push('\n');
         }
 
+        // Hack: to get the width of a normal space,
+        // for that fontdue will render the tailing space with zero width
+        let layout = draw.get_text_layout(font, self.font_size, "  ");
+        let space_width = layout.glyphs().last().unwrap().x
+            - layout.glyphs().first().unwrap().x
+            - layout.glyphs().first().unwrap().width.as_f32();
+
         let layout = draw.get_text_layout(font, self.font_size, &text);
         self.glyphs.clone_from(layout.glyphs());
 
@@ -640,7 +647,11 @@ impl TheTextRenderer {
                     .as_usize();
                 let bottom = (line.baseline_y - line.min_descent).ceil().as_usize();
                 let right = {
-                    let last_glyph = self.glyphs.get(line.glyph_end).unwrap();
+                    let last_glyph = self.glyphs.get_mut(line.glyph_end).unwrap();
+                    // Manually set trailing space width
+                    if last_glyph.parent == ' ' && last_glyph.width == 0 {
+                        last_glyph.width = space_width.as_usize();
+                    }
                     (last_glyph.x + last_glyph.width.as_f32()).ceil().as_usize()
                 };
 
