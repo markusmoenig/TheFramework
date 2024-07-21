@@ -9,6 +9,10 @@ pub struct TheCursor {
 }
 
 impl TheCursor {
+    pub fn new(row: usize, column: usize) -> Self {
+        Self { row, column }
+    }
+
     pub fn zero() -> Self {
         Self::default()
     }
@@ -98,6 +102,39 @@ impl TheTextEditState {
     // Position of cursor in cursor index
     pub fn find_cursor_index(&self) -> usize {
         self.find_start_index_of_row(self.cursor.row) + self.cursor.column
+    }
+
+    pub fn find_row_col_of_index(&self, index: usize) -> (usize, usize) {
+        let row = self.find_row_number_of_index(index);
+        let row_start_index = self.find_start_index_of_row(row);
+        let col = index - row_start_index;
+        (row, col)
+    }
+
+    // Row index of glyph index
+    // glyph index  0   1   2   3
+    //        text  a   b   c   \n
+    //         row  0
+    // glyph index  4   5   6   7
+    //        text  d   e   f   \n
+    //         row  1
+    pub fn find_row_number_of_index(&self, index: usize) -> usize {
+        let mut left = 0;
+        let mut right = self.row_count();
+        while left < right {
+            let row_number = left + (right - left) / 2;
+            let (row_start, row_end) = self.find_range_of_row(row_number);
+
+            if index < row_start {
+                right = row_number;
+            } else if index >= row_end {
+                left = row_number + 1;
+            } else {
+                return row_number;
+            }
+        }
+
+        self.row_count() - 1
     }
 
     // Range of row in cursor index
@@ -454,32 +491,6 @@ impl TheTextEditState {
         self.reset_selection();
 
         true
-    }
-
-    // Row index of glyph index
-    // glyph index  0   1   2   3
-    //        text  a   b   c   \n
-    //         row  0
-    // glyph index  4   5   6   7
-    //        text  d   e   f   \n
-    //         row  1
-    fn find_row_number_of_index(&self, index: usize) -> usize {
-        let mut left = 0;
-        let mut right = self.row_count();
-        while left < right {
-            let row_number = left + (right - left) / 2;
-            let (row_start, row_end) = self.find_range_of_row(row_number);
-
-            if index < row_start {
-                right = row_number;
-            } else if index >= row_end {
-                left = row_number + 1;
-            } else {
-                return row_number;
-            }
-        }
-
-        self.row_count() - 1
     }
 
     // Length of row in glyphs, linebreak included

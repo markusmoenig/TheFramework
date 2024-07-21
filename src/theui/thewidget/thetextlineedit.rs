@@ -329,40 +329,6 @@ impl TheWidget for TheTextLineEdit {
                             self.is_dirty = true;
                             redraw = true;
                         }
-                    } else if key == TheKeyCode::Down {
-                        if self.state.move_cursor_down() {
-                            self.renderer.scroll_to_cursor(
-                                self.state.find_cursor_index(),
-                                self.state.cursor.row,
-                            );
-                            self.is_dirty = true;
-                            redraw = true;
-                        }
-                    } else if key == TheKeyCode::Left {
-                        if self.state.move_cursor_left() {
-                            self.renderer.scroll_to_cursor(
-                                self.state.find_cursor_index(),
-                                self.state.cursor.row,
-                            );
-                            self.is_dirty = true;
-                            redraw = true;
-                        }
-                    } else if key == TheKeyCode::Right {
-                        if self.state.move_cursor_right() {
-                            self.renderer.scroll_to_cursor(
-                                self.state.find_cursor_index(),
-                                self.state.cursor.row,
-                            );
-                            self.is_dirty = true;
-                            redraw = true;
-                        }
-                    } else if key == TheKeyCode::Up && self.state.move_cursor_up() {
-                        self.renderer.scroll_to_cursor(
-                            self.state.find_cursor_index(),
-                            self.state.cursor.row,
-                        );
-                        self.is_dirty = true;
-                        redraw = true;
                     } else if key == TheKeyCode::Return && self.modified_since_last_return {
                         if let Some(layout_id) = &self.layout_id {
                             ctx.ui.send(TheEvent::RedirectWidgetValueToLayout(
@@ -379,6 +345,44 @@ impl TheWidget for TheTextLineEdit {
                         self.modified_since_last_return = false;
                         if self.is_range() {
                             self.original = self.state.to_text();
+                        }
+                    } else if key == TheKeyCode::Left {
+                        let updated = if self.state.selection.is_none() {
+                            self.state.move_cursor_left()
+                        } else {
+                            let (row, column) =
+                                self.state.find_row_col_of_index(self.state.selection.start);
+                            self.state.set_cursor(TheCursor::new(row, column));
+                            self.state.reset_selection();
+                            true
+                        };
+
+                        if updated {
+                            self.renderer.scroll_to_cursor(
+                                self.state.find_cursor_index(),
+                                self.state.cursor.row,
+                            );
+                            self.is_dirty = true;
+                            redraw = true;
+                        }
+                    } else if key == TheKeyCode::Right {
+                        let updated = if self.state.selection.is_none() {
+                            self.state.move_cursor_right()
+                        } else {
+                            let (row, column) =
+                                self.state.find_row_col_of_index(self.state.selection.end);
+                            self.state.set_cursor(TheCursor::new(row, column));
+                            self.state.reset_selection();
+                            true
+                        };
+
+                        if updated {
+                            self.renderer.scroll_to_cursor(
+                                self.state.find_cursor_index(),
+                                self.state.cursor.row,
+                            );
+                            self.is_dirty = true;
+                            redraw = true;
                         }
                     }
 

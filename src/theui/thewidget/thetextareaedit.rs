@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use crate::prelude::*;
 
-use super::thetextedit::{TheTextEditState, TheTextRenderer};
+use super::thetextedit::{TheCursor, TheTextEditState, TheTextRenderer};
 
 pub struct TheTextAreaEdit {
     // Widget Basic
@@ -379,8 +379,39 @@ impl TheWidget for TheTextAreaEdit {
                         self.modified_since_last_tick = true;
                         self.is_dirty = true;
                         redraw = true;
+                    } else if key == TheKeyCode::Up {
+                        let updated = if self.state.selection.is_none() {
+                            self.state.move_cursor_up()
+                        } else {
+                            let (row, column) =
+                                self.state.find_row_col_of_index(self.state.selection.start);
+                            self.state.set_cursor(TheCursor::new(row, column));
+                            self.state.move_cursor_up();
+                            self.state.reset_selection();
+                            true
+                        };
+
+                        if updated {
+                            self.renderer.scroll_to_cursor(
+                                self.state.find_cursor_index(),
+                                self.state.cursor.row,
+                            );
+                            self.is_dirty = true;
+                            redraw = true;
+                        }
                     } else if key == TheKeyCode::Down {
-                        if self.state.move_cursor_down() {
+                        let updated = if self.state.selection.is_none() {
+                            self.state.move_cursor_down()
+                        } else {
+                            let (row, column) =
+                                self.state.find_row_col_of_index(self.state.selection.end);
+                            self.state.set_cursor(TheCursor::new(row, column));
+                            self.state.move_cursor_down();
+                            self.state.reset_selection();
+                            true
+                        };
+
+                        if updated {
                             self.renderer.scroll_to_cursor(
                                 self.state.find_cursor_index(),
                                 self.state.cursor.row,
@@ -389,7 +420,17 @@ impl TheWidget for TheTextAreaEdit {
                             redraw = true;
                         }
                     } else if key == TheKeyCode::Left {
-                        if self.state.move_cursor_left() {
+                        let updated = if self.state.selection.is_none() {
+                            self.state.move_cursor_left()
+                        } else {
+                            let (row, column) =
+                                self.state.find_row_col_of_index(self.state.selection.start);
+                            self.state.set_cursor(TheCursor::new(row, column));
+                            self.state.reset_selection();
+                            true
+                        };
+
+                        if updated {
                             self.renderer.scroll_to_cursor(
                                 self.state.find_cursor_index(),
                                 self.state.cursor.row,
@@ -398,7 +439,17 @@ impl TheWidget for TheTextAreaEdit {
                             redraw = true;
                         }
                     } else if key == TheKeyCode::Right {
-                        if self.state.move_cursor_right() {
+                        let updated = if self.state.selection.is_none() {
+                            self.state.move_cursor_right()
+                        } else {
+                            let (row, column) =
+                                self.state.find_row_col_of_index(self.state.selection.end);
+                            self.state.set_cursor(TheCursor::new(row, column));
+                            self.state.reset_selection();
+                            true
+                        };
+
+                        if updated {
                             self.renderer.scroll_to_cursor(
                                 self.state.find_cursor_index(),
                                 self.state.cursor.row,
@@ -406,13 +457,6 @@ impl TheWidget for TheTextAreaEdit {
                             self.is_dirty = true;
                             redraw = true;
                         }
-                    } else if key == TheKeyCode::Up && self.state.move_cursor_up() {
-                        self.renderer.scroll_to_cursor(
-                            self.state.find_cursor_index(),
-                            self.state.cursor.row,
-                        );
-                        self.is_dirty = true;
-                        redraw = true;
                     }
                 }
             }
