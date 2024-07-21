@@ -161,7 +161,7 @@ impl TheWidget for TheTextLineEdit {
         match event {
             TheEvent::MouseDown(coord) => {
                 if !self.state.is_empty() {
-                    self.state.set_cursor(self.find_cursor(coord));
+                    self.state.set_cursor(self.renderer.find_cursor(coord));
                     self.drag_start_index = self.state.find_cursor_index();
 
                     if self.is_range() && self.state.selection.is_none() {
@@ -261,7 +261,7 @@ impl TheWidget for TheTextLineEdit {
                             .scroll(&vec2i(delta_x / ratio, delta_y / ratio), true);
                     }
 
-                    self.state.set_cursor(self.find_cursor(coord));
+                    self.state.set_cursor(self.renderer.find_cursor(coord));
 
                     let cursor_index = self.state.find_cursor_index();
                     if self.drag_start_index != cursor_index {
@@ -653,13 +653,6 @@ impl TheTextLineEditTrait for TheTextLineEdit {
 }
 
 impl TheTextLineEdit {
-    fn find_cursor(&self, coord: &Vec2<i32>) -> TheCursor {
-        self.renderer.find_cursor(&vec2i(
-            coord.x - self.padding.0.as_i32(),
-            coord.y - self.padding.1.as_i32(),
-        ))
-    }
-
     fn is_range(&self) -> bool {
         self.range.is_some()
     }
