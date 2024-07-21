@@ -31,7 +31,7 @@ impl TheTheme for TheDarkTheme {
         colors.insert(SectionbarSelectedTextColor, [96, 96, 96, 255]);
 
         colors.insert(TextLayoutBackground, [82, 82, 82, 255]);
-        colors.insert(TextLayoutBorder, [95, 95, 95, 255]);
+        colors.insert(TextLayoutBorder, [139, 139, 139, 255]);
 
         colors.insert(TextEditBackground, [148, 148, 148, 255]);
         colors.insert(TextEditRange, [178, 178, 178, 255]);
@@ -146,6 +146,12 @@ impl TheTheme for TheDarkTheme {
         colors.insert(NodeBorderSelected, [230, 230, 230, 255]);
         colors.insert(NodeBody, [84, 84, 84, 255]);
         colors.insert(NodeBodySelected, [65, 65, 65, 255]);
+
+        colors.insert(ToolListButtonNormalBorder, [108, 108, 108, 255]);
+        colors.insert(ToolListButtonHoverBorder, [170, 170, 170, 255]);
+        colors.insert(ToolListButtonSelectedBorder, [204, 204, 204, 255]);
+        colors.insert(ToolListButtonHoverBackground, [157, 157, 157, 255]);
+        colors.insert(ToolListButtonSelectedBackground, [149, 149, 149, 255]);
 
         Self {
             temp_color: BLACK,

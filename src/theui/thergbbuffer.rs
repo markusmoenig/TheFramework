@@ -149,6 +149,31 @@ impl TheRGBBuffer {
         }
     }
 
+    /// Creates a scaled version of the buffer.
+    pub fn scaled(&self, new_width: i32, new_height: i32) -> Self {
+        let scale_x = new_width as f32 / self.dim.width as f32;
+        let scale_y = new_height as f32 / self.dim.height as f32;
+
+        let mut new_buffer = TheRGBBuffer::new(TheDim::new(0, 0, new_width, new_height));
+
+        for y in 0..new_height {
+            for x in 0..new_width {
+                let src_x = (x as f32 / scale_x).round() as i32;
+                let src_y = (y as f32 / scale_y).round() as i32;
+
+                let pixel_index = (src_y * self.dim.width + src_x) as usize * 3;
+                let new_pixel_index = (y * new_width + x) as usize * 3;
+
+                if pixel_index < self.buffer.len() && new_pixel_index < new_buffer.buffer.len() {
+                    new_buffer.buffer[new_pixel_index..new_pixel_index + 3]
+                        .copy_from_slice(&self.buffer[pixel_index..pixel_index + 3]);
+                }
+            }
+        }
+
+        new_buffer
+    }
+
     /// Returns the pixel at the given UV coordinate as [f32;3]
     pub fn at_f_vec3f(&self, uv: Vec2f) -> Option<Vec3f> {
         let x = (uv.x * self.dim.width as f32) as i32;

@@ -38,6 +38,8 @@ pub mod thetextlineedit;
 pub mod thetimeslider;
 pub mod thetoolbar;
 pub mod thetoolbarbutton;
+pub mod thetoollistbar;
+pub mod thetoollistbutton;
 pub mod thetraybar;
 pub mod thetraybarbutton;
 pub mod theverticalscrollbar;
@@ -106,6 +108,9 @@ pub mod prelude {
     pub use crate::theui::thewidget::thetimeslider::{TheTimeSlider, TheTimeSliderTrait};
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetState;
+
+    pub use crate::theui::thewidget::thetoollistbar::TheToolListBar;
+    pub use crate::theui::thewidget::thetoollistbutton::*;
 
     pub use crate::theui::thewidget::therenderview::{TheRenderView, TheRenderViewTrait};
 }

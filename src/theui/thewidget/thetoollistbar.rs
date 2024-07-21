@@ -1,29 +1,26 @@
 use crate::prelude::*;
 
-pub struct TheSwitchbar {
+pub struct TheToolListBar {
     id: TheId,
-
     limiter: TheSizeLimiter,
 
     dim: TheDim,
-    text: String,
     is_dirty: bool,
 }
 
-impl TheWidget for TheSwitchbar {
+impl TheWidget for TheToolListBar {
     fn new(id: TheId) -> Self
     where
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_height(21);
+        limiter.set_max_height(23);
 
         Self {
             id,
             limiter,
 
             dim: TheDim::zero(),
-            text: "".to_string(),
             is_dirty: false,
         }
     }
@@ -63,13 +60,6 @@ impl TheWidget for TheSwitchbar {
         self.is_dirty
     }
 
-    fn set_value(&mut self, value: TheValue) {
-        if let Some(text) = value.to_string() {
-            self.text = text;
-            self.is_dirty = true;
-        }
-    }
-
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
@@ -83,47 +73,38 @@ impl TheWidget for TheSwitchbar {
         let stride = buffer.stride();
         let utuple: (usize, usize, usize, usize) = self.dim.to_buffer_utuple();
 
-        ctx.draw.rect_outline(
+        ctx.draw.rect(
             buffer.pixels_mut(),
-            &utuple,
+            &(utuple.0, utuple.1, utuple.2 - 1, 1),
             stride,
-            style.theme().color(SwitchbarBorder),
+            style.theme().color(DefaultWidgetDarkBackground),
         );
 
-        if let Some(icon) = ctx.ui.icon("dark_switchbar") {
-            for x in 1..utuple.2 - 1 {
-                let r = (utuple.0 + x, utuple.1, 1, icon.dim().height as usize);
+        ctx.draw.rect(
+            buffer.pixels_mut(),
+            &(utuple.0 + utuple.2 - 1, utuple.1, 1, utuple.3),
+            stride,
+            style.theme().color(DefaultWidgetDarkBackground),
+        );
+
+        if let Some(icon) = ctx.ui.icon("dark_toollistbar") {
+            for x in 0..utuple.2 - 1 {
+                let r = (utuple.0 + x, utuple.1 + 1, 1, icon.dim().height as usize);
                 ctx.draw
                     .copy_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
             }
         }
 
-        if let Some(icon) = ctx.ui.icon("switchbar_icon") {
-            let r = (
-                utuple.0 + 6,
-                utuple.1 + 6,
-                icon.dim().width as usize,
-                icon.dim().height as usize,
-            );
-            ctx.draw
-                .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
-        }
-
-        let mut shrinker = TheDimShrinker::zero();
-        shrinker.shrink_by(30, 1, 0, 0);
-
         if let Some(font) = &ctx.ui.font {
-            let mut r = self.dim.to_buffer_shrunk_utuple(&shrinker);
-            r.3 = 21;
             ctx.draw.text_rect_blend(
                 buffer.pixels_mut(),
-                &r,
+                &utuple,
                 stride,
                 font,
-                14.0,
-                &self.text,
+                11.5,
+                "TOOLS",
                 &WHITE,
-                TheHorizontalAlign::Left,
+                TheHorizontalAlign::Center,
                 TheVerticalAlign::Center,
             );
         }
@@ -133,15 +114,5 @@ impl TheWidget for TheSwitchbar {
 
     fn as_any(&mut self) -> &mut dyn std::any::Any {
         self
-    }
-}
-
-pub trait TheSwitchbarTrait {
-    fn set_text(&mut self, text: String);
-}
-
-impl TheSwitchbarTrait for TheSwitchbar {
-    fn set_text(&mut self, text: String) {
-        self.text = text;
     }
 }

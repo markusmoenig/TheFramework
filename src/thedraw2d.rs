@@ -4,7 +4,7 @@ use fontdue::layout::{
 use fontdue::Font;
 use maths_rs::prelude::*;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Eq)]
 pub enum TheHorizontalAlign {
     Left,
     Center,
