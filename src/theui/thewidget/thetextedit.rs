@@ -577,27 +577,62 @@ impl TheTextRenderer {
         self.actual_size.y > self.height
     }
 
-    pub fn prepare(
-        &mut self,
-        state: &TheTextEditState,
-        visible_area: &(usize, usize, usize, usize),
-        font: &Font,
-        draw: &TheDraw2D,
-    ) {
-        self.set_dim(
-            visible_area.0,
-            visible_area.1,
-            visible_area.2,
-            visible_area.3,
-        );
+    pub fn prepare_glyphs(&mut self, text: &str, font: &Font, draw: &TheDraw2D) {
+        self.actual_size = Vec2::zero();
+        self.glyphs.clear();
+        self.row_info.clear();
 
-        let mut text = state.to_text();
+        let mut text = text.to_owned();
         // Indicate a new line, for render and interaction only
         if text.ends_with('\n') || text.is_empty() {
             text.push('\n');
         }
-        self.prepare_glyphs(&text, font, draw);
-        self.scroll_to_cursor(state.find_cursor_index(), state.cursor.row);
+
+        let layout = draw.get_text_layout(font, self.font_size, &text);
+        self.glyphs.clone_from(layout.glyphs());
+
+        self.row_info = layout
+            .lines()
+            .unwrap()
+            .iter()
+            .map(|line| {
+                let top = (line.baseline_y - line.max_ascent).ceil().as_usize();
+                let left = self
+                    .glyphs
+                    .get(line.glyph_start)
+                    .unwrap()
+                    .x
+                    .ceil()
+                    .as_usize();
+                let bottom = (line.baseline_y - line.min_descent).ceil().as_usize();
+                let right = {
+                    let last_glyph = self.glyphs.get(line.glyph_end).unwrap();
+                    (last_glyph.x + last_glyph.width.as_f32()).ceil().as_usize()
+                };
+
+                self.actual_size.x = self.actual_size.x.max(right);
+                self.actual_size.y = self.actual_size.y.max(bottom);
+
+                TheRowInfo {
+                    top,
+                    left,
+                    bottom,
+                    right,
+                    baseline: line.baseline_y.ceil().as_usize(),
+                    glyph_start: line.glyph_start,
+                    glyph_end: line.glyph_end,
+                    highlights: None,
+                }
+            })
+            .collect();
+
+        if let Some(highlighter) = &self.highlighter {
+            for (idx, line) in text.split('\n').enumerate() {
+                if let Some(row) = self.row_info.get_mut(idx) {
+                    row.highlights = Some(highlighter.highlight_line(line));
+                }
+            }
+        }
     }
 
     pub fn render_text(
@@ -690,7 +725,7 @@ impl TheTextRenderer {
         self.row_info.len()
     }
 
-    pub fn scroll(&mut self, delta: &Vec2<i32>) -> bool {
+    pub fn scroll(&mut self, delta: &Vec2<i32>, visible_constrained: bool) -> bool {
         if self.row_info.is_empty() {
             self.scroll_offset = Vec2::zero();
             return true;
@@ -698,14 +733,17 @@ impl TheTextRenderer {
 
         let previous_offset = self.scroll_offset;
 
-        let (start_row, end_row) = self.find_visible_rows();
-        let max_width_of_visible_rows = self.row_info[start_row..=end_row]
-            .iter()
-            .max_by_key(|row| row.right)
-            .unwrap()
-            .right;
-
-        let rightmost = max_width_of_visible_rows.saturating_sub(self.width);
+        let max_width = if visible_constrained {
+            let (start_row, end_row) = self.find_visible_rows();
+            self.row_info[start_row..=end_row]
+                .iter()
+                .max_by_key(|row| row.right)
+                .unwrap()
+                .right
+        } else {
+            self.actual_size.x
+        };
+        let rightmost = max_width.saturating_sub(self.width);
         self.scroll_offset.x = (self.scroll_offset.x.as_i32() + delta.x)
             .max(0)
             .as_usize()
@@ -792,7 +830,7 @@ impl TheTextRenderer {
                 .iter()
                 .enumerate()
                 .find(|(_, row)| row.top > self.height + self.scroll_offset.y)
-                .map(|(idx, _)| idx)
+                .map(|(idx, _)| idx + start_row)
                 .unwrap_or(self.row_count() - 1)
         } else {
             start_row
@@ -854,62 +892,6 @@ impl TheTextRenderer {
 
     fn linebreak_width(&self) -> usize {
         (self.font_size * 0.5).ceil().as_usize()
-    }
-
-    fn prepare_glyphs(&mut self, text: &str, font: &Font, draw: &TheDraw2D) {
-        self.actual_size = Vec2::zero();
-        self.glyphs.clear();
-        self.row_info.clear();
-
-        if text.is_empty() {
-            panic!("Text is empty");
-        };
-
-        let layout = draw.get_text_layout(font, self.font_size, text);
-        self.glyphs.clone_from(layout.glyphs());
-
-        self.row_info = layout
-            .lines()
-            .unwrap()
-            .iter()
-            .map(|line| {
-                let top = (line.baseline_y - line.max_ascent).ceil().as_usize();
-                let left = self
-                    .glyphs
-                    .get(line.glyph_start)
-                    .unwrap()
-                    .x
-                    .ceil()
-                    .as_usize();
-                let bottom = (line.baseline_y - line.min_descent).ceil().as_usize();
-                let right = {
-                    let last_glyph = self.glyphs.get(line.glyph_end).unwrap();
-                    (last_glyph.x + last_glyph.width.as_f32()).ceil().as_usize()
-                };
-
-                self.actual_size.x = self.actual_size.x.max(right);
-                self.actual_size.y = self.actual_size.y.max(bottom);
-
-                TheRowInfo {
-                    top,
-                    left,
-                    bottom,
-                    right,
-                    baseline: line.baseline_y.ceil().as_usize(),
-                    glyph_start: line.glyph_start,
-                    glyph_end: line.glyph_end,
-                    highlights: None,
-                }
-            })
-            .collect();
-
-        if let Some(highlighter) = &self.highlighter {
-            for (idx, line) in text.split('\n').enumerate() {
-                if let Some(row) = self.row_info.get_mut(idx) {
-                    row.highlights = Some(highlighter.highlight_line(line));
-                }
-            }
-        }
     }
 
     fn render_cursor(

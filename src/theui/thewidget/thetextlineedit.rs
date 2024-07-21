@@ -258,7 +258,7 @@ impl TheWidget for TheTextLineEdit {
                             4
                         };
                         self.renderer
-                            .scroll(&vec2i(delta_x / ratio, delta_y / ratio));
+                            .scroll(&vec2i(delta_x / ratio, delta_y / ratio), true);
                     }
 
                     self.state.set_cursor(self.find_cursor(coord));
@@ -297,7 +297,7 @@ impl TheWidget for TheTextLineEdit {
                 }
             }
             TheEvent::MouseWheel(delta) => {
-                if self.renderer.scroll(&vec2i(delta.x / 4, delta.y / 4)) {
+                if self.renderer.scroll(&vec2i(delta.x / 4, delta.y / 4), true) {
                     redraw = true;
                 }
             }
@@ -505,12 +505,17 @@ impl TheWidget for TheTextLineEdit {
 
         let font = ctx.ui.font.as_ref().unwrap();
         if self.modified_since_last_tick || self.renderer.row_count() == 0 {
-            self.renderer.prepare(
-                &self.state,
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                font,
-                &ctx.draw,
+            self.renderer
+                .prepare_glyphs(&self.state.to_text(), font, &ctx.draw);
+            let visible_area = self.dim.to_buffer_shrunk_utuple(&shrinker);
+            self.renderer.set_dim(
+                visible_area.0,
+                visible_area.1,
+                visible_area.2,
+                visible_area.3,
             );
+            self.renderer
+                .scroll_to_cursor(self.state.find_cursor_index(), self.state.cursor.row);
         }
 
         if self.is_range() && !self.is_disabled {

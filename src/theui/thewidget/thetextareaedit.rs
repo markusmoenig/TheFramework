@@ -226,10 +226,14 @@ impl TheWidget for TheTextAreaEdit {
                             ctx,
                         );
                         if let Some(scrollbar) = self.hscrollbar.as_horizontal_scrollbar() {
-                            redraw = self.renderer.scroll(&vec2i(
-                                scrollbar.scroll_offset() - self.renderer.scroll_offset.x.as_i32(),
-                                0,
-                            )) || redraw;
+                            redraw = self.renderer.scroll(
+                                &vec2i(
+                                    scrollbar.scroll_offset()
+                                        - self.renderer.scroll_offset.x.as_i32(),
+                                    0,
+                                ),
+                                false,
+                            ) || redraw;
                         }
                     } else if self.is_vscrollbar_clicked {
                         redraw = self.vscrollbar.on_event(
@@ -241,10 +245,14 @@ impl TheWidget for TheTextAreaEdit {
                             ctx,
                         );
                         if let Some(scrollbar) = self.vscrollbar.as_vertical_scrollbar() {
-                            redraw = self.renderer.scroll(&vec2i(
-                                0,
-                                scrollbar.scroll_offset() - self.renderer.scroll_offset.y.as_i32(),
-                            )) || redraw;
+                            redraw = self.renderer.scroll(
+                                &vec2i(
+                                    0,
+                                    scrollbar.scroll_offset()
+                                        - self.renderer.scroll_offset.y.as_i32(),
+                                ),
+                                false,
+                            ) || redraw;
                         }
                     } else {
                         let delta_x = if coord.x < 0 {
@@ -270,7 +278,7 @@ impl TheWidget for TheTextAreaEdit {
                                 4
                             };
                             self.renderer
-                                .scroll(&vec2i(delta_x / ratio, delta_y / ratio));
+                                .scroll(&vec2i(delta_x / ratio, delta_y / ratio), true);
                         }
 
                         self.state.set_cursor(self.renderer.find_cursor(coord));
@@ -316,18 +324,25 @@ impl TheWidget for TheTextAreaEdit {
             }
             TheEvent::MouseWheel(delta) => {
                 let global_coord = self.hover_coord + self.dim.screen_coord();
-                if (self.renderer.is_horizontal_overflow()
-                    && self.hscrollbar.dim().contains(global_coord)
-                    && self
-                        .renderer
-                        .scroll(&vec2i((delta.x / 4).max(delta.y / 4), 0)))
-                    || (self.renderer.is_vertical_overflow()
-                        && self.vscrollbar.dim().contains(global_coord)
-                        && self
-                            .renderer
-                            .scroll(&vec2i(0, (delta.x / 4).max(delta.y / 4))))
-                    || self.renderer.scroll(&vec2i(delta.x / 4, delta.y / 4))
-                {
+                let scrolled = if self.hscrollbar.dim().contains(global_coord) {
+                    let delta = if delta.x.abs() > delta.y.abs() {
+                        delta.x / 4
+                    } else {
+                        delta.y / 4
+                    };
+                    self.renderer.scroll(&vec2i(delta, 0), false)
+                } else if self.vscrollbar.dim().contains(global_coord) {
+                    let delta = if delta.x.abs() > delta.y.abs() {
+                        delta.x / 4
+                    } else {
+                        delta.y / 4
+                    };
+                    self.renderer.scroll(&vec2i(0, delta), false)
+                } else {
+                    self.renderer
+                        .scroll(&vec2i(delta.x / 4, delta.y / 4), false)
+                };
+                if scrolled {
                     self.is_dirty = true;
                     redraw = true;
                 }
@@ -493,7 +508,7 @@ impl TheWidget for TheTextAreaEdit {
 
             let mut visible_area = self.dim.to_buffer_shrunk_utuple(&shrinker);
             self.renderer
-                .prepare(&self.state, &visible_area, font, &ctx.draw);
+                .prepare_glyphs(&self.state.to_text(), font, &ctx.draw);
 
             let is_hoverflow = self.renderer.is_horizontal_overflow();
             let is_voverflow = self.renderer.is_vertical_overflow();
@@ -509,6 +524,8 @@ impl TheWidget for TheTextAreaEdit {
                 visible_area.2,
                 visible_area.3,
             );
+            self.renderer
+                .scroll_to_cursor(self.state.find_cursor_index(), self.state.cursor.row);
 
             if is_hoverflow {
                 self.hscrollbar.set_dim(TheDim::new(
@@ -528,10 +545,14 @@ impl TheWidget for TheTextAreaEdit {
                         .saturating_sub(self.scrollbar_size)
                         .as_i32(),
                 );
-
-                if let Some(scrollbar) = self.hscrollbar.as_horizontal_scrollbar() {
-                    scrollbar.set_total_width(self.renderer.actual_size.x.as_i32());
-                }
+            }
+            if let Some(scrollbar) = self.hscrollbar.as_horizontal_scrollbar() {
+                scrollbar.set_total_width(
+                    (self.renderer.actual_size.x
+                        + self.renderer.padding.0
+                        + self.renderer.padding.2)
+                        .as_i32(),
+                );
             }
 
             if is_voverflow {
@@ -552,10 +573,14 @@ impl TheWidget for TheTextAreaEdit {
                         .as_i32(),
                     outer_area.1.as_i32(),
                 );
-
-                if let Some(scrollbar) = self.vscrollbar.as_vertical_scrollbar() {
-                    scrollbar.set_total_height(self.renderer.actual_size.y.as_i32());
-                }
+            }
+            if let Some(scrollbar) = self.vscrollbar.as_vertical_scrollbar() {
+                scrollbar.set_total_height(
+                    (self.renderer.actual_size.y
+                        + self.renderer.padding.1
+                        + self.renderer.padding.3)
+                        .as_i32(),
+                );
             }
         }
 
@@ -570,12 +595,7 @@ impl TheWidget for TheTextAreaEdit {
 
         if self.renderer.is_horizontal_overflow() {
             if let Some(scrollbar) = self.hscrollbar.as_horizontal_scrollbar() {
-                scrollbar.set_scroll_offset(
-                    (self.renderer.scroll_offset.x
-                        - self.renderer.padding.0
-                        - self.renderer.padding.2)
-                        .as_i32(),
-                );
+                scrollbar.set_scroll_offset(self.renderer.scroll_offset.x.as_i32());
 
                 if self.is_hscrollbar_hovered {
                     ctx.ui.set_hover(self.hscrollbar.id());
@@ -588,12 +608,7 @@ impl TheWidget for TheTextAreaEdit {
         }
         if self.renderer.is_vertical_overflow() {
             if let Some(scrollbar) = self.vscrollbar.as_vertical_scrollbar() {
-                scrollbar.set_scroll_offset(
-                    (self.renderer.scroll_offset.y
-                        - self.renderer.padding.1
-                        - self.renderer.padding.3)
-                        .as_i32(),
-                );
+                scrollbar.set_scroll_offset(self.renderer.scroll_offset.y.as_i32());
 
                 if self.is_vscrollbar_hovered {
                     ctx.ui.set_hover(self.vscrollbar.id());
