@@ -30,7 +30,7 @@ pub trait TheStyle: Send {
     fn draw_text_edit_border(
         &mut self,
         buffer: &mut TheRGBABuffer,
-        widget: &mut dyn TheWidget,
+        widget: &dyn TheWidget,
         shrinker: &mut TheDimShrinker,
         ctx: &mut TheContext,
         draw_focus: bool,
