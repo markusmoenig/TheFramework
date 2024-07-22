@@ -30,7 +30,6 @@ pub struct TheTextLineEdit {
     modified_since_last_tick: bool,
 
     // Text render
-    padding: (usize, usize, usize, usize), // left top right bottom
     renderer: TheTextRenderer,
 
     // Interaction
@@ -73,7 +72,6 @@ impl TheWidget for TheTextLineEdit {
             modified_since_last_return: false,
             modified_since_last_tick: false,
 
-            padding: (5, 0, 5, 0),
             renderer: TheTextRenderer::default(),
 
             drag_start_index: 0,
