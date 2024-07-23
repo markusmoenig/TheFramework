@@ -246,6 +246,33 @@ impl TheRGBABuffer {
         }
     }
 
+    /// Copy the horizontal range of the other buffer into this buffer at the given coordinates.
+    pub fn copy_horizontal_range_into(
+        &mut self,
+        x: i32,
+        y: i32,
+        other: &TheRGBABuffer,
+        range: Range<i32>,
+    ) {
+        let dest = &mut self.buffer[..];
+        let height = other.dim.height as usize;
+        let stride = self.dim.width * 4;
+
+        for (dw, w) in range.enumerate() {
+            if w >= other.dim.width {
+                break;
+            }
+            let s_start = (w * 4) as usize;
+            let d_start = ((x + dw as i32) * 4) as usize;
+
+            for h in 0..height {
+                let s = s_start + h * other.dim().width as usize * 4;
+                let d = d_start + ((y + h as i32) * stride) as usize;
+                dest[d..d + 4].copy_from_slice(&other.buffer[s..s + 4]);
+            }
+        }
+    }
+
     /// Copy the vertical range of the other buffer into this buffer at the given coordinates.
     pub fn copy_vertical_range_into(
         &mut self,

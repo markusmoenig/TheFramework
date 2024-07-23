@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-pub struct TheListItem {
+pub struct TheRowListItem {
     id: TheId,
     limiter: TheSizeLimiter,
 
@@ -20,14 +20,12 @@ pub struct TheListItem {
     layout_id: TheId,
     scroll_offset: i32,
 
-    values: Vec<(i32, TheValue)>,
-
     context_menu: Option<TheContextMenu>,
 
     background: Option<TheColor>,
 }
 
-impl TheWidget for TheListItem {
+impl TheWidget for TheRowListItem {
     fn new(id: TheId) -> Self
     where
         Self: Sized,
@@ -54,8 +52,6 @@ impl TheWidget for TheListItem {
 
             layout_id: TheId::empty(),
             scroll_offset: 0,
-
-            values: Vec::new(),
 
             context_menu: None,
 
@@ -98,11 +94,11 @@ impl TheWidget for TheListItem {
                     ));
                     redraw = true;
                 }
-                self.mouse_down_pos = vec2i(coord.x, coord.y + self.scroll_offset);
+                self.mouse_down_pos = vec2i(coord.x + self.scroll_offset, coord.y);
                 ctx.ui.set_focus(self.id());
             }
             TheEvent::MouseDragged(coord) => {
-                let coord = vec2i(coord.x, coord.y + self.scroll_offset);
+                let coord = vec2i(coord.x + self.scroll_offset, coord.y);
                 if ctx.ui.drop.is_none()
                     && distance(Vec2f::from(self.mouse_down_pos), Vec2f::from(coord)) >= 5.0
                 {
@@ -233,7 +229,7 @@ impl TheWidget for TheListItem {
             &self.dim.to_buffer_shrunk_utuple(&shrinker),
             stride,
             &color,
-            1,
+            2,
         );
 
         shrinker.shrink(1);
@@ -244,129 +240,55 @@ impl TheWidget for TheListItem {
             &color,
         );
 
-        if let Some(icon) = &self.icon {
-            let ut = self.dim.to_buffer_shrunk_utuple(&shrinker);
-            ctx.draw.rect_outline_border(
-                buffer.pixels_mut(),
-                &(ut.0 + 1, ut.1 + 1, 38, 38),
-                stride,
-                style.theme().color(ListItemIconBorder),
-                1,
-            );
-            ctx.draw.copy_slice(
-                buffer.pixels_mut(),
-                icon.pixels(),
-                &(ut.0 + 2, ut.1 + 2, 36, 36),
-                stride,
-            );
+        let ut = self.dim.to_buffer_shrunk_utuple(&shrinker);
 
-            if let Some(font) = &ctx.ui.font {
-                ctx.draw.text_rect_blend(
+        if let Some(icon) = &self.icon {
+            let icon_width = icon.dim().width as usize;
+            let icon_height = icon.dim().height as usize;
+
+            if icon_width < ut.2 && icon_height < ut.3 {
+                let ut = self.dim.to_buffer_shrunk_utuple(&shrinker);
+                let off_x = (ut.2 - icon_width) / 2;
+                let off_y = (ut.3 - icon_height) / 2 - 20;
+                ctx.draw.rect_outline_border(
                     buffer.pixels_mut(),
                     &(
-                        ut.0 + 38 + 7 + 5,
-                        ut.1 + 5,
-                        (self.dim.width - 38 - 7 - 10) as usize,
-                        13,
+                        ut.0 + off_x - 1,
+                        ut.1 + off_y - 1,
+                        icon_width + 2,
+                        icon_height + 2,
                     ),
                     stride,
-                    font,
-                    12.0,
-                    &self.text,
-                    style.theme().color(ListItemText),
-                    TheHorizontalAlign::Left,
-                    TheVerticalAlign::Center,
+                    style.theme().color(ListItemIconBorder),
+                    1,
                 );
-
-                if !self.sub_text.is_empty() {
-                    ctx.draw.text_rect_blend(
-                        buffer.pixels_mut(),
-                        &(
-                            ut.0 + 38 + 7 + 5,
-                            ut.1 + 22,
-                            (self.dim.width - 38 - 7 - 10) as usize,
-                            13,
-                        ),
-                        stride,
-                        font,
-                        12.0,
-                        &self.sub_text,
-                        style.theme().color(ListItemText),
-                        TheHorizontalAlign::Left,
-                        TheVerticalAlign::Center,
-                    );
-                }
-            }
-        } else {
-            let mut right_width = 5;
-            for v in self.values.iter() {
-                right_width += v.0;
-            }
-
-            shrinker.shrink_by(9, 0, 0, 0);
-            let mut rect: (usize, usize, usize, usize) =
-                self.dim.to_buffer_shrunk_utuple(&shrinker);
-
-            if let Some(font) = &ctx.ui.font {
-                ctx.draw.text_rect_blend(
+                ctx.draw.copy_slice(
                     buffer.pixels_mut(),
-                    &(rect.0, rect.1, rect.2 - right_width as usize, rect.3),
+                    icon.pixels(),
+                    &(ut.0 + off_x, ut.1 + off_y, icon_width, icon_height),
                     stride,
-                    font,
-                    13.0,
-                    &self.text,
-                    style.theme().color(ListItemText),
-                    TheHorizontalAlign::Left,
-                    TheVerticalAlign::Center,
                 );
-
-                rect.0 += rect.2 - right_width as usize;
-
-                for (width, value) in self.values.iter() {
-                    ctx.draw.rect(
-                        buffer.pixels_mut(),
-                        &(rect.0, rect.1 - 1, 1, rect.3 + 2),
-                        stride,
-                        style.theme().color(ListLayoutBackground),
-                    );
-
-                    #[allow(clippy::single_match)]
-                    match value {
-                        TheValue::Text(text) => {
-                            ctx.draw.text_rect_blend(
-                                buffer.pixels_mut(),
-                                &(rect.0 + 9, rect.1, *width as usize - 10, rect.3),
-                                stride,
-                                font,
-                                13.0,
-                                text,
-                                style.theme().color(ListItemText),
-                                TheHorizontalAlign::Left,
-                                TheVerticalAlign::Center,
-                            );
-                        }
-                        _ => {
-                            ctx.draw.text_rect_blend(
-                                buffer.pixels_mut(),
-                                &(rect.0 + 9, rect.1, *width as usize - 10, rect.3),
-                                stride,
-                                font,
-                                13.0,
-                                &value.describe(),
-                                style.theme().color(ListItemText),
-                                TheHorizontalAlign::Left,
-                                TheVerticalAlign::Center,
-                            );
-                        }
-                    }
-                }
             }
+        }
+
+        if let Some(font) = &ctx.ui.font {
+            ctx.draw.text_rect_blend(
+                buffer.pixels_mut(),
+                &(ut.0, ut.1 + self.dim.height as usize - 25, ut.2, 20),
+                stride,
+                font,
+                12.0,
+                &self.text,
+                style.theme().color(ListItemText),
+                TheHorizontalAlign::Center,
+                TheVerticalAlign::Center,
+            );
         }
 
         self.is_dirty = false;
     }
 
-    fn as_list_item(&mut self) -> Option<&mut dyn TheListItemTrait> {
+    fn as_rowlist_item(&mut self) -> Option<&mut dyn TheRowListItemTrait> {
         Some(self)
     }
 
@@ -375,7 +297,7 @@ impl TheWidget for TheListItem {
     }
 }
 
-pub trait TheListItemTrait {
+pub trait TheRowListItemTrait {
     fn set_background_color(&mut self, color: TheColor);
     fn set_text(&mut self, text: String);
     fn set_sub_text(&mut self, sub_text: String);
@@ -383,10 +305,9 @@ pub trait TheListItemTrait {
     fn set_size(&mut self, size: i32);
     fn set_icon(&mut self, icon: TheRGBABuffer);
     fn set_scroll_offset(&mut self, offset: i32);
-    fn add_value_column(&mut self, width: i32, value: TheValue);
 }
 
-impl TheListItemTrait for TheListItem {
+impl TheRowListItemTrait for TheRowListItem {
     fn set_background_color(&mut self, color: TheColor) {
         self.background = Some(color);
         self.is_dirty = true;
@@ -411,8 +332,5 @@ impl TheListItemTrait for TheListItem {
     }
     fn set_scroll_offset(&mut self, offset: i32) {
         self.scroll_offset = offset;
-    }
-    fn add_value_column(&mut self, width: i32, value: TheValue) {
-        self.values.push((width, value));
     }
 }

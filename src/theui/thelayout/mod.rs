@@ -5,6 +5,7 @@ pub mod thecodelayout;
 pub mod thehlayout;
 pub mod thelistlayout;
 pub mod thergbalayout;
+pub mod therowlistlayout;
 pub mod thesharedhlayout;
 pub mod thesharedvlayout;
 pub mod thesnapperlayout;
@@ -19,6 +20,7 @@ pub mod prelude {
     pub use crate::theui::thelayout::thehlayout::{TheHLayout, TheHLayoutMode, TheHLayoutTrait};
     pub use crate::theui::thelayout::thelistlayout::{TheListLayout, TheListLayoutTrait};
     pub use crate::theui::thelayout::thergbalayout::{TheRGBALayout, TheRGBALayoutTrait};
+    pub use crate::theui::thelayout::therowlistlayout::{TheRowListLayout, TheRowListLayoutTrait};
     pub use crate::theui::thelayout::thesharedhlayout::*;
     pub use crate::theui::thelayout::thesharedvlayout::*;
     pub use crate::theui::thelayout::thesnapperlayout::{TheSnapperLayout, TheSnapperLayoutTrait};
@@ -118,6 +120,11 @@ pub trait TheLayout: Send {
 
     /// Attempts to cast to TheListLayoutTrait. Only valid for TheListLayout.
     fn as_list_layout(&mut self) -> Option<&mut dyn TheListLayoutTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheRowListLayoutTrait. Only valid for TheRowListLayout.
+    fn as_rowlist_layout(&mut self) -> Option<&mut dyn TheRowListLayoutTrait> {
         None
     }
 

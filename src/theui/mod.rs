@@ -300,12 +300,17 @@ impl TheUI {
                         if let Some(layout) = self.canvas.get_layout(None, Some(&layout_id.uuid)) {
                             if let Some(list) = layout.as_list_layout() {
                                 list.new_item_selected(id);
+                            } else if let Some(list) = layout.as_rowlist_layout() {
+                                list.new_item_selected(id);
                             }
                         }
                     }
                     TheEvent::ScrollLayout(layout_id, delta) => {
                         if let Some(layout) = self.canvas.get_layout(None, Some(&layout_id.uuid)) {
                             if let Some(list) = layout.as_list_layout() {
+                                list.scroll_by(delta);
+                                self.is_dirty = true;
+                            } else if let Some(list) = layout.as_rowlist_layout() {
                                 list.scroll_by(delta);
                                 self.is_dirty = true;
                             }
@@ -869,6 +874,14 @@ impl TheUI {
     pub fn get_list_layout(&mut self, name: &str) -> Option<&mut dyn TheListLayoutTrait> {
         if let Some(text_line_edit) = self.canvas.get_layout(Some(&name.to_string()), None) {
             return text_line_edit.as_list_layout();
+        }
+        None
+    }
+
+    /// Gets a given TheRowListLayout by name
+    pub fn get_rowlist_layout(&mut self, name: &str) -> Option<&mut dyn TheRowListLayoutTrait> {
+        if let Some(text_line_edit) = self.canvas.get_layout(Some(&name.to_string()), None) {
+            return text_line_edit.as_rowlist_layout();
         }
         None
     }

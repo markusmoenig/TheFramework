@@ -22,6 +22,7 @@ pub mod thenodecanvasview;
 pub mod thepalettepicker;
 pub mod therenderview;
 pub mod thergbaview;
+pub mod therowlistitem;
 pub mod thesdfview;
 pub mod thesectionbar;
 pub mod thesectionbarbutton;
@@ -64,6 +65,7 @@ pub mod prelude {
         TheHorizontalScrollbar, TheHorizontalScrollbarTrait,
     };
     pub use crate::theui::thewidget::thelistitem::{TheListItem, TheListItemTrait};
+    pub use crate::theui::thewidget::therowlistitem::{TheRowListItem, TheRowListItemTrait};
     pub use crate::theui::thewidget::thesectionbar::TheSectionbar;
     pub use crate::theui::thewidget::thesectionbarbutton::TheSectionbarButton;
     pub use crate::theui::thewidget::thesectionbarbutton::TheSectionbarButtonTrait;
@@ -231,6 +233,11 @@ pub trait TheWidget: Send {
 
     /// Attempts to cast to TheListItemTrait. Only valid for TheListItem.
     fn as_list_item(&mut self) -> Option<&mut dyn TheListItemTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheRowListItemTrait. Only valid for TheRowListItem.
+    fn as_rowlist_item(&mut self) -> Option<&mut dyn TheRowListItemTrait> {
         None
     }
 
