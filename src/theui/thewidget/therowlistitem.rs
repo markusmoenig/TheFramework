@@ -243,33 +243,62 @@ impl TheWidget for TheRowListItem {
         let ut = self.dim.to_buffer_shrunk_utuple(&shrinker);
 
         if let Some(icon) = &self.icon {
-            let icon_width = icon.dim().width as usize;
-            let icon_height = icon.dim().height as usize;
+            let icon_width = ut.2 - 16;
+            let icon_height = icon_width; //ut.3 - 16 - 20;
 
-            if icon_width < ut.2 && icon_height < ut.3 {
-                let ut = self.dim.to_buffer_shrunk_utuple(&shrinker);
-                let off_x = (ut.2 - icon_width) / 2;
-                let off_y = (ut.3 - icon_height) / 2 - 20;
-                ctx.draw.rect_outline_border(
-                    buffer.pixels_mut(),
-                    &(
-                        ut.0 + off_x - 1,
-                        ut.1 + off_y - 1,
-                        icon_width + 2,
-                        icon_height + 2,
-                    ),
-                    stride,
-                    style.theme().color(ListItemIconBorder),
-                    1,
-                );
-                ctx.draw.copy_slice(
-                    buffer.pixels_mut(),
-                    icon.pixels(),
-                    &(ut.0 + off_x, ut.1 + off_y, icon_width, icon_height),
-                    stride,
-                );
-            }
+            let ut = self.dim.to_buffer_shrunk_utuple(&shrinker);
+            let off_x = 8;
+            let off_y = 8;
+            ctx.draw.rect_outline_border(
+                buffer.pixels_mut(),
+                &(
+                    ut.0 + off_x - 1,
+                    ut.1 + off_y - 1,
+                    icon_width + 2,
+                    icon_height + 2,
+                ),
+                stride,
+                style.theme().color(ListItemIconBorder),
+                1,
+            );
+            ctx.draw.scale_chunk(
+                buffer.pixels_mut(),
+                &(ut.0 + off_x, ut.1 + off_y, icon_width, icon_height),
+                stride,
+                icon.pixels(),
+                &(icon.dim().width as usize, icon.dim().height as usize),
+                1.0,
+            );
         }
+
+        // if let Some(icon) = &self.icon {
+        //     let icon_width = icon.dim().width as usize;
+        //     let icon_height = icon.dim().height as usize;
+
+        //     if icon_width < ut.2 && icon_height < ut.3 {
+        //         let ut = self.dim.to_buffer_shrunk_utuple(&shrinker);
+        //         let off_x = (ut.2 - icon_width) / 2;
+        //         let off_y = (ut.3 - icon_height) / 2 - 20;
+        //         ctx.draw.rect_outline_border(
+        //             buffer.pixels_mut(),
+        //             &(
+        //                 ut.0 + off_x - 1,
+        //                 ut.1 + off_y - 1,
+        //                 icon_width + 2,
+        //                 icon_height + 2,
+        //             ),
+        //             stride,
+        //             style.theme().color(ListItemIconBorder),
+        //             1,
+        //         );
+        //         ctx.draw.copy_slice(
+        //             buffer.pixels_mut(),
+        //             icon.pixels(),
+        //             &(ut.0 + off_x, ut.1 + off_y, icon_width, icon_height),
+        //             stride,
+        //         );
+        //     }
+        // }
 
         if let Some(font) = &ctx.ui.font {
             ctx.draw.text_rect_blend(
