@@ -699,15 +699,7 @@ impl TheTextRenderer {
                 }
             }
 
-            self.render_row(
-                &state.rows[i],
-                i,
-                state.find_start_index_of_row(i),
-                buffer,
-                style,
-                font,
-                draw,
-            );
+            self.render_row(&state.rows[i], i, buffer, style, font, draw);
         }
 
         if focused {
@@ -992,6 +984,7 @@ impl TheTextRenderer {
         }
 
         // Find the visible text
+        let glyph_start = self.row_info[row_number].glyph_start;
         let mut visible_text_start_index = 0;
         let mut visible_text_end_index = text.len();
         let mut is_start_index_found = false;
@@ -1001,7 +994,7 @@ impl TheTextRenderer {
                 visible_text_end_index = i;
                 break;
             }
-            chars_acc_width = self.get_text_width(glyph_start_index, glyph_start_index + i);
+            chars_acc_width = self.get_text_width(glyph_start, glyph_start + i);
             if !is_start_index_found && chars_acc_width >= self.scroll_offset.x {
                 visible_text_start_index = i;
                 is_start_index_found = true;
@@ -1012,7 +1005,7 @@ impl TheTextRenderer {
         // Make sure row x start at 0 TODO
         let left = self.left.as_i32()
             - self.scroll_offset.x.as_i32()
-            - self.get_text_left(glyph_start_index).as_i32();
+            - self.get_text_left(glyph_start).as_i32();
         let top = self.top.as_i32() - self.scroll_offset.y.as_i32()
             + self.row_info[row_number].top.as_i32();
 
@@ -1029,7 +1022,7 @@ impl TheTextRenderer {
                     continue;
                 }
 
-                let left = left + self.get_text_left(glyph_start_index + token_start).as_i32();
+                let left = left + self.get_text_left(glyph_start + token_start).as_i32();
                 draw.text_rect_blend_clip(
                     buffer.pixels_mut(),
                     &vec2i(left, top - 1),
@@ -1046,7 +1039,7 @@ impl TheTextRenderer {
         } else {
             let left = left
                 + self
-                    .get_text_left(glyph_start_index + visible_text_start_index)
+                    .get_text_left(glyph_start + visible_text_start_index)
                     .as_i32();
             draw.text_rect_blend_clip(
                 buffer.pixels_mut(),
