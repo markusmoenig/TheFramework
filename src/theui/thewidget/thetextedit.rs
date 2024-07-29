@@ -1,4 +1,5 @@
-use fontdue::{layout::GlyphPosition, Font};
+use fontdue::Font;
+use unicode_segmentation::UnicodeSegmentation;
 
 use crate::prelude::*;
 
@@ -25,6 +26,16 @@ impl TheCursor {
         self.row = 0;
         self.column = 0;
     }
+}
+
+struct TheGlyph {
+    parent: char,
+
+    start: usize,
+    end: usize,
+
+    x: f32,
+    width: usize,
 }
 
 struct TheRowInfo {
@@ -199,7 +210,8 @@ impl TheTextEditState {
             self.delete_text_by_selection();
         }
 
-        self.rows[self.cursor.row].insert(self.cursor.column, char);
+        let insert_index = self.byte_offset_of_index(self.cursor.row, self.cursor.column);
+        self.rows[self.cursor.row].insert(insert_index, char);
         self.move_cursor_right();
     }
 
@@ -208,22 +220,23 @@ impl TheTextEditState {
             self.delete_text_by_selection();
         }
 
+        let insert_index = self.byte_offset_of_index(self.cursor.row, self.cursor.column);
         if !text.contains('\n') {
-            self.rows[self.cursor.row].insert_str(self.cursor.column, &text);
-            self.cursor.column += text.len();
+            self.rows[self.cursor.row].insert_str(insert_index, &text);
+            self.cursor.column += text.graphemes(true).count();
             return;
         }
 
         let (first_row, rest_text) = text.split_at(text.find('\n').unwrap());
-        let leftover = self.rows[self.cursor.row].split_off(self.cursor.column);
-        self.rows[self.cursor.row].insert_str(self.cursor.column, first_row);
+        let leftover = self.rows[self.cursor.row].split_off(insert_index);
+        self.rows[self.cursor.row].insert_str(insert_index, first_row);
 
         for str in rest_text.split('\n') {
             self.cursor.row += 1;
             self.rows.insert(self.cursor.row, str.to_owned());
             self.cursor.column = str.len();
         }
-        self.rows[self.cursor.row].insert_str(self.cursor.column, &leftover);
+        self.rows[self.cursor.row].insert_str(insert_index, &leftover);
     }
 
     pub fn insert_row(&mut self) {
@@ -235,11 +248,12 @@ impl TheTextEditState {
         if self.cursor.column == 0 {
             self.rows.insert(self.cursor.row, String::default());
         // Insert at next row
-        } else if self.cursor.column >= self.rows[self.cursor.row].len() {
+        } else if self.cursor.column >= self.glyphs_in_row(self.cursor.row) {
             self.rows.insert(self.cursor.row + 1, String::default());
         // Insert inside current row
         } else {
-            let new_text = self.rows[self.cursor.row].split_off(self.cursor.column);
+            let insert_index = self.byte_offset_of_index(self.cursor.row, self.cursor.column);
+            let new_text = self.rows[self.cursor.row].split_off(insert_index);
             self.rows.insert(self.cursor.row + 1, new_text);
         }
 
@@ -269,7 +283,7 @@ impl TheTextEditState {
         }
 
         self.cursor.row += 1;
-        self.cursor.column = self.cursor.column.min(self.rows[self.cursor.row].len());
+        self.cursor.column = self.cursor.column.min(self.glyphs_in_row(self.cursor.row));
         true
     }
 
@@ -280,7 +294,7 @@ impl TheTextEditState {
 
         if self.cursor.column == 0 {
             self.cursor.row -= 1;
-            self.cursor.column = self.rows[self.cursor.row].len();
+            self.cursor.column = self.glyphs_in_row(self.cursor.row);
         } else {
             self.cursor.column -= 1;
         }
@@ -289,12 +303,12 @@ impl TheTextEditState {
 
     pub fn move_cursor_right(&mut self) -> bool {
         if self.is_last_row(self.cursor.row)
-            && self.cursor.column == self.rows[self.cursor.row].len()
+            && self.cursor.column == self.glyphs_in_row(self.cursor.row)
         {
             return false;
         }
 
-        if self.cursor.column == self.rows[self.cursor.row].len() {
+        if self.cursor.column == self.glyphs_in_row(self.cursor.row) {
             self.cursor.row += 1;
             self.cursor.column = 0;
         } else {
@@ -309,7 +323,7 @@ impl TheTextEditState {
         }
 
         self.cursor.row -= 1;
-        self.cursor.column = self.cursor.column.min(self.rows[self.cursor.row].len());
+        self.cursor.column = self.cursor.column.min(self.glyphs_in_row(self.cursor.row));
         true
     }
 
@@ -400,14 +414,19 @@ impl TheTextEditState {
     }
 
     pub fn set_text(&mut self, text: String) {
-        self.rows = text
-            .split('\n')
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>();
+        self.rows = text.split('\n').map(|s| s.to_string()).collect();
     }
 
     pub fn to_text(&self) -> String {
         self.rows.join("\n")
+    }
+
+    fn byte_offset_of_index(&self, row_number: usize, index: usize) -> usize {
+        self.rows[row_number]
+            .grapheme_indices(true)
+            .nth(index)
+            .map(|(byte_offset, _)| byte_offset)
+            .unwrap_or(self.rows[row_number].len())
     }
 
     fn delete_char_by_cursor(&mut self) -> bool {
@@ -417,7 +436,7 @@ impl TheTextEditState {
 
         // Delete linebreak and concat with previous row
         if self.cursor.column == 0 {
-            self.cursor.column = self.rows[self.cursor.row - 1].len();
+            self.cursor.column = self.glyphs_in_row(self.cursor.row - 1);
             let text = self.rows.remove(self.cursor.row);
             self.rows[self.cursor.row - 1].push_str(&text);
             self.move_cursor_up();
@@ -435,11 +454,13 @@ impl TheTextEditState {
 
     fn delete_range_of_row(&mut self, row_number: usize, start: usize, end: usize) -> bool {
         let left = start.min(end);
-        let right = start.max(end).min(self.rows[row_number].len());
+        let right = start.max(end).min(self.glyphs_in_row(row_number));
         if left == right {
             return false;
         }
 
+        let left = self.byte_offset_of_index(row_number, left);
+        let right = self.byte_offset_of_index(row_number, right);
         let text = &mut self.rows[row_number];
         let remaining = text.split_off(right);
         text.truncate(left);
@@ -493,15 +514,19 @@ impl TheTextEditState {
         true
     }
 
+    fn glyphs_in_row(&self, row_number: usize) -> usize {
+        return self.rows[row_number].graphemes(true).count();
+    }
+
     // Length of row in glyphs, linebreak included
     fn row_len(&self, row_number: usize) -> usize {
         // +1 to include the linebreak,
         // except for the last row
-        let text_len = self.rows[row_number].len();
+        let len = self.glyphs_in_row(row_number);
         if self.is_last_row(row_number) {
-            text_len
+            len
         } else {
-            text_len + 1
+            len + 1
         }
     }
 }
@@ -521,7 +546,7 @@ pub struct TheTextRenderer {
 
     // State
     pub actual_size: Vec2<usize>,
-    glyphs: Vec<GlyphPosition>,
+    glyphs: Vec<TheGlyph>,
     highlighter: Option<Box<dyn TheCodeHighlighterTrait>>,
     row_info: Vec<TheRowInfo>,
     pub scroll_offset: Vec2<usize>,
@@ -583,7 +608,7 @@ impl TheTextRenderer {
                 }
 
                 for i in start_index..=end_index {
-                    let glyph = self.glyphs[i];
+                    let glyph = &self.glyphs[i];
                     if (glyph.x + glyph.width.as_f32()).as_i32() > coord.x {
                         cursor.column = i - start_index;
                         break;
@@ -630,7 +655,17 @@ impl TheTextRenderer {
             - layout.glyphs().first().unwrap().width.as_f32();
 
         let layout = draw.get_text_layout(font, self.font_size, &text);
-        self.glyphs.clone_from(layout.glyphs());
+        let glyph_positions = layout.glyphs();
+        self.glyphs = glyph_positions
+            .iter()
+            .map(|glyph| TheGlyph {
+                parent: glyph.parent,
+                start: glyph.byte_offset,
+                end: glyph.byte_offset + glyph.parent.len_utf8(),
+                x: glyph.x,
+                width: glyph.width,
+            })
+            .collect();
 
         self.row_info = layout
             .lines()
@@ -879,6 +914,19 @@ impl TheTextRenderer {
         (start_row, end_row)
     }
 
+    fn get_glyph_text_range(&self, index: usize) -> (usize, usize) {
+        if self.glyphs.is_empty() {
+            return (0, 0);
+        }
+
+        if let Some(glyph) = self.glyphs.get(index) {
+            return (glyph.start, glyph.end);
+        }
+
+        let last_glyph = &self.glyphs[self.glyphs.len() - 1];
+        (last_glyph.end, last_glyph.end)
+    }
+
     fn get_text_left(&self, index: usize) -> usize {
         if self.glyphs.is_empty() {
             return 0;
@@ -888,7 +936,7 @@ impl TheTextRenderer {
             return glyph.x.ceil().as_usize();
         }
 
-        let last_glyph = self.glyphs[self.glyphs.len() - 1];
+        let last_glyph = &self.glyphs[self.glyphs.len() - 1];
         last_glyph.x.ceil().as_usize() + last_glyph.width
     }
 
@@ -967,7 +1015,6 @@ impl TheTextRenderer {
         &self,
         text: &str,
         row_number: usize,
-        glyph_start_index: usize,
         buffer: &mut TheRGBABuffer,
         style: &mut Box<dyn TheStyle>,
         font: &Font,
@@ -985,11 +1032,12 @@ impl TheTextRenderer {
 
         // Find the visible text
         let glyph_start = self.row_info[row_number].glyph_start;
+        let glyphs_count = self.row_info[row_number].glyph_end - glyph_start;
         let mut visible_text_start_index = 0;
-        let mut visible_text_end_index = text.len();
+        let mut visible_text_end_index = glyphs_count;
         let mut is_start_index_found = false;
         let mut chars_acc_width = 0;
-        for i in 0..text.len() {
+        for i in 0..glyphs_count {
             if is_start_index_found && chars_acc_width >= self.scroll_offset.x + self.width {
                 visible_text_end_index = i;
                 break;
@@ -1041,6 +1089,16 @@ impl TheTextRenderer {
                 + self
                     .get_text_left(glyph_start + visible_text_start_index)
                     .as_i32();
+            let row_start_index = self.get_glyph_text_range(glyph_start).0;
+            let start = self
+                .get_glyph_text_range(glyph_start + visible_text_start_index)
+                .0
+                - row_start_index;
+            let end = self
+                .get_glyph_text_range(glyph_start + visible_text_end_index)
+                .1
+                - row_start_index;
+            let end = text.len().min(end);
             draw.text_rect_blend_clip(
                 buffer.pixels_mut(),
                 &vec2i(left, top - 1),
@@ -1048,7 +1106,7 @@ impl TheTextRenderer {
                 stride,
                 font,
                 self.font_size,
-                &text[visible_text_start_index..visible_text_end_index],
+                &text[start..end],
                 style.theme().color(TextEditTextColor),
                 TheHorizontalAlign::Center,
                 TheVerticalAlign::Center,
