@@ -149,6 +149,10 @@ impl TheWidget for TheTextLineEdit {
         true
     }
 
+    fn supports_text_input(&mut self) -> bool {
+        true
+    }
+
     #[allow(clippy::single_match)]
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         if self.is_disabled {
@@ -320,6 +324,7 @@ impl TheWidget for TheTextLineEdit {
                 }
             }
             TheEvent::KeyCodeDown(key_code) => {
+                // println!("key {:?}", key_code);
                 if let Some(key) = key_code.to_key_code() {
                     if key == TheKeyCode::Delete {
                         if self.state.delete_text() {
@@ -415,6 +420,9 @@ impl TheWidget for TheTextLineEdit {
                     ctx.ui.set_hover(self.id());
                 }
             }
+            // TheEvent::ModifierChanged(a, b, c, d) => {
+            //     println!("{}{}{}{}", a, b, c, d);
+            // }
             _ => {}
         }
         redraw

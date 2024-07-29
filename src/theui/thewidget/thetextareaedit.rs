@@ -156,6 +156,10 @@ impl TheWidget for TheTextAreaEdit {
         true
     }
 
+    fn supports_text_input(&mut self) -> bool {
+        true
+    }
+
     #[allow(clippy::single_match)]
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         if self.is_disabled {
