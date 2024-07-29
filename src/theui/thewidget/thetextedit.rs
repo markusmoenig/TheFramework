@@ -1157,11 +1157,17 @@ impl TheTextRenderer {
         let top = top.max(0).as_usize().max(self.top);
 
         let stride = buffer.stride();
+        let color = &self
+            .highlighter
+            .as_ref()
+            .and_then(|hl| hl.selection_background())
+            .map(|color| color.to_u8_array())
+            .unwrap_or(*style.theme().color(DefaultSelection));
         draw.blend_rect(
             buffer.pixels_mut(),
             &(left, top, right - left, bottom - top),
             stride,
-            style.theme().color(DefaultSelection),
+            color,
         );
     }
 
