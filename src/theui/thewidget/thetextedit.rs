@@ -543,6 +543,7 @@ pub struct TheTextRenderer {
     cursor_vertical_shrink: usize,
     font_size: f32,
     pub padding: (usize, usize, usize, usize), // left top right bottom
+    selection_extend: usize,
 
     // State
     pub actual_size: Vec2<usize>,
@@ -564,6 +565,7 @@ impl Default for TheTextRenderer {
             cursor_vertical_shrink: 1,
             font_size: 14.0,
             padding: (5, 0, 5, 0),
+            selection_extend: 2,
 
             actual_size: Vec2::zero(),
             glyphs: vec![],
@@ -1129,7 +1131,7 @@ impl TheTextRenderer {
             return;
         }
 
-        let height = self.row_height();
+        let height = self.row_height() + 2 * self.selection_extend;
         let width = self.get_text_width(start, end - 1);
         let width = if width == 0 {
             self.linebreak_width()
@@ -1138,7 +1140,9 @@ impl TheTextRenderer {
         };
 
         let left = (self.left + self.get_text_left(start)).as_i32() - self.scroll_offset.x.as_i32();
-        let top = (self.top + row.top).as_i32() - self.scroll_offset.y.as_i32();
+        let top = (self.top + self.row_info[row_number].baseline - height + self.selection_extend)
+            .as_i32()
+            - self.scroll_offset.y.as_i32();
 
         let right = (left + width.as_i32())
             .max(0)
