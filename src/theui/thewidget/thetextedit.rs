@@ -1004,11 +1004,17 @@ impl TheTextRenderer {
         let top = (self.top + top).saturating_sub(self.scroll_offset.y);
 
         let stride = buffer.stride();
+        let color = &self
+            .highlighter
+            .as_ref()
+            .and_then(|hl| hl.caret())
+            .map(|color| color.to_u8_array())
+            .unwrap_or(*style.theme().color(TextEditCursorColor));
         draw.rect(
             buffer.pixels_mut(),
             &(left, top, self.cursor_width, self.cursor_height()),
             stride,
-            style.theme().color(TextEditCursorColor),
+            color,
         );
     }
 
