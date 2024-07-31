@@ -39,6 +39,13 @@ impl ThePalette {
         self.colors[self.current_index as usize].clone()
     }
 
+    /// Clears all palette colors.
+    pub fn clear(&mut self) {
+        for v in self.colors.iter_mut() {
+            *v = None;
+        }
+    }
+
     /// Load the palette from a Paint.net TXT file
     pub fn load_from_txt(&mut self, txt: String) {
         let mut index = self.current_index as usize;

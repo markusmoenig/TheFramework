@@ -183,6 +183,10 @@ impl TheWidget for TheRowListItem {
                 self.text.clone_from(&text);
                 self.is_dirty = true;
             }
+            TheValue::Image(image) => {
+                self.icon = Some(image);
+                self.is_dirty = true;
+            }
             _ => {}
         }
     }

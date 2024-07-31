@@ -287,6 +287,8 @@ pub trait TheRowListLayoutTrait: TheLayout {
     fn select_item_at(&mut self, index: i32, ctx: &mut TheContext, send_event: bool) -> bool;
     /// Sets the text for an item
     fn set_item_text(&mut self, id: Uuid, text: String);
+    /// Sets the image for an item.
+    fn set_item_image(&mut self, id: Uuid, image: TheRGBABuffer);
     /// Scroll by the given amount.
     fn scroll_by(&mut self, delta: Vec2i);
 }
@@ -376,6 +378,14 @@ impl TheRowListLayoutTrait for TheRowListLayout {
         for w in &mut self.widgets {
             if w.id().uuid == id {
                 w.set_value(TheValue::Text(text.clone()));
+                self.is_dirty = true;
+            }
+        }
+    }
+    fn set_item_image(&mut self, id: Uuid, image: TheRGBABuffer) {
+        for w in &mut self.widgets {
+            if w.id().uuid == id {
+                w.set_value(TheValue::Image(image.clone()));
                 self.is_dirty = true;
             }
         }
