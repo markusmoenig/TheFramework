@@ -3,9 +3,9 @@ use crate::prelude::*;
 /// A 2D map with a flat storage structure.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TheFlattenedMap<T> {
-    data: Vec<Option<T>>,
-    width: i32,
-    height: i32,
+    pub data: Vec<Option<T>>,
+    pub width: i32,
+    pub height: i32,
 }
 
 impl<T> TheFlattenedMap<T>
