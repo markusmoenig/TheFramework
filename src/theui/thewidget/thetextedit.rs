@@ -884,11 +884,6 @@ impl TheTextRenderer {
         self.font_size = font_size;
     }
 
-    fn cursor_height(&self) -> usize {
-        self.row_height()
-            .saturating_sub(self.cursor_vertical_shrink * 2)
-    }
-
     // Inclusive on both end
     fn find_visible_rows(&self) -> (usize, usize) {
         if self.row_count() == 0 {
@@ -992,16 +987,33 @@ impl TheTextRenderer {
         style: &mut Box<dyn TheStyle>,
         draw: &TheDraw2D,
     ) {
-        let left = self
-            .get_text_left(cursor_index)
-            .saturating_sub(self.cursor_width / 2);
-        let top = self.row_info[cursor.row].baseline - self.cursor_height();
-        if self.is_rect_out_of_visible_area(left, top, self.cursor_width, self.cursor_height()) {
+        let height = self
+            .row_height()
+            .saturating_sub(self.cursor_vertical_shrink * 2);
+
+        let left = self.get_text_left(cursor_index).as_i32() - (self.cursor_width / 2).as_i32();
+        let top = self.row_info[cursor.row].baseline.as_i32() - height.as_i32();
+        if self.is_rect_out_of_visible_area(
+            left.max(0).as_usize(),
+            top.max(0).as_usize(),
+            self.cursor_width,
+            height,
+        ) {
             return;
         }
 
-        let left = (self.left + left).saturating_sub(self.scroll_offset.x);
-        let top = (self.top + top).saturating_sub(self.scroll_offset.y);
+        let left = (self.left.as_i32() + left - self.scroll_offset.x.as_i32())
+            .max(0)
+            .as_usize()
+            .max(self.left);
+        let top = self.top.as_i32() + top - self.scroll_offset.y.as_i32();
+
+        let bottom = (top + height.as_i32())
+            .max(0)
+            .as_usize()
+            .min(self.top + self.height);
+
+        let top = top.max(0).as_usize().max(self.top);
 
         let stride = buffer.stride();
         let color = &self
@@ -1012,7 +1024,7 @@ impl TheTextRenderer {
             .unwrap_or(*style.theme().color(TextEditCursorColor));
         draw.rect(
             buffer.pixels_mut(),
-            &(left, top, self.cursor_width, self.cursor_height()),
+            &(left, top, self.cursor_width, bottom - top),
             stride,
             color,
         );
