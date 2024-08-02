@@ -792,6 +792,11 @@ impl TheWidget for TheTextAreaEdit {
                         + (self.renderer.row_baseline(i).as_f32() - line.max_ascent)
                             .ceil()
                             .as_i32();
+                    let color = if self.state.cursor.row == i {
+                        style.theme().color(TextEditTextColor)
+                    } else {
+                        style.theme().color_disabled_t(TextEditTextColor)
+                    };
                     ctx.draw.text_rect_blend_clip(
                         buffer.pixels_mut(),
                         &vec2i(
@@ -803,7 +808,7 @@ impl TheWidget for TheTextAreaEdit {
                         font,
                         font_size,
                         &text[i - start_row],
-                        style.theme().color(TextEditTextColor),
+                        color,
                         TheHorizontalAlign::Center,
                         TheVerticalAlign::Center,
                     );
