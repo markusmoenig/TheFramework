@@ -1,4 +1,4 @@
-use fontdue::Font;
+use fontdue::{layout::LayoutSettings, Font};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::prelude::*;
@@ -541,14 +541,14 @@ pub struct TheTextRenderer {
     // Options
     cursor_width: usize,
     cursor_vertical_shrink: usize,
-    font_size: f32,
+    pub font_size: f32,
     pub padding: (usize, usize, usize, usize), // left top right bottom
     selection_extend: usize,
 
     // State
     pub actual_size: Vec2<usize>,
     glyphs: Vec<TheGlyph>,
-    highlighter: Option<Box<dyn TheCodeHighlighterTrait>>,
+    pub highlighter: Option<Box<dyn TheCodeHighlighterTrait>>,
     row_info: Vec<TheRowInfo>,
     pub scroll_offset: Vec2<usize>,
 }
@@ -651,12 +651,12 @@ impl TheTextRenderer {
 
         // Hack: to get the width of a normal space,
         // for that fontdue will render the tailing space with zero width
-        let layout = draw.get_text_layout(font, self.font_size, "  ");
+        let layout = draw.get_text_layout(font, self.font_size, "  ", LayoutSettings::default());
         let space_width = layout.glyphs().last().unwrap().x
             - layout.glyphs().first().unwrap().x
             - layout.glyphs().first().unwrap().width.as_f32();
 
-        let layout = draw.get_text_layout(font, self.font_size, &text);
+        let layout = draw.get_text_layout(font, self.font_size, &text, LayoutSettings::default());
         let glyph_positions = layout.glyphs();
         self.glyphs = glyph_positions
             .iter()
@@ -687,7 +687,7 @@ impl TheTextRenderer {
                     let last_glyph = self.glyphs.get_mut(line.glyph_end).unwrap();
                     // Manually set trailing space width
                     if last_glyph.parent == ' ' && last_glyph.width == 0 {
-                        last_glyph.width = space_width.as_usize();
+                        last_glyph.width = space_width.ceil().as_usize();
                     }
                     (last_glyph.x + last_glyph.width.as_f32()).ceil().as_usize()
                 };
@@ -729,24 +729,26 @@ impl TheTextRenderer {
         font: &Font,
         draw: &TheDraw2D,
     ) {
-        for i in 0..state.rows.len() {
-            if focused {
-                if let Some((start, end)) = state.find_selected_range_of_row(i) {
-                    self.render_selection(i, start, end, buffer, style, draw);
+        if let Some((start_row, end_row)) = self.visible_rows() {
+            for i in start_row..=end_row {
+                if focused {
+                    if let Some((start, end)) = state.find_selected_range_of_row(i) {
+                        self.render_selection(i, start, end, buffer, style, draw);
+                    }
                 }
+
+                self.render_row(&state.rows[i], i, buffer, style, font, draw);
             }
 
-            self.render_row(&state.rows[i], i, buffer, style, font, draw);
-        }
-
-        if focused {
-            self.render_cursor(
-                &state.cursor,
-                state.find_cursor_index(),
-                buffer,
-                style,
-                draw,
-            );
+            if focused {
+                self.render_cursor(
+                    &state.cursor,
+                    state.find_cursor_index(),
+                    buffer,
+                    style,
+                    draw,
+                );
+            }
         }
     }
 
@@ -798,6 +800,10 @@ impl TheTextRenderer {
         );
     }
 
+    pub fn row_baseline(&self, row_number: usize) -> usize {
+        self.row_info[row_number].baseline
+    }
+
     pub fn row_count(&self) -> usize {
         self.row_info.len()
     }
@@ -810,16 +816,18 @@ impl TheTextRenderer {
 
         let previous_offset = self.scroll_offset;
 
-        let max_width = if visible_constrained {
-            let (start_row, end_row) = self.find_visible_rows();
-            self.row_info[start_row..=end_row]
-                .iter()
-                .max_by_key(|row| row.right)
-                .unwrap()
-                .right
-        } else {
-            self.actual_size.x
-        };
+        let max_width = visible_constrained
+            .then(|| {
+                self.visible_rows()
+                    .and_then(|(start_row, end_row)| {
+                        self.row_info[start_row..=end_row]
+                            .iter()
+                            .max_by_key(|row| row.right)
+                    })
+                    .map(|row| row.right)
+                    .unwrap_or(self.actual_size.x)
+            })
+            .unwrap_or(self.actual_size.x);
         let rightmost = max_width.saturating_sub(self.width);
         self.scroll_offset.x = (self.scroll_offset.x.as_i32() + delta.x)
             .max(0)
@@ -885,9 +893,9 @@ impl TheTextRenderer {
     }
 
     // Inclusive on both end
-    fn find_visible_rows(&self) -> (usize, usize) {
+    pub fn visible_rows(&self) -> Option<(usize, usize)> {
         if self.row_count() == 0 {
-            return (0, 0);
+            return None;
         }
 
         let start_row = self
@@ -908,7 +916,7 @@ impl TheTextRenderer {
             start_row
         };
 
-        (start_row, end_row)
+        Some((start_row, end_row))
     }
 
     fn get_glyph_text_range(&self, index: usize) -> (usize, usize) {
@@ -992,7 +1000,7 @@ impl TheTextRenderer {
             .saturating_sub(self.cursor_vertical_shrink * 2);
 
         let left = self.get_text_left(cursor_index).as_i32() - (self.cursor_width / 2).as_i32();
-        let top = self.row_info[cursor.row].baseline.as_i32() - height.as_i32();
+        let top = self.row_baseline(cursor.row).as_i32() - height.as_i32();
         if self.is_rect_out_of_visible_area(
             left.max(0).as_usize(),
             top.max(0).as_usize(),
@@ -1051,8 +1059,8 @@ impl TheTextRenderer {
         }
 
         // Find the visible text
-        let glyph_start = self.row_info[row_number].glyph_start;
-        let glyphs_count = self.row_info[row_number].glyph_end - glyph_start;
+        let glyph_start = row.glyph_start;
+        let glyphs_count = row.glyph_end - glyph_start;
         let mut visible_text_start_index = 0;
         let mut visible_text_end_index = glyphs_count;
         let mut is_start_index_found = false;
@@ -1074,8 +1082,7 @@ impl TheTextRenderer {
         let left = self.left.as_i32()
             - self.scroll_offset.x.as_i32()
             - self.get_text_left(glyph_start).as_i32();
-        let top = self.top.as_i32() - self.scroll_offset.y.as_i32()
-            + self.row_info[row_number].top.as_i32();
+        let top = self.top.as_i32() - self.scroll_offset.y.as_i32() + row.top.as_i32();
 
         let stride = buffer.stride();
         if let Some(highlights) = &row.highlights {
@@ -1144,12 +1151,13 @@ impl TheTextRenderer {
         draw: &TheDraw2D,
     ) {
         let row = &self.row_info[row_number];
+
+        let height = self.row_height() + 2 * self.selection_extend;
         let row_width = row.right - row.left;
         if self.is_rect_out_of_visible_area(row.left, row.top, row_width, self.row_height()) {
             return;
         }
 
-        let height = self.row_height() + 2 * self.selection_extend;
         let width = self.get_text_width(start, end - 1);
         let width = if width == 0 {
             self.linebreak_width()
@@ -1158,8 +1166,7 @@ impl TheTextRenderer {
         };
 
         let left = (self.left + self.get_text_left(start)).as_i32() - self.scroll_offset.x.as_i32();
-        let top = (self.top + self.row_info[row_number].baseline - height + self.selection_extend)
-            .as_i32()
+        let top = (self.top + row.baseline - height + self.selection_extend).as_i32()
             - self.scroll_offset.y.as_i32();
 
         let right = (left + width.as_i32())

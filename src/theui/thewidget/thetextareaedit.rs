@@ -1,5 +1,7 @@
 use std::time::Instant;
 
+use fontdue::layout::{HorizontalAlign, LayoutSettings};
+
 use crate::prelude::*;
 
 use super::thetextedit::{TheCursor, TheTextEditState, TheTextRenderer};
@@ -23,6 +25,7 @@ pub struct TheTextAreaEdit {
 
     // Text render
     renderer: TheTextRenderer,
+    ln_area_dim: Option<TheDim>,
     scrollbar_size: usize,
     tab_spaces: usize,
 
@@ -76,6 +79,7 @@ impl TheWidget for TheTextAreaEdit {
             modified_since_last_tick: false,
 
             renderer: TheTextRenderer::default(),
+            ln_area_dim: None,
             scrollbar_size: 13,
             tab_spaces: 4,
 
@@ -188,11 +192,15 @@ impl TheWidget for TheTextAreaEdit {
                             ctx,
                         );
                     } else if self.renderer.dim().contains(global_coord) {
-                        self.state.set_cursor(self.renderer.find_cursor(coord));
-                        self.drag_start_index = self.state.find_cursor_index();
-
                         let is_double_click = self.last_mouse_down_time.elapsed().as_millis() < 500
                             && self.last_mouse_down_coord == *coord;
+
+                        let mut coord = *coord;
+                        if let Some(dim) = &self.ln_area_dim {
+                            coord.x -= dim.width;
+                        }
+                        self.state.set_cursor(self.renderer.find_cursor(&coord));
+                        self.drag_start_index = self.state.find_cursor_index();
 
                         if !self.state.selection.is_none() {
                             if is_double_click {
@@ -261,6 +269,11 @@ impl TheWidget for TheTextAreaEdit {
                             ) || redraw;
                         }
                     } else {
+                        let mut coord = *coord;
+                        if let Some(dim) = &self.ln_area_dim {
+                            coord.x -= dim.width;
+                        }
+
                         let delta_x = if coord.x < 0 {
                             coord.x
                         } else if coord.x > self.dim.width {
@@ -268,7 +281,6 @@ impl TheWidget for TheTextAreaEdit {
                         } else {
                             0
                         };
-
                         let delta_y = if coord.y < 0 {
                             coord.y
                         } else if coord.y > self.dim.height {
@@ -287,7 +299,7 @@ impl TheWidget for TheTextAreaEdit {
                                 .scroll(&vec2i(delta_x / ratio, delta_y / ratio), true);
                         }
 
-                        self.state.set_cursor(self.renderer.find_cursor(coord));
+                        self.state.set_cursor(self.renderer.find_cursor(&coord));
 
                         let cursor_index = self.state.find_cursor_index();
                         if self.drag_start_index != cursor_index {
@@ -547,31 +559,64 @@ impl TheWidget for TheTextAreaEdit {
 
         let font = ctx.ui.font.as_ref().unwrap();
         if self.modified_since_last_tick || self.renderer.row_count() == 0 {
+            self.renderer
+                .prepare(&self.state.to_text(), font, &ctx.draw);
+
             shrinker.shrink_by(
                 -self.renderer.padding.0.as_i32(),
                 -self.renderer.padding.1.as_i32(),
                 -self.renderer.padding.2.as_i32(),
                 -self.renderer.padding.3.as_i32(),
             );
-            let outer_area = self.dim.to_buffer_shrunk_utuple(&shrinker);
+            let mut outer_area = self.dim.to_buffer_shrunk_utuple(&shrinker);
+
             shrinker.shrink_by(
                 self.renderer.padding.0.as_i32(),
                 self.renderer.padding.1.as_i32(),
                 self.renderer.padding.2.as_i32(),
                 self.renderer.padding.3.as_i32(),
             );
-
             let mut visible_area = self.dim.to_buffer_shrunk_utuple(&shrinker);
-            self.renderer
-                .prepare(&self.state.to_text(), font, &ctx.draw);
 
-            let is_hoverflow = self.renderer.is_horizontal_overflow();
-            let is_voverflow = self.renderer.is_vertical_overflow();
+            if let Some(dim) = &mut self.ln_area_dim {
+                let font_size = self.renderer.font_size;
+                let digit_count = self.state.row_count().to_string().len();
+                let line_number_width = ctx
+                    .draw
+                    // We assume '9' is one of the widest chars within 0-9
+                    .get_text_size(font, font_size, &"9".repeat(digit_count))
+                    .0;
+                let line_number_area_width = line_number_width + font_size.round().as_usize();
+                dim.x = outer_area.0.as_i32();
+                dim.y = outer_area.1.as_i32();
+                dim.width = line_number_area_width.as_i32();
+                dim.height = outer_area.3.as_i32();
+                dim.set_buffer_offset(dim.x, dim.y);
+
+                outer_area.0 += line_number_area_width;
+                outer_area.2 = outer_area.2.saturating_sub(line_number_area_width);
+                visible_area.0 += line_number_area_width;
+                visible_area.2 = visible_area.2.saturating_sub(line_number_area_width);
+            }
+
+            let content_w = self.renderer.actual_size.x;
+            let content_h = self.renderer.actual_size.y;
+            let outer_w = visible_area.2;
+            let outer_h = visible_area.3;
+            let inner_w = outer_w.saturating_sub(self.scrollbar_size);
+            let inner_h = outer_h.saturating_sub(self.scrollbar_size);
+            let (is_hoverflow, is_voverflow) = if content_w <= outer_w && content_h <= outer_h {
+                (false, false)
+            } else if content_w > outer_w && content_h > outer_h {
+                (true, true)
+            } else {
+                (content_w > inner_w, content_h > inner_h)
+            };
             if is_hoverflow {
-                visible_area.3 = visible_area.3.saturating_sub(self.scrollbar_size);
+                visible_area.3 = inner_h;
             }
             if is_voverflow {
-                visible_area.2 = visible_area.2.saturating_sub(self.scrollbar_size);
+                visible_area.2 = inner_w;
             }
             self.renderer.set_dim(
                 visible_area.0,
@@ -583,7 +628,7 @@ impl TheWidget for TheTextAreaEdit {
                 .scroll_to_cursor(self.state.find_cursor_index(), self.state.cursor.row);
 
             if is_hoverflow {
-                self.hscrollbar.set_dim(TheDim::new(
+                let mut dim = TheDim::new(
                     outer_area.0.as_i32(),
                     (outer_area.1 + outer_area.3)
                         .saturating_sub(self.scrollbar_size)
@@ -593,13 +638,9 @@ impl TheWidget for TheTextAreaEdit {
                         .saturating_sub(if is_voverflow { self.scrollbar_size } else { 0 })
                         .as_i32(),
                     self.scrollbar_size.as_i32(),
-                ));
-                self.hscrollbar.dim_mut().set_buffer_offset(
-                    outer_area.0.as_i32(),
-                    (outer_area.1 + outer_area.3)
-                        .saturating_sub(self.scrollbar_size)
-                        .as_i32(),
                 );
+                dim.set_buffer_offset(dim.x, dim.y);
+                self.hscrollbar.set_dim(dim);
             }
             if let Some(scrollbar) = self.hscrollbar.as_horizontal_scrollbar() {
                 scrollbar.set_total_width(
@@ -611,7 +652,7 @@ impl TheWidget for TheTextAreaEdit {
             }
 
             if is_voverflow {
-                self.vscrollbar.set_dim(TheDim::new(
+                let mut dim = TheDim::new(
                     (outer_area.0 + outer_area.2)
                         .saturating_sub(self.scrollbar_size)
                         .as_i32(),
@@ -621,13 +662,9 @@ impl TheWidget for TheTextAreaEdit {
                         .3
                         .saturating_sub(if is_hoverflow { self.scrollbar_size } else { 0 })
                         .as_i32(),
-                ));
-                self.vscrollbar.dim_mut().set_buffer_offset(
-                    (outer_area.0 + outer_area.2)
-                        .saturating_sub(self.scrollbar_size)
-                        .as_i32(),
-                    outer_area.1.as_i32(),
                 );
+                dim.set_buffer_offset(dim.x, dim.y);
+                self.vscrollbar.set_dim(dim);
             }
             if let Some(scrollbar) = self.vscrollbar.as_vertical_scrollbar() {
                 scrollbar.set_total_height(
@@ -647,6 +684,70 @@ impl TheWidget for TheTextAreaEdit {
             font,
             &ctx.draw,
         );
+
+        if let Some(dim) = &self.ln_area_dim {
+            let stride = buffer.stride();
+            if !self.is_disabled {
+                ctx.draw.rect(
+                    buffer.pixels_mut(),
+                    &dim.to_buffer_shrunk_utuple(&TheDimShrinker::zero()),
+                    stride,
+                    style.theme().color(TextEditBackground),
+                );
+            } else {
+                ctx.draw.blend_rect(
+                    buffer.pixels_mut(),
+                    &dim.to_buffer_utuple(),
+                    stride,
+                    style.theme().color_disabled_t(TextEditBackground),
+                );
+            }
+
+            if let Some((start_row, end_row)) = self.renderer.visible_rows() {
+                let font_size = self.renderer.font_size;
+                let text = (start_row..=end_row)
+                    .map(|i| format!("{}", i + 1))
+                    .collect::<Vec<String>>();
+                let layout = ctx.draw.get_text_layout(
+                    font,
+                    font_size,
+                    &text.join("\n"),
+                    LayoutSettings {
+                        horizontal_align: HorizontalAlign::Right,
+                        max_width: Some(dim.width.as_f32() - font_size),
+                        ..LayoutSettings::default()
+                    },
+                );
+                let lines = layout.lines().unwrap();
+                let left = dim.x + (0.5 * font_size).ceil().as_i32();
+                let mut rect = dim.to_buffer_utuple();
+                if self.renderer.is_horizontal_overflow() {
+                    rect.3 = rect.3.saturating_sub(self.scrollbar_size);
+                }
+                for i in start_row..=end_row {
+                    let line = lines[i - start_row];
+                    let top = dim.y - self.renderer.scroll_offset.y.as_i32()
+                        + (self.renderer.row_baseline(i).as_f32() - line.max_ascent)
+                            .ceil()
+                            .as_i32();
+                    ctx.draw.text_rect_blend_clip(
+                        buffer.pixels_mut(),
+                        &vec2i(
+                            left + layout.glyphs()[line.glyph_start].x.ceil().as_i32(),
+                            top - 1,
+                        ),
+                        &rect,
+                        stride,
+                        font,
+                        font_size,
+                        &text[i - start_row],
+                        style.theme().color(TextEditTextColor),
+                        TheHorizontalAlign::Center,
+                        TheVerticalAlign::Center,
+                    );
+                }
+            }
+        }
 
         if self.renderer.is_horizontal_overflow() {
             if let Some(scrollbar) = self.hscrollbar.as_horizontal_scrollbar() {
@@ -698,6 +799,7 @@ pub trait TheTextAreaEditTrait: TheWidget {
     fn set_continuous(&mut self, continuous: bool);
     fn set_code_type(&mut self, code_type: &str);
     fn set_code_theme(&mut self, code_theme: &str);
+    fn display_line_number(&mut self, display_line_number: bool);
 }
 
 impl TheTextAreaEditTrait for TheTextAreaEdit {
@@ -727,6 +829,11 @@ impl TheTextAreaEditTrait for TheTextAreaEdit {
     }
     fn set_code_theme(&mut self, code_theme: &str) {
         self.renderer.set_code_theme(code_theme);
+        self.modified_since_last_tick = true;
+        self.is_dirty = true;
+    }
+    fn display_line_number(&mut self, display_line_number: bool) {
+        self.ln_area_dim = display_line_number.then_some(TheDim::zero());
         self.modified_since_last_tick = true;
         self.is_dirty = true;
     }
