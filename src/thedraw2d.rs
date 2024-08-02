@@ -564,30 +564,30 @@ impl TheDraw2D {
             text_to_use += "...";
         }
 
-        let fonts = &[font];
-
-        let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
-        layout.reset(&LayoutSettings {
-            max_width: Some(rect.2 as f32),
-            max_height: Some(rect.3 as f32),
-            horizontal_align: if halign == TheHorizontalAlign::Left {
-                HorizontalAlign::Left
-            } else if halign == TheHorizontalAlign::Right {
-                HorizontalAlign::Right
-            } else {
-                HorizontalAlign::Center
+        let layout = self.get_text_layout(
+            font,
+            size,
+            &text_to_use,
+            LayoutSettings {
+                max_width: Some(rect.2 as f32),
+                max_height: Some(rect.3 as f32),
+                horizontal_align: if halign == TheHorizontalAlign::Left {
+                    HorizontalAlign::Left
+                } else if halign == TheHorizontalAlign::Right {
+                    HorizontalAlign::Right
+                } else {
+                    HorizontalAlign::Center
+                },
+                vertical_align: if valign == TheVerticalAlign::Top {
+                    VerticalAlign::Top
+                } else if valign == TheVerticalAlign::Bottom {
+                    VerticalAlign::Bottom
+                } else {
+                    VerticalAlign::Middle
+                },
+                ..LayoutSettings::default()
             },
-            vertical_align: if valign == TheVerticalAlign::Top {
-                VerticalAlign::Top
-            } else if valign == TheVerticalAlign::Bottom {
-                VerticalAlign::Bottom
-            } else {
-                VerticalAlign::Middle
-            },
-            ..LayoutSettings::default()
-        });
-        layout.append(fonts, &TextStyle::new(text_to_use.as_str(), size, 0));
-
+        );
         for glyph in layout.glyphs() {
             let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
             //println!("Metrics: {:?}", glyph);
@@ -630,29 +630,29 @@ impl TheDraw2D {
             return;
         }
 
-        let fonts = &[font];
-
-        let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
-        layout.reset(&LayoutSettings {
-            horizontal_align: if halign == TheHorizontalAlign::Left {
-                HorizontalAlign::Left
-            } else if halign == TheHorizontalAlign::Right {
-                HorizontalAlign::Right
-            } else {
-                HorizontalAlign::Center
+        let layout = self.get_text_layout(
+            font,
+            size,
+            &text_to_use,
+            LayoutSettings {
+                horizontal_align: if halign == TheHorizontalAlign::Left {
+                    HorizontalAlign::Left
+                } else if halign == TheHorizontalAlign::Right {
+                    HorizontalAlign::Right
+                } else {
+                    HorizontalAlign::Center
+                },
+                vertical_align: if valign == TheVerticalAlign::Top {
+                    VerticalAlign::Top
+                } else if valign == TheVerticalAlign::Bottom {
+                    VerticalAlign::Bottom
+                } else {
+                    VerticalAlign::Middle
+                },
+                wrap_hard_breaks: false,
+                ..LayoutSettings::default()
             },
-            vertical_align: if valign == TheVerticalAlign::Top {
-                VerticalAlign::Top
-            } else if valign == TheVerticalAlign::Bottom {
-                VerticalAlign::Bottom
-            } else {
-                VerticalAlign::Middle
-            },
-            wrap_hard_breaks: false,
-            ..LayoutSettings::default()
-        });
-        layout.append(fonts, &TextStyle::new(text_to_use.as_str(), size, 0));
-
+        );
         for glyph in layout.glyphs() {
             let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
 
@@ -720,30 +720,30 @@ impl TheDraw2D {
             text_to_use += "...";
         }
 
-        let fonts = &[font];
-
-        let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
-        layout.reset(&LayoutSettings {
-            max_width: Some(rect.2 as f32),
-            max_height: Some(rect.3 as f32),
-            horizontal_align: if halign == TheHorizontalAlign::Left {
-                HorizontalAlign::Left
-            } else if halign == TheHorizontalAlign::Right {
-                HorizontalAlign::Right
-            } else {
-                HorizontalAlign::Center
+        let layout = self.get_text_layout(
+            font,
+            size,
+            &text_to_use,
+            LayoutSettings {
+                max_width: Some(rect.2 as f32),
+                max_height: Some(rect.3 as f32),
+                horizontal_align: if halign == TheHorizontalAlign::Left {
+                    HorizontalAlign::Left
+                } else if halign == TheHorizontalAlign::Right {
+                    HorizontalAlign::Right
+                } else {
+                    HorizontalAlign::Center
+                },
+                vertical_align: if valign == TheVerticalAlign::Top {
+                    VerticalAlign::Top
+                } else if valign == TheVerticalAlign::Bottom {
+                    VerticalAlign::Bottom
+                } else {
+                    VerticalAlign::Middle
+                },
+                ..LayoutSettings::default()
             },
-            vertical_align: if valign == TheVerticalAlign::Top {
-                VerticalAlign::Top
-            } else if valign == TheVerticalAlign::Bottom {
-                VerticalAlign::Bottom
-            } else {
-                VerticalAlign::Middle
-            },
-            ..LayoutSettings::default()
-        });
-        layout.append(fonts, &TextStyle::new(text_to_use.as_str(), size, 0));
-
+        );
         for glyph in layout.glyphs() {
             let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
             //println!("Metrics: {:?}", glyph);
@@ -791,28 +791,28 @@ impl TheDraw2D {
             return;
         }
 
-        let fonts = &[font];
-
-        let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
-        layout.reset(&LayoutSettings {
-            horizontal_align: if halign == TheHorizontalAlign::Left {
-                HorizontalAlign::Left
-            } else if halign == TheHorizontalAlign::Right {
-                HorizontalAlign::Right
-            } else {
-                HorizontalAlign::Center
+        let layout = self.get_text_layout(
+            font,
+            size,
+            &text_to_use,
+            LayoutSettings {
+                horizontal_align: if halign == TheHorizontalAlign::Left {
+                    HorizontalAlign::Left
+                } else if halign == TheHorizontalAlign::Right {
+                    HorizontalAlign::Right
+                } else {
+                    HorizontalAlign::Center
+                },
+                vertical_align: if valign == TheVerticalAlign::Top {
+                    VerticalAlign::Top
+                } else if valign == TheVerticalAlign::Bottom {
+                    VerticalAlign::Bottom
+                } else {
+                    VerticalAlign::Middle
+                },
+                ..LayoutSettings::default()
             },
-            vertical_align: if valign == TheVerticalAlign::Top {
-                VerticalAlign::Top
-            } else if valign == TheVerticalAlign::Bottom {
-                VerticalAlign::Bottom
-            } else {
-                VerticalAlign::Middle
-            },
-            ..LayoutSettings::default()
-        });
-        layout.append(fonts, &TextStyle::new(text_to_use.as_str(), size, 0));
-
+        );
         for glyph in layout.glyphs() {
             let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
 
@@ -865,14 +865,7 @@ impl TheDraw2D {
             return;
         }
 
-        let fonts = &[font];
-
-        let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
-        layout.reset(&LayoutSettings {
-            ..LayoutSettings::default()
-        });
-        layout.append(fonts, &TextStyle::new(text, size, 0));
-
+        let layout = self.get_text_layout(font, size, text, LayoutSettings::default());
         for glyph in layout.glyphs() {
             let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
             //println!("Metrics: {:?}", glyph);
@@ -909,14 +902,7 @@ impl TheDraw2D {
             return;
         }
 
-        let fonts = &[font];
-
-        let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
-        layout.reset(&LayoutSettings {
-            ..LayoutSettings::default()
-        });
-        layout.append(fonts, &TextStyle::new(text, size, 0));
-
+        let layout = self.get_text_layout(font, size, text, LayoutSettings::default());
         for glyph in layout.glyphs() {
             let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
             //println!("Metrics: {:?}", glyph);
@@ -939,13 +925,17 @@ impl TheDraw2D {
     }
 
     /// Returns the layout of the given text
-    pub fn get_text_layout(&self, font: &Font, size: f32, text: &str) -> Layout {
+    pub fn get_text_layout(
+        &self,
+        font: &Font,
+        size: f32,
+        text: &str,
+        settings: LayoutSettings,
+    ) -> Layout {
         let fonts = &[font];
 
         let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
-        layout.reset(&LayoutSettings {
-            ..LayoutSettings::default()
-        });
+        layout.reset(&settings);
         layout.append(fonts, &TextStyle::new(text, size, 0));
 
         layout
@@ -957,7 +947,7 @@ impl TheDraw2D {
             return (0, 0);
         }
 
-        let layout = self.get_text_layout(font, size, text);
+        let layout = self.get_text_layout(font, size, text, LayoutSettings::default());
         let glyphs = layout.glyphs();
 
         let x = glyphs[glyphs.len() - 1].x.ceil() as usize + glyphs[glyphs.len() - 1].width + 1;

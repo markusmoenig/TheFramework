@@ -31,6 +31,7 @@ pub trait TheCodeHighlighterTrait: Send {
     fn set_theme(&mut self, theme: &str);
 
     fn background(&self) -> Option<TheColor>;
+    fn caret(&self) -> Option<TheColor>;
     fn selection_background(&self) -> Option<TheColor>;
 
     fn highlight_line(&self, line: &str) -> Vec<(TheColor, usize)>;
@@ -53,6 +54,13 @@ impl TheCodeHighlighterTrait for TheCodeHighlighter {
         self.theme
             .settings
             .background
+            .map(|color| TheColor::from_u8(color.r, color.g, color.b, color.a))
+    }
+
+    fn caret(&self) -> Option<TheColor> {
+        self.theme
+            .settings
+            .caret
             .map(|color| TheColor::from_u8(color.r, color.g, color.b, color.a))
     }
 
