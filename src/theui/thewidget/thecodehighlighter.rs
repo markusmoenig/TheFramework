@@ -27,6 +27,8 @@ impl Default for TheCodeHighlighter {
 }
 
 pub trait TheCodeHighlighterTrait: Send {
+    fn syntax(&self) -> &str;
+
     fn set_syntax_by_name(&mut self, name: &str);
     fn set_theme(&mut self, theme: &str);
 
@@ -38,6 +40,10 @@ pub trait TheCodeHighlighterTrait: Send {
 }
 
 impl TheCodeHighlighterTrait for TheCodeHighlighter {
+    fn syntax(&self) -> &str {
+        &self.syntax.name
+    }
+
     fn set_syntax_by_name(&mut self, name: &str) {
         if let Some(syntax) = SYNTAX_SET.find_syntax_by_name(name) {
             self.syntax = syntax;

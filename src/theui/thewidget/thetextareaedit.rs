@@ -26,6 +26,7 @@ pub struct TheTextAreaEdit {
     // Text render
     renderer: TheTextRenderer,
     ln_area_dim: Option<TheDim>,
+    statusbar_dim: Option<TheDim>,
     scrollbar_size: usize,
     tab_spaces: usize,
 
@@ -80,6 +81,7 @@ impl TheWidget for TheTextAreaEdit {
 
             renderer: TheTextRenderer::default(),
             ln_area_dim: None,
+            statusbar_dim: None,
             scrollbar_size: 13,
             tab_spaces: 4,
 
@@ -578,6 +580,21 @@ impl TheWidget for TheTextAreaEdit {
             );
             let mut visible_area = self.dim.to_buffer_shrunk_utuple(&shrinker);
 
+            if let Some(dim) = &mut self.statusbar_dim {
+                let font_size = self.renderer.font_size;
+                let statusbar_height = (1.5 * font_size).round().as_usize();
+                dim.x = outer_area.0.as_i32();
+                dim.y = (outer_area.1 + outer_area.3)
+                    .saturating_sub(statusbar_height)
+                    .as_i32();
+                dim.width = outer_area.2.as_i32();
+                dim.height = statusbar_height.as_i32();
+                dim.set_buffer_offset(dim.x, dim.y);
+
+                outer_area.3 = outer_area.3.saturating_sub(statusbar_height);
+                visible_area.3 = visible_area.3.saturating_sub(statusbar_height);
+            }
+
             if let Some(dim) = &mut self.ln_area_dim {
                 let font_size = self.renderer.font_size;
                 let digit_count = self.state.row_count().to_string().len();
@@ -685,12 +702,57 @@ impl TheWidget for TheTextAreaEdit {
             &ctx.draw,
         );
 
+        if let Some(dim) = &self.statusbar_dim {
+            let stride = buffer.stride();
+            if !self.is_disabled {
+                ctx.draw.rect(
+                    buffer.pixels_mut(),
+                    &dim.to_buffer_utuple(),
+                    stride,
+                    style.theme().color(TextEditBackground),
+                );
+            } else {
+                ctx.draw.blend_rect(
+                    buffer.pixels_mut(),
+                    &dim.to_buffer_utuple(),
+                    stride,
+                    style.theme().color_disabled_t(TextEditBackground),
+                );
+            }
+
+            let font_size = self.renderer.font_size * 0.8;
+            let mut text = format!(
+                "Ln{}, Col{}",
+                self.state.cursor.row + 1,
+                self.state.cursor.column + 1
+            );
+            if let Some(hl) = &self.renderer.highlighter {
+                text.push_str(&format!(" {}", hl.syntax()));
+            }
+            let text_size = ctx.draw.get_text_size(font, font_size, &text);
+            let right = dim.x + dim.width - font_size.ceil().as_i32();
+            let top = dim.y + (dim.height.as_f32() * 0.5).round().as_i32()
+                - (text_size.1.as_f32() * 0.5).round().as_i32();
+            ctx.draw.text_rect_blend_clip(
+                buffer.pixels_mut(),
+                &vec2i(right - text_size.0.as_i32(), top - 1),
+                &dim.to_buffer_utuple(),
+                stride,
+                font,
+                font_size,
+                &text,
+                style.theme().color_disabled_t(TextEditTextColor),
+                TheHorizontalAlign::Center,
+                TheVerticalAlign::Center,
+            );
+        }
+
         if let Some(dim) = &self.ln_area_dim {
             let stride = buffer.stride();
             if !self.is_disabled {
                 ctx.draw.rect(
                     buffer.pixels_mut(),
-                    &dim.to_buffer_shrunk_utuple(&TheDimShrinker::zero()),
+                    &dim.to_buffer_utuple(),
                     stride,
                     style.theme().color(TextEditBackground),
                 );
@@ -730,6 +792,11 @@ impl TheWidget for TheTextAreaEdit {
                         + (self.renderer.row_baseline(i).as_f32() - line.max_ascent)
                             .ceil()
                             .as_i32();
+                    let color = if self.state.cursor.row == i {
+                        style.theme().color(TextEditTextColor)
+                    } else {
+                        style.theme().color_disabled_t(TextEditTextColor)
+                    };
                     ctx.draw.text_rect_blend_clip(
                         buffer.pixels_mut(),
                         &vec2i(
@@ -741,7 +808,7 @@ impl TheWidget for TheTextAreaEdit {
                         font,
                         font_size,
                         &text[i - start_row],
-                        style.theme().color(TextEditTextColor),
+                        color,
                         TheHorizontalAlign::Center,
                         TheVerticalAlign::Center,
                     );
@@ -800,6 +867,7 @@ pub trait TheTextAreaEditTrait: TheWidget {
     fn set_code_type(&mut self, code_type: &str);
     fn set_code_theme(&mut self, code_theme: &str);
     fn display_line_number(&mut self, display_line_number: bool);
+    fn display_statusbar(&mut self, display_statusbar: bool);
 }
 
 impl TheTextAreaEditTrait for TheTextAreaEdit {
@@ -834,6 +902,11 @@ impl TheTextAreaEditTrait for TheTextAreaEdit {
     }
     fn display_line_number(&mut self, display_line_number: bool) {
         self.ln_area_dim = display_line_number.then_some(TheDim::zero());
+        self.modified_since_last_tick = true;
+        self.is_dirty = true;
+    }
+    fn display_statusbar(&mut self, display_statusbar: bool) {
+        self.statusbar_dim = display_statusbar.then_some(TheDim::zero());
         self.modified_since_last_tick = true;
         self.is_dirty = true;
     }
