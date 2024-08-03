@@ -1,7 +1,6 @@
 use crate::prelude::*;
 
 pub mod thecheckbutton;
-pub mod thecodehighlighter;
 #[cfg(feature = "code")]
 pub mod thecodeview;
 pub mod thecolorbutton;
@@ -80,9 +79,6 @@ pub mod prelude {
     pub use crate::theui::thewidget::thegroupbutton::{TheGroupButton, TheGroupButtonTrait};
 
     pub use crate::theui::thewidget::thecheckbutton::TheCheckButton;
-    pub use crate::theui::thewidget::thecodehighlighter::{
-        TheCodeHighlighter, TheCodeHighlighterTrait,
-    };
     pub use crate::theui::thewidget::thehdivider::TheHDivider;
     pub use crate::theui::thewidget::theiconview::{TheIconView, TheIconViewTrait};
     pub use crate::theui::thewidget::thergbaview::{
