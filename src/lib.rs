@@ -58,8 +58,8 @@ pub mod prelude {
     pub use crate::thetrait::TheTrait;
     pub use crate::TheKeyCode;
 
-    #[cfg(feature = "renderer")]
-    pub use therenderer::prelude::*;
+    //#[cfg(feature = "renderer")]
+    //pub use therenderer::prelude::*;
 
     #[cfg(feature = "ui")]
     pub use crate::theui::prelude::*;
