@@ -6,6 +6,14 @@ use crate::prelude::*;
 
 use super::thetextedit::{TheCursor, TheTextEditState, TheTextRenderer};
 
+#[derive(Default, PartialEq)]
+enum StatusbarType {
+    #[default]
+    None,
+    Widget(TheDim),
+    Global,
+}
+
 pub struct TheTextAreaEdit {
     // Widget Basic
     id: TheId,
@@ -26,8 +34,8 @@ pub struct TheTextAreaEdit {
     // Text render
     renderer: TheTextRenderer,
     ln_area_dim: Option<TheDim>,
-    statusbar_dim: Option<TheDim>,
     scrollbar_size: usize,
+    statusbar_type: StatusbarType,
     tab_spaces: usize,
 
     // Interaction
@@ -81,8 +89,8 @@ impl TheWidget for TheTextAreaEdit {
 
             renderer: TheTextRenderer::default(),
             ln_area_dim: None,
-            statusbar_dim: None,
             scrollbar_size: 13,
+            statusbar_type: StatusbarType::None,
             tab_spaces: 4,
 
             drag_start_index: 0,
@@ -173,6 +181,7 @@ impl TheWidget for TheTextAreaEdit {
         }
 
         let mut redraw = false;
+        let mut update_status = false;
         match event {
             TheEvent::MouseDown(coord) => {
                 if !self.state.is_empty() {
@@ -202,6 +211,7 @@ impl TheWidget for TheTextAreaEdit {
                             coord.x -= dim.width;
                         }
                         self.state.set_cursor(self.renderer.find_cursor(&coord));
+                        update_status = true;
                         self.drag_start_index = self.state.find_cursor_index();
 
                         if !self.state.selection.is_none() {
@@ -302,6 +312,7 @@ impl TheWidget for TheTextAreaEdit {
                         }
 
                         self.state.set_cursor(self.renderer.find_cursor(&coord));
+                        update_status = true;
 
                         let cursor_index = self.state.find_cursor_index();
                         if self.drag_start_index != cursor_index {
@@ -373,6 +384,7 @@ impl TheWidget for TheTextAreaEdit {
                     self.modified_since_last_tick = true;
                     self.is_dirty = true;
                     redraw = true;
+                    update_status = true;
 
                     if self.continuous {
                         self.emit_value_changed(ctx);
@@ -386,17 +398,20 @@ impl TheWidget for TheTextAreaEdit {
                             self.modified_since_last_tick = true;
                             self.is_dirty = true;
                             redraw = true;
+                            update_status = true;
                         }
                     } else if key == TheKeyCode::Return {
                         self.state.insert_row();
                         self.modified_since_last_tick = true;
                         self.is_dirty = true;
                         redraw = true;
+                        update_status = true;
                     } else if key == TheKeyCode::Tab {
                         self.state.insert_text(" ".repeat(self.tab_spaces));
                         self.modified_since_last_tick = true;
                         self.is_dirty = true;
                         redraw = true;
+                        update_status = true;
                     } else if key == TheKeyCode::Up {
                         let updated = if self.state.selection.is_none() {
                             self.state.move_cursor_up()
@@ -416,6 +431,7 @@ impl TheWidget for TheTextAreaEdit {
                             );
                             self.is_dirty = true;
                             redraw = true;
+                            update_status = true;
                         }
                     } else if key == TheKeyCode::Down {
                         let updated = if self.state.selection.is_none() {
@@ -436,6 +452,7 @@ impl TheWidget for TheTextAreaEdit {
                             );
                             self.is_dirty = true;
                             redraw = true;
+                            update_status = true;
                         }
                     } else if key == TheKeyCode::Left {
                         let updated = if self.state.selection.is_none() {
@@ -455,6 +472,7 @@ impl TheWidget for TheTextAreaEdit {
                             );
                             self.is_dirty = true;
                             redraw = true;
+                            update_status = true;
                         }
                     } else if key == TheKeyCode::Right {
                         let updated = if self.state.selection.is_none() {
@@ -474,6 +492,7 @@ impl TheWidget for TheTextAreaEdit {
                             );
                             self.is_dirty = true;
                             redraw = true;
+                            update_status = true;
                         }
                     }
                 }
@@ -515,6 +534,14 @@ impl TheWidget for TheTextAreaEdit {
             }
             _ => {}
         }
+
+        if update_status && self.statusbar_type == StatusbarType::Global {
+            ctx.ui.send(TheEvent::SetStatusText(
+                self.id().clone(),
+                self.statusbar_text(),
+            ));
+        }
+
         redraw
     }
 
@@ -580,7 +607,7 @@ impl TheWidget for TheTextAreaEdit {
             );
             let mut visible_area = self.dim.to_buffer_shrunk_utuple(&shrinker);
 
-            if let Some(dim) = &mut self.statusbar_dim {
+            if let StatusbarType::Widget(dim) = &mut self.statusbar_type {
                 let font_size = self.renderer.font_size;
                 let statusbar_height = (1.5 * font_size).round().as_usize();
                 dim.x = outer_area.0.as_i32();
@@ -702,7 +729,7 @@ impl TheWidget for TheTextAreaEdit {
             &ctx.draw,
         );
 
-        if let Some(dim) = &self.statusbar_dim {
+        if let StatusbarType::Widget(dim) = &self.statusbar_type {
             let stride = buffer.stride();
             if !self.is_disabled {
                 ctx.draw.rect(
@@ -719,16 +746,15 @@ impl TheWidget for TheTextAreaEdit {
                     style.theme().color_disabled_t(TextEditBackground),
                 );
             }
+            ctx.draw.rect(
+                buffer.pixels_mut(),
+                &(dim.x.as_usize(), dim.y.as_usize(), dim.width.as_usize(), 1),
+                stride,
+                style.theme().color(TextEditBorder),
+            );
 
             let font_size = self.renderer.font_size * 0.8;
-            let mut text = format!(
-                "Ln{}, Col{}",
-                self.state.cursor.row + 1,
-                self.state.cursor.column + 1
-            );
-            if let Some(hl) = &self.renderer.highlighter {
-                text.push_str(&format!(" {}", hl.syntax()));
-            }
+            let text = self.statusbar_text();
             let text_size = ctx.draw.get_text_size(font, font_size, &text);
             let right = dim.x + dim.width - font_size.ceil().as_i32();
             let top = dim.y + (dim.height.as_f32() * 0.5).round().as_i32()
@@ -764,6 +790,17 @@ impl TheWidget for TheTextAreaEdit {
                     style.theme().color_disabled_t(TextEditBackground),
                 );
             }
+            ctx.draw.rect(
+                buffer.pixels_mut(),
+                &(
+                    (dim.x + dim.width - 1).as_usize(),
+                    dim.y.as_usize(),
+                    1,
+                    dim.height.as_usize(),
+                ),
+                stride,
+                style.theme().color(TextEditBorder),
+            );
 
             if let Some((start_row, end_row)) = self.renderer.visible_rows() {
                 let font_size = self.renderer.font_size;
@@ -867,7 +904,8 @@ pub trait TheTextAreaEditTrait: TheWidget {
     fn set_code_type(&mut self, code_type: &str);
     fn set_code_theme(&mut self, code_theme: &str);
     fn display_line_number(&mut self, display_line_number: bool);
-    fn display_statusbar(&mut self, display_statusbar: bool);
+    fn use_statusbar(&mut self, use_statusbar: bool);
+    fn use_global_statusbar(&mut self, use_global_statusbar: bool);
 }
 
 impl TheTextAreaEditTrait for TheTextAreaEdit {
@@ -905,8 +943,17 @@ impl TheTextAreaEditTrait for TheTextAreaEdit {
         self.modified_since_last_tick = true;
         self.is_dirty = true;
     }
-    fn display_statusbar(&mut self, display_statusbar: bool) {
-        self.statusbar_dim = display_statusbar.then_some(TheDim::zero());
+    fn use_statusbar(&mut self, use_statusbar: bool) {
+        self.statusbar_type = use_statusbar
+            .then_some(StatusbarType::Widget(TheDim::zero()))
+            .unwrap_or_default();
+        self.modified_since_last_tick = true;
+        self.is_dirty = true;
+    }
+    fn use_global_statusbar(&mut self, use_global_statusbar: bool) {
+        self.statusbar_type = use_global_statusbar
+            .then_some(StatusbarType::Global)
+            .unwrap_or_default();
         self.modified_since_last_tick = true;
         self.is_dirty = true;
     }
@@ -916,5 +963,17 @@ impl TheTextAreaEdit {
     fn emit_value_changed(&mut self, ctx: &mut TheContext) {
         ctx.ui.send_widget_value_changed(self.id(), self.value());
         self.modified_since_last_return = false;
+    }
+
+    fn statusbar_text(&self) -> String {
+        let mut text = format!(
+            "Ln{}, Col{}",
+            self.state.cursor.row + 1,
+            self.state.cursor.column + 1
+        );
+        if let Some(hl) = &self.renderer.highlighter {
+            text.push_str(&format!(" {}", hl.syntax()));
+        }
+        text
     }
 }
