@@ -719,6 +719,12 @@ impl TheWidget for TheTextAreaEdit {
                     style.theme().color_disabled_t(TextEditBackground),
                 );
             }
+            ctx.draw.rect(
+                buffer.pixels_mut(),
+                &(dim.x.as_usize(), dim.y.as_usize(), dim.width.as_usize(), 1),
+                stride,
+                style.theme().color(TextEditBorder),
+            );
 
             let font_size = self.renderer.font_size * 0.8;
             let mut text = format!(
@@ -764,6 +770,17 @@ impl TheWidget for TheTextAreaEdit {
                     style.theme().color_disabled_t(TextEditBackground),
                 );
             }
+            ctx.draw.rect(
+                buffer.pixels_mut(),
+                &(
+                    (dim.x + dim.width - 1).as_usize(),
+                    dim.y.as_usize(),
+                    1,
+                    dim.height.as_usize(),
+                ),
+                stride,
+                style.theme().color(TextEditBorder),
+            );
 
             if let Some((start_row, end_row)) = self.renderer.visible_rows() {
                 let font_size = self.renderer.font_size;
