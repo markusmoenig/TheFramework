@@ -132,7 +132,6 @@ impl TheApp {
                         app.dropped_file(path.to_str().unwrap().to_string());
                         window.request_redraw();
                     }
-
                     WindowEvent::ReceivedCharacter(char) => {
                         #[cfg(feature = "ui")]
                         if !char.is_ascii_control() && ui.key_down(Some(*char), None, &mut ctx) {
@@ -163,108 +162,112 @@ impl TheApp {
                             window.request_redraw();
                         }
                     }
-
                     WindowEvent::KeyboardInput {
                         input:
                             KeyboardInput {
                                 virtual_keycode: Some(virtual_code),
-                                state: ElementState::Pressed,
+                                state,
                                 ..
                             },
                         ..
-                    } => match virtual_code {
-                        VirtualKeyCode::Delete => {
-                            #[cfg(feature = "ui")]
-                            if ui.key_down(None, Some(TheKeyCode::Delete), &mut ctx) {
-                                window.request_redraw();
-                            }
-                            if app.key_down(None, Some(TheKeyCode::Delete), &mut ctx) {
-                                window.request_redraw();
+                    } => {
+                        ui.virtual_key_changed(*state, *virtual_code, &mut ctx);
+                        if *state == ElementState::Pressed {
+                            match virtual_code {
+                                VirtualKeyCode::Delete => {
+                                    #[cfg(feature = "ui")]
+                                    if ui.key_down(None, Some(TheKeyCode::Delete), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                    if app.key_down(None, Some(TheKeyCode::Delete), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                }
+                                VirtualKeyCode::Back => {
+                                    #[cfg(feature = "ui")]
+                                    if ui.key_down(None, Some(TheKeyCode::Delete), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                    if app.key_down(None, Some(TheKeyCode::Delete), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                }
+                                VirtualKeyCode::Up => {
+                                    #[cfg(feature = "ui")]
+                                    if ui.key_down(None, Some(TheKeyCode::Up), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                    if app.key_down(None, Some(TheKeyCode::Up), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                }
+                                VirtualKeyCode::Right => {
+                                    #[cfg(feature = "ui")]
+                                    if ui.key_down(None, Some(TheKeyCode::Right), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                    if app.key_down(None, Some(TheKeyCode::Right), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                }
+                                VirtualKeyCode::Down => {
+                                    #[cfg(feature = "ui")]
+                                    if ui.key_down(None, Some(TheKeyCode::Down), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                    if app.key_down(None, Some(TheKeyCode::Down), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                }
+                                VirtualKeyCode::Left => {
+                                    #[cfg(feature = "ui")]
+                                    if ui.key_down(None, Some(TheKeyCode::Left), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                    if app.key_down(None, Some(TheKeyCode::Left), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                }
+                                VirtualKeyCode::Space => {
+                                    #[cfg(feature = "ui")]
+                                    if ui.key_down(None, Some(TheKeyCode::Space), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                    if app.key_down(None, Some(TheKeyCode::Space), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                }
+                                VirtualKeyCode::Tab => {
+                                    #[cfg(feature = "ui")]
+                                    if ui.key_down(None, Some(TheKeyCode::Tab), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                    if app.key_down(None, Some(TheKeyCode::Tab), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                }
+                                VirtualKeyCode::Return => {
+                                    #[cfg(feature = "ui")]
+                                    if ui.key_down(None, Some(TheKeyCode::Return), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                    if app.key_down(None, Some(TheKeyCode::Return), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                }
+                                VirtualKeyCode::Escape => {
+                                    #[cfg(feature = "ui")]
+                                    if ui.key_down(None, Some(TheKeyCode::Escape), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                    if app.key_down(None, Some(TheKeyCode::Escape), &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                }
+                                _ => (),
                             }
                         }
-                        VirtualKeyCode::Back => {
-                            #[cfg(feature = "ui")]
-                            if ui.key_down(None, Some(TheKeyCode::Delete), &mut ctx) {
-                                window.request_redraw();
-                            }
-                            if app.key_down(None, Some(TheKeyCode::Delete), &mut ctx) {
-                                window.request_redraw();
-                            }
-                        }
-                        VirtualKeyCode::Up => {
-                            #[cfg(feature = "ui")]
-                            if ui.key_down(None, Some(TheKeyCode::Up), &mut ctx) {
-                                window.request_redraw();
-                            }
-                            if app.key_down(None, Some(TheKeyCode::Up), &mut ctx) {
-                                window.request_redraw();
-                            }
-                        }
-                        VirtualKeyCode::Right => {
-                            #[cfg(feature = "ui")]
-                            if ui.key_down(None, Some(TheKeyCode::Right), &mut ctx) {
-                                window.request_redraw();
-                            }
-                            if app.key_down(None, Some(TheKeyCode::Right), &mut ctx) {
-                                window.request_redraw();
-                            }
-                        }
-                        VirtualKeyCode::Down => {
-                            #[cfg(feature = "ui")]
-                            if ui.key_down(None, Some(TheKeyCode::Down), &mut ctx) {
-                                window.request_redraw();
-                            }
-                            if app.key_down(None, Some(TheKeyCode::Down), &mut ctx) {
-                                window.request_redraw();
-                            }
-                        }
-                        VirtualKeyCode::Left => {
-                            #[cfg(feature = "ui")]
-                            if ui.key_down(None, Some(TheKeyCode::Left), &mut ctx) {
-                                window.request_redraw();
-                            }
-                            if app.key_down(None, Some(TheKeyCode::Left), &mut ctx) {
-                                window.request_redraw();
-                            }
-                        }
-                        VirtualKeyCode::Space => {
-                            #[cfg(feature = "ui")]
-                            if ui.key_down(None, Some(TheKeyCode::Space), &mut ctx) {
-                                window.request_redraw();
-                            }
-                            if app.key_down(None, Some(TheKeyCode::Space), &mut ctx) {
-                                window.request_redraw();
-                            }
-                        }
-                        VirtualKeyCode::Tab => {
-                            #[cfg(feature = "ui")]
-                            if ui.key_down(None, Some(TheKeyCode::Tab), &mut ctx) {
-                                window.request_redraw();
-                            }
-                            if app.key_down(None, Some(TheKeyCode::Tab), &mut ctx) {
-                                window.request_redraw();
-                            }
-                        }
-                        VirtualKeyCode::Return => {
-                            #[cfg(feature = "ui")]
-                            if ui.key_down(None, Some(TheKeyCode::Return), &mut ctx) {
-                                window.request_redraw();
-                            }
-                            if app.key_down(None, Some(TheKeyCode::Return), &mut ctx) {
-                                window.request_redraw();
-                            }
-                        }
-                        VirtualKeyCode::Escape => {
-                            #[cfg(feature = "ui")]
-                            if ui.key_down(None, Some(TheKeyCode::Escape), &mut ctx) {
-                                window.request_redraw();
-                            }
-                            if app.key_down(None, Some(TheKeyCode::Escape), &mut ctx) {
-                                window.request_redraw();
-                            }
-                        }
-                        _ => (),
-                    },
+                    }
                     _ => (),
                 },
 
