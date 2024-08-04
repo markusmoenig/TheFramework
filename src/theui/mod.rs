@@ -696,6 +696,7 @@ impl TheUI {
             if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
                 redraw = widget.on_event(&event, ctx);
                 self.process_events(ctx);
+                redraw = true;
             }
         }
         redraw
