@@ -171,7 +171,9 @@ impl TheApp {
                             },
                         ..
                     } => {
-                        ui.virtual_key_changed(*state, *virtual_code, &mut ctx);
+                        if ui.virtual_key_changed(*state, *virtual_code, &mut ctx) {
+                            window.request_redraw();
+                        }
                         if *state == ElementState::Pressed {
                             match virtual_code {
                                 VirtualKeyCode::Delete => {
