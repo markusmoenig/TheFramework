@@ -1,6 +1,7 @@
 use std::time::Instant;
 
 use fontdue::layout::{HorizontalAlign, LayoutSettings};
+use winit::event::{ElementState, VirtualKeyCode};
 
 use crate::prelude::*;
 
@@ -43,6 +44,7 @@ pub struct TheTextAreaEdit {
     hover_coord: Vec2<i32>,
     last_mouse_down_coord: Vec2<i32>,
     last_mouse_down_time: Instant,
+    modifier_ctrl: bool,
 
     // Scrollbar
     hscrollbar: Box<dyn TheWidget>,
@@ -97,6 +99,7 @@ impl TheWidget for TheTextAreaEdit {
             hover_coord: Vec2::zero(),
             last_mouse_down_coord: Vec2::zero(),
             last_mouse_down_time: Instant::now(),
+            modifier_ctrl: false,
 
             hscrollbar,
             vscrollbar,
@@ -183,6 +186,9 @@ impl TheWidget for TheTextAreaEdit {
         let mut redraw = false;
         let mut update_status = false;
         match event {
+            TheEvent::ModifierChanged(_shift, ctrl, _alt, _logo) => {
+                self.modifier_ctrl = *ctrl;
+            }
             TheEvent::MouseDown(coord) => {
                 if !self.state.is_empty() {
                     let global_coord = coord + self.dim.screen_coord();
@@ -494,6 +500,18 @@ impl TheWidget for TheTextAreaEdit {
                             redraw = true;
                             update_status = true;
                         }
+                    }
+                }
+            }
+            TheEvent::VirtualKeyChanged(state, key_code) => {
+                if *state == ElementState::Pressed && self.modifier_ctrl {
+                    match key_code {
+                        VirtualKeyCode::A => {
+                            self.state.select_all();
+                            self.is_dirty = true;
+                            redraw = true;
+                        }
+                        _ => {}
                     }
                 }
             }

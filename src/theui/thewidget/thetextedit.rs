@@ -404,6 +404,15 @@ impl TheTextEditState {
         self.selection.end = end;
     }
 
+    pub fn select_all(&mut self) {
+        self.selection.start = 0;
+        self.selection.end = self
+            .rows
+            .iter()
+            .enumerate()
+            .fold(0, |acc, (i, _)| acc + self.row_len(i));
+    }
+
     pub fn select_row(&mut self) {
         let (start, end) = self.find_range_of_row(self.cursor.row);
         self.select(start, end);
