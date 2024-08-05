@@ -41,6 +41,7 @@ pub struct TheTextLineEdit {
 
     // Modifiers
     modifier_ctrl: bool,
+    modifier_logo: bool,
 
     // Range
     range: Option<TheValue>,
@@ -84,6 +85,7 @@ impl TheWidget for TheTextLineEdit {
             last_mouse_down_time: Instant::now(),
 
             modifier_ctrl: false,
+            modifier_logo: false,
 
             range: None,
             original: "".to_string(),
@@ -168,8 +170,9 @@ impl TheWidget for TheTextLineEdit {
 
         let mut redraw = false;
         match event {
-            TheEvent::ModifierChanged(_shift, ctrl, _alt, _logo) => {
+            TheEvent::ModifierChanged(_shift, ctrl, _alt, logo) => {
                 self.modifier_ctrl = *ctrl;
+                self.modifier_logo = *logo;
             }
             TheEvent::MouseDown(coord) => {
                 if !self.state.is_empty() {
@@ -360,15 +363,20 @@ impl TheWidget for TheTextLineEdit {
                             self.original = self.state.to_text();
                         }
                     } else if key == TheKeyCode::Left {
-                        let updated = if self.state.selection.is_none() {
-                            self.state.move_cursor_left()
-                        } else {
-                            let (row, column) =
-                                self.state.find_row_col_of_index(self.state.selection.start);
-                            self.state.set_cursor(TheCursor::new(row, column));
-                            self.state.reset_selection();
-                            true
-                        };
+                        let updated = (!self.modifier_ctrl && !self.modifier_logo)
+                            .then(|| {
+                                if self.state.selection.is_none() {
+                                    self.state.move_cursor_left()
+                                } else {
+                                    let (row, column) = self
+                                        .state
+                                        .find_row_col_of_index(self.state.selection.start);
+                                    self.state.set_cursor(TheCursor::new(row, column));
+                                    self.state.reset_selection();
+                                    true
+                                }
+                            })
+                            .unwrap_or_default();
 
                         if updated {
                             self.renderer.scroll_to_cursor(
@@ -379,15 +387,19 @@ impl TheWidget for TheTextLineEdit {
                             redraw = true;
                         }
                     } else if key == TheKeyCode::Right {
-                        let updated = if self.state.selection.is_none() {
-                            self.state.move_cursor_right()
-                        } else {
-                            let (row, column) =
-                                self.state.find_row_col_of_index(self.state.selection.end);
-                            self.state.set_cursor(TheCursor::new(row, column));
-                            self.state.reset_selection();
-                            true
-                        };
+                        let updated = (!self.modifier_ctrl && !self.modifier_logo)
+                            .then(|| {
+                                if self.state.selection.is_none() {
+                                    self.state.move_cursor_right()
+                                } else {
+                                    let (row, column) =
+                                        self.state.find_row_col_of_index(self.state.selection.end);
+                                    self.state.set_cursor(TheCursor::new(row, column));
+                                    self.state.reset_selection();
+                                    true
+                                }
+                            })
+                            .unwrap_or_default();
 
                         if updated {
                             self.renderer.scroll_to_cursor(
@@ -413,14 +425,37 @@ impl TheWidget for TheTextLineEdit {
                 }
             }
             TheEvent::VirtualKeyChanged(state, key_code) => {
-                if *state == ElementState::Pressed && self.modifier_ctrl {
-                    match key_code {
-                        VirtualKeyCode::A => {
-                            self.state.select_all();
-                            self.is_dirty = true;
-                            redraw = true;
+                if *state == ElementState::Pressed {
+                    if self.modifier_ctrl {
+                        match key_code {
+                            VirtualKeyCode::A => {
+                                self.state.select_all();
+                                self.is_dirty = true;
+                                redraw = true;
+                            }
+                            _ => {}
                         }
-                        _ => {}
+                    }
+                    if self.modifier_ctrl || self.modifier_logo {
+                        match key_code {
+                            VirtualKeyCode::Left => {
+                                if self.state.move_cursor_to_line_start()
+                                    || self.state.move_cursor_left()
+                                {
+                                    self.is_dirty = true;
+                                    redraw = true;
+                                }
+                            }
+                            VirtualKeyCode::Right => {
+                                if self.state.move_cursor_to_line_end()
+                                    || self.state.move_cursor_right()
+                                {
+                                    self.is_dirty = true;
+                                    redraw = true;
+                                }
+                            }
+                            _ => {}
+                        }
                     }
                 }
             }
