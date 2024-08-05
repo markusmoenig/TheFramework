@@ -44,6 +44,9 @@ pub struct TheTextAreaEdit {
     hover_coord: Vec2<i32>,
     last_mouse_down_coord: Vec2<i32>,
     last_mouse_down_time: Instant,
+
+    // Modifiers
+    modifier_alt: bool,
     modifier_ctrl: bool,
 
     // Scrollbar
@@ -99,6 +102,8 @@ impl TheWidget for TheTextAreaEdit {
             hover_coord: Vec2::zero(),
             last_mouse_down_coord: Vec2::zero(),
             last_mouse_down_time: Instant::now(),
+
+            modifier_alt: false,
             modifier_ctrl: false,
 
             hscrollbar,
@@ -186,7 +191,8 @@ impl TheWidget for TheTextAreaEdit {
         let mut redraw = false;
         let mut update_status = false;
         match event {
-            TheEvent::ModifierChanged(_shift, ctrl, _alt, _logo) => {
+            TheEvent::ModifierChanged(_shift, ctrl, alt, _logo) => {
+                self.modifier_alt = *alt;
                 self.modifier_ctrl = *ctrl;
             }
             TheEvent::MouseDown(coord) => {
@@ -419,16 +425,21 @@ impl TheWidget for TheTextAreaEdit {
                         redraw = true;
                         update_status = true;
                     } else if key == TheKeyCode::Up {
-                        let updated = if self.state.selection.is_none() {
-                            self.state.move_cursor_up()
-                        } else {
-                            let (row, column) =
-                                self.state.find_row_col_of_index(self.state.selection.start);
-                            self.state.set_cursor(TheCursor::new(row, column));
-                            self.state.move_cursor_up();
-                            self.state.reset_selection();
-                            true
-                        };
+                        let updated = (!self.modifier_alt && !self.modifier_ctrl)
+                            .then(|| {
+                                if self.state.selection.is_none() {
+                                    self.state.move_cursor_up()
+                                } else {
+                                    let (row, column) = self
+                                        .state
+                                        .find_row_col_of_index(self.state.selection.start);
+                                    self.state.set_cursor(TheCursor::new(row, column));
+                                    self.state.move_cursor_up();
+                                    self.state.reset_selection();
+                                    true
+                                }
+                            })
+                            .unwrap_or_default();
 
                         if updated {
                             self.renderer.scroll_to_cursor(
@@ -440,16 +451,20 @@ impl TheWidget for TheTextAreaEdit {
                             update_status = true;
                         }
                     } else if key == TheKeyCode::Down {
-                        let updated = if self.state.selection.is_none() {
-                            self.state.move_cursor_down()
-                        } else {
-                            let (row, column) =
-                                self.state.find_row_col_of_index(self.state.selection.end);
-                            self.state.set_cursor(TheCursor::new(row, column));
-                            self.state.move_cursor_down();
-                            self.state.reset_selection();
-                            true
-                        };
+                        let updated = (!self.modifier_alt && !self.modifier_ctrl)
+                            .then(|| {
+                                if self.state.selection.is_none() {
+                                    self.state.move_cursor_down()
+                                } else {
+                                    let (row, column) =
+                                        self.state.find_row_col_of_index(self.state.selection.end);
+                                    self.state.set_cursor(TheCursor::new(row, column));
+                                    self.state.move_cursor_down();
+                                    self.state.reset_selection();
+                                    true
+                                }
+                            })
+                            .unwrap_or_default();
 
                         if updated {
                             self.renderer.scroll_to_cursor(
@@ -461,15 +476,20 @@ impl TheWidget for TheTextAreaEdit {
                             update_status = true;
                         }
                     } else if key == TheKeyCode::Left {
-                        let updated = if self.state.selection.is_none() {
-                            self.state.move_cursor_left()
-                        } else {
-                            let (row, column) =
-                                self.state.find_row_col_of_index(self.state.selection.start);
-                            self.state.set_cursor(TheCursor::new(row, column));
-                            self.state.reset_selection();
-                            true
-                        };
+                        let updated = (!self.modifier_alt && !self.modifier_ctrl)
+                            .then(|| {
+                                if self.state.selection.is_none() {
+                                    self.state.move_cursor_left()
+                                } else {
+                                    let (row, column) = self
+                                        .state
+                                        .find_row_col_of_index(self.state.selection.start);
+                                    self.state.set_cursor(TheCursor::new(row, column));
+                                    self.state.reset_selection();
+                                    true
+                                }
+                            })
+                            .unwrap_or_default();
 
                         if updated {
                             self.renderer.scroll_to_cursor(
@@ -481,15 +501,19 @@ impl TheWidget for TheTextAreaEdit {
                             update_status = true;
                         }
                     } else if key == TheKeyCode::Right {
-                        let updated = if self.state.selection.is_none() {
-                            self.state.move_cursor_right()
-                        } else {
-                            let (row, column) =
-                                self.state.find_row_col_of_index(self.state.selection.end);
-                            self.state.set_cursor(TheCursor::new(row, column));
-                            self.state.reset_selection();
-                            true
-                        };
+                        let updated = (!self.modifier_alt && !self.modifier_ctrl)
+                            .then(|| {
+                                if self.state.selection.is_none() {
+                                    self.state.move_cursor_right()
+                                } else {
+                                    let (row, column) =
+                                        self.state.find_row_col_of_index(self.state.selection.end);
+                                    self.state.set_cursor(TheCursor::new(row, column));
+                                    self.state.reset_selection();
+                                    true
+                                }
+                            })
+                            .unwrap_or_default();
 
                         if updated {
                             self.renderer.scroll_to_cursor(
@@ -504,14 +528,35 @@ impl TheWidget for TheTextAreaEdit {
                 }
             }
             TheEvent::VirtualKeyChanged(state, key_code) => {
-                if *state == ElementState::Pressed && self.modifier_ctrl {
-                    match key_code {
-                        VirtualKeyCode::A => {
-                            self.state.select_all();
-                            self.is_dirty = true;
-                            redraw = true;
+                if *state == ElementState::Pressed {
+                    if self.modifier_alt {
+                        match key_code {
+                            VirtualKeyCode::Up => {
+                                if self.state.move_lines_up() {
+                                    self.modified_since_last_tick = true;
+                                    self.is_dirty = true;
+                                    redraw = true;
+                                }
+                            }
+                            VirtualKeyCode::Down => {
+                                if self.state.move_lines_down() {
+                                    self.modified_since_last_tick = true;
+                                    self.is_dirty = true;
+                                    redraw = true;
+                                }
+                            }
+                            _ => {}
                         }
-                        _ => {}
+                    }
+                    if self.modifier_ctrl {
+                        match key_code {
+                            VirtualKeyCode::A => {
+                                self.state.select_all();
+                                self.is_dirty = true;
+                                redraw = true;
+                            }
+                            _ => {}
+                        }
                     }
                 }
             }
