@@ -317,6 +317,24 @@ impl TheTextEditState {
         true
     }
 
+    pub fn move_cursor_to_line_end(&mut self) -> bool {
+        if self.cursor.column == self.glyphs_in_row(self.cursor.row) {
+            return false;
+        }
+
+        self.cursor.column = self.glyphs_in_row(self.cursor.row);
+        true
+    }
+
+    pub fn move_cursor_to_line_start(&mut self) -> bool {
+        if self.cursor.column == 0 {
+            return false;
+        }
+
+        self.cursor.column = 0;
+        true
+    }
+
     pub fn move_cursor_up(&mut self) -> bool {
         if self.cursor.row == 0 {
             return false;
