@@ -1,4 +1,5 @@
 pub mod thecanvas;
+pub mod thecodehighlighter;
 pub mod thecollection;
 pub mod thecontextmenu;
 pub mod thecurrency;
@@ -78,6 +79,7 @@ pub mod prelude {
     pub use crate::thecode::prelude::*;
 
     pub use crate::theui::thecanvas::*;
+    pub use crate::theui::thecodehighlighter::{TheCodeHighlighter, TheCodeHighlighterTrait};
     pub use crate::theui::thedim::*;
     pub use crate::theui::thergbabuffer::{
         TheRGBABuffer, TheRGBARegion, TheRGBARegionSequence, TheRGBATile,

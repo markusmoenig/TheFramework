@@ -327,6 +327,30 @@ impl TheTextEditState {
         true
     }
 
+    pub fn move_lines_down(&mut self) -> bool {
+        if self.selection.is_none() {
+            self.move_lines(self.cursor.row, self.cursor.row, 1)
+        } else {
+            self.move_lines(
+                self.find_row_number_of_index(self.selection.start),
+                self.find_row_number_of_index(self.selection.end),
+                1,
+            )
+        }
+    }
+
+    pub fn move_lines_up(&mut self) -> bool {
+        if self.selection.is_none() {
+            self.move_lines(self.cursor.row, self.cursor.row, -1)
+        } else {
+            self.move_lines(
+                self.find_row_number_of_index(self.selection.start),
+                self.find_row_number_of_index(self.selection.end),
+                -1,
+            )
+        }
+    }
+
     pub fn quick_select(&mut self) {
         let text = &self.rows[self.cursor.row];
         let (row_start, row_end) = self.find_range_of_row(self.cursor.row);
@@ -402,6 +426,15 @@ impl TheTextEditState {
     pub fn select(&mut self, start: usize, end: usize) {
         self.selection.start = start;
         self.selection.end = end;
+    }
+
+    pub fn select_all(&mut self) {
+        self.selection.start = 0;
+        self.selection.end = self
+            .rows
+            .iter()
+            .enumerate()
+            .fold(0, |acc, (i, _)| acc + self.row_len(i));
     }
 
     pub fn select_row(&mut self) {
@@ -516,6 +549,42 @@ impl TheTextEditState {
 
     fn glyphs_in_row(&self, row_number: usize) -> usize {
         return self.rows[row_number].graphemes(true).count();
+    }
+
+    // Inclusive on both end
+    fn move_lines(&mut self, start: usize, end: usize, vector: isize) -> bool {
+        if vector == 0
+            || (start as isize) + vector < 0
+            || ((end as isize) + vector).abs().as_usize() >= self.row_count()
+        {
+            return false;
+        }
+
+        if vector < 0 {
+            let vector = vector.abs().as_usize();
+            if !self.selection.is_none() {
+                let row_len = self.glyphs_in_row(start - vector) + 1;
+                self.selection.start -= row_len;
+                self.selection.end -= row_len;
+            }
+            for i in start..=end {
+                self.rows.swap(i, i - vector);
+            }
+            self.cursor.row -= vector;
+        } else {
+            let vector = vector.abs().as_usize();
+            if !self.selection.is_none() {
+                let row_len = self.glyphs_in_row(end + vector) + 1;
+                self.selection.start += row_len;
+                self.selection.end += row_len;
+            }
+            for i in (start..=end).rev() {
+                self.rows.swap(i, i + vector);
+            }
+            self.cursor.row += vector;
+        }
+
+        true
     }
 
     // Length of row in glyphs, linebreak included
