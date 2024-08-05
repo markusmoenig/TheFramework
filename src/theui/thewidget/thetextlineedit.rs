@@ -1,5 +1,7 @@
 use std::time::Instant;
 
+use winit::event::{ElementState, VirtualKeyCode};
+
 use crate::prelude::*;
 
 use super::thetextedit::{TheCursor, TheTextEditState, TheTextRenderer};
@@ -36,6 +38,9 @@ pub struct TheTextLineEdit {
     drag_start_index: usize,
     last_mouse_down_coord: Vec2<i32>,
     last_mouse_down_time: Instant,
+
+    // Modifiers
+    modifier_ctrl: bool,
 
     // Range
     range: Option<TheValue>,
@@ -77,6 +82,8 @@ impl TheWidget for TheTextLineEdit {
             drag_start_index: 0,
             last_mouse_down_coord: Vec2::zero(),
             last_mouse_down_time: Instant::now(),
+
+            modifier_ctrl: false,
 
             range: None,
             original: "".to_string(),
@@ -161,6 +168,9 @@ impl TheWidget for TheTextLineEdit {
 
         let mut redraw = false;
         match event {
+            TheEvent::ModifierChanged(_shift, ctrl, _alt, _logo) => {
+                self.modifier_ctrl = *ctrl;
+            }
             TheEvent::MouseDown(coord) => {
                 if !self.state.is_empty() {
                     self.state.set_cursor(self.renderer.find_cursor(coord));
@@ -399,6 +409,18 @@ impl TheWidget for TheTextLineEdit {
                         } else {
                             ctx.ui.send_widget_value_changed(self.id(), self.value());
                         }
+                    }
+                }
+            }
+            TheEvent::VirtualKeyChanged(state, key_code) => {
+                if *state == ElementState::Pressed && self.modifier_ctrl {
+                    match key_code {
+                        VirtualKeyCode::A => {
+                            self.state.select_all();
+                            self.is_dirty = true;
+                            redraw = true;
+                        }
+                        _ => {}
                     }
                 }
             }
