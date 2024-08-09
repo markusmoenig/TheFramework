@@ -263,6 +263,29 @@ impl TheRGBBuffer {
         }
     }
 
+    /// Get a pixel at (x, y).
+    pub fn get_pixel(&self, x: i32, y: i32) -> Option<[u8; 3]> {
+        self.pixel_index(x, y).map(|index| {
+            [
+                self.buffer[index],
+                self.buffer[index + 1],
+                self.buffer[index + 2],
+            ]
+        })
+    }
+
+    /// Get a pixel at (x, y).
+    pub fn get_pixel_rgba(&self, x: i32, y: i32) -> Option<[u8; 4]> {
+        self.pixel_index(x, y).map(|index| {
+            [
+                self.buffer[index],
+                self.buffer[index + 1],
+                self.buffer[index + 2],
+                255,
+            ]
+        })
+    }
+
     /// Sets the color of a pixel at (x, y).
     pub fn set_pixel(&mut self, x: i32, y: i32, color: &[u8; 3]) {
         if let Some(index) = self.pixel_index(x, y) {
@@ -317,5 +340,16 @@ impl TheRGBBuffer {
         } else {
             eprintln!("Failed to initialize clipboard context");
         }
+    }
+
+    /// Convert the buffer to an TheRGBABuffer.
+    pub fn to_rgba(&self) -> TheRGBABuffer {
+        let mut rgba_buffer = Vec::with_capacity(self.buffer.len() / 3 * 4);
+        for chunk in self.buffer.chunks(3) {
+            rgba_buffer.extend_from_slice(chunk);
+            rgba_buffer.push(255); // Add alpha channel
+        }
+
+        TheRGBABuffer::from(rgba_buffer, self.dim.width as u32, self.dim.height as u32)
     }
 }

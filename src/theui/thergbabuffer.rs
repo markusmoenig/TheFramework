@@ -786,6 +786,18 @@ impl TheRGBABuffer {
         }
     }
 
+    /// Get a pixel at (x, y).
+    pub fn get_pixel(&self, x: i32, y: i32) -> Option<[u8; 4]> {
+        self.pixel_index(x, y).map(|index| {
+            [
+                self.buffer[index],
+                self.buffer[index + 1],
+                self.buffer[index + 2],
+                self.buffer[index + 3],
+            ]
+        })
+    }
+
     /// Sets the color of a pixel at (x, y).
     pub fn set_pixel(&mut self, x: i32, y: i32, color: &[u8; 4]) {
         if let Some(index) = self.pixel_index(x, y) {
