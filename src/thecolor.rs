@@ -92,13 +92,24 @@ impl TheColor {
         }
     }
 
-    /// Creates a color from u8 values.
+    /// Creates a color from 4 u8 values.
     pub fn from_u8_array(color: [u8; 4]) -> Self {
         Self {
             r: color[0] as f32 / 255.0,
             g: color[1] as f32 / 255.0,
             b: color[2] as f32 / 255.0,
             a: color[3] as f32 / 255.0,
+            name: String::default(),
+        }
+    }
+
+    /// Creates a color from 3 u8 values.
+    pub fn from_u8_array_3(color: [u8; 3]) -> Self {
+        Self {
+            r: color[0] as f32 / 255.0,
+            g: color[1] as f32 / 255.0,
+            b: color[2] as f32 / 255.0,
+            a: 1.0,
             name: String::default(),
         }
     }
@@ -328,5 +339,43 @@ impl IndexMut<usize> for TheColor {
             3 => &mut self.a,
             _ => panic!("Index out of bounds!"),
         }
+    }
+}
+
+// From<T>
+
+impl From<Vec3f> for TheColor {
+    fn from(color: Vec3f) -> Self {
+        Self::from_vec3f(color)
+    }
+}
+
+impl From<Vec4f> for TheColor {
+    fn from(color: Vec4f) -> Self {
+        Self::from_vec4f(color)
+    }
+}
+
+impl From<[u8; 4]> for TheColor {
+    fn from(color: [u8; 4]) -> Self {
+        Self::from_u8_array(color)
+    }
+}
+
+impl From<[u8; 3]> for TheColor {
+    fn from(color: [u8; 3]) -> Self {
+        Self::from_u8_array_3(color)
+    }
+}
+
+impl From<&str> for TheColor {
+    fn from(color: &str) -> Self {
+        Self::from_hex(color)
+    }
+}
+
+impl From<(f32, f32, f32)> for TheColor {
+    fn from(color: (f32, f32, f32)) -> Self {
+        Self::from_hsl(color.0, color.1, color.2)
     }
 }
