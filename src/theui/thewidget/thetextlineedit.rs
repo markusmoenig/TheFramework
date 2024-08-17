@@ -337,7 +337,6 @@ impl TheWidget for TheTextLineEdit {
                 }
             }
             TheEvent::KeyCodeDown(key_code) => {
-                // println!("key {:?}", key_code);
                 if let Some(key) = key_code.to_key_code() {
                     if key == TheKeyCode::Delete {
                         if self.state.delete_text() {
@@ -538,12 +537,12 @@ impl TheWidget for TheTextLineEdit {
                 self.set_text(text);
             }
             TheValue::Int(v) => {
-                self.content_type = TheTextLineEditContentType::Int;
                 self.set_text(v.to_string());
+                self.content_type = TheTextLineEditContentType::Int;
             }
             TheValue::Float(v) => {
-                self.content_type = TheTextLineEditContentType::Float;
                 self.set_text(v.to_string());
+                self.content_type = TheTextLineEditContentType::Float;
             }
             _ => {}
         }
