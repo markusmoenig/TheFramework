@@ -1,4 +1,5 @@
 pub use crate::prelude::*;
+use std::hash::{Hash, Hasher};
 
 /// Defines the identifier for a widget, its name and Uuid.
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -10,6 +11,14 @@ pub struct TheId {
 impl PartialEq for TheId {
     fn eq(&self, other: &Self) -> bool {
         self.uuid == other.uuid
+    }
+}
+
+impl Eq for TheId {}
+
+impl Hash for TheId {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.uuid.hash(state); // Hash based only on `uuid`
     }
 }
 

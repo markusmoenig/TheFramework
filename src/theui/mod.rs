@@ -119,6 +119,8 @@ pub mod prelude {
     pub use crate::theui::thetilemask::TheTileMask;
     pub use crate::theui::thetime::TheTime;
     pub use crate::theui::thetimeline::{TheInterpolation, TheTimeline};
+    pub use crate::theui::TheAccelerator;
+    pub use crate::theui::TheAcceleratorKey;
     pub use crate::theui::TheDialogButtonRole;
 }
 
@@ -128,6 +130,72 @@ macro_rules! str {
     ($x:expr) => {
         $x.to_string()
     };
+}
+
+bitflags::bitflags! {
+    pub struct TheAcceleratorKey: u32 {
+        /// Shift Key
+        const SHIFT = 0b00000001;
+        /// Ctrl Key / Control on Mac
+        const CTRL = 0b00000010;
+        /// Alt Key / Option on Mac
+        const ALT = 0b00000100;
+        /// Cmd on Mac
+        const CMD = 0b00001000;
+
+        /// CtrlAndCmd
+        const CTRLCMD = Self::CTRL.bits() | Self::CMD.bits();
+
+        /// The combination of `A`, `B`, and `C`.
+        const ALL = Self::SHIFT.bits() | Self::CTRL.bits() | Self::ALT.bits() | Self::CMD.bits();
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+/// An accelerator for context menus and similar.
+pub struct TheAccelerator {
+    pub accel: TheAcceleratorKey,
+    pub key: char,
+}
+
+impl TheAccelerator {
+    pub fn new(accel: TheAcceleratorKey, key: char) -> Self {
+        Self { accel, key }
+    }
+
+    /// Converts the accelerator to a string.
+    pub fn description(&self) -> String {
+        let mut str = "";
+        if self.accel == TheAcceleratorKey::CTRLCMD {
+            if cfg!(target_os = "macos") {
+                str = "Cmd + ";
+            } else {
+                str = "Ctrl + "
+            }
+        }
+
+        let mut s = str.to_string();
+        s += &self.key.to_string().to_uppercase();
+
+        s
+    }
+
+    /// Test if we match the given modifiers and key.
+    pub fn matches(&self, shift: bool, ctrl: bool, alt: bool, logo: bool, key: char) -> bool {
+        #[allow(clippy::if_same_then_else)]
+        if self.key == key {
+            if shift && self.accel.contains(TheAcceleratorKey::SHIFT) {
+                return true;
+            } else if ctrl && self.accel.contains(TheAcceleratorKey::CTRL) {
+                return true;
+            } else if alt && self.accel.contains(TheAcceleratorKey::ALT) {
+                return true;
+            } else if logo && self.accel.contains(TheAcceleratorKey::CMD) {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 /// The roles for dialog buttons.
@@ -181,6 +249,12 @@ pub struct TheUI {
     pub menu_widget_id: Option<TheId>,
 
     pub is_dirty: bool,
+
+    // Modifiers
+    pub shift: bool,
+    pub ctrl: bool,
+    pub alt: bool,
+    pub logo: bool,
 }
 
 impl Default for TheUI {
@@ -208,6 +282,11 @@ impl TheUI {
             context_menu: None,
             menu_widget_id: None,
             is_dirty: false,
+
+            shift: false,
+            ctrl: false,
+            alt: false,
+            logo: false,
         }
     }
 
@@ -710,29 +789,50 @@ impl TheUI {
         ctx: &mut TheContext,
     ) -> bool {
         let mut redraw = false;
-        let event = if let Some(c) = char {
-            TheEvent::KeyDown(TheValue::Char(c))
-        } else {
-            if key.clone().unwrap().clone() == TheKeyCode::Escape && self.context_menu.is_some() {
-                self.context_menu = None;
-                let menu_widget_id = self.menu_widget_id.clone();
-                if let Some(menu_widget_id) = menu_widget_id {
-                    if let Some(widget) = self.get_widget_abs(None, Some(&menu_widget_id.uuid)) {
-                        widget.on_event(&TheEvent::ContextMenuClosed(menu_widget_id), ctx);
+
+        let mut consumed = false;
+
+        if let Some(c) = char {
+            if self.ctrl || self.shift || self.alt || self.logo {
+                // Check for accelerators in context menus.
+                for (id, accel) in &ctx.ui.accelerators.clone() {
+                    if accel.matches(self.shift, self.ctrl, self.alt, self.logo, c) {
+                        consumed = true;
+                        ctx.ui
+                            .send(TheEvent::ContextMenuSelected(id.clone(), id.clone()));
+                        break;
                     }
                 }
-                self.menu_widget_id = None;
-                ctx.ui.clear_hover();
-                return true;
             }
+        }
 
-            TheEvent::KeyCodeDown(TheValue::KeyCode(key.unwrap()))
-        };
-        ctx.ui.send(event.clone());
-        if let Some(id) = &ctx.ui.focus {
-            if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
-                redraw = widget.on_event(&event, ctx);
-                self.process_events(ctx);
+        if !consumed {
+            let event = if let Some(c) = char {
+                TheEvent::KeyDown(TheValue::Char(c))
+            } else {
+                if key.clone().unwrap().clone() == TheKeyCode::Escape && self.context_menu.is_some()
+                {
+                    self.context_menu = None;
+                    let menu_widget_id = self.menu_widget_id.clone();
+                    if let Some(menu_widget_id) = menu_widget_id {
+                        if let Some(widget) = self.get_widget_abs(None, Some(&menu_widget_id.uuid))
+                        {
+                            widget.on_event(&TheEvent::ContextMenuClosed(menu_widget_id), ctx);
+                        }
+                    }
+                    self.menu_widget_id = None;
+                    ctx.ui.clear_hover();
+                    return true;
+                }
+
+                TheEvent::KeyCodeDown(TheValue::KeyCode(key.unwrap()))
+            };
+            ctx.ui.send(event.clone());
+            if let Some(id) = &ctx.ui.focus {
+                if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
+                    redraw = widget.on_event(&event, ctx);
+                    self.process_events(ctx);
+                }
             }
         }
         redraw
@@ -747,6 +847,12 @@ impl TheUI {
         ctx: &mut TheContext,
     ) -> bool {
         let mut redraw = false;
+
+        self.shift = shift;
+        self.ctrl = ctrl;
+        self.alt = alt;
+        self.logo = logo;
+
         if let Some(id) = &ctx.ui.focus {
             if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
                 let event = TheEvent::ModifierChanged(shift, ctrl, alt, logo);

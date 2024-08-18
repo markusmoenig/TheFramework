@@ -8,6 +8,8 @@ pub struct TheContextMenuItem {
     pub id: TheId,
     pub value: Option<TheValue>,
     pub sub_menu: Option<TheContextMenu>,
+
+    pub accel: Option<TheAccelerator>,
 }
 
 impl TheContextMenuItem {
@@ -17,6 +19,19 @@ impl TheContextMenuItem {
             id,
             value: None,
             sub_menu: None,
+
+            accel: None,
+        }
+    }
+
+    pub fn new_with_accel(name: String, id: TheId, accel: TheAccelerator) -> Self {
+        Self {
+            name,
+            id,
+            value: None,
+            sub_menu: None,
+
+            accel: Some(accel),
         }
     }
 
@@ -26,6 +41,8 @@ impl TheContextMenuItem {
             id,
             value: None,
             sub_menu: Some(sub_menu),
+
+            accel: None,
         }
     }
 
@@ -194,6 +211,15 @@ impl TheContextMenu {
         None
     }
 
+    /// Register the accelerators to the system.
+    pub fn register_accel(&self, ctx: &mut TheContext) {
+        for item in &self.items {
+            if let Some(accel) = item.accel {
+                ctx.ui.accelerators.insert(item.id.clone(), accel);
+            }
+        }
+    }
+
     /// Draw the menu
     pub fn draw(&mut self, pixels: &mut [u8], style: &mut Box<dyn TheStyle>, ctx: &mut TheContext) {
         let mut tuple = self.dim.to_buffer_utuple();
@@ -268,7 +294,21 @@ impl TheContextMenu {
                 );
             }
 
-            if let Some(sub_menu) = &mut item.sub_menu {
+            if let Some(accel) = &item.accel {
+                if let Some(font) = &ctx.ui.font {
+                    ctx.draw.text_rect_blend(
+                        pixels,
+                        &(rect.0, rect.1, &rect.2 - 6, rect.3),
+                        ctx.width,
+                        font,
+                        12.0,
+                        &accel.description(),
+                        style.theme().color(ContextMenuTextDisabled),
+                        TheHorizontalAlign::Right,
+                        TheVerticalAlign::Center,
+                    );
+                }
+            } else if let Some(sub_menu) = &mut item.sub_menu {
                 if !is_disabled {
                     if Some(item.id.clone()) == self.hovered {
                         sub_menu

@@ -40,6 +40,8 @@ pub struct TheUIContext {
     pub drop: Option<TheDrop>,
 
     pub file_requester_receiver: Option<(TheId, Receiver<Vec<PathBuf>>)>,
+
+    pub accelerators: FxHashMap<TheId, TheAccelerator>,
 }
 
 impl Default for TheUIContext {
@@ -133,6 +135,8 @@ impl TheUIContext {
             drop: None,
 
             file_requester_receiver: None,
+
+            accelerators: FxHashMap::default(),
         }
     }
 
