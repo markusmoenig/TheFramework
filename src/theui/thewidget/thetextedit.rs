@@ -558,6 +558,11 @@ impl TheTextEditState {
                 self.selection.end - self.find_start_index_of_row(end_row),
             );
             let text = self.rows.remove(end_row);
+            // When only linebreak is selected, manually add a linebreak,
+            // so we can delete chars safely later
+            if self.selection.end == row_end && self.selection.end - 1 == self.selection.start {
+                self.rows[start_row].push('\n');
+            }
             self.rows[start_row].push_str(&text);
 
             // Remove inter rows
