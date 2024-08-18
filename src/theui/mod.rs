@@ -165,13 +165,17 @@ impl TheAccelerator {
 
     /// Converts the accelerator to a string.
     pub fn description(&self) -> String {
-        let mut str = "";
-        if self.accel == TheAcceleratorKey::CTRLCMD {
+        let mut str = "".to_string();
+        if self.accel.contains(TheAcceleratorKey::CTRLCMD) {
             if cfg!(target_os = "macos") {
-                str = "Cmd + ";
+                str = "Cmd + ".to_string();
             } else {
-                str = "Ctrl + "
+                str = "Ctrl + ".to_string();
             }
+        }
+
+        if self.accel.contains(TheAcceleratorKey::SHIFT) {
+            str = "Shift + ".to_string() + &str;
         }
 
         let mut s = str.to_string();
@@ -184,17 +188,29 @@ impl TheAccelerator {
     pub fn matches(&self, shift: bool, ctrl: bool, alt: bool, logo: bool, key: char) -> bool {
         #[allow(clippy::if_same_then_else)]
         if self.key == key {
-            if shift && self.accel.contains(TheAcceleratorKey::SHIFT) {
-                return true;
-            } else if ctrl && self.accel.contains(TheAcceleratorKey::CTRL) {
-                return true;
-            } else if alt && self.accel.contains(TheAcceleratorKey::ALT) {
-                return true;
-            } else if logo && self.accel.contains(TheAcceleratorKey::CMD) {
-                return true;
+            if shift || ctrl || alt || logo {
+                let mut ok = true;
+
+                if shift && !self.accel.contains(TheAcceleratorKey::SHIFT) {
+                    ok = false;
+                }
+                if ctrl && !self.accel.contains(TheAcceleratorKey::CTRL) {
+                    ok = false;
+                }
+                if alt && !self.accel.contains(TheAcceleratorKey::ALT) {
+                    ok = false;
+                }
+                if logo && !self.accel.contains(TheAcceleratorKey::CMD) {
+                    ok = false;
+                }
+
+                ok
+            } else {
+                false
             }
+        } else {
+            false
         }
-        false
     }
 }
 
@@ -800,6 +816,8 @@ impl TheUI {
                         consumed = true;
                         ctx.ui
                             .send(TheEvent::ContextMenuSelected(id.clone(), id.clone()));
+                        ctx.ui
+                            .send(TheEvent::StateChanged(id.clone(), TheWidgetState::Selected));
                         break;
                     }
                 }
