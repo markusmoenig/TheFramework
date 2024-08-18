@@ -557,6 +557,54 @@ impl TheRGBABuffer {
         }
     }
 
+    /// Draws a horizontal line from (x0, y) to (x1, y) with the given color.
+    pub fn draw_horizontal_line(&mut self, x0: i32, x1: i32, y: i32, color: [u8; 4]) {
+        let mut start_x = x0.min(x1);
+        let end_x = x0.max(x1);
+
+        // Ensure that the line is within bounds
+        if y < 0 || y >= self.dim.height || start_x >= self.dim.width {
+            return;
+        }
+
+        // Clip start_x to buffer bounds
+        if start_x < 0 {
+            start_x = 0;
+        }
+
+        for x in start_x..=end_x {
+            if x < self.dim.width {
+                self.set_pixel(x, y, &color);
+            } else {
+                break;
+            }
+        }
+    }
+
+    /// Draws a vertical line from (x, y0) to (x, y1) with the given color.
+    pub fn draw_vertical_line(&mut self, x: i32, y0: i32, y1: i32, color: [u8; 4]) {
+        let mut start_y = y0.min(y1);
+        let end_y = y0.max(y1);
+
+        // Ensure that the line is within bounds
+        if x < 0 || x >= self.dim.width || start_y >= self.dim.height {
+            return;
+        }
+
+        // Clip start_y to buffer bounds
+        if start_y < 0 {
+            start_y = 0;
+        }
+
+        for y in start_y..=end_y {
+            if y < self.dim.height {
+                self.set_pixel(x, y, &color);
+            } else {
+                break;
+            }
+        }
+    }
+
     /// Draws the outline of a given rectangle
     pub fn draw_rect_outline(&mut self, rect: &TheDim, color: &[u8; 4]) {
         let y = rect.y;
