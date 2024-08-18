@@ -108,6 +108,19 @@ pub enum TheEvent {
     // The top canvas has been resized.
     Resize,
 
+    // --- Clipboard
+
+    // Sets the clipboard with the value and an optional app specific description.
+    // For example to specify a certain type of JSON content.
+    SetClipboard(TheValue, Option<String>),
+    // Events send to Widgets to handle Cut / Copy / Paste events.
+    // They can set the clipboard via the SetClipboard event above.
+    Cut,
+    Copy,
+    Paste(TheValue, Option<String>),
+    // Send when the content of the Clipboard changed.
+    ClipboardChanged,
+
     // Custom event for applications.
     Custom(TheId, TheValue),
 }

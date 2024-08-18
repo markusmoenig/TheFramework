@@ -42,6 +42,9 @@ pub struct TheUIContext {
     pub file_requester_receiver: Option<(TheId, Receiver<Vec<PathBuf>>)>,
 
     pub accelerators: FxHashMap<TheId, TheAccelerator>,
+
+    pub clipboard: Option<TheValue>,
+    pub clipboard_app_type: Option<String>,
 }
 
 impl Default for TheUIContext {
@@ -137,6 +140,9 @@ impl TheUIContext {
             file_requester_receiver: None,
 
             accelerators: FxHashMap::default(),
+
+            clipboard: None,
+            clipboard_app_type: None,
         }
     }
 

@@ -191,16 +191,32 @@ impl TheAccelerator {
             if shift || ctrl || alt || logo {
                 let mut ok = true;
 
-                if shift && !self.accel.contains(TheAcceleratorKey::SHIFT) {
+                if (shift && !self.accel.contains(TheAcceleratorKey::SHIFT))
+                    || (!shift && self.accel.contains(TheAcceleratorKey::SHIFT))
+                {
                     ok = false;
                 }
-                if ctrl && !self.accel.contains(TheAcceleratorKey::CTRL) {
+                // Check Ctrl: Allow for cases where either Ctrl or Cmd is part of CtrlCmd
+                if (ctrl
+                    && !(self.accel.contains(TheAcceleratorKey::CTRL)
+                        || self.accel.contains(TheAcceleratorKey::CMD)))
+                    || (!ctrl
+                        && self.accel.contains(TheAcceleratorKey::CTRL)
+                        && !self.accel.contains(TheAcceleratorKey::CMD))
+                {
                     ok = false;
                 }
                 if alt && !self.accel.contains(TheAcceleratorKey::ALT) {
                     ok = false;
                 }
-                if logo && !self.accel.contains(TheAcceleratorKey::CMD) {
+                // Check Cmd (Logo): Allow for cases where either Ctrl or Cmd is part of CtrlCmd
+                if (logo
+                    && !(self.accel.contains(TheAcceleratorKey::CMD)
+                        || self.accel.contains(TheAcceleratorKey::CTRL)))
+                    || (!logo
+                        && self.accel.contains(TheAcceleratorKey::CMD)
+                        && !self.accel.contains(TheAcceleratorKey::CTRL))
+                {
                     ok = false;
                 }
 
@@ -331,6 +347,41 @@ impl TheUI {
         ctx.ui.relayout = false;
     }
 
+    /// Initiate a cut operation on the current focus widget.
+    pub fn cut(&mut self, ctx: &mut TheContext) {
+        if let Some(id) = &ctx.ui.focus {
+            if let Some(widget) = self.get_widget_abs(None, Some(&id.uuid)) {
+                let event = TheEvent::Cut;
+                self.is_dirty = widget.on_event(&event, ctx);
+                self.process_events(ctx);
+            }
+        }
+    }
+
+    /// Initiate a copy operation on the current focus widget.
+    pub fn copy(&mut self, ctx: &mut TheContext) {
+        if let Some(id) = &ctx.ui.focus {
+            if let Some(widget) = self.get_widget_abs(None, Some(&id.uuid)) {
+                let event = TheEvent::Copy;
+                self.is_dirty = widget.on_event(&event, ctx);
+                self.process_events(ctx);
+            }
+        }
+    }
+
+    /// Initiate a paste operation on the current focus widget.
+    pub fn paste(&mut self, ctx: &mut TheContext) {
+        if let Some(id) = &ctx.ui.focus {
+            if let Some(widget) = self.get_widget_abs(None, Some(&id.uuid)) {
+                if let Some(value) = &ctx.ui.clipboard {
+                    let event = TheEvent::Paste(value.clone(), ctx.ui.clipboard_app_type.clone());
+                    self.is_dirty = widget.on_event(&event, ctx);
+                    self.process_events(ctx);
+                }
+            }
+        }
+    }
+
     pub fn draw(&mut self, pixels: &mut [u8], ctx: &mut TheContext) {
         if self.canvas.resize(ctx.width as i32, ctx.height as i32, ctx) {
             ctx.ui.send(TheEvent::Resize);
@@ -372,6 +423,11 @@ impl TheUI {
                 }
 
                 match event {
+                    TheEvent::SetClipboard(value, app_type) => {
+                        ctx.ui.clipboard = Some(value);
+                        ctx.ui.clipboard_app_type = app_type;
+                        ctx.ui.send(TheEvent::ClipboardChanged);
+                    }
                     TheEvent::ShowMenu(id, coord, mut menu) => {
                         menu.set_position(coord, ctx);
                         menu.id = id.clone();
