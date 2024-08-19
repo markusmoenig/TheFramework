@@ -42,6 +42,7 @@ pub struct TheTextAreaEdit {
     // Interaction
     drag_start_index: usize,
     hover_coord: Vec2<i32>,
+    is_clicking_on_selection: bool,
     last_mouse_down_coord: Vec2<i32>,
     last_mouse_down_time: Instant,
 
@@ -101,6 +102,7 @@ impl TheWidget for TheTextAreaEdit {
 
             drag_start_index: 0,
             hover_coord: Vec2::zero(),
+            is_clicking_on_selection: false,
             last_mouse_down_coord: Vec2::zero(),
             last_mouse_down_time: Instant::now(),
 
@@ -218,30 +220,33 @@ impl TheWidget for TheTextAreaEdit {
                             ctx,
                         );
                     } else if self.renderer.dim().contains(global_coord) {
+                        {
+                            let mut coord = *coord;
+                            if let Some(dim) = &self.ln_area_dim {
+                                coord.x -= dim.width;
+                            }
+                            self.state.set_cursor(self.renderer.find_cursor(&coord));
+                            update_status = true;
+                        }
+
+                        self.drag_start_index = self.state.find_cursor_index();
                         let is_double_click = self.last_mouse_down_time.elapsed().as_millis() < 500
                             && self.last_mouse_down_coord == *coord;
-
-                        let mut coord = *coord;
-                        if let Some(dim) = &self.ln_area_dim {
-                            coord.x -= dim.width;
-                        }
-                        self.state.set_cursor(self.renderer.find_cursor(&coord));
-                        update_status = true;
-                        self.drag_start_index = self.state.find_cursor_index();
-
-                        if !self.state.selection.is_none() {
-                            if is_double_click {
-                                if self.state.is_row_all_selected(self.state.cursor.row) {
-                                    self.state.reset_selection();
-                                } else {
-                                    self.state.select_row();
-                                }
-                            } else {
+                        if is_double_click {
+                            if self.state.selection.is_none() {
+                                // Select a word, a whole row or a spacing etc.
+                                self.state.quick_select();
+                            } else if self.state.is_row_all_selected(self.state.cursor.row) {
                                 self.state.reset_selection();
+                            } else {
+                                self.state.select_row();
                             }
-                        } else if is_double_click {
-                            // Select a word, a whole row or a spacing etc.
-                            self.state.quick_select();
+                        } else if self.drag_start_index >= self.state.selection.start
+                            && self.drag_start_index < self.state.selection.end
+                        {
+                            self.is_clicking_on_selection = true;
+                        } else {
+                            self.state.reset_selection();
                         }
                     }
                 }
@@ -329,13 +334,15 @@ impl TheWidget for TheTextAreaEdit {
                         self.state.set_cursor(self.renderer.find_cursor(&coord));
                         update_status = true;
 
-                        let cursor_index = self.state.find_cursor_index();
-                        if self.drag_start_index != cursor_index {
-                            let start = self.drag_start_index.min(cursor_index);
-                            let end = self.drag_start_index.max(cursor_index);
-                            self.state.select(start, end);
-                        } else {
-                            self.state.reset_selection();
+                        if !self.is_clicking_on_selection {
+                            let cursor_index = self.state.find_cursor_index();
+                            if self.drag_start_index != cursor_index {
+                                let start = self.drag_start_index.min(cursor_index);
+                                let end = self.drag_start_index.max(cursor_index);
+                                self.state.select(start, end);
+                            } else {
+                                self.state.reset_selection();
+                            }
                         }
 
                         redraw = true;
@@ -361,9 +368,30 @@ impl TheWidget for TheTextAreaEdit {
                         ),
                         ctx,
                     );
+                } else if self
+                    .renderer
+                    .dim()
+                    .contains(coord + self.dim.screen_coord())
+                    && self.is_clicking_on_selection
+                {
+                    // Drag selection then cut/paste
+                    let cursor_index = self.state.find_cursor_index();
+                    if cursor_index < self.state.selection.start
+                        || cursor_index >= self.state.selection.end
+                    {
+                        let text = self.state.cut_text();
+                        let (start, end) = self.state.insert_text(text);
+                        self.state.select(start, end);
+                        self.modified_since_last_tick = true;
+                    } else {
+                        self.state.reset_selection();
+                    }
                 }
 
+                self.is_dirty = true;
                 redraw = true;
+
+                self.is_clicking_on_selection = false;
                 self.is_hscrollbar_clicked = false;
                 self.is_vscrollbar_clicked = false;
                 self.drag_start_index = 0;

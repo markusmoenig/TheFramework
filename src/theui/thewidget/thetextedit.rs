@@ -96,6 +96,12 @@ impl Default for TheTextEditState {
 }
 
 impl TheTextEditState {
+    pub fn cut_text(&mut self) -> String {
+        let text = self.get_text(self.selection.start, self.selection.end);
+        self.delete_text_by_selection();
+        text
+    }
+
     pub fn delete_text(&mut self) -> bool {
         let deleted = if !self.selection.is_none() {
             self.delete_text_by_selection()
@@ -215,28 +221,36 @@ impl TheTextEditState {
         self.move_cursor_right();
     }
 
-    pub fn insert_text(&mut self, text: String) {
+    pub fn insert_text(&mut self, text: String) -> (usize, usize) {
         if !self.selection.is_none() {
             self.delete_text_by_selection();
         }
 
+        let start = self.find_cursor_index();
+        let glyph_count = text.graphemes(true).count();
         let insert_index = self.byte_offset_of_index(self.cursor.row, self.cursor.column);
         if !text.contains('\n') {
             self.rows[self.cursor.row].insert_str(insert_index, &text);
-            self.cursor.column += text.graphemes(true).count();
-            return;
+            self.cursor.column += glyph_count;
+            return (start, start + glyph_count);
         }
 
-        let (first_row, rest_text) = text.split_at(text.find('\n').unwrap());
+        let mut rows = text.split('\n');
         let leftover = self.rows[self.cursor.row].split_off(insert_index);
-        self.rows[self.cursor.row].insert_str(insert_index, first_row);
+        self.rows[self.cursor.row].insert_str(insert_index, rows.next().unwrap());
 
-        for str in rest_text.split('\n') {
+        for str in rows {
             self.cursor.row += 1;
             self.rows.insert(self.cursor.row, str.to_owned());
-            self.cursor.column = str.len();
+            self.cursor.column = self.glyphs_in_row(self.cursor.row);
         }
-        self.rows[self.cursor.row].insert_str(insert_index, &leftover);
+
+        if !leftover.is_empty() {
+            let insert_index = self.byte_offset_of_index(self.cursor.row, self.cursor.column);
+            self.rows[self.cursor.row].insert_str(insert_index, &leftover);
+        }
+
+        (start, start + glyph_count)
     }
 
     pub fn insert_row(&mut self) {
@@ -525,6 +539,7 @@ impl TheTextEditState {
             return false;
         }
 
+        let cursor_index = self.find_cursor_index();
         let start_row = self.find_row_number_of_index(self.selection.start);
         let end_row = self.find_row_number_of_index(self.selection.end);
 
@@ -543,6 +558,11 @@ impl TheTextEditState {
                 self.selection.end - self.find_start_index_of_row(end_row),
             );
             let text = self.rows.remove(end_row);
+            // When only linebreak is selected, manually add a linebreak,
+            // so we can delete chars safely later
+            if self.selection.end == row_end && self.selection.end - 1 == self.selection.start {
+                self.rows[start_row].push('\n');
+            }
             self.rows[start_row].push_str(&text);
 
             // Remove inter rows
@@ -557,12 +577,39 @@ impl TheTextEditState {
         self.delete_range_of_row(start_row, left, right);
 
         // Reset cursor
-        self.cursor.row = start_row;
-        self.cursor.column = left;
+        if cursor_index >= self.selection.start {
+            if cursor_index < self.selection.end {
+                self.cursor.row = start_row;
+                self.cursor.column = left;
+            } else {
+                let cursor_index = cursor_index - (self.selection.end - self.selection.start);
+                let (row, col) = self.find_row_col_of_index(cursor_index);
+                self.cursor.row = row;
+                self.cursor.column = col;
+            }
+        }
 
         self.reset_selection();
 
         true
+    }
+
+    fn get_text(&self, start: usize, end: usize) -> String {
+        let (start_row, start_col) = self.find_row_col_of_index(start);
+        let (end_row, end_col) = self.find_row_col_of_index(end);
+
+        if start_row == end_row {
+            self.rows[start_row][start_col..end_col].to_owned()
+        } else {
+            let mut text = self.rows[start_row][start_col..].to_owned();
+            for row in &self.rows[start_row + 1..end_row] {
+                text.push('\n');
+                text.push_str(row.as_str());
+            }
+            text.push('\n');
+            text.push_str(&self.rows[end_row][..end_col]);
+            text
+        }
     }
 
     fn glyphs_in_row(&self, row_number: usize) -> usize {
