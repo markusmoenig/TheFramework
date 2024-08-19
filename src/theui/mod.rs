@@ -347,6 +347,28 @@ impl TheUI {
         ctx.ui.relayout = false;
     }
 
+    /// Returns true if the current focus widget supports text input.
+    pub fn focus_widget_supports_text_input(&mut self, ctx: &mut TheContext) -> bool {
+        let mut supports = false;
+        if let Some(id) = &ctx.ui.focus {
+            if let Some(widget) = self.get_widget_abs(None, Some(&id.uuid)) {
+                supports = widget.supports_text_input();
+            }
+        }
+        supports
+    }
+
+    /// Returns true if the current focus widget supports clipboard operations.
+    pub fn focus_widget_supports_clipboard(&mut self, ctx: &mut TheContext) -> bool {
+        let mut supports = false;
+        if let Some(id) = &ctx.ui.focus {
+            if let Some(widget) = self.get_widget_abs(None, Some(&id.uuid)) {
+                supports = widget.supports_clipboard();
+            }
+        }
+        supports
+    }
+
     /// Initiate a cut operation on the current focus widget.
     pub fn cut(&mut self, ctx: &mut TheContext) {
         if let Some(id) = &ctx.ui.focus {

@@ -196,13 +196,18 @@ pub trait TheWidget: Send {
 
     fn update(&mut self, ctx: &mut TheContext) {}
 
-    /// Widgets who supports hover return true
+    /// Widgets who support hover return true
     fn supports_hover(&mut self) -> bool {
         false
     }
 
-    /// Widgets who supports text input
+    /// Widgets who support text input return true
     fn supports_text_input(&mut self) -> bool {
+        false
+    }
+
+    /// Widgets who support clipboard operations return true
+    fn supports_clipboard(&mut self) -> bool {
         false
     }
 
