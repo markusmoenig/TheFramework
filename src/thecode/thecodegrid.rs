@@ -329,6 +329,16 @@ impl TheCodeGrid {
         !self.code.iter().any(|(&(_cx, cy), _)| cy == line)
     }
 
+    /// Move all Position values by the given amount.
+    pub fn move_positions_by(&mut self, move_by: Vec2i) {
+        for atom in self.code.values_mut() {
+            if let TheCodeAtom::Value(TheValue::Position(p)) = atom {
+                p.x += move_by.x as f32;
+                p.z += move_by.y as f32;
+            }
+        }
+    }
+
     /// Create a grid from json.
     pub fn from_json(json: &str) -> Self {
         serde_json::from_str(json).unwrap_or(TheCodeGrid::new())

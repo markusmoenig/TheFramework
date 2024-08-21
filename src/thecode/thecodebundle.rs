@@ -55,4 +55,11 @@ impl TheCodeBundle {
         entries.sort_by(|a, b| a.1.cmp(&b.1));
         entries.into_iter().map(|(uuid, _)| uuid).collect()
     }
+
+    /// Move all positions by the given amount.
+    pub fn move_positions_by(&mut self, move_by: Vec2i) {
+        for grid in self.grids.values_mut() {
+            grid.move_positions_by(move_by);
+        }
+    }
 }
