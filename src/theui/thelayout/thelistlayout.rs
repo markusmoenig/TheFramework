@@ -273,6 +273,8 @@ pub trait TheListLayoutTrait: TheLayout {
     fn selected(&self) -> Option<TheId>;
     /// Set the height of the items
     fn set_item_size(&mut self, item_size: i32);
+    /// Sets the icon for an item.
+    fn set_item_icon(&mut self, id: Uuid, image: TheRGBABuffer);
     /// Selects the first item (and sends events)
     fn select_first_item(&mut self, ctx: &mut TheContext);
     /// Selects the item of the given uuid.
@@ -370,6 +372,14 @@ impl TheListLayoutTrait for TheListLayout {
         for w in &mut self.widgets {
             if w.id().uuid == id {
                 w.set_value(TheValue::Text(text.clone()));
+                self.is_dirty = true;
+            }
+        }
+    }
+    fn set_item_icon(&mut self, id: Uuid, image: TheRGBABuffer) {
+        for w in &mut self.widgets {
+            if w.id().uuid == id {
+                w.set_value(TheValue::Image(image.clone()));
                 self.is_dirty = true;
             }
         }
