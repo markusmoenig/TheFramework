@@ -82,7 +82,7 @@ impl TheContextMenu {
             id: TheId::empty(),
 
             items: vec![],
-            width: 160,
+            width: 200,
             item_height: 21,
 
             dim: TheDim::zero(),
@@ -99,7 +99,7 @@ impl TheContextMenu {
             id: TheId::empty(),
 
             items: vec![],
-            width: 160,
+            width: 200,
             item_height: 23,
 
             dim: TheDim::zero(),
