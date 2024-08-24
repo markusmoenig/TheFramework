@@ -472,7 +472,7 @@ impl TheWidget for TheNodeCanvasView {
                     let yy = height - (i / width) as i32;
 
                     let m_x = (xx + self.canvas.offset.x) % 40;
-                    let m_y = (yy - self.canvas.offset.y) % 40;
+                    let m_y = (yy + self.canvas.offset.y) % 40;
 
                     // if (m_x.abs() <= 1 && xx != -1) || (m_y.abs() <= 1 && yy != -1) {
                     if m_x == 0 || m_y == 0 {
