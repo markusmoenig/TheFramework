@@ -240,6 +240,8 @@ pub trait TheSharedVLayoutTrait: TheLayout {
     fn mode(&mut self) -> TheSharedVLayoutMode;
     /// Set the layout mode.
     fn set_mode(&mut self, mode: TheSharedVLayoutMode);
+    /// Get the layout mode.
+    fn get_mode(&self) -> TheSharedVLayoutMode;
     // Se the shared ratio. Default is 0.5.
     fn set_shared_ratio(&mut self, ratio: f32);
 }
@@ -251,9 +253,11 @@ impl TheSharedVLayoutTrait for TheSharedVLayout {
     fn mode(&mut self) -> TheSharedVLayoutMode {
         self.mode.clone()
     }
-
     fn set_mode(&mut self, mode: TheSharedVLayoutMode) {
         self.mode = mode;
+    }
+    fn get_mode(&self) -> TheSharedVLayoutMode {
+        self.mode.clone()
     }
     fn set_shared_ratio(&mut self, ratio: f32) {
         self.ratio = ratio;

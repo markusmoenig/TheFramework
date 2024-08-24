@@ -238,6 +238,8 @@ pub trait TheSharedHLayoutTrait: TheLayout {
     fn add_canvas(&mut self, canvas: TheCanvas);
     /// Set the layout mode.
     fn set_mode(&mut self, mode: TheSharedHLayoutMode);
+    /// Get the layout mode.
+    fn get_mode(&self) -> TheSharedHLayoutMode;
     // Se the shared ratio. Default is 0.5.
     fn set_shared_ratio(&mut self, ratio: f32);
 }
@@ -248,6 +250,9 @@ impl TheSharedHLayoutTrait for TheSharedHLayout {
     }
     fn set_mode(&mut self, mode: TheSharedHLayoutMode) {
         self.mode = mode;
+    }
+    fn get_mode(&self) -> TheSharedHLayoutMode {
+        self.mode.clone()
     }
     fn set_shared_ratio(&mut self, ratio: f32) {
         self.ratio = ratio;
