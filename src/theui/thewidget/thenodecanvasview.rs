@@ -56,6 +56,8 @@ pub struct TheNodeCanvasView {
     drag_offset: Vec2i,
 
     action_changed: bool,
+
+    overlay: Option<TheRGBABuffer>,
 }
 
 impl TheWidget for TheNodeCanvasView {
@@ -90,6 +92,8 @@ impl TheWidget for TheNodeCanvasView {
             drag_offset: Vec2i::zero(),
 
             action_changed: false,
+
+            overlay: None,
         }
     }
 
@@ -437,7 +441,60 @@ impl TheWidget for TheNodeCanvasView {
             self.fill_node_ui_images(ctx);
         }
 
-        self.render_buffer.fill([128, 128, 128, 255]);
+        //self.render_buffer.fill([128, 128, 128, 255]);
+
+        let width = self.render_buffer.dim().width as usize;
+        let height = self.render_buffer.dim().height;
+
+        let pixels = self.render_buffer.pixels_mut();
+        pixels
+            .par_rchunks_exact_mut(width * 4)
+            .enumerate()
+            .for_each(|(j, line)| {
+                for (i, pixel) in line.chunks_exact_mut(4).enumerate() {
+                    let i = j * width + i;
+
+                    fn mix_color(a: &[u8; 4], b: &[u8; 4], v: f32) -> [u8; 4] {
+                        [
+                            (((1.0 - v) * (a[0] as f32 / 255.0) + b[0] as f32 / 255.0 * v) * 255.0)
+                                as u8,
+                            (((1.0 - v) * (a[1] as f32 / 255.0) + b[1] as f32 / 255.0 * v) * 255.0)
+                                as u8,
+                            (((1.0 - v) * (a[2] as f32 / 255.0) + b[2] as f32 / 255.0 * v) * 255.0)
+                                as u8,
+                            255,
+                        ]
+                    }
+
+                    let mut color = [128, 128, 128, 255];
+
+                    let xx = (i % width) as i32;
+                    let yy = height - (i / width) as i32;
+
+                    let m_x = (xx + self.canvas.offset.x) % 40;
+                    let m_y = (yy - self.canvas.offset.y) % 40;
+
+                    // if (m_x.abs() <= 1 && xx != -1) || (m_y.abs() <= 1 && yy != -1) {
+                    if m_x == 0 || m_y == 0 {
+                        color = [81, 81, 81, 255];
+                    }
+
+                    if let Some(overlay) = &self.overlay {
+                        //let w = overlay.dim().width;
+                        let h = overlay.dim().height;
+
+                        if yy > height - h && xx < width as i32 {
+                            let y = height - h;
+                            if let Some(c) = overlay.get_pixel(xx, yy - y) {
+                                color = mix_color(&color, &c, c[3] as f32 / 255.0);
+                            }
+                        }
+                    }
+
+                    pixel.copy_from_slice(&color);
+                }
+            });
+
         let rbw = self.render_buffer.dim().width as usize;
         let rbh = self.render_buffer.dim().height as usize;
 
@@ -826,6 +883,7 @@ impl TheWidget for TheNodeCanvasView {
 
 pub trait TheNodeCanvasViewTrait: TheWidget {
     fn set_canvas(&mut self, canvas: TheNodeCanvas);
+    fn set_overlay(&mut self, overlay: Option<TheRGBABuffer>);
     fn set_node_preview(&mut self, index: usize, buffer: TheRGBABuffer);
     fn fill_node_ui_images(&mut self, ctx: &mut TheContext);
     fn node_index_at(&self, coord: &Vec2i) -> Option<usize>;
@@ -836,6 +894,10 @@ pub trait TheNodeCanvasViewTrait: TheWidget {
 impl TheNodeCanvasViewTrait for TheNodeCanvasView {
     fn set_canvas(&mut self, canvas: TheNodeCanvas) {
         self.canvas = canvas;
+        self.is_dirty = true;
+    }
+    fn set_overlay(&mut self, overlay: Option<TheRGBABuffer>) {
+        self.overlay = overlay;
         self.is_dirty = true;
     }
     fn set_node_preview(&mut self, index: usize, buffer: TheRGBABuffer) {

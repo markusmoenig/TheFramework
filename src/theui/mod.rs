@@ -1188,6 +1188,15 @@ impl TheUI {
         }
     }
 
+    /// Sets the overlay for the node canvas.
+    pub fn set_node_overlay(&mut self, name: &str, overlay: Option<TheRGBABuffer>) {
+        if let Some(view) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            if let Some(nodes) = view.as_node_canvas_view() {
+                nodes.set_overlay(overlay);
+            }
+        }
+    }
+
     /// Sets the preview for a node in a node canvas.
     pub fn set_node_preview(&mut self, name: &str, index: usize, buffer: TheRGBABuffer) {
         if let Some(view) = self.canvas.get_widget(Some(&name.to_string()), None) {
