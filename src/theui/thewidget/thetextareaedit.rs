@@ -1,7 +1,6 @@
 use std::time::Instant;
 
 use fontdue::layout::{HorizontalAlign, LayoutSettings};
-use winit::event::{ElementState, VirtualKeyCode};
 
 use crate::prelude::*;
 
@@ -423,42 +422,50 @@ impl TheWidget for TheTextAreaEdit {
             }
             TheEvent::KeyDown(key) => {
                 if let Some(c) = key.to_char() {
-                    self.state.insert_char(c);
-                    self.modified_since_last_tick = true;
-                    self.is_dirty = true;
-                    redraw = true;
-                    update_status = true;
+                    if self.modifier_ctrl && c == 'a' {
+                        self.state.select_all();
+                        self.is_dirty = true;
+                        redraw = true;
+                    } else {
+                        self.state.insert_char(c);
+                        self.modified_since_last_tick = true;
+                        self.is_dirty = true;
+                        redraw = true;
+                        update_status = true;
 
-                    if self.continuous {
-                        self.emit_value_changed(ctx);
+                        if self.continuous {
+                            self.emit_value_changed(ctx);
+                        }
                     }
                 }
             }
             TheEvent::KeyCodeDown(key_code) => {
                 if let Some(key) = key_code.to_key_code() {
-                    if key == TheKeyCode::Delete {
-                        if self.state.delete_text() {
+                    match key {
+                        TheKeyCode::Return => {
+                            self.state.insert_row();
                             self.modified_since_last_tick = true;
                             self.is_dirty = true;
                             redraw = true;
                             update_status = true;
                         }
-                    } else if key == TheKeyCode::Return {
-                        self.state.insert_row();
-                        self.modified_since_last_tick = true;
-                        self.is_dirty = true;
-                        redraw = true;
-                        update_status = true;
-                    } else if key == TheKeyCode::Tab {
-                        self.state.insert_text(" ".repeat(self.tab_spaces));
-                        self.modified_since_last_tick = true;
-                        self.is_dirty = true;
-                        redraw = true;
-                        update_status = true;
-                    } else if key == TheKeyCode::Up {
-                        let updated =
-                            (!self.modifier_alt && !self.modifier_ctrl && !self.modifier_logo)
-                                .then(|| {
+                        TheKeyCode::Delete => {
+                            if self.state.delete_text() {
+                                self.modified_since_last_tick = true;
+                                self.is_dirty = true;
+                                redraw = true;
+                                update_status = true;
+                            }
+                        }
+                        TheKeyCode::Up => {
+                            if self.modifier_alt {
+                                if self.state.move_lines_up() {
+                                    self.modified_since_last_tick = true;
+                                    self.is_dirty = true;
+                                    redraw = true;
+                                }
+                            } else {
+                                let updated = {
                                     if self.state.selection.is_none() {
                                         self.state.move_cursor_up()
                                     } else {
@@ -470,49 +477,95 @@ impl TheWidget for TheTextAreaEdit {
                                         self.state.reset_selection();
                                         true
                                     }
-                                })
-                                .unwrap_or_default();
+                                };
 
-                        if updated {
-                            self.renderer.scroll_to_cursor(
-                                self.state.find_cursor_index(),
-                                self.state.cursor.row,
-                            );
-                            self.is_dirty = true;
-                            redraw = true;
-                            update_status = true;
-                        }
-                    } else if key == TheKeyCode::Down {
-                        let updated = (!self.modifier_alt
-                            && !self.modifier_ctrl
-                            && !self.modifier_logo)
-                            .then(|| {
-                                if self.state.selection.is_none() {
-                                    self.state.move_cursor_down()
-                                } else {
-                                    let (row, column) =
-                                        self.state.find_row_col_of_index(self.state.selection.end);
-                                    self.state.set_cursor(TheCursor::new(row, column));
-                                    self.state.move_cursor_down();
-                                    self.state.reset_selection();
-                                    true
+                                if updated {
+                                    self.renderer.scroll_to_cursor(
+                                        self.state.find_cursor_index(),
+                                        self.state.cursor.row,
+                                    );
+                                    self.is_dirty = true;
+                                    redraw = true;
+                                    update_status = true;
                                 }
-                            })
-                            .unwrap_or_default();
-
-                        if updated {
-                            self.renderer.scroll_to_cursor(
-                                self.state.find_cursor_index(),
-                                self.state.cursor.row,
-                            );
-                            self.is_dirty = true;
-                            redraw = true;
-                            update_status = true;
+                            }
                         }
-                    } else if key == TheKeyCode::Left {
-                        let updated =
-                            (!self.modifier_alt && !self.modifier_ctrl && !self.modifier_logo)
-                                .then(|| {
+                        TheKeyCode::Right => {
+                            if self.modifier_ctrl || self.modifier_logo {
+                                if self.state.move_cursor_to_line_end()
+                                    || self.state.move_cursor_right()
+                                {
+                                    self.is_dirty = true;
+                                    redraw = true;
+                                }
+                            } else {
+                                let updated = {
+                                    if self.state.selection.is_none() {
+                                        self.state.move_cursor_right()
+                                    } else {
+                                        let (row, column) = self
+                                            .state
+                                            .find_row_col_of_index(self.state.selection.end);
+                                        self.state.set_cursor(TheCursor::new(row, column));
+                                        self.state.reset_selection();
+                                        true
+                                    }
+                                };
+
+                                if updated {
+                                    self.renderer.scroll_to_cursor(
+                                        self.state.find_cursor_index(),
+                                        self.state.cursor.row,
+                                    );
+                                    self.is_dirty = true;
+                                    redraw = true;
+                                    update_status = true;
+                                }
+                            }
+                        }
+                        TheKeyCode::Down => {
+                            if self.modifier_alt {
+                                if self.state.move_lines_down() {
+                                    self.modified_since_last_tick = true;
+                                    self.is_dirty = true;
+                                    redraw = true;
+                                }
+                            } else {
+                                let updated = {
+                                    if self.state.selection.is_none() {
+                                        self.state.move_cursor_down()
+                                    } else {
+                                        let (row, column) = self
+                                            .state
+                                            .find_row_col_of_index(self.state.selection.end);
+                                        self.state.set_cursor(TheCursor::new(row, column));
+                                        self.state.move_cursor_down();
+                                        self.state.reset_selection();
+                                        true
+                                    }
+                                };
+
+                                if updated {
+                                    self.renderer.scroll_to_cursor(
+                                        self.state.find_cursor_index(),
+                                        self.state.cursor.row,
+                                    );
+                                    self.is_dirty = true;
+                                    redraw = true;
+                                    update_status = true;
+                                }
+                            }
+                        }
+                        TheKeyCode::Left => {
+                            if self.modifier_ctrl || self.modifier_logo {
+                                if self.state.move_cursor_to_line_start()
+                                    || self.state.move_cursor_left()
+                                {
+                                    self.is_dirty = true;
+                                    redraw = true;
+                                }
+                            } else {
+                                let updated = {
                                     if self.state.selection.is_none() {
                                         self.state.move_cursor_left()
                                     } else {
@@ -523,98 +576,34 @@ impl TheWidget for TheTextAreaEdit {
                                         self.state.reset_selection();
                                         true
                                     }
-                                })
-                                .unwrap_or_default();
+                                };
 
-                        if updated {
-                            self.renderer.scroll_to_cursor(
-                                self.state.find_cursor_index(),
-                                self.state.cursor.row,
-                            );
+                                if updated {
+                                    self.renderer.scroll_to_cursor(
+                                        self.state.find_cursor_index(),
+                                        self.state.cursor.row,
+                                    );
+                                    self.is_dirty = true;
+                                    redraw = true;
+                                    update_status = true;
+                                }
+                            }
+                        }
+                        TheKeyCode::Space => {
+                            self.state.insert_text(" ".to_owned());
+                            self.modified_since_last_tick = true;
                             self.is_dirty = true;
                             redraw = true;
                             update_status = true;
                         }
-                    } else if key == TheKeyCode::Right {
-                        let updated = (!self.modifier_alt
-                            && !self.modifier_ctrl
-                            && !self.modifier_logo)
-                            .then(|| {
-                                if self.state.selection.is_none() {
-                                    self.state.move_cursor_right()
-                                } else {
-                                    let (row, column) =
-                                        self.state.find_row_col_of_index(self.state.selection.end);
-                                    self.state.set_cursor(TheCursor::new(row, column));
-                                    self.state.reset_selection();
-                                    true
-                                }
-                            })
-                            .unwrap_or_default();
-
-                        if updated {
-                            self.renderer.scroll_to_cursor(
-                                self.state.find_cursor_index(),
-                                self.state.cursor.row,
-                            );
+                        TheKeyCode::Tab => {
+                            self.state.insert_text(" ".repeat(self.tab_spaces));
+                            self.modified_since_last_tick = true;
                             self.is_dirty = true;
                             redraw = true;
                             update_status = true;
                         }
-                    }
-                }
-            }
-            TheEvent::VirtualKeyChanged(state, key_code) => {
-                if *state == ElementState::Pressed {
-                    if self.modifier_alt {
-                        match key_code {
-                            VirtualKeyCode::Up => {
-                                if self.state.move_lines_up() {
-                                    self.modified_since_last_tick = true;
-                                    self.is_dirty = true;
-                                    redraw = true;
-                                }
-                            }
-                            VirtualKeyCode::Down => {
-                                if self.state.move_lines_down() {
-                                    self.modified_since_last_tick = true;
-                                    self.is_dirty = true;
-                                    redraw = true;
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
-                    if self.modifier_ctrl {
-                        match key_code {
-                            VirtualKeyCode::A => {
-                                self.state.select_all();
-                                self.is_dirty = true;
-                                redraw = true;
-                            }
-                            _ => {}
-                        }
-                    }
-                    if self.modifier_ctrl || self.modifier_logo {
-                        match key_code {
-                            VirtualKeyCode::Left => {
-                                if self.state.move_cursor_to_line_start()
-                                    || self.state.move_cursor_left()
-                                {
-                                    self.is_dirty = true;
-                                    redraw = true;
-                                }
-                            }
-                            VirtualKeyCode::Right => {
-                                if self.state.move_cursor_to_line_end()
-                                    || self.state.move_cursor_right()
-                                {
-                                    self.is_dirty = true;
-                                    redraw = true;
-                                }
-                            }
-                            _ => {}
-                        }
+                        _ => {}
                     }
                 }
             }
