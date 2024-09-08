@@ -89,6 +89,16 @@ impl TheRGBABuffer {
         }
     }
 
+    /// Check if the buffer is empty
+    pub fn is_empty(&self) -> bool {
+        !self.is_valid()
+    }
+
+    /// Returns the len of the underlying Vec<u8>
+    pub fn len(&self) -> usize {
+        self.dim.width as usize * self.dim.height as usize * 4
+    }
+
     /// Allocates the buffer.
     pub fn allocate(&mut self) {
         if self.dim.is_valid() {

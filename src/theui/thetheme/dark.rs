@@ -161,11 +161,7 @@ impl TheTheme for TheDarkTheme {
 
     /// Return the given theme color.
     fn color(&self, of: TheThemeColors) -> &RGBA {
-        if let Some(color) = self.colors.get(&of) {
-            color
-        } else {
-            &[0, 0, 0, 255]
-        }
+        self.colors.get(&of).unwrap_or(&[0, 0, 0, 255])
     }
 
     fn color_disabled_switch(&mut self, of: TheThemeColors, disabled: bool) -> &RGBA {
