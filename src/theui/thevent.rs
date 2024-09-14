@@ -1,5 +1,3 @@
-use winit::event::{ElementState, VirtualKeyCode};
-
 use crate::prelude::*;
 
 /// All events which are handled by the framework
@@ -16,8 +14,6 @@ pub enum TheEvent {
     KeyDown(TheValue),
     KeyCodeDown(TheValue),
     ModifierChanged(bool, bool, bool, bool),
-    VirtualKeyChanged(ElementState, VirtualKeyCode),
-
     DropPreview(Vec2i, TheDrop),
     Drop(Vec2i, TheDrop),
 

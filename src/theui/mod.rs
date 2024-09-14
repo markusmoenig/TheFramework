@@ -29,7 +29,6 @@ use ::serde::ser::{self, Serializer};
 use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
 use std::io::{Read, Write};
 use std::sync::mpsc::{self, Receiver, Sender};
-use winit::event::{ElementState, VirtualKeyCode};
 
 fn compress<S>(data: &[u8], serializer: S) -> Result<S::Ok, S::Error>
 where
@@ -851,25 +850,6 @@ impl TheUI {
         if let Some(id) = &ctx.ui.hover {
             if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
                 redraw = widget.on_event(&TheEvent::MouseWheel(vec2i(delta.0, delta.1)), ctx);
-                self.process_events(ctx);
-            }
-        }
-        redraw
-    }
-
-    pub fn virtual_key_changed(
-        &mut self,
-        state: ElementState,
-        virtual_key: VirtualKeyCode,
-        ctx: &mut TheContext,
-    ) -> bool {
-        let mut redraw = false;
-        let event = TheEvent::VirtualKeyChanged(state, virtual_key);
-
-        ctx.ui.send(event.clone());
-        if let Some(id) = &ctx.ui.focus {
-            if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
-                redraw = widget.on_event(&event, ctx);
                 self.process_events(ctx);
             }
         }
