@@ -38,7 +38,7 @@ impl TheApp {
         use winit::{
             dpi::{LogicalSize, PhysicalSize},
             event::{DeviceEvent, ElementState, Event, MouseButton, MouseScrollDelta, WindowEvent},
-            event_loop::EventLoop,
+            event_loop::{ControlFlow, EventLoop},
             keyboard::{Key, NamedKey},
             platform::modifier_supplement::KeyEventExtModifierSupplement,
             window::{Icon, WindowBuilder},
@@ -110,6 +110,7 @@ impl TheApp {
         }
 
         // Loop
+        event_loop.set_control_flow(ControlFlow::Poll);
         event_loop
             .run(move |event, elwt| {
                 match &event {
