@@ -623,6 +623,7 @@ impl TheWidget for TheTextLineEdit {
         self.renderer.render_text(
             &self.state,
             ctx.ui.has_focus(self.id()),
+            false,
             buffer,
             style,
             font,
