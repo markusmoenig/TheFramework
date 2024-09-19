@@ -157,6 +157,7 @@ impl TheWidget for TheTextAreaEdit {
     fn set_dim(&mut self, dim: TheDim) {
         if self.dim != dim {
             self.dim = dim;
+            self.modified_since_last_tick = true;
             self.is_dirty = true;
         }
     }
