@@ -161,7 +161,7 @@ impl TheApp {
                         }
                         WindowEvent::KeyboardInput { event, .. } => {
                             if event.state == ElementState::Pressed {
-                                let key = match event.key_without_modifiers() {
+                                let key = match &event.logical_key {
                                     Key::Named(NamedKey::Delete)
                                     | Key::Named(NamedKey::Backspace) => Some(TheKeyCode::Delete),
                                     Key::Named(NamedKey::ArrowUp) => Some(TheKeyCode::Up),

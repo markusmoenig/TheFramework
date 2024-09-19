@@ -132,6 +132,7 @@ impl TheWidget for TheTextLineEdit {
     fn set_dim(&mut self, dim: TheDim) {
         if self.dim != dim {
             self.dim = dim;
+            self.modified_since_last_tick = true;
             self.is_dirty = true;
         }
     }
@@ -622,6 +623,7 @@ impl TheWidget for TheTextLineEdit {
         self.renderer.render_text(
             &self.state,
             ctx.ui.has_focus(self.id()),
+            false,
             buffer,
             style,
             font,

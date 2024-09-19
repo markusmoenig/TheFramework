@@ -854,10 +854,12 @@ impl TheTextRenderer {
         self.scroll(&Vec2::zero(), false);
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn render_text(
         &self,
         state: &TheTextEditState,
         focused: bool,
+        readonly: bool,
         buffer: &mut TheRGBABuffer,
         style: &mut Box<dyn TheStyle>,
         font: &Font,
@@ -874,7 +876,7 @@ impl TheTextRenderer {
                 self.render_row(&state.rows[i], i, buffer, style, font, draw);
             }
 
-            if focused {
+            if focused && !readonly {
                 self.render_cursor(
                     &state.cursor,
                     state.find_cursor_index(),
