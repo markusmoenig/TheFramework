@@ -2,7 +2,6 @@ use crate::prelude::*;
 
 pub struct TheNodeTerminal {
     pub name: String,
-    pub role: String,
     pub color: TheColor,
 }
 

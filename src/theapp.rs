@@ -40,7 +40,7 @@ impl TheApp {
             event::{DeviceEvent, ElementState, Event, MouseButton, MouseScrollDelta, WindowEvent},
             event_loop::{ControlFlow, EventLoop},
             keyboard::{Key, NamedKey},
-            platform::modifier_supplement::KeyEventExtModifierSupplement,
+            //platform::modifier_supplement::KeyEventExtModifierSupplement,
             window::{Icon, WindowBuilder},
         };
         use winit_input_helper::WinitInputHelper;
