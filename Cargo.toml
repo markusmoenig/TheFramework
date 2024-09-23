@@ -67,7 +67,13 @@ web-sys = { version = "0.3", features = ["GpuTextureFormat"] }
 #renderer = ["therenderer"]
 ui = ["futures", "rfd", "flate2", "rayon", "zeno"]
 code = []
-pixels_winit = ["pixels", "winit", "winit_input_helper"]
+
+winit_app = ["winit", "winit_input_helper"]
+pixels_winit = ["winit_app", "pixels_gpu"]
+
+gpu = []
+pixels_gpu = ["gpu", "pixels"]
+
 default = ["pixels_winit"]
 
 [workspace]
