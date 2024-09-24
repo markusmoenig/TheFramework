@@ -789,8 +789,11 @@ impl TheUI {
 
         if let Some(drop) = &ctx.ui.drop {
             if let Some(widget) = self.canvas.get_widget_at_coord(coord) {
+                let mut drop_copy = drop.clone();
+                drop_copy.target_id = widget.id().clone();
                 let event = TheEvent::Drop(widget.dim().to_local(coord), drop.clone());
                 redraw = widget.on_event(&event, ctx);
+                ctx.ui.send(event);
                 self.process_events(ctx);
             }
             redraw = true;

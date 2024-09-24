@@ -167,10 +167,20 @@ impl TheWidget for TheNodeCanvasView {
                     redraw = true;
                 } else if self.action == TheNodeAction::DragNode {
                     if let Some(index) = self.canvas.selected_node {
-                        let mut v = self.canvas.nodes[index].position;
-                        v.x += coord.x - self.drag_start.x;
-                        v.y += coord.y - self.drag_start.y;
-                        self.canvas.nodes[index].position = v;
+                        let displacement =
+                            vec2i(coord.x - self.drag_start.x, coord.y - self.drag_start.y);
+
+                        // Move the selected node
+                        self.canvas.nodes[index].position.x += displacement.x;
+                        self.canvas.nodes[index].position.y += displacement.y;
+
+                        // Now find and move all connected nodes
+                        let connected_nodes = self.find_connected_nodes(index);
+                        for &connected_index in &connected_nodes {
+                            self.canvas.nodes[connected_index].position.x += displacement.x;
+                            self.canvas.nodes[connected_index].position.y += displacement.y;
+                        }
+
                         self.drag_start = *coord;
                         self.is_dirty = true;
                         self.action_changed = true;
@@ -882,6 +892,7 @@ impl TheWidget for TheNodeCanvasView {
 }
 
 pub trait TheNodeCanvasViewTrait: TheWidget {
+    fn find_connected_nodes(&self, node_index: usize) -> Vec<usize>;
     fn set_canvas(&mut self, canvas: TheNodeCanvas);
     fn set_overlay(&mut self, overlay: Option<TheRGBABuffer>);
     fn set_node_preview(&mut self, index: usize, buffer: TheRGBABuffer);
@@ -892,6 +903,22 @@ pub trait TheNodeCanvasViewTrait: TheWidget {
 }
 
 impl TheNodeCanvasViewTrait for TheNodeCanvasView {
+    fn find_connected_nodes(&self, node_index: usize) -> Vec<usize> {
+        let mut connected_nodes = FxHashSet::default(); // Use a set to avoid duplicates
+        let mut stack = vec![node_index];
+
+        while let Some(current_node) = stack.pop() {
+            // Find all connections where the current node is the source (output terminal)
+            for &(src, _, dest, _) in &self.canvas.connections {
+                if src as usize == current_node && !connected_nodes.contains(&(dest as usize)) {
+                    connected_nodes.insert(dest as usize);
+                    stack.push(dest as usize);
+                }
+            }
+        }
+
+        connected_nodes.into_iter().collect()
+    }
     fn set_canvas(&mut self, canvas: TheNodeCanvas) {
         self.canvas = canvas;
         self.is_dirty = true;

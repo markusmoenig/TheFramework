@@ -9,6 +9,8 @@ pub enum TheDropOperation {
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub struct TheDrop {
     pub id: TheId,
+    pub target_id: TheId,
+
     pub data: String,
     pub title: String,
     pub text: String,
@@ -25,6 +27,8 @@ impl TheDrop {
     pub fn new(id: TheId) -> Self {
         Self {
             id,
+            target_id: TheId::empty(),
+
             data: String::new(),
             title: String::new(),
             text: String::new(),
