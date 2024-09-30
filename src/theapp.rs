@@ -1,4 +1,4 @@
-use crate::{prelude::*, TheTrait};
+use crate::prelude::*;
 
 /// TheApp class handles running an application on the current backend.
 pub struct TheApp {
@@ -30,7 +30,7 @@ impl TheApp {
     /// Runs the app
     #[cfg(not(target_arch = "wasm32"))]
     #[cfg(feature = "winit_app")]
-    pub fn run(&mut self, mut app: Box<dyn TheTrait>) -> Result<(), pixels::Error> {
+    pub fn run(&mut self, mut app: Box<dyn crate::TheTrait>) {
         use std::sync::Arc;
 
         use log::error;
@@ -44,7 +44,7 @@ impl TheApp {
         };
         use winit_input_helper::WinitInputHelper;
 
-        let (width, height) = app.default_window_size();
+        let (mut width, mut height) = app.default_window_size();
 
         let mut ctx = TheContext::new(width, height);
         #[cfg(feature = "ui")]
@@ -92,9 +92,7 @@ impl TheApp {
         let window = Arc::new(window);
 
         #[cfg(feature = "pixels_winit")]
-        let mut gpu = TheGpuCanvas::<ThePixelsContext>::new(
-            ThePixelsContext::from_window(window.clone()).unwrap(),
-        );
+        let mut gpu = ThePixelsContext::from_window(window.clone()).unwrap();
 
         #[cfg(not(any(feature = "pixels_winit", feature = "wgpu_winit")))]
         panic!("No suitable gpu backend was set.");
@@ -355,10 +353,11 @@ impl TheApp {
                     if let Some(size) = input.window_resized() {
                         gpu.resize(size.width, size.height);
                         let scale = window.scale_factor();
-                        gpu.scale(scale);
+                        gpu.scale(scale as f32);
+
                         // editor.resize(size.width as usize / scale as usize, size.height as usize / scale as usize);
-                        let width = size.width as usize / scale as usize;
-                        let height = size.height as usize / scale as usize;
+                        width = size.width as usize / scale as usize;
+                        height = size.height as usize / scale as usize;
                         ctx.width = width;
                         ctx.height = height;
 
@@ -389,13 +388,11 @@ impl TheApp {
                 }
             })
             .unwrap();
-
-        Ok(())
     }
 
     // Run on WASM
     #[cfg(target_arch = "wasm32")]
-    pub fn run(&mut self, mut app: Box<dyn TheTrait>) {
+    pub fn run(&mut self, mut app: Box<dyn crate::TheTrait>) {
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
         console_log::init_with_level(log::Level::Trace).expect("error initializing logger");
 

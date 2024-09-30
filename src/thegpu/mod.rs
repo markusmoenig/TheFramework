@@ -1,11 +1,9 @@
-mod thegpucanvas;
 mod thegpucontext;
 
 #[cfg(feature = "pixels_gpu")]
 mod thepixelscontext;
 
 pub mod prelude {
-    pub use crate::thegpu::thegpucanvas::TheGpuCanvas;
     pub use crate::thegpu::thegpucontext::TheGpuContext;
 
     #[cfg(feature = "pixels_gpu")]

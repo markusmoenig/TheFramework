@@ -9,15 +9,9 @@ pub trait TheGpuContext {
     type Surface;
     type TextureId;
 
-    fn add_layer(&mut self, label: Option<&str>) -> Self::LayerId {
+    fn add_layer(&mut self) -> Self::LayerId {
         unimplemented!("Won't support");
     }
-
-    fn buffer(&self) -> &[u8];
-
-    fn buffer_mut(&mut self) -> &mut [u8];
-
-    fn clear(&mut self);
 
     fn draw(&self) -> Result<(), Self::Error>;
 
@@ -46,11 +40,7 @@ pub trait TheGpuContext {
 
     fn resize(&mut self, width: u32, height: u32);
 
-    fn scale(&mut self, scale: f64);
-
-    fn scale_layer(&mut self, layer_id: Self::LayerId, scale: f64) {
-        unimplemented!("Won't support");
-    }
+    fn scale(&mut self, scale: f32);
 
     fn set_compute_shader(&mut self, shader: Self::ShaderInfo) {
         unimplemented!("Won't support");
@@ -60,12 +50,7 @@ pub trait TheGpuContext {
         unimplemented!("Won't support");
     }
 
-    fn set_surface(
-        &mut self,
-        width: u32,
-        height: u32,
-        surface: Self::Surface,
-    ) -> Result<(), Self::Error>;
+    fn set_surface(&mut self, width: u32, height: u32, surface: Self::Surface);
 
     fn set_vertex_shader(&mut self, shader: Self::ShaderInfo) {
         unimplemented!("Won't support");

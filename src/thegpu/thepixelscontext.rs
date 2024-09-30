@@ -10,7 +10,7 @@ pub struct ThePixelsContext<'w> {
 
     width: u32,
     height: u32,
-    scale: f64,
+    scale: f32,
 }
 
 impl<'w> TheGpuContext for ThePixelsContext<'w> {
@@ -20,18 +20,6 @@ impl<'w> TheGpuContext for ThePixelsContext<'w> {
     type ShaderInfo = ();
     type Surface = ();
     type TextureId = usize;
-
-    fn buffer(&self) -> &[u8] {
-        todo!()
-    }
-
-    fn buffer_mut(&mut self) -> &mut [u8] {
-        todo!()
-    }
-
-    fn clear(&mut self) {
-        todo!()
-    }
 
     fn draw(&self) -> Result<(), Self::Error> {
         self.pixels.render()
@@ -62,7 +50,7 @@ impl<'w> TheGpuContext for ThePixelsContext<'w> {
             .unwrap();
     }
 
-    fn scale(&mut self, scale: f64) {
+    fn scale(&mut self, scale: f32) {
         if self.scale == scale {
             return;
         }
@@ -75,12 +63,7 @@ impl<'w> TheGpuContext for ThePixelsContext<'w> {
     }
 
     #[allow(unused)]
-    fn set_surface(
-        &mut self,
-        width: u32,
-        height: u32,
-        surface: Self::Surface,
-    ) -> Result<(), Self::Error> {
+    fn set_surface(&mut self, width: u32, height: u32, surface: Self::Surface) {
         unimplemented!("Won't support");
     }
 
@@ -98,10 +81,12 @@ impl ThePixelsContext<'_> {
         let window_size = window.inner_size();
         let width = window_size.width;
         let height = window_size.height;
-        let scale = window.scale_factor();
+        let scale = window.scale_factor() as f32;
 
         let surface_texture = SurfaceTexture::new(width, height, window);
-        let pixels = Pixels::new(width, height, surface_texture)?;
+        let mut pixels = Pixels::new(width, height, surface_texture)?;
+        pixels.resize_surface(width, height)?;
+        pixels.resize_buffer(width / scale as u32, height / scale as u32)?;
 
         Ok(Self {
             pixels,
