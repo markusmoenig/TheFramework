@@ -11,6 +11,9 @@ pub mod theui;
 #[cfg(feature = "code")]
 pub mod thecode;
 
+#[cfg(feature = "gpu")]
+pub mod thegpu;
+
 pub use crate::theapp::TheApp;
 pub use crate::thecontext::TheContext;
 pub use crate::thetrait::TheTrait;
@@ -66,4 +69,7 @@ pub mod prelude {
 
     //#[cfg(feature = "code")]
     //pub use crate::thecode::prelude::*;
+
+    #[cfg(feature = "gpu")]
+    pub use crate::thegpu::prelude::*;
 }

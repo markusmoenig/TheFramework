@@ -1,0 +1,955 @@
+use std::{
+    borrow::Cow,
+    collections::{BTreeMap, HashMap},
+    error::Error,
+    fmt,
+    iter::once,
+    num::NonZeroU32,
+    sync::mpsc::channel,
+};
+
+use aict::{Factory, FactoryBuilder};
+use wgpu::util::DeviceExt;
+
+use crate::prelude::*;
+
+const U8_SIZE: u32 = std::mem::size_of::<u8>() as u32;
+
+type TheTextureId = wgpu::Id<wgpu::Texture>;
+
+enum TheSize {
+    Absolute(Vec2<f32>),
+    Relative(Vec2<f32>),
+}
+
+#[derive(Debug)]
+pub enum TheWgpuContextError {
+    AdapterNotFound,
+    AsyncInternal { source: Box<dyn Error + 'static> },
+    InvalidTextureFormat(wgpu::TextureFormat),
+    RenderContextNotFound,
+    WgpuInternal { source: Box<dyn Error + 'static> },
+}
+
+impl Error for TheWgpuContextError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::AsyncInternal { source } => Some(source.as_ref()),
+            Self::WgpuInternal { source } => Some(source.as_ref()),
+            _ => None,
+        }
+    }
+}
+
+impl fmt::Display for TheWgpuContextError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::AdapterNotFound => write!(
+                f,
+                "No adapters are found that suffice all the 'hard' options."
+            ),
+            Self::AsyncInternal { source } => write!(f, "{}", source),
+            Self::InvalidTextureFormat(format) => write!(f, "Invalid texture format: {:?}", format),
+            Self::RenderContextNotFound => write!(f, "No render contexts are found"),
+            Self::WgpuInternal { source } => write!(f, "{}", source),
+        }
+    }
+}
+
+struct TheModifyState<T> {
+    has_modified: bool,
+    value: Option<T>,
+}
+
+impl<T> Default for TheModifyState<T> {
+    fn default() -> Self {
+        Self {
+            has_modified: false,
+            value: None,
+        }
+    }
+}
+
+impl<T> TheModifyState<T> {
+    pub fn is_not_vacant(&self) -> bool {
+        self.value.is_some()
+    }
+
+    pub fn modify(&mut self, value: T) {
+        self.has_modified = true;
+        self.value = Some(value);
+    }
+
+    pub fn take(&mut self) -> Option<T> {
+        self.has_modified = self.value.is_some();
+        self.value.take()
+    }
+
+    pub fn take_if_modified(&mut self) -> Option<T> {
+        self.has_modified.then(|| self.take())?
+    }
+
+    pub fn use_ref(&mut self) -> Option<&T> {
+        self.has_modified = false;
+        self.value.as_ref()
+    }
+
+    pub fn use_ref_if_modified(&mut self) -> Option<&T> {
+        self.has_modified.then(|| self.use_ref())?
+    }
+}
+
+struct TheSurfaceInfo<'w> {
+    pub width: u32,
+    pub height: u32,
+    pub surface: wgpu::Surface<'w>,
+}
+
+struct TheTextureCoordInfo {
+    id: TheTextureId,
+    coord: Vec2<f32>,
+}
+
+impl TheTextureCoordInfo {
+    pub fn vertices(
+        &self,
+        surface_size: Vec2<f32>,
+        layer_coord: Vec2<f32>,
+        texture_size: Vec2<f32>,
+    ) -> [[f32; 2]; 6] {
+        let x = layer_coord.x + 2.0 * self.coord.x / surface_size.x;
+        let y = layer_coord.y - 2.0 * self.coord.y / surface_size.y;
+        let w = 2.0 * texture_size.x / surface_size.x;
+        let h = 2.0 * texture_size.y / surface_size.y;
+        [
+            [x + w, y],
+            [x, y - h],
+            [x, y],
+            [x + w, y],
+            [x, y - h],
+            [x + w, y - h],
+        ]
+    }
+}
+
+struct TheTextureDataInfo {
+    size: Vec2<f32>,
+    texture: wgpu::TextureView,
+}
+
+pub struct TheWgpuRenderLayer {
+    coord: Vec2<f32>,
+    hidden: bool,
+    size: TheSize,
+    texture_array: Vec<TheTextureCoordInfo>,
+    transform: Mat4<f32>,
+    viewport_size: Vec2<u32>,
+}
+
+impl TheWgpuRenderLayer {
+    pub fn new(viewport_size: Vec2<u32>) -> Self {
+        Self {
+            coord: Vec2::zero(),
+            hidden: false,
+            size: TheSize::Relative(Vec2::new(1.0, 1.0)),
+            texture_array: vec![],
+            transform: Mat4::identity(),
+            viewport_size,
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.texture_array.clear();
+    }
+
+    pub fn place_texture(&mut self, texture_id: TheTextureId, coord: Vec2<f32>) {
+        self.texture_array.push(TheTextureCoordInfo {
+            id: texture_id,
+            coord,
+        })
+    }
+
+    pub fn rotate(&mut self, theta: f32) {
+        self.transform *= Mat4::from_rotation(Vec3::new(1.0, 1.0, 0.0), theta);
+    }
+
+    pub fn scale(&mut self, scale: f32) {
+        self.transform *= Mat4::from_scale(scale.into());
+    }
+
+    pub fn set_absolute_size(&mut self, width: f32, height: f32) {
+        self.size = TheSize::Absolute(Vec2::new(width, height));
+    }
+
+    pub fn set_relative_size(&mut self, x: f32, y: f32) {
+        self.size = TheSize::Relative(Vec2::new(x, y));
+    }
+
+    pub fn set_coord(&mut self, x: f32, y: f32) {
+        self.coord = Vec2::new(x, y);
+    }
+
+    pub fn translate(&mut self, x: f32, y: f32) {
+        self.transform *= Mat4::from_translation(Vec3::new(
+            x / self.viewport_size.x as f32,
+            y / self.viewport_size.y as f32,
+            1.0,
+        ));
+    }
+
+    fn set_viewport_size(&mut self, viewport_size: Vec2<u32>) {
+        self.viewport_size = viewport_size;
+    }
+}
+
+pub struct TheWgpuShaderInfo<'s> {
+    pub entry: &'s str,
+    pub source: &'s str,
+}
+
+impl<'s> TheWgpuShaderInfo<'s> {
+    pub fn from_source(source: &'s str) -> Self {
+        Self {
+            entry: "main",
+            source,
+        }
+    }
+}
+
+struct TheWgpuComputeContext {}
+
+struct TheWgpuRenderContext<'w, 's> {
+    surface: wgpu::Surface<'w>,
+    surface_config: wgpu::SurfaceConfiguration,
+
+    sampler: wgpu::Sampler,
+
+    fragment_entry: &'s str,
+    fragment_shader: wgpu::ShaderModule,
+
+    vertex_entry: &'s str,
+    vertex_shader: wgpu::ShaderModule,
+}
+
+impl<'w, 's> TheWgpuRenderContext<'w, 's> {
+    pub fn new(
+        adapter: &wgpu::Adapter,
+        device: &wgpu::Device,
+        surface_info: TheSurfaceInfo<'w>,
+        fragment_entry: &'s str,
+        fragment_shader: wgpu::ShaderModule,
+        vertex_entry: &'s str,
+        vertex_shader: wgpu::ShaderModule,
+    ) -> Self {
+        let surface = surface_info.surface;
+        let capabilities = surface.get_capabilities(adapter);
+        let format = capabilities
+            .formats
+            .iter()
+            .find(|f| f.is_srgb())
+            .copied()
+            .unwrap_or(capabilities.formats[0]);
+
+        let surface_config = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            format,
+            width: surface_info.width,
+            height: surface_info.height,
+            present_mode: capabilities.present_modes[0],
+            desired_maximum_frame_latency: 2,
+            alpha_mode: capabilities.alpha_modes[0],
+            view_formats: vec![],
+        };
+        surface.configure(device, &surface_config);
+
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor::default());
+
+        Self {
+            surface,
+            surface_config,
+
+            sampler,
+
+            fragment_entry,
+            fragment_shader,
+
+            vertex_entry,
+            vertex_shader,
+        }
+    }
+
+    pub fn draw<'a>(
+        &self,
+        device: &wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
+        texture_map: &HashMap<TheTextureId, TheTextureDataInfo>,
+        layers: impl Iterator<Item = &'a TheWgpuRenderLayer>,
+        global_transform: Mat4<f32>,
+    ) -> Result<wgpu::SurfaceTexture, TheWgpuContextError> {
+        let surface_texture = self.surface.get_current_texture().map_err(map_wgpu_error)?;
+        let surface_size = Vec2::new(
+            self.surface_config.width as f32,
+            self.surface_config.height as f32,
+        );
+
+        let view = &surface_texture
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor {
+                format: Some(self.surface_config.format),
+                ..Default::default()
+            });
+
+        let mut first_frame = true;
+
+        for layer in layers {
+            if layer.hidden {
+                continue;
+            }
+
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: if first_frame {
+                            wgpu::LoadOp::Clear(wgpu::Color::BLACK)
+                        } else {
+                            wgpu::LoadOp::Load
+                        },
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+            });
+
+            let layer_x = 2.0 * layer.coord.x / surface_size.x - 1.0;
+            let layer_y = 1.0 - 2.0 * layer.coord.y / surface_size.y;
+            let layer_coord = Vec2::new(layer_x, layer_y);
+
+            let (texture_array, texture_vertices) = layer
+                .texture_array
+                .iter()
+                .filter_map(|texture_coord| {
+                    texture_map.get(&texture_coord.id).map(|texture| {
+                        (
+                            &texture.texture,
+                            texture_coord.vertices(surface_size, layer_coord, texture.size),
+                        )
+                    })
+                })
+                .collect::<(Vec<&wgpu::TextureView>, Vec<[[f32; 2]; 6]>)>();
+            let texture_vertices = texture_vertices.into_flattened();
+
+            let vertex_data_slice = bytemuck::cast_slice(&texture_vertices);
+            let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: vertex_data_slice,
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+            let vertex_buffer_layout = wgpu::VertexBufferLayout {
+                array_stride: (vertex_data_slice.len() / texture_vertices.len())
+                    as wgpu::BufferAddress,
+                step_mode: wgpu::VertexStepMode::Vertex,
+                attributes: &[wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x2,
+                    offset: 0,
+                    shader_location: 0,
+                }],
+            };
+
+            let matrix = layer.transform * global_transform;
+            let transform_bytes = matrix.as_u8_slice();
+            let transform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Transform Buffer"),
+                contents: transform_bytes,
+                usage: wgpu::BufferUsages::UNIFORM,
+            });
+
+            let bind_group_layout =
+                device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    entries: &[
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 0,
+                            visibility: wgpu::ShaderStages::VERTEX,
+                            ty: wgpu::BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Uniform,
+                                has_dynamic_offset: false,
+                                min_binding_size: wgpu::BufferSize::new(
+                                    transform_bytes.len() as u64
+                                ),
+                            },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 1,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                multisampled: false,
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            },
+                            count: NonZeroU32::new(texture_array.len() as u32),
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 2,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                            count: None,
+                        },
+                    ],
+                    label: Some("Bind Group Layout"),
+                });
+
+            let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("Bind Group"),
+                layout: &bind_group_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: transform_buffer.as_entire_binding(),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::TextureViewArray(&texture_array),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: wgpu::BindingResource::Sampler(&self.sampler),
+                    },
+                ],
+            });
+
+            let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Render Pipeline Layout"),
+                bind_group_layouts: &[&bind_group_layout],
+                ..Default::default()
+            });
+
+            let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("Render Pipeline"),
+                layout: Some(&pipeline_layout),
+                vertex: wgpu::VertexState {
+                    module: &self.vertex_shader,
+                    entry_point: self.vertex_entry,
+                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                    buffers: &[vertex_buffer_layout],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &self.fragment_shader,
+                    entry_point: self.fragment_entry,
+                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: self.surface_config.format,
+                        blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview: None,
+                cache: None,
+            });
+
+            render_pass.set_pipeline(&pipeline);
+            render_pass.set_bind_group(0, &bind_group, &[]);
+            render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
+            render_pass.draw(
+                0..texture_vertices.len() as u32,
+                0..texture_array.len() as u32,
+            );
+
+            if first_frame {
+                first_frame = false;
+            }
+        }
+
+        Ok(surface_texture)
+    }
+
+    pub fn resize(&mut self, device: &wgpu::Device, width: u32, height: u32) {
+        if self.surface_config.width == width && self.surface_config.height == height {
+            return;
+        }
+
+        self.surface_config.width = width;
+        self.surface_config.height = height;
+        self.surface.configure(device, &self.surface_config);
+    }
+
+    pub fn update_fragment_shader(&mut self, entry: &'s str, shader: wgpu::ShaderModule) {
+        self.fragment_entry = entry;
+        self.fragment_shader = shader;
+    }
+
+    pub fn update_vertex_shader(&mut self, entry: &'s str, shader: wgpu::ShaderModule) {
+        self.vertex_entry = entry;
+        self.vertex_shader = shader;
+    }
+}
+
+pub struct TheWgpuContext<'w, 's> {
+    // TODO: Handle order of layers
+    layers: BTreeMap<usize, TheWgpuRenderLayer>,
+    texture_map: HashMap<TheTextureId, TheTextureDataInfo>,
+    transform: Mat4<f32>,
+
+    adapter: wgpu::Adapter,
+    device: wgpu::Device,
+    instance: wgpu::Instance,
+    queue: wgpu::Queue,
+
+    compute_context: Option<TheWgpuComputeContext>,
+
+    render_context: Option<TheWgpuRenderContext<'w, 's>>,
+    surface_info: TheModifyState<TheSurfaceInfo<'w>>,
+    fragment_shader_info: TheModifyState<TheWgpuShaderInfo<'s>>,
+    vertex_shader_info: TheModifyState<TheWgpuShaderInfo<'s>>,
+
+    layer_id_factory: Factory<usize>,
+    queue_capture: bool,
+}
+
+impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
+    type Error = TheWgpuContextError;
+    type Layer = TheWgpuRenderLayer;
+    type LayerId = usize;
+    type ShaderInfo = TheWgpuShaderInfo<'s>;
+    type Surface = wgpu::Surface<'w>;
+    type TextureId = TheTextureId;
+
+    fn add_layer(&mut self) -> Self::LayerId {
+        let Some(context) = &self.render_context else {
+            panic!("No render contexts are found");
+        };
+
+        let Ok(id) = self.layer_id_factory.next() else {
+            panic!("Cannot retrieve an unique id for the new layer.");
+        };
+
+        let layer = TheWgpuRenderLayer::new(Vec2::new(
+            context.surface_config.width,
+            context.surface_config.height,
+        ));
+
+        self.layers.insert(id, layer);
+
+        id
+    }
+
+    fn draw(&self) -> Result<Option<Vec<u8>>, Self::Error> {
+        let Some(context) = &self.render_context else {
+            return Err(TheWgpuContextError::RenderContextNotFound);
+        };
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Command Encoder"),
+            });
+
+        let surface_texture = context.draw(
+            &self.device,
+            &mut encoder,
+            &self.texture_map,
+            self.layers.values(),
+            self.transform,
+        )?;
+
+        self.queue.submit(once(encoder.finish()));
+
+        let capture = if self.queue_capture {
+            Some(self.capture(&surface_texture.texture)?)
+        } else {
+            None
+        };
+
+        surface_texture.present();
+
+        Ok(capture)
+    }
+
+    fn layer(&self, layer_id: Self::LayerId) -> Option<&Self::Layer> {
+        self.layers.get(&layer_id)
+    }
+
+    fn layer_mut(&mut self, layer_id: Self::LayerId) -> Option<&mut Self::Layer> {
+        self.layers.get_mut(&layer_id)
+    }
+
+    fn load_texture(&mut self, width: u32, height: u32, buffer: &[u8]) -> Self::TextureId {
+        let size = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
+
+        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Texture"),
+            size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[wgpu::TextureFormat::Rgba8UnormSrgb],
+        });
+
+        self.queue.write_texture(
+            texture.as_image_copy(),
+            buffer,
+            wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: Some(4 * width),
+                rows_per_image: Some(height),
+            },
+            size,
+        );
+
+        let id = texture.global_id();
+
+        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor {
+            label: Some("Texture View"),
+            ..Default::default()
+        });
+
+        self.texture_map.insert(
+            id,
+            TheTextureDataInfo {
+                size: Vec2::new(width as f32, height as f32),
+                texture: texture_view,
+            },
+        );
+
+        id
+    }
+
+    fn place_texture(
+        &mut self,
+        layer_id: Self::LayerId,
+        texture_id: Self::TextureId,
+        coord: Vec2<f32>,
+    ) {
+        if let Some(layer) = self.layers.get_mut(&layer_id) {
+            layer.place_texture(texture_id, coord);
+        }
+    }
+
+    fn remove_layer(&mut self, layer_id: Self::LayerId) -> Option<Self::Layer> {
+        self.layer_id_factory.remove(layer_id);
+        self.layers.remove(&layer_id)
+    }
+
+    fn request_capture(&mut self, capture: bool) {
+        self.queue_capture = capture;
+    }
+
+    fn resize(&mut self, width: u32, height: u32) {
+        if let Some(context) = &mut self.render_context {
+            context.resize(&self.device, width, height);
+        }
+
+        for layer in self.layers.values_mut() {
+            layer.set_viewport_size(Vec2::new(width, height));
+        }
+    }
+
+    fn rotate(&mut self, theta: f32) {
+        self.transform *= Mat4::from_rotation(Vec3::new(1.0, 1.0, 0.0), theta);
+    }
+
+    fn scale(&mut self, scale: f32) {
+        self.transform *= Mat4::from_scale(scale.into());
+    }
+
+    fn set_compute_shader(&mut self, shader_info: Self::ShaderInfo) {
+        todo!()
+    }
+
+    fn set_fragment_shader(&mut self, shader: Self::ShaderInfo) {
+        self.fragment_shader_info.modify(shader);
+
+        self.try_update_render_context();
+    }
+
+    fn set_surface(&mut self, width: u32, height: u32, surface: Self::Surface) {
+        self.surface_info.modify(TheSurfaceInfo {
+            width,
+            height,
+            surface,
+        });
+
+        self.try_update_render_context();
+
+        self.resize(width, height);
+    }
+
+    fn set_vertex_shader(&mut self, shader: Self::ShaderInfo) {
+        self.vertex_shader_info.modify(shader);
+
+        self.try_update_render_context();
+    }
+
+    fn translate(&mut self, x: f32, y: f32) {
+        if let Some(context) = &self.render_context {
+            self.transform *= Mat4::from_translation(Vec3::new(
+                x / context.surface_config.width as f32,
+                y / context.surface_config.height as f32,
+                1.0,
+            ));
+        } else {
+            self.transform *= Mat4::from_translation(Vec3::new(x, y, 1.0));
+        }
+    }
+
+    fn translate_coord_to_local(&self, x: u32, y: u32) -> (u32, u32) {
+        (x, y)
+    }
+
+    fn unload_texture(&mut self, texture_id: Self::TextureId) {
+        let _ = self.texture_map.remove(&texture_id);
+    }
+}
+
+impl<'w, 's> TheWgpuContext<'w, 's> {
+    pub async fn new() -> Result<Self, TheWgpuContextError> {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+            #[cfg(not(target_arch = "wasm32"))]
+            backends: wgpu::Backends::PRIMARY,
+            #[cfg(target_arch = "wasm32")]
+            backends: wgpu::Backends::GL,
+            ..Default::default()
+        });
+
+        if let Some(adapter) = instance
+            .request_adapter(&wgpu::RequestAdapterOptions::default())
+            .await
+        {
+            let (device, queue) = adapter
+                .request_device(
+                    &wgpu::DeviceDescriptor {
+                        required_features:
+                        // wgpu::Features::ADDRESS_MODE_CLAMP_TO_BORDER |
+                        // wgpu::Features::BUFFER_BINDING_ARRAY |
+                        // wgpu::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING |
+                        // wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY |
+                        wgpu::Features::TEXTURE_BINDING_ARRAY,
+                        #[cfg(target_arch = "wasm32")]
+                        required_limits: wgpu::Limits::downlevel_webgl2_defaults(),
+                        #[cfg(not(target_arch = "wasm32"))]
+                        required_limits: wgpu::Limits::default(),
+                        ..Default::default()
+                    },
+                    None,
+                )
+                .await
+                .map_err(map_wgpu_error)?;
+
+            let layer_id_factory = FactoryBuilder::new().build();
+
+            Ok(Self {
+                layers: BTreeMap::new(),
+                texture_map: HashMap::new(),
+                transform: Mat4::identity(),
+
+                adapter,
+                device,
+                instance,
+                queue,
+
+                compute_context: None,
+
+                render_context: None,
+                surface_info: TheModifyState::default(),
+                fragment_shader_info: TheModifyState::default(),
+                vertex_shader_info: TheModifyState::default(),
+
+                layer_id_factory,
+                queue_capture: false,
+            })
+        } else {
+            Err(TheWgpuContextError::AdapterNotFound)
+        }
+    }
+
+    pub async fn with_default_shaders() -> Result<Self, TheWgpuContextError> {
+        let mut context = Self::new().await?;
+
+        context.set_fragment_shader(TheWgpuShaderInfo::from_source(include_str!(
+            "./shaders/fragment.wgsl"
+        )));
+        context.set_vertex_shader(TheWgpuShaderInfo::from_source(include_str!(
+            "./shaders/vertex.wgsl"
+        )));
+
+        Ok(context)
+    }
+
+    pub fn create_surface<W>(&self, target: W) -> Result<wgpu::Surface<'w>, TheWgpuContextError>
+    where
+        W: wgpu::WindowHandle + 'w,
+    {
+        self.instance.create_surface(target).map_err(map_wgpu_error)
+    }
+
+    fn capture(&self, texture: &wgpu::Texture) -> Result<Vec<u8>, TheWgpuContextError> {
+        let Some(context) = &self.render_context else {
+            return Err(TheWgpuContextError::RenderContextNotFound);
+        };
+
+        let width = context.surface_config.width;
+        let height = context.surface_config.height;
+        let size = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Capture Command Encoder"),
+            });
+
+        let output_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Capture Texture"),
+            size: texture.size(),
+            mip_level_count: texture.mip_level_count(),
+            sample_count: texture.sample_count(),
+            dimension: texture.dimension(),
+            format: texture.format(),
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                | wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        let output_texture = output_texture.as_image_copy();
+        encoder.copy_texture_to_texture(texture.as_image_copy(), output_texture, size);
+
+        let src = output_texture;
+
+        let align_width =
+            align_up(width * 4 * U8_SIZE, wgpu::COPY_BYTES_PER_ROW_ALIGNMENT) / U8_SIZE;
+        let output_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Capture Buffer"),
+            size: (align_width * height) as wgpu::BufferAddress,
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let dst = wgpu::ImageCopyBuffer {
+            buffer: &output_buffer,
+            layout: wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: Some(align_width),
+                rows_per_image: Some(height),
+            },
+        };
+
+        encoder.copy_texture_to_buffer(src, dst, size);
+
+        let submission_index = self.queue.submit(Some(encoder.finish()));
+
+        let buffer_slice = output_buffer.slice(..);
+
+        let (sender, receiver) = channel();
+        buffer_slice.map_async(wgpu::MapMode::Read, move |r| drop(sender.send(r)));
+
+        self.device
+            .poll(wgpu::Maintain::WaitForSubmissionIndex(submission_index));
+        receiver
+            .recv()
+            .map_err(map_async_error)?
+            .map_err(map_async_error)?;
+
+        let to_rgba = match texture.format() {
+            wgpu::TextureFormat::Rgba8Unorm | wgpu::TextureFormat::Rgba8UnormSrgb => {
+                Ok([0, 1, 2, 3])
+            }
+            wgpu::TextureFormat::Bgra8Unorm | wgpu::TextureFormat::Bgra8UnormSrgb => {
+                Ok([2, 1, 0, 3])
+            }
+            _ => return Err(TheWgpuContextError::InvalidTextureFormat(texture.format())),
+        }?;
+
+        let mut output = Vec::with_capacity((width * height) as usize * 4);
+        for padded_row in buffer_slice.get_mapped_range().chunks(align_width as usize) {
+            let row = &padded_row[..width as usize * 4];
+            for color in row.chunks(4) {
+                output.push(color[to_rgba[0]]);
+                output.push(color[to_rgba[1]]);
+                output.push(color[to_rgba[2]]);
+                output.push(color[to_rgba[3]]);
+            }
+        }
+
+        output_buffer.unmap();
+
+        Ok(output)
+    }
+
+    fn try_update_render_context(&mut self) {
+        // Create a new context when surface has changed,
+        // and fragment and vertex shaders are ready
+        if self.fragment_shader_info.is_not_vacant() && self.vertex_shader_info.is_not_vacant() {
+            if let Some(surface_info) = self.surface_info.take_if_modified() {
+                let fragment_shader_info = self.fragment_shader_info.use_ref().unwrap();
+                let vertex_shader_info = self.vertex_shader_info.use_ref().unwrap();
+
+                self.render_context = Some(TheWgpuRenderContext::new(
+                    &self.adapter,
+                    &self.device,
+                    surface_info,
+                    fragment_shader_info.entry,
+                    create_shader(&self.device, "Fragment Shader", fragment_shader_info.source),
+                    vertex_shader_info.entry,
+                    create_shader(&self.device, "Vertex Shader", vertex_shader_info.source),
+                ));
+                return;
+            }
+        }
+
+        let Some(context) = &mut self.render_context else {
+            return;
+        };
+
+        // Update existing context when surface has not changed
+        if let Some(shader_info) = self.fragment_shader_info.use_ref_if_modified() {
+            context.update_fragment_shader(
+                shader_info.entry,
+                create_shader(&self.device, "Fragment Shader", shader_info.source),
+            );
+        }
+        if let Some(shader_info) = self.vertex_shader_info.use_ref_if_modified() {
+            context.update_vertex_shader(
+                shader_info.entry,
+                create_shader(&self.device, "Vertex Shader", shader_info.source),
+            );
+        }
+    }
+}
+
+fn align_up(num: u32, align: u32) -> u32 {
+    (num + align - 1) & !(align - 1)
+}
+
+fn create_shader(device: &wgpu::Device, label: &str, source: &str) -> wgpu::ShaderModule {
+    device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some(label),
+        source: wgpu::ShaderSource::Wgsl(Cow::from(source)),
+    })
+}
+
+fn map_async_error(err: impl Error + 'static) -> TheWgpuContextError {
+    TheWgpuContextError::AsyncInternal {
+        source: Box::new(err),
+    }
+}
+
+fn map_wgpu_error(err: impl Error + 'static) -> TheWgpuContextError {
+    TheWgpuContextError::WgpuInternal {
+        source: Box::new(err),
+    }
+}
