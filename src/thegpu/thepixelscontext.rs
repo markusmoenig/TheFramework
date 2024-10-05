@@ -21,8 +21,8 @@ impl<'w> TheGpuContext for ThePixelsContext<'w> {
     type Surface = ();
     type TextureId = usize;
 
-    fn draw(&self) -> Result<(), Self::Error> {
-        self.pixels.render()
+    fn draw(&self) -> Result<Option<Vec<u8>>, Self::Error> {
+        self.pixels.render().map(|_| None)
     }
 
     #[allow(unused)]
@@ -50,6 +50,11 @@ impl<'w> TheGpuContext for ThePixelsContext<'w> {
             .unwrap();
     }
 
+    #[allow(unused)]
+    fn rotate(&mut self, theta: f32) {
+        unimplemented!("Won't support");
+    }
+
     fn scale(&mut self, scale: f32) {
         if self.scale == scale {
             return;
@@ -64,6 +69,11 @@ impl<'w> TheGpuContext for ThePixelsContext<'w> {
 
     #[allow(unused)]
     fn set_surface(&mut self, width: u32, height: u32, surface: Self::Surface) {
+        unimplemented!("Won't support");
+    }
+
+    #[allow(unused)]
+    fn translate(&mut self, x: f32, y: f32) {
         unimplemented!("Won't support");
     }
 

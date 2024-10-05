@@ -13,7 +13,7 @@ pub trait TheGpuContext {
         unimplemented!("Won't support");
     }
 
-    fn draw(&self) -> Result<(), Self::Error>;
+    fn draw(&self) -> Result<Option<Vec<u8>>, Self::Error>;
 
     fn layer(&self, layer_id: Self::LayerId) -> Option<&Self::Layer> {
         unimplemented!("Won't support");
@@ -38,7 +38,13 @@ pub trait TheGpuContext {
         unimplemented!("Won't support");
     }
 
+    fn request_capture(&mut self, capture: bool) {
+        unimplemented!("Won't support");
+    }
+
     fn resize(&mut self, width: u32, height: u32);
+
+    fn rotate(&mut self, theta: f32);
 
     fn scale(&mut self, scale: f32);
 
@@ -55,6 +61,8 @@ pub trait TheGpuContext {
     fn set_vertex_shader(&mut self, shader: Self::ShaderInfo) {
         unimplemented!("Won't support");
     }
+
+    fn translate(&mut self, x: f32, y: f32);
 
     fn translate_coord_to_local(&self, x: u32, y: u32) -> (u32, u32);
 

@@ -46,19 +46,6 @@ impl TheApp {
 
         let (mut width, mut height) = app.default_window_size();
 
-        let mut ctx = TheContext::new(width, height);
-        #[cfg(feature = "ui")]
-        let mut ui = TheUI::new();
-        #[cfg(feature = "ui")]
-        ui.init(&mut ctx);
-
-        app.init(&mut ctx);
-
-        // If available set the command line arguments to the trait.
-        if let Some(args) = self.args.take() {
-            app.set_cmd_line_args(args, &mut ctx);
-        }
-
         let window_title = app.window_title();
         let mut icon: Option<Icon> = None;
         if let Some(window_icon) = app.window_icon() {
@@ -92,10 +79,37 @@ impl TheApp {
         let window = Arc::new(window);
 
         #[cfg(feature = "pixels_winit")]
-        let mut gpu = ThePixelsContext::from_window(window.clone()).unwrap();
+        let gpu = ThePixelsContext::from_window(window.clone()).unwrap();
+
+        #[cfg(feature = "wgpu_winit")]
+        let (gpu, ui_layer) = {
+            let mut gpu =
+                futures::executor::block_on(TheWgpuContext::with_default_shaders()).unwrap();
+            let surface = gpu.create_surface(window.clone()).unwrap();
+            gpu.set_surface(width as u32, height as u32, surface);
+
+            let ui_layer = gpu.add_layer();
+
+            (gpu, ui_layer)
+        };
 
         #[cfg(not(any(feature = "pixels_winit", feature = "wgpu_winit")))]
         panic!("No suitable gpu backend was set.");
+
+        let mut ui_frame = vec![0; width * height * 4];
+
+        let mut ctx = TheContext::new(width, height, gpu);
+        #[cfg(feature = "ui")]
+        let mut ui = TheUI::new();
+        #[cfg(feature = "ui")]
+        ui.init(&mut ctx);
+
+        app.init(&mut ctx);
+
+        // If available set the command line arguments to the trait.
+        if let Some(args) = self.args.take() {
+            app.set_cmd_line_args(args, &mut ctx);
+        }
 
         #[cfg(feature = "ui")]
         {
@@ -114,24 +128,45 @@ impl TheApp {
                 match &event {
                     Event::WindowEvent { event, .. } => match event {
                         WindowEvent::RedrawRequested => {
+                            #[cfg(feature = "ui")]
+                            ui.draw(&mut ui_frame, &mut ctx);
+
+                            #[cfg(not(feature = "ui"))]
+                            app.draw(&mut ui_frame, &mut ctx);
+
                             #[cfg(feature = "pixels_winit")]
-                            {
-                                let frame = gpu.layer_mut(0).unwrap().frame_mut();
+                            ctx.gpu
+                                .layer_mut(0)
+                                .unwrap()
+                                .frame_mut()
+                                .copy_from_slice(&ui_frame);
 
-                                #[cfg(feature = "ui")]
-                                ui.draw(frame, &mut ctx);
+                            #[cfg(feature = "wgpu_winit")]
+                            let ui_texture = {
+                                let ui_texture =
+                                    ctx.gpu.load_texture(width as u32, height as u32, &ui_frame);
+                                ctx.gpu
+                                    .place_texture(ui_layer, ui_texture, Vec2::new(0.0, 0.0));
 
-                                #[cfg(not(feature = "ui"))]
-                                app.draw(frame, &mut ctx);
-                            }
+                                ui_texture
+                            };
 
-                            if gpu
+                            if ctx
+                                .gpu
                                 .draw()
                                 .map_err(|e| error!("render failed: {}", e))
                                 .is_err()
                             {
                                 elwt.exit();
                                 return;
+                            }
+
+                            #[cfg(feature = "wgpu_winit")]
+                            {
+                                ctx.gpu.unload_texture(ui_texture);
+                                if let Some(layer) = ctx.gpu.layer_mut(ui_layer) {
+                                    layer.clear();
+                                }
                             }
                         }
                         WindowEvent::DroppedFile(path) => {
@@ -267,8 +302,9 @@ impl TheApp {
 
                     if input.mouse_pressed(MouseButton::Left) {
                         if let Some(coords) = input.cursor() {
-                            let (x, y) =
-                                gpu.translate_coord_to_local(coords.0 as u32, coords.1 as u32);
+                            let (x, y) = ctx
+                                .gpu
+                                .translate_coord_to_local(coords.0 as u32, coords.1 as u32);
 
                             #[cfg(feature = "ui")]
                             if ui.touch_down(x as f32, y as f32, &mut ctx) {
@@ -283,8 +319,9 @@ impl TheApp {
 
                     if input.mouse_pressed(MouseButton::Right) {
                         if let Some(coords) = input.cursor() {
-                            let (x, y) =
-                                gpu.translate_coord_to_local(coords.0 as u32, coords.1 as u32);
+                            let (x, y) = ctx
+                                .gpu
+                                .translate_coord_to_local(coords.0 as u32, coords.1 as u32);
 
                             #[cfg(feature = "ui")]
                             if ui.context(x as f32, y as f32, &mut ctx) {
@@ -299,8 +336,9 @@ impl TheApp {
 
                     if input.mouse_released(MouseButton::Left) {
                         if let Some(coords) = input.cursor() {
-                            let (x, y) =
-                                gpu.translate_coord_to_local(coords.0 as u32, coords.1 as u32);
+                            let (x, y) = ctx
+                                .gpu
+                                .translate_coord_to_local(coords.0 as u32, coords.1 as u32);
 
                             #[cfg(feature = "ui")]
                             if ui.touch_up(x as f32, y as f32, &mut ctx) {
@@ -317,8 +355,9 @@ impl TheApp {
                         let diff = input.mouse_diff();
                         if diff.0 != 0.0 || diff.1 != 0.0 {
                             if let Some(coords) = input.cursor() {
-                                let (x, y) =
-                                    gpu.translate_coord_to_local(coords.0 as u32, coords.1 as u32);
+                                let (x, y) = ctx
+                                    .gpu
+                                    .translate_coord_to_local(coords.0 as u32, coords.1 as u32);
 
                                 #[cfg(feature = "ui")]
                                 if ui.touch_dragged(x as f32, y as f32, &mut ctx) {
@@ -334,8 +373,9 @@ impl TheApp {
                         let diff = input.mouse_diff();
                         if diff.0 != 0.0 || diff.1 != 0.0 {
                             if let Some(coords) = input.cursor() {
-                                let (x, y) =
-                                    gpu.translate_coord_to_local(coords.0 as u32, coords.1 as u32);
+                                let (x, y) = ctx
+                                    .gpu
+                                    .translate_coord_to_local(coords.0 as u32, coords.1 as u32);
 
                                 #[cfg(feature = "ui")]
                                 if ui.hover(x as f32, y as f32, &mut ctx) {
@@ -351,15 +391,17 @@ impl TheApp {
 
                     // Resize the window
                     if let Some(size) = input.window_resized() {
-                        gpu.resize(size.width, size.height);
+                        ctx.gpu.resize(size.width, size.height);
                         let scale = window.scale_factor();
-                        gpu.scale(scale as f32);
+                        ctx.gpu.scale(scale as f32);
 
                         // editor.resize(size.width as usize / scale as usize, size.height as usize / scale as usize);
                         width = size.width as usize / scale as usize;
                         height = size.height as usize / scale as usize;
                         ctx.width = width;
                         ctx.height = height;
+
+                        ui_frame.resize(width * height * 4, 0);
 
                         #[cfg(feature = "ui")]
                         ui.canvas
