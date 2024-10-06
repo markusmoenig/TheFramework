@@ -73,6 +73,10 @@ pub trait TheTrait {
         false
     }
 
+    fn post_captured(&mut self, texture: Vec<u8>) -> bool {
+        false
+    }
+
     /// Open a file requester
     fn open(&mut self) {}
 
