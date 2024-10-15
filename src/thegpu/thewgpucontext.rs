@@ -20,11 +20,6 @@ const U8_SIZE: u32 = std::mem::size_of::<u8>() as u32;
 type TheRenderLayerId = usize;
 type TheTextureId = wgpu::Id<wgpu::Texture>;
 
-enum TheSize {
-    Absolute(Vec2<f32>),
-    Relative(Vec2<f32>),
-}
-
 #[derive(Debug)]
 pub enum TheWgpuContextError {
     AdapterNotFound,
@@ -168,7 +163,6 @@ pub struct TheWgpuRenderLayer {
     clip_rect: Option<Vec4<u32>>,
     coord: Vec2<f32>,
     hidden: bool,
-    size: TheSize,
     texture_array: Vec<TheTextureCoordInfo>,
     transform: TheTransformMatrix,
     viewport_size: Vec2<u32>,
@@ -180,7 +174,6 @@ impl TheWgpuRenderLayer {
             clip_rect: None,
             coord: Vec2::zero(),
             hidden: false,
-            size: TheSize::Relative(Vec2::new(1.0, 1.0)),
             texture_array: vec![],
             transform: TheTransformMatrix::default(),
             viewport_size,
@@ -207,20 +200,12 @@ impl TheWgpuRenderLayer {
         self.transform.scale = Vec2::new(scale, scale);
     }
 
-    pub fn set_absolute_size(&mut self, width: f32, height: f32) {
-        self.size = TheSize::Absolute(Vec2::new(width, height));
-    }
-
     pub fn set_clip_rect(&mut self, rect: Option<Vec4<u32>>) {
         self.clip_rect = rect;
     }
 
     pub fn set_origin(&mut self, origin: Vec2<f32>) {
         self.transform.origin = origin
-    }
-
-    pub fn set_relative_size(&mut self, x: f32, y: f32) {
-        self.size = TheSize::Relative(Vec2::new(x, y));
     }
 
     pub fn set_coord(&mut self, x: f32, y: f32) {
