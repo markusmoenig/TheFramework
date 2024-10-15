@@ -10,12 +10,14 @@ use std::{
 
 use aict::{Factory, FactoryBuilder};
 use bytemuck::{Pod, Zeroable};
+use indexmap::IndexSet;
 use wgpu::util::DeviceExt;
 
 use crate::prelude::*;
 
 const U8_SIZE: u32 = std::mem::size_of::<u8>() as u32;
 
+type TheRenderLayerId = usize;
 type TheTextureId = wgpu::Id<wgpu::Texture>;
 
 enum TheSize {
@@ -357,10 +359,6 @@ impl<'w, 's> TheWgpuRenderContext<'w, 's> {
                 occlusion_query_set: None,
             });
 
-            let layer_x = 2.0 * layer.coord.x / surface_size.x - 1.0;
-            let layer_y = 1.0 - 2.0 * layer.coord.y / surface_size.y;
-            let layer_coord = Vec2::new(layer_x, layer_y);
-
             let (texture_array, texture_vertices) = layer
                 .texture_array
                 .iter()
@@ -541,8 +539,9 @@ impl<'w, 's> TheWgpuRenderContext<'w, 's> {
 }
 
 pub struct TheWgpuContext<'w, 's> {
-    // TODO: Handle order of layers
-    layers: BTreeMap<usize, TheWgpuRenderLayer>,
+    layer_group: BTreeMap<isize, IndexSet<TheRenderLayerId>>,
+    layer_zindex: HashMap<TheRenderLayerId, isize>,
+    layers: HashMap<TheRenderLayerId, TheWgpuRenderLayer>,
     texture_map: HashMap<TheTextureId, TheTextureDataInfo>,
     transform: TheTransformMatrix,
 
@@ -565,7 +564,7 @@ pub struct TheWgpuContext<'w, 's> {
 impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
     type Error = TheWgpuContextError;
     type Layer = TheWgpuRenderLayer;
-    type LayerId = usize;
+    type LayerId = TheRenderLayerId;
     type ShaderInfo = TheWgpuShaderInfo<'s>;
     type Surface = wgpu::Surface<'w>;
     type TextureId = TheTextureId;
@@ -585,6 +584,8 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
         ));
 
         self.layers.insert(id, layer);
+        self.layer_zindex.insert(id, 0);
+        self.layer_group.get_mut(&0).unwrap().insert(id);
 
         id
     }
@@ -600,11 +601,18 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
                 label: Some("Command Encoder"),
             });
 
+        let ordered_layers = self
+            .layer_group
+            .values()
+            .map(|set| set.iter())
+            .flatten()
+            .filter_map(|id| self.layers.get(id));
+
         let surface_texture = context.draw(
             &self.device,
             &mut encoder,
             &self.texture_map,
-            self.layers.values(),
+            ordered_layers,
             &self.transform,
         )?;
 
@@ -772,12 +780,7 @@ impl<'w, 's> TheWgpuContext<'w, 's> {
             let (device, queue) = adapter
                 .request_device(
                     &wgpu::DeviceDescriptor {
-                        required_features:
-                        // wgpu::Features::ADDRESS_MODE_CLAMP_TO_BORDER |
-                        // wgpu::Features::BUFFER_BINDING_ARRAY |
-                        // wgpu::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING |
-                        // wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY |
-                        wgpu::Features::TEXTURE_BINDING_ARRAY,
+                        required_features: wgpu::Features::TEXTURE_BINDING_ARRAY,
                         #[cfg(target_arch = "wasm32")]
                         required_limits: wgpu::Limits::downlevel_webgl2_defaults(),
                         #[cfg(not(target_arch = "wasm32"))]
@@ -789,10 +792,14 @@ impl<'w, 's> TheWgpuContext<'w, 's> {
                 .await
                 .map_err(map_wgpu_error)?;
 
+            let mut layer_group = BTreeMap::new();
+            layer_group.insert(0, IndexSet::new());
             let layer_id_factory = FactoryBuilder::new().build();
 
             Ok(Self {
-                layers: BTreeMap::new(),
+                layer_group,
+                layer_zindex: HashMap::new(),
+                layers: HashMap::new(),
                 texture_map: HashMap::new(),
                 transform: TheTransformMatrix::default(),
 
@@ -834,6 +841,25 @@ impl<'w, 's> TheWgpuContext<'w, 's> {
         W: wgpu::WindowHandle + 'w,
     {
         self.instance.create_surface(target).map_err(map_wgpu_error)
+    }
+
+    pub fn set_layer_zindex(&mut self, layer_id: TheRenderLayerId, zindex: isize) {
+        if let Some(prev_zindex) = self.layer_zindex.get(&layer_id) {
+            if let Some(set) = self.layer_group.get_mut(&prev_zindex) {
+                set.shift_remove(&layer_id);
+            }
+        }
+
+        self.layer_zindex.insert(layer_id, zindex);
+
+        if !self.layer_group.contains_key(&zindex) {
+            self.layer_group.insert(zindex, IndexSet::new());
+        }
+        self.layer_group.get_mut(&zindex).unwrap().insert(layer_id);
+    }
+
+    pub fn set_origin(&mut self, origin: Vec2<f32>) {
+        self.transform.origin = origin;
     }
 
     fn capture(&self, texture: &wgpu::Texture) -> Result<Vec<u8>, TheWgpuContextError> {
@@ -929,10 +955,6 @@ impl<'w, 's> TheWgpuContext<'w, 's> {
         output_buffer.unmap();
 
         Ok(output)
-    }
-
-    pub fn set_origin(&mut self, origin: Vec2<f32>) {
-        self.transform.origin = origin;
     }
 
     fn try_update_render_context(&mut self) {
