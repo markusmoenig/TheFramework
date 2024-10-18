@@ -702,6 +702,11 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
 
     fn remove_layer(&mut self, layer_id: Self::LayerId) -> Option<Self::Layer> {
         self.layer_id_factory.remove(layer_id);
+        if let Some(zindex) = self.layer_zindex.remove(&layer_id) {
+            if let Some(set) = self.layer_group.get_mut(&zindex) {
+                set.shift_remove(&layer_id);
+            }
+        }
         self.layers.remove(&layer_id)
     }
 
