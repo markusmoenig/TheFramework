@@ -31,6 +31,9 @@ impl TheTrait for Demo {
         // Set zindex < 0 so that the ui layer can always be on top
         ctx.gpu.set_layer_zindex(self.canvas_layer, -1);
 
+        // Request screen capture. We can get the buffer later in `post_captured` callback.
+        // ctx.gpu.request_capture(true);
+
         let textures = (0..7)
             .map(|i| {
                 create_buffer(
@@ -80,6 +83,11 @@ impl TheTrait for Demo {
         ui.canvas.set_right(sidebar);
 
         self.event_receiver = Some(ui.add_state_listener("Main".into()));
+    }
+
+    fn post_captured(&mut self, texture: Vec<u8>, width: u32, height: u32) -> bool {
+        // Handle screen buffer here.
+        false
     }
 
     fn update_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) -> bool {

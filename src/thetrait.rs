@@ -73,7 +73,7 @@ pub trait TheTrait {
         false
     }
 
-    fn post_captured(&mut self, texture: Vec<u8>) -> bool {
+    fn post_captured(&mut self, texture: Vec<u8>, width: u32, height: u32) -> bool {
         false
     }
 

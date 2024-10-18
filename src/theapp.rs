@@ -153,7 +153,7 @@ impl TheApp {
                             match ctx.gpu.draw().map_err(|e| error!("render failed: {}", e)) {
                                 Ok(texture) => {
                                     if let Some(texture) = texture {
-                                        app.post_captured(texture);
+                                        app.post_captured(texture, width as u32, height as u32);
                                     }
                                 }
                                 Err(_) => {
