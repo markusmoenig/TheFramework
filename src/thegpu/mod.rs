@@ -11,5 +11,5 @@ pub mod prelude {
     #[cfg(feature = "pixels_gpu")]
     pub use crate::thegpu::thepixelscontext::ThePixelsContext;
     #[cfg(feature = "wgpu_gpu")]
-    pub use crate::thegpu::thewgpucontext::TheWgpuContext;
+    pub use crate::thegpu::thewgpucontext::{TheTextureId, TheWgpuContext};
 }
