@@ -3,8 +3,9 @@
 
 @fragment
 fn main(
+    @builtin(position) in_position: vec4<f32>,
     @location(0) coord: vec2<f32>,
-    @location(1) index: u32
+    @location(1) index: u32,
 ) -> @location(0) vec4<f32> {
     return textureSample(r_textures[index], r_sampler, coord);
 }

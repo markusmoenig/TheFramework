@@ -39,7 +39,6 @@ impl TheApp {
             event::{DeviceEvent, ElementState, Event, MouseButton, MouseScrollDelta, WindowEvent},
             event_loop::{ControlFlow, EventLoop},
             keyboard::{Key, NamedKey},
-            //platform::modifier_supplement::KeyEventExtModifierSupplement,
             window::{Icon, WindowBuilder},
         };
         use winit_input_helper::WinitInputHelper;
@@ -151,14 +150,16 @@ impl TheApp {
                                 ui_texture
                             };
 
-                            if ctx
-                                .gpu
-                                .draw()
-                                .map_err(|e| error!("render failed: {}", e))
-                                .is_err()
-                            {
-                                elwt.exit();
-                                return;
+                            match ctx.gpu.draw().map_err(|e| error!("render failed: {}", e)) {
+                                Ok(texture) => {
+                                    if let Some(texture) = texture {
+                                        app.post_captured(texture, width as u32, height as u32);
+                                    }
+                                }
+                                Err(_) => {
+                                    elwt.exit();
+                                    return;
+                                }
                             }
 
                             #[cfg(feature = "wgpu_winit")]

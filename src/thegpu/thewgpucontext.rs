@@ -9,18 +9,16 @@ use std::{
 };
 
 use aict::{Factory, FactoryBuilder};
+use bytemuck::{Pod, Zeroable};
+use indexmap::IndexSet;
 use wgpu::util::DeviceExt;
 
 use crate::prelude::*;
 
 const U8_SIZE: u32 = std::mem::size_of::<u8>() as u32;
 
-type TheTextureId = wgpu::Id<wgpu::Texture>;
-
-enum TheSize {
-    Absolute(Vec2<f32>),
-    Relative(Vec2<f32>),
-}
+type TheRenderLayerId = usize;
+pub type TheTextureId = wgpu::Id<wgpu::Texture>;
 
 #[derive(Debug)]
 pub enum TheWgpuContextError {
@@ -71,38 +69,38 @@ impl<T> Default for TheModifyState<T> {
 }
 
 impl<T> TheModifyState<T> {
-    pub fn is_not_vacant(&self) -> bool {
+    fn is_not_vacant(&self) -> bool {
         self.value.is_some()
     }
 
-    pub fn modify(&mut self, value: T) {
+    fn modify(&mut self, value: T) {
         self.has_modified = true;
         self.value = Some(value);
     }
 
-    pub fn take(&mut self) -> Option<T> {
+    fn take(&mut self) -> Option<T> {
         self.has_modified = self.value.is_some();
         self.value.take()
     }
 
-    pub fn take_if_modified(&mut self) -> Option<T> {
+    fn take_if_modified(&mut self) -> Option<T> {
         self.has_modified.then(|| self.take())?
     }
 
-    pub fn use_ref(&mut self) -> Option<&T> {
+    fn use_ref(&mut self) -> Option<&T> {
         self.has_modified = false;
         self.value.as_ref()
     }
 
-    pub fn use_ref_if_modified(&mut self) -> Option<&T> {
+    fn use_ref_if_modified(&mut self) -> Option<&T> {
         self.has_modified.then(|| self.use_ref())?
     }
 }
 
 struct TheSurfaceInfo<'w> {
-    pub width: u32,
-    pub height: u32,
-    pub surface: wgpu::Surface<'w>,
+    width: u32,
+    height: u32,
+    surface: wgpu::Surface<'w>,
 }
 
 struct TheTextureCoordInfo {
@@ -111,7 +109,7 @@ struct TheTextureCoordInfo {
 }
 
 impl TheTextureCoordInfo {
-    pub fn vertices(
+    fn vertices(
         &self,
         surface_size: Vec2<f32>,
         layer_coord: Vec2<f32>,
@@ -137,23 +135,47 @@ struct TheTextureDataInfo {
     texture: wgpu::TextureView,
 }
 
+struct TheTransformMatrix {
+    origin: Vec2<f32>,
+    rotation: f32,
+    scale: Vec2<f32>,
+    translation: Vec2<f32>,
+}
+
+impl Default for TheTransformMatrix {
+    fn default() -> Self {
+        Self {
+            origin: Vec2::zero(),
+            rotation: 0.0,
+            scale: Vec2::new(1.0, 1.0),
+            translation: Vec2::new(0.0, 0.0),
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Pod, Zeroable)]
+struct TheVertexParams {
+    transform: [f32; 16],
+}
+
 pub struct TheWgpuRenderLayer {
+    clip_rect: Option<Vec4<u32>>,
     coord: Vec2<f32>,
     hidden: bool,
-    size: TheSize,
     texture_array: Vec<TheTextureCoordInfo>,
-    transform: Mat4<f32>,
+    transform: TheTransformMatrix,
     viewport_size: Vec2<u32>,
 }
 
 impl TheWgpuRenderLayer {
     pub fn new(viewport_size: Vec2<u32>) -> Self {
         Self {
+            clip_rect: None,
             coord: Vec2::zero(),
             hidden: false,
-            size: TheSize::Relative(Vec2::new(1.0, 1.0)),
             texture_array: vec![],
-            transform: Mat4::identity(),
+            transform: TheTransformMatrix::default(),
             viewport_size,
         }
     }
@@ -170,19 +192,20 @@ impl TheWgpuRenderLayer {
     }
 
     pub fn rotate(&mut self, theta: f32) {
-        self.transform *= Mat4::from_rotation(Vec3::new(1.0, 1.0, 0.0), theta);
+        todo!("Fix rotation skewing");
+        self.transform.rotation = theta;
     }
 
     pub fn scale(&mut self, scale: f32) {
-        self.transform *= Mat4::from_scale(scale.into());
+        self.transform.scale = Vec2::new(scale, scale);
     }
 
-    pub fn set_absolute_size(&mut self, width: f32, height: f32) {
-        self.size = TheSize::Absolute(Vec2::new(width, height));
+    pub fn set_clip_rect(&mut self, rect: Option<Vec4<u32>>) {
+        self.clip_rect = rect;
     }
 
-    pub fn set_relative_size(&mut self, x: f32, y: f32) {
-        self.size = TheSize::Relative(Vec2::new(x, y));
+    pub fn set_origin(&mut self, origin: Vec2<f32>) {
+        self.transform.origin = origin
     }
 
     pub fn set_coord(&mut self, x: f32, y: f32) {
@@ -190,11 +213,7 @@ impl TheWgpuRenderLayer {
     }
 
     pub fn translate(&mut self, x: f32, y: f32) {
-        self.transform *= Mat4::from_translation(Vec3::new(
-            x / self.viewport_size.x as f32,
-            y / self.viewport_size.y as f32,
-            1.0,
-        ));
+        self.transform.translation = Vec2::new(x, y);
     }
 
     fn set_viewport_size(&mut self, viewport_size: Vec2<u32>) {
@@ -232,7 +251,7 @@ struct TheWgpuRenderContext<'w, 's> {
 }
 
 impl<'w, 's> TheWgpuRenderContext<'w, 's> {
-    pub fn new(
+    fn new(
         adapter: &wgpu::Adapter,
         device: &wgpu::Device,
         surface_info: TheSurfaceInfo<'w>,
@@ -278,19 +297,53 @@ impl<'w, 's> TheWgpuRenderContext<'w, 's> {
         }
     }
 
-    pub fn draw<'a>(
+    fn draw(
         &self,
         device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         texture_map: &HashMap<TheTextureId, TheTextureDataInfo>,
-        layers: impl Iterator<Item = &'a TheWgpuRenderLayer>,
-        global_transform: Mat4<f32>,
+        layers: Vec<&TheWgpuRenderLayer>,
+        global_transform: &TheTransformMatrix,
     ) -> Result<wgpu::SurfaceTexture, TheWgpuContextError> {
         let surface_texture = self.surface.get_current_texture().map_err(map_wgpu_error)?;
         let surface_size = Vec2::new(
             self.surface_config.width as f32,
             self.surface_config.height as f32,
         );
+
+        let visible_layers = layers.iter().enumerate().filter(|(_, layer)| !layer.hidden);
+        let texture_groups = visible_layers
+            .map(|(index, layer)| {
+                let textures_and_vertices = layer
+                    .texture_array
+                    .iter()
+                    .filter_map(|texture_coord| {
+                        texture_map.get(&texture_coord.id).map(|texture| {
+                            let vertices = texture_coord.vertices(
+                                surface_size,
+                                ndc(layer.coord, surface_size),
+                                texture.size,
+                            );
+
+                            (&texture.texture, vertices)
+                        })
+                    })
+                    .collect::<Vec<(&wgpu::TextureView, [[f32; 2]; 6])>>();
+                let chunked_textures_and_vertices = textures_and_vertices
+                    .chunks(device.limits().max_sampled_textures_per_shader_stage as usize)
+                    .map(|textures_and_vertices| textures_and_vertices.to_vec());
+
+                chunked_textures_and_vertices
+                    .map(move |textures_and_vertices| {
+                        let (textures, vertices): (Vec<&wgpu::TextureView>, Vec<[[f32; 2]; 6]>) =
+                            textures_and_vertices.into_iter().unzip();
+
+                        (index, (textures, vertices.into_flattened()))
+                    })
+                    .collect::<Vec<(usize, (Vec<&wgpu::TextureView>, Vec<[f32; 2]>))>>()
+            })
+            .flatten()
+            .collect::<Vec<(usize, (Vec<&wgpu::TextureView>, Vec<[f32; 2]>))>>();
 
         let view = &surface_texture
             .texture
@@ -299,121 +352,157 @@ impl<'w, 's> TheWgpuRenderContext<'w, 's> {
                 ..Default::default()
             });
 
-        let mut first_frame = true;
+        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("Render Pass"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
+        });
 
-        for layer in layers {
-            if layer.hidden {
+        let mut bind_group_layout = None;
+        let mut prev_group_texture_count = 0;
+        for (index, (textures, vertices)) in texture_groups {
+            if textures.is_empty() {
                 continue;
             }
 
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: if first_frame {
-                            wgpu::LoadOp::Clear(wgpu::Color::BLACK)
-                        } else {
-                            wgpu::LoadOp::Load
-                        },
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: None,
-                timestamp_writes: None,
-                occlusion_query_set: None,
-            });
+            let Some(layer) = layers.iter().nth(index) else {
+                continue;
+            };
 
-            let layer_x = 2.0 * layer.coord.x / surface_size.x - 1.0;
-            let layer_y = 1.0 - 2.0 * layer.coord.y / surface_size.y;
-            let layer_coord = Vec2::new(layer_x, layer_y);
-
-            let (texture_array, texture_vertices) = layer
-                .texture_array
-                .iter()
-                .filter_map(|texture_coord| {
-                    texture_map.get(&texture_coord.id).map(|texture| {
-                        (
-                            &texture.texture,
-                            texture_coord.vertices(surface_size, layer_coord, texture.size),
-                        )
-                    })
-                })
-                .collect::<(Vec<&wgpu::TextureView>, Vec<[[f32; 2]; 6]>)>();
-            let texture_vertices = texture_vertices.into_flattened();
-
-            let vertex_data_slice = bytemuck::cast_slice(&texture_vertices);
+            let vertex_data_slice = bytemuck::cast_slice(&vertices);
             let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
                 contents: vertex_data_slice,
                 usage: wgpu::BufferUsages::VERTEX,
             });
-            let vertex_buffer_layout = wgpu::VertexBufferLayout {
-                array_stride: (vertex_data_slice.len() / texture_vertices.len())
-                    as wgpu::BufferAddress,
-                step_mode: wgpu::VertexStepMode::Vertex,
-                attributes: &[wgpu::VertexAttribute {
-                    format: wgpu::VertexFormat::Float32x2,
-                    offset: 0,
-                    shader_location: 0,
-                }],
-            };
+            render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
 
-            let matrix = layer.transform * global_transform;
-            let transform_bytes = matrix.as_u8_slice();
-            let transform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Transform Buffer"),
-                contents: transform_bytes,
-                usage: wgpu::BufferUsages::UNIFORM,
-            });
+            let texture_count = textures.len() as u32;
+            if prev_group_texture_count != texture_count {
+                bind_group_layout = Some(device.create_bind_group_layout(
+                    &wgpu::BindGroupLayoutDescriptor {
+                        label: Some("Bind Group Layout"),
+                        entries: &[
+                            wgpu::BindGroupLayoutEntry {
+                                binding: 0,
+                                visibility: wgpu::ShaderStages::VERTEX,
+                                ty: wgpu::BindingType::Buffer {
+                                    ty: wgpu::BufferBindingType::Uniform,
+                                    has_dynamic_offset: false,
+                                    min_binding_size: None,
+                                },
+                                count: None,
+                            },
+                            wgpu::BindGroupLayoutEntry {
+                                binding: 1,
+                                visibility: wgpu::ShaderStages::FRAGMENT,
+                                ty: wgpu::BindingType::Texture {
+                                    multisampled: false,
+                                    view_dimension: wgpu::TextureViewDimension::D2,
+                                    sample_type: wgpu::TextureSampleType::Float {
+                                        filterable: true,
+                                    },
+                                },
+                                count: NonZeroU32::new(texture_count),
+                            },
+                            wgpu::BindGroupLayoutEntry {
+                                binding: 2,
+                                visibility: wgpu::ShaderStages::FRAGMENT,
+                                ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                                count: None,
+                            },
+                        ],
+                    },
+                ));
 
-            let bind_group_layout =
-                device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                    entries: &[
-                        wgpu::BindGroupLayoutEntry {
-                            binding: 0,
-                            visibility: wgpu::ShaderStages::VERTEX,
-                            ty: wgpu::BindingType::Buffer {
-                                ty: wgpu::BufferBindingType::Uniform,
-                                has_dynamic_offset: false,
-                                min_binding_size: wgpu::BufferSize::new(
-                                    transform_bytes.len() as u64
-                                ),
-                            },
-                            count: None,
-                        },
-                        wgpu::BindGroupLayoutEntry {
-                            binding: 1,
-                            visibility: wgpu::ShaderStages::FRAGMENT,
-                            ty: wgpu::BindingType::Texture {
-                                multisampled: false,
-                                view_dimension: wgpu::TextureViewDimension::D2,
-                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                            },
-                            count: NonZeroU32::new(texture_array.len() as u32),
-                        },
-                        wgpu::BindGroupLayoutEntry {
-                            binding: 2,
-                            visibility: wgpu::ShaderStages::FRAGMENT,
-                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                            count: None,
-                        },
-                    ],
-                    label: Some("Bind Group Layout"),
+                let pipeline_layout =
+                    device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                        label: Some("Render Pipeline Layout"),
+                        bind_group_layouts: &[bind_group_layout.as_ref().unwrap()],
+                        ..Default::default()
+                    });
+
+                let vertex_buffer_layout = wgpu::VertexBufferLayout {
+                    array_stride: (vertex_data_slice.len() / vertices.len()) as wgpu::BufferAddress,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &[wgpu::VertexAttribute {
+                        format: wgpu::VertexFormat::Float32x2,
+                        offset: 0,
+                        shader_location: 0,
+                    }],
+                };
+
+                let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                    label: Some("Render Pipeline"),
+                    layout: Some(&pipeline_layout),
+                    vertex: wgpu::VertexState {
+                        module: &self.vertex_shader,
+                        entry_point: self.vertex_entry,
+                        compilation_options: wgpu::PipelineCompilationOptions::default(),
+                        buffers: &[vertex_buffer_layout],
+                    },
+                    fragment: Some(wgpu::FragmentState {
+                        module: &self.fragment_shader,
+                        entry_point: self.fragment_entry,
+                        compilation_options: wgpu::PipelineCompilationOptions::default(),
+                        targets: &[Some(wgpu::ColorTargetState {
+                            format: self.surface_config.format,
+                            blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                            write_mask: wgpu::ColorWrites::ALL,
+                        })],
+                    }),
+                    primitive: wgpu::PrimitiveState::default(),
+                    depth_stencil: None,
+                    multisample: wgpu::MultisampleState::default(),
+                    multiview: None,
+                    cache: None,
+                });
+
+                render_pass.set_pipeline(&pipeline);
+
+                prev_group_texture_count = texture_count;
+            }
+
+            let matrix = transform_matrix(
+                ndc(
+                    global_transform.origin + layer.transform.origin,
+                    surface_size,
+                ),
+                global_transform.rotation + layer.transform.rotation,
+                global_transform.scale * layer.transform.scale,
+                2.0 * (global_transform.translation + layer.transform.translation) / surface_size,
+            );
+            let mut transform = [0.0; 16];
+            transform.copy_from_slice(matrix.as_ref());
+
+            let vertex_params = TheVertexParams { transform };
+            let vertex_params_buffer =
+                device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("Vertex Params Buffer"),
+                    contents: bytemuck::cast_slice(&[vertex_params]),
+                    usage: wgpu::BufferUsages::UNIFORM,
                 });
 
             let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("Bind Group"),
-                layout: &bind_group_layout,
+                layout: bind_group_layout.as_ref().unwrap(),
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: transform_buffer.as_entire_binding(),
+                        resource: vertex_params_buffer.as_entire_binding(),
                     },
                     wgpu::BindGroupEntry {
                         binding: 1,
-                        resource: wgpu::BindingResource::TextureViewArray(&texture_array),
+                        resource: wgpu::BindingResource::TextureViewArray(&textures),
                     },
                     wgpu::BindGroupEntry {
                         binding: 2,
@@ -422,55 +511,17 @@ impl<'w, 's> TheWgpuRenderContext<'w, 's> {
                 ],
             });
 
-            let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&bind_group_layout],
-                ..Default::default()
-            });
-
-            let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: Some("Render Pipeline"),
-                layout: Some(&pipeline_layout),
-                vertex: wgpu::VertexState {
-                    module: &self.vertex_shader,
-                    entry_point: self.vertex_entry,
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
-                    buffers: &[vertex_buffer_layout],
-                },
-                fragment: Some(wgpu::FragmentState {
-                    module: &self.fragment_shader,
-                    entry_point: self.fragment_entry,
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
-                    targets: &[Some(wgpu::ColorTargetState {
-                        format: self.surface_config.format,
-                        blend: Some(wgpu::BlendState::ALPHA_BLENDING),
-                        write_mask: wgpu::ColorWrites::ALL,
-                    })],
-                }),
-                primitive: wgpu::PrimitiveState::default(),
-                depth_stencil: None,
-                multisample: wgpu::MultisampleState::default(),
-                multiview: None,
-                cache: None,
-            });
-
-            render_pass.set_pipeline(&pipeline);
             render_pass.set_bind_group(0, &bind_group, &[]);
-            render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-            render_pass.draw(
-                0..texture_vertices.len() as u32,
-                0..texture_array.len() as u32,
-            );
-
-            if first_frame {
-                first_frame = false;
+            if let Some(rect) = layer.clip_rect {
+                render_pass.set_scissor_rect(rect.x, rect.y, rect.z, rect.w);
             }
+            render_pass.draw(0..vertices.len() as u32, 0..texture_count);
         }
 
         Ok(surface_texture)
     }
 
-    pub fn resize(&mut self, device: &wgpu::Device, width: u32, height: u32) {
+    fn resize(&mut self, device: &wgpu::Device, width: u32, height: u32) {
         if self.surface_config.width == width && self.surface_config.height == height {
             return;
         }
@@ -480,22 +531,23 @@ impl<'w, 's> TheWgpuRenderContext<'w, 's> {
         self.surface.configure(device, &self.surface_config);
     }
 
-    pub fn update_fragment_shader(&mut self, entry: &'s str, shader: wgpu::ShaderModule) {
+    fn update_fragment_shader(&mut self, entry: &'s str, shader: wgpu::ShaderModule) {
         self.fragment_entry = entry;
         self.fragment_shader = shader;
     }
 
-    pub fn update_vertex_shader(&mut self, entry: &'s str, shader: wgpu::ShaderModule) {
+    fn update_vertex_shader(&mut self, entry: &'s str, shader: wgpu::ShaderModule) {
         self.vertex_entry = entry;
         self.vertex_shader = shader;
     }
 }
 
 pub struct TheWgpuContext<'w, 's> {
-    // TODO: Handle order of layers
-    layers: BTreeMap<usize, TheWgpuRenderLayer>,
+    layer_group: BTreeMap<isize, IndexSet<TheRenderLayerId>>,
+    layer_zindex: HashMap<TheRenderLayerId, isize>,
+    layers: HashMap<TheRenderLayerId, TheWgpuRenderLayer>,
     texture_map: HashMap<TheTextureId, TheTextureDataInfo>,
-    transform: Mat4<f32>,
+    transform: TheTransformMatrix,
 
     adapter: wgpu::Adapter,
     device: wgpu::Device,
@@ -516,7 +568,7 @@ pub struct TheWgpuContext<'w, 's> {
 impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
     type Error = TheWgpuContextError;
     type Layer = TheWgpuRenderLayer;
-    type LayerId = usize;
+    type LayerId = TheRenderLayerId;
     type ShaderInfo = TheWgpuShaderInfo<'s>;
     type Surface = wgpu::Surface<'w>;
     type TextureId = TheTextureId;
@@ -536,6 +588,8 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
         ));
 
         self.layers.insert(id, layer);
+        self.layer_zindex.insert(id, 0);
+        self.layer_group.get_mut(&0).unwrap().insert(id);
 
         id
     }
@@ -551,12 +605,20 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
                 label: Some("Command Encoder"),
             });
 
+        let ordered_layers = self
+            .layer_group
+            .values()
+            .map(|set| set.iter())
+            .flatten()
+            .filter_map(|id| self.layers.get(id))
+            .collect::<Vec<&TheWgpuRenderLayer>>();
+
         let surface_texture = context.draw(
             &self.device,
             &mut encoder,
             &self.texture_map,
-            self.layers.values(),
-            self.transform,
+            ordered_layers,
+            &self.transform,
         )?;
 
         self.queue.submit(once(encoder.finish()));
@@ -640,6 +702,11 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
 
     fn remove_layer(&mut self, layer_id: Self::LayerId) -> Option<Self::Layer> {
         self.layer_id_factory.remove(layer_id);
+        if let Some(zindex) = self.layer_zindex.remove(&layer_id) {
+            if let Some(set) = self.layer_group.get_mut(&zindex) {
+                set.shift_remove(&layer_id);
+            }
+        }
         self.layers.remove(&layer_id)
     }
 
@@ -658,11 +725,11 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
     }
 
     fn rotate(&mut self, theta: f32) {
-        self.transform *= Mat4::from_rotation(Vec3::new(1.0, 1.0, 0.0), theta);
+        self.transform.rotation = theta;
     }
 
     fn scale(&mut self, scale: f32) {
-        self.transform *= Mat4::from_scale(scale.into());
+        self.transform.scale = Vec2::new(scale, scale);
     }
 
     fn set_compute_shader(&mut self, shader_info: Self::ShaderInfo) {
@@ -694,15 +761,7 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
     }
 
     fn translate(&mut self, x: f32, y: f32) {
-        if let Some(context) = &self.render_context {
-            self.transform *= Mat4::from_translation(Vec3::new(
-                x / context.surface_config.width as f32,
-                y / context.surface_config.height as f32,
-                1.0,
-            ));
-        } else {
-            self.transform *= Mat4::from_translation(Vec3::new(x, y, 1.0));
-        }
+        self.transform.translation = Vec2::new(x, y);
     }
 
     fn translate_coord_to_local(&self, x: u32, y: u32) -> (u32, u32) {
@@ -731,12 +790,7 @@ impl<'w, 's> TheWgpuContext<'w, 's> {
             let (device, queue) = adapter
                 .request_device(
                     &wgpu::DeviceDescriptor {
-                        required_features:
-                        // wgpu::Features::ADDRESS_MODE_CLAMP_TO_BORDER |
-                        // wgpu::Features::BUFFER_BINDING_ARRAY |
-                        // wgpu::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING |
-                        // wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY |
-                        wgpu::Features::TEXTURE_BINDING_ARRAY,
+                        required_features: wgpu::Features::TEXTURE_BINDING_ARRAY,
                         #[cfg(target_arch = "wasm32")]
                         required_limits: wgpu::Limits::downlevel_webgl2_defaults(),
                         #[cfg(not(target_arch = "wasm32"))]
@@ -748,12 +802,16 @@ impl<'w, 's> TheWgpuContext<'w, 's> {
                 .await
                 .map_err(map_wgpu_error)?;
 
+            let mut layer_group = BTreeMap::new();
+            layer_group.insert(0, IndexSet::new());
             let layer_id_factory = FactoryBuilder::new().build();
 
             Ok(Self {
-                layers: BTreeMap::new(),
+                layer_group,
+                layer_zindex: HashMap::new(),
+                layers: HashMap::new(),
                 texture_map: HashMap::new(),
-                transform: Mat4::identity(),
+                transform: TheTransformMatrix::default(),
 
                 adapter,
                 device,
@@ -793,6 +851,25 @@ impl<'w, 's> TheWgpuContext<'w, 's> {
         W: wgpu::WindowHandle + 'w,
     {
         self.instance.create_surface(target).map_err(map_wgpu_error)
+    }
+
+    pub fn set_layer_zindex(&mut self, layer_id: TheRenderLayerId, zindex: isize) {
+        if let Some(prev_zindex) = self.layer_zindex.get(&layer_id) {
+            if let Some(set) = self.layer_group.get_mut(&prev_zindex) {
+                set.shift_remove(&layer_id);
+            }
+        }
+
+        self.layer_zindex.insert(layer_id, zindex);
+
+        if !self.layer_group.contains_key(&zindex) {
+            self.layer_group.insert(zindex, IndexSet::new());
+        }
+        self.layer_group.get_mut(&zindex).unwrap().insert(layer_id);
+    }
+
+    pub fn set_origin(&mut self, origin: Vec2<f32>) {
+        self.transform.origin = origin;
     }
 
     fn capture(&self, texture: &wgpu::Texture) -> Result<Vec<u8>, TheWgpuContextError> {
@@ -952,4 +1029,33 @@ fn map_wgpu_error(err: impl Error + 'static) -> TheWgpuContextError {
     TheWgpuContextError::WgpuInternal {
         source: Box::new(err),
     }
+}
+
+fn ndc(coord: Vec2<f32>, device_size: Vec2<f32>) -> Vec2<f32> {
+    Vec2::new(
+        2.0 * coord.x / device_size.x - 1.0,
+        1.0 - 2.0 * coord.y / device_size.y,
+    )
+}
+
+fn transform_matrix(
+    origin: Vec2<f32>,
+    rotation: f32,
+    scale: Vec2<f32>,
+    translation: Vec2<f32>,
+) -> Mat4<f32> {
+    let cos = rotation.cos();
+    let sin = rotation.sin();
+
+    let tx = -origin.x * scale.x * cos + origin.y * scale.y * sin + origin.x + translation.x;
+    let ty = -origin.x * scale.x * sin - origin.y * scale.y * cos + origin.y - translation.y;
+
+    #[rustfmt::skip]
+    let matrix = Mat4::new(
+        scale.x * cos, -scale.y * sin, 0.0, 0.0,
+        scale.x * sin, scale.y * cos, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        tx, ty, 0.0, 1.0,
+    );
+    matrix
 }
