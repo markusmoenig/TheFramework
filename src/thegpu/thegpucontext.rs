@@ -56,7 +56,11 @@ pub trait TheGpuContext {
         unimplemented!("Won't support");
     }
 
-    fn set_surface(&mut self, width: u32, height: u32, surface: Self::Surface);
+    fn set_scale_factor(&mut self, scale_factor: f32) {
+        unimplemented!("Won't support");
+    }
+
+    fn set_surface(&mut self, width: u32, height: u32, scale_factor: f32, surface: Self::Surface);
 
     fn set_vertex_shader(&mut self, shader: Self::ShaderInfo) {
         unimplemented!("Won't support");

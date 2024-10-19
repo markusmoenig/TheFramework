@@ -100,6 +100,7 @@ impl<T> TheModifyState<T> {
 struct TheSurfaceInfo<'w> {
     width: u32,
     height: u32,
+    scale_factor: f32,
     surface: wgpu::Surface<'w>,
 }
 
@@ -238,6 +239,8 @@ impl<'s> TheWgpuShaderInfo<'s> {
 struct TheWgpuComputeContext {}
 
 struct TheWgpuRenderContext<'w, 's> {
+    scale_factor: f32,
+
     surface: wgpu::Surface<'w>,
     surface_config: wgpu::SurfaceConfiguration,
 
@@ -284,6 +287,7 @@ impl<'w, 's> TheWgpuRenderContext<'w, 's> {
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor::default());
 
         Self {
+            scale_factor: surface_info.scale_factor,
             surface,
             surface_config,
 
@@ -307,8 +311,8 @@ impl<'w, 's> TheWgpuRenderContext<'w, 's> {
     ) -> Result<wgpu::SurfaceTexture, TheWgpuContextError> {
         let surface_texture = self.surface.get_current_texture().map_err(map_wgpu_error)?;
         let surface_size = Vec2::new(
-            self.surface_config.width as f32,
-            self.surface_config.height as f32,
+            self.surface_config.width as f32 / self.scale_factor,
+            self.surface_config.height as f32 / self.scale_factor,
         );
 
         let visible_layers = layers.iter().enumerate().filter(|(_, layer)| !layer.hidden);
@@ -531,6 +535,10 @@ impl<'w, 's> TheWgpuRenderContext<'w, 's> {
         self.surface.configure(device, &self.surface_config);
     }
 
+    fn set_scale_factor(&mut self, scale_factor: f32) {
+        self.scale_factor = scale_factor;
+    }
+
     fn update_fragment_shader(&mut self, entry: &'s str, shader: wgpu::ShaderModule) {
         self.fragment_entry = entry;
         self.fragment_shader = shader;
@@ -742,10 +750,17 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
         self.try_update_render_context();
     }
 
-    fn set_surface(&mut self, width: u32, height: u32, surface: Self::Surface) {
+    fn set_scale_factor(&mut self, scale_factor: f32) {
+        if let Some(context) = &mut self.render_context {
+            context.set_scale_factor(scale_factor);
+        }
+    }
+
+    fn set_surface(&mut self, width: u32, height: u32, scale_factor: f32, surface: Self::Surface) {
         self.surface_info.modify(TheSurfaceInfo {
             width,
             height,
+            scale_factor,
             surface,
         });
 
