@@ -6,6 +6,7 @@ pub struct TheContext<
 > {
     pub width: usize,
     pub height: usize,
+    pub scale_factor: f32,
 
     pub draw: TheDraw2D,
     // #[cfg(feature = "renderer")]
@@ -89,6 +90,7 @@ impl<'w, 's> TheContext<'w, 's> {
         Self {
             width,
             height,
+            scale_factor: 1.0,
             draw: TheDraw2D::new(),
             #[cfg(feature = "ui")]
             ui: TheUIContext::new(),

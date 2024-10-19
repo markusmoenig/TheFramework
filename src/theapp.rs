@@ -397,15 +397,16 @@ impl TheApp {
 
                     // Resize the window
                     if let Some(size) = input.window_resized() {
-                        let scale = window.scale_factor();
+                        let scale = window.scale_factor() as f32;
 
                         ctx.gpu.resize(size.width, size.height);
-                        ctx.gpu.set_scale_factor(scale as f32);
+                        ctx.gpu.set_scale_factor(scale);
 
-                        width = (size.width as f32 / scale as f32) as usize;
-                        height = (size.height as f32 / scale as f32) as usize;
+                        width = (size.width as f32 / scale) as usize;
+                        height = (size.height as f32 / scale) as usize;
                         ctx.width = width;
                         ctx.height = height;
+                        ctx.scale_factor = scale;
 
                         ui_frame.resize(width * height * 4, 0);
 

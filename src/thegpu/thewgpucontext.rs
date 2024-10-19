@@ -780,7 +780,14 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
     }
 
     fn translate_coord_to_local(&self, x: u32, y: u32) -> (u32, u32) {
-        (x, y)
+        if let Some(context) = &self.render_context {
+            (
+                (x as f32 / context.scale_factor) as u32,
+                (y as f32 / context.scale_factor) as u32,
+            )
+        } else {
+            (x, y)
+        }
     }
 
     fn unload_texture(&mut self, texture_id: Self::TextureId) {
