@@ -85,7 +85,12 @@ impl TheApp {
             let mut gpu =
                 futures::executor::block_on(TheWgpuContext::with_default_shaders()).unwrap();
             let surface = gpu.create_surface(window.clone()).unwrap();
-            gpu.set_surface(width as u32, height as u32, surface);
+            gpu.set_surface(
+                width as u32,
+                height as u32,
+                window.scale_factor() as f32,
+                surface,
+            );
 
             let ui_layer = gpu.add_layer();
 
@@ -395,9 +400,7 @@ impl TheApp {
                         let scale = window.scale_factor();
 
                         ctx.gpu.resize(size.width, size.height);
-
-                        // This would upscale the surface to Retina on mac which is wrong
-                        //ctx.gpu.scale(scale as f32);
+                        ctx.gpu.set_scale_factor(scale as f32);
 
                         width = (size.width as f32 / scale as f32) as usize;
                         height = (size.height as f32 / scale as f32) as usize;
