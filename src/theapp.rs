@@ -392,13 +392,15 @@ impl TheApp {
 
                     // Resize the window
                     if let Some(size) = input.window_resized() {
-                        ctx.gpu.resize(size.width, size.height);
                         let scale = window.scale_factor();
-                        ctx.gpu.scale(scale as f32);
 
-                        // editor.resize(size.width as usize / scale as usize, size.height as usize / scale as usize);
-                        width = size.width as usize / scale as usize;
-                        height = size.height as usize / scale as usize;
+                        ctx.gpu.resize(size.width, size.height);
+
+                        // This would upscale the surface to Retina on mac which is wrong
+                        //ctx.gpu.scale(scale as f32);
+
+                        width = (size.width as f32 / scale as f32) as usize;
+                        height = (size.height as f32 / scale as f32) as usize;
                         ctx.width = width;
                         ctx.height = height;
 
