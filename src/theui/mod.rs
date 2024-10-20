@@ -186,7 +186,8 @@ impl TheAccelerator {
     /// Test if we match the given modifiers and key.
     pub fn matches(&self, shift: bool, ctrl: bool, alt: bool, logo: bool, key: char) -> bool {
         #[allow(clippy::if_same_then_else)]
-        if self.key == key {
+        // We assume that accelerators are always case-insensitive.
+        if self.key == key.to_ascii_lowercase() {
             if shift || ctrl || alt || logo {
                 let mut ok = true;
 
