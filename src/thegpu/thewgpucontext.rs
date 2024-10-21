@@ -573,15 +573,8 @@ pub struct TheWgpuContext<'w, 's> {
     queue_capture: bool,
 }
 
-impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
-    type Error = TheWgpuContextError;
-    type Layer = TheWgpuRenderLayer;
-    type LayerId = TheRenderLayerId;
-    type ShaderInfo = TheWgpuShaderInfo<'s>;
-    type Surface = wgpu::Surface<'w>;
-    type TextureId = TheTextureId;
-
-    fn add_layer(&mut self) -> Self::LayerId {
+impl<'w, 's> TheWgpuContext<'w, 's> {
+    pub fn add_layer(&mut self) -> TheRenderLayerId {
         let Some(context) = &self.render_context else {
             panic!("No render contexts are found");
         };
@@ -602,7 +595,14 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
         id
     }
 
-    fn draw(&self) -> Result<Option<Vec<u8>>, Self::Error> {
+    pub fn create_surface<W>(&self, target: W) -> Result<wgpu::Surface<'w>, TheWgpuContextError>
+    where
+        W: wgpu::WindowHandle + 'w,
+    {
+        self.instance.create_surface(target).map_err(map_wgpu_error)
+    }
+
+    pub fn draw(&self) -> Result<Option<Vec<u8>>, TheWgpuContextError> {
         let Some(context) = &self.render_context else {
             return Err(TheWgpuContextError::RenderContextNotFound);
         };
@@ -642,15 +642,15 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
         Ok(capture)
     }
 
-    fn layer(&self, layer_id: Self::LayerId) -> Option<&Self::Layer> {
+    pub fn layer(&self, layer_id: TheRenderLayerId) -> Option<&TheWgpuRenderLayer> {
         self.layers.get(&layer_id)
     }
 
-    fn layer_mut(&mut self, layer_id: Self::LayerId) -> Option<&mut Self::Layer> {
+    pub fn layer_mut(&mut self, layer_id: TheRenderLayerId) -> Option<&mut TheWgpuRenderLayer> {
         self.layers.get_mut(&layer_id)
     }
 
-    fn load_texture(&mut self, width: u32, height: u32, buffer: &[u8]) -> Self::TextureId {
+    pub fn load_texture(&mut self, width: u32, height: u32, buffer: &[u8]) -> TheTextureId {
         let size = wgpu::Extent3d {
             width,
             height,
@@ -697,10 +697,10 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
         id
     }
 
-    fn place_texture(
+    pub fn place_texture(
         &mut self,
-        layer_id: Self::LayerId,
-        texture_id: Self::TextureId,
+        layer_id: TheRenderLayerId,
+        texture_id: TheTextureId,
         coord: Vec2<f32>,
     ) {
         if let Some(layer) = self.layers.get_mut(&layer_id) {
@@ -708,7 +708,7 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
         }
     }
 
-    fn remove_layer(&mut self, layer_id: Self::LayerId) -> Option<Self::Layer> {
+    pub fn remove_layer(&mut self, layer_id: TheRenderLayerId) -> Option<TheWgpuRenderLayer> {
         self.layer_id_factory.remove(layer_id);
         if let Some(zindex) = self.layer_zindex.remove(&layer_id) {
             if let Some(set) = self.layer_group.get_mut(&zindex) {
@@ -718,11 +718,11 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
         self.layers.remove(&layer_id)
     }
 
-    fn request_capture(&mut self, capture: bool) {
+    pub fn request_capture(&mut self, capture: bool) {
         self.queue_capture = capture;
     }
 
-    fn resize(&mut self, width: u32, height: u32) {
+    pub fn resize(&mut self, width: u32, height: u32) {
         if let Some(context) = &mut self.render_context {
             context.resize(&self.device, width, height);
         }
@@ -732,31 +732,56 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
         }
     }
 
-    fn rotate(&mut self, theta: f32) {
+    pub fn rotate(&mut self, theta: f32) {
         self.transform.rotation = theta;
     }
 
-    fn scale(&mut self, scale: f32) {
+    pub fn scale(&mut self, scale: f32) {
         self.transform.scale = Vec2::new(scale, scale);
     }
 
-    fn set_compute_shader(&mut self, shader_info: Self::ShaderInfo) {
+    pub fn set_compute_shader(&mut self, shader_info: TheWgpuShaderInfo<'s>) {
         todo!()
     }
 
-    fn set_fragment_shader(&mut self, shader: Self::ShaderInfo) {
+    pub fn set_fragment_shader(&mut self, shader: TheWgpuShaderInfo<'s>) {
         self.fragment_shader_info.modify(shader);
 
         self.try_update_render_context();
     }
 
-    fn set_scale_factor(&mut self, scale_factor: f32) {
+    pub fn set_layer_zindex(&mut self, layer_id: TheRenderLayerId, zindex: isize) {
+        if let Some(prev_zindex) = self.layer_zindex.get(&layer_id) {
+            if let Some(set) = self.layer_group.get_mut(&prev_zindex) {
+                set.shift_remove(&layer_id);
+            }
+        }
+
+        self.layer_zindex.insert(layer_id, zindex);
+
+        if !self.layer_group.contains_key(&zindex) {
+            self.layer_group.insert(zindex, IndexSet::new());
+        }
+        self.layer_group.get_mut(&zindex).unwrap().insert(layer_id);
+    }
+
+    pub fn set_origin(&mut self, origin: Vec2<f32>) {
+        self.transform.origin = origin;
+    }
+
+    pub fn set_scale_factor(&mut self, scale_factor: f32) {
         if let Some(context) = &mut self.render_context {
             context.set_scale_factor(scale_factor);
         }
     }
 
-    fn set_surface(&mut self, width: u32, height: u32, scale_factor: f32, surface: Self::Surface) {
+    pub fn set_surface(
+        &mut self,
+        width: u32,
+        height: u32,
+        scale_factor: f32,
+        surface: wgpu::Surface<'w>,
+    ) {
         self.surface_info.modify(TheSurfaceInfo {
             width,
             height,
@@ -769,17 +794,17 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
         self.resize(width, height);
     }
 
-    fn set_vertex_shader(&mut self, shader: Self::ShaderInfo) {
+    pub fn set_vertex_shader(&mut self, shader: TheWgpuShaderInfo<'s>) {
         self.vertex_shader_info.modify(shader);
 
         self.try_update_render_context();
     }
 
-    fn translate(&mut self, x: f32, y: f32) {
+    pub fn translate(&mut self, x: f32, y: f32) {
         self.transform.translation = Vec2::new(x, y);
     }
 
-    fn translate_coord_to_local(&self, x: u32, y: u32) -> (u32, u32) {
+    pub fn translate_coord_to_local(&self, x: u32, y: u32) -> (u32, u32) {
         if let Some(context) = &self.render_context {
             (
                 (x as f32 / context.scale_factor) as u32,
@@ -790,7 +815,7 @@ impl<'w, 's> TheGpuContext for TheWgpuContext<'w, 's> {
         }
     }
 
-    fn unload_texture(&mut self, texture_id: Self::TextureId) {
+    pub fn unload_texture(&mut self, texture_id: TheTextureId) {
         let _ = self.texture_map.remove(&texture_id);
     }
 }
@@ -867,33 +892,9 @@ impl<'w, 's> TheWgpuContext<'w, 's> {
 
         Ok(context)
     }
+}
 
-    pub fn create_surface<W>(&self, target: W) -> Result<wgpu::Surface<'w>, TheWgpuContextError>
-    where
-        W: wgpu::WindowHandle + 'w,
-    {
-        self.instance.create_surface(target).map_err(map_wgpu_error)
-    }
-
-    pub fn set_layer_zindex(&mut self, layer_id: TheRenderLayerId, zindex: isize) {
-        if let Some(prev_zindex) = self.layer_zindex.get(&layer_id) {
-            if let Some(set) = self.layer_group.get_mut(&prev_zindex) {
-                set.shift_remove(&layer_id);
-            }
-        }
-
-        self.layer_zindex.insert(layer_id, zindex);
-
-        if !self.layer_group.contains_key(&zindex) {
-            self.layer_group.insert(zindex, IndexSet::new());
-        }
-        self.layer_group.get_mut(&zindex).unwrap().insert(layer_id);
-    }
-
-    pub fn set_origin(&mut self, origin: Vec2<f32>) {
-        self.transform.origin = origin;
-    }
-
+impl<'w, 's> TheWgpuContext<'w, 's> {
     fn capture(&self, texture: &wgpu::Texture) -> Result<Vec<u8>, TheWgpuContextError> {
         let Some(context) = &self.render_context else {
             return Err(TheWgpuContextError::RenderContextNotFound);

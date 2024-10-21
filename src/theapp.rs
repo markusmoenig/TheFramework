@@ -77,10 +77,7 @@ impl TheApp {
         };
         let window = Arc::new(window);
 
-        #[cfg(feature = "pixels_winit")]
-        let gpu = ThePixelsContext::from_window(window.clone()).unwrap();
-
-        #[cfg(feature = "wgpu_winit")]
+        #[cfg(feature = "gpu_winit")]
         let (gpu, ui_layer) = {
             let mut gpu =
                 futures::executor::block_on(TheWgpuContext::with_default_shaders()).unwrap();
@@ -97,10 +94,7 @@ impl TheApp {
             (gpu, ui_layer)
         };
 
-        #[cfg(all(
-            feature = "gpu",
-            not(any(feature = "pixels_winit", feature = "wgpu_winit"))
-        ))]
+        #[cfg(all(feature = "gpu", not(feature = "gpu_winit")))]
         panic!("No suitable gpu backend was set.");
 
         let mut ui_frame = vec![0; width * height * 4];
@@ -144,14 +138,7 @@ impl TheApp {
                             #[cfg(not(feature = "ui"))]
                             app.draw(&mut ui_frame, &mut ctx);
 
-                            #[cfg(feature = "pixels_winit")]
-                            ctx.gpu
-                                .layer_mut(0)
-                                .unwrap()
-                                .frame_mut()
-                                .copy_from_slice(&ui_frame);
-
-                            #[cfg(feature = "wgpu_winit")]
+                            #[cfg(feature = "gpu_winit")]
                             let ui_texture = {
                                 let ui_texture =
                                     ctx.gpu.load_texture(width as u32, height as u32, &ui_frame);
@@ -174,7 +161,7 @@ impl TheApp {
                                 }
                             }
 
-                            #[cfg(feature = "wgpu_winit")]
+                            #[cfg(feature = "gpu_winit")]
                             {
                                 ctx.gpu.unload_texture(ui_texture);
                                 if let Some(layer) = ctx.gpu.layer_mut(ui_layer) {
