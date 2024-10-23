@@ -52,6 +52,7 @@ pub struct TheTextLineEdit {
     continuous: bool,
 
     content_type: TheTextLineEditContentType,
+    info_text: Option<String>,
 }
 
 impl TheWidget for TheTextLineEdit {
@@ -95,6 +96,7 @@ impl TheWidget for TheTextLineEdit {
             continuous: false,
 
             content_type: TheTextLineEditContentType::Unknown,
+            info_text: None,
         }
     }
 
@@ -161,7 +163,6 @@ impl TheWidget for TheTextLineEdit {
         true
     }
 
-    #[allow(clippy::single_match)]
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         if self.is_disabled {
             return false;
@@ -630,6 +631,26 @@ impl TheWidget for TheTextLineEdit {
             &ctx.draw,
         );
 
+        if let Some(info_text) = &self.info_text {
+            let stride = buffer.stride();
+            shrinker.shrink_by(0, 0, 5, 0);
+            let utuple: (usize, usize, usize, usize) = self.dim.to_buffer_shrunk_utuple(&shrinker);
+
+            if let Some(font) = &ctx.ui.font {
+                ctx.draw.text_rect_blend(
+                    buffer.pixels_mut(),
+                    &utuple,
+                    stride,
+                    font,
+                    11.5,
+                    info_text,
+                    style.theme().color(DefaultWidgetDarkBackground),
+                    TheHorizontalAlign::Right,
+                    TheVerticalAlign::Center,
+                );
+            }
+        }
+
         self.modified_since_last_return =
             self.modified_since_last_return || self.modified_since_last_tick;
         self.modified_since_last_tick = false;
@@ -648,6 +669,7 @@ impl TheWidget for TheTextLineEdit {
 pub trait TheTextLineEditTrait: TheWidget {
     fn text(&self) -> String;
     fn set_text(&mut self, text: String);
+    fn set_info_text(&mut self, text: Option<String>);
     fn set_font_size(&mut self, font_size: f32);
     fn set_embedded(&mut self, embedded: bool);
     fn set_range(&mut self, range: TheValue);
@@ -674,6 +696,9 @@ impl TheTextLineEditTrait for TheTextLineEdit {
         self.content_type = TheTextLineEditContentType::Text;
         self.modified_since_last_tick = true;
         self.is_dirty = true;
+    }
+    fn set_info_text(&mut self, text: Option<String>) {
+        self.info_text = text;
     }
     fn set_font_size(&mut self, font_size: f32) {
         self.renderer.set_font_size(font_size);
