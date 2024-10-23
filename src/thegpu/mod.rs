@@ -1,5 +1,5 @@
-mod thewgpucontext;
+mod thegpucontext;
 
 pub mod prelude {
-    pub use crate::thegpu::thewgpucontext::{TheTextureId, TheWgpuContext};
+    pub use crate::thegpu::thegpucontext::{TheTextureId, TheGpuContext};
 }

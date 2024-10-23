@@ -80,7 +80,7 @@ impl TheApp {
         #[cfg(feature = "gpu_winit")]
         let (gpu, ui_layer) = {
             let mut gpu =
-                futures::executor::block_on(TheWgpuContext::with_default_shaders()).unwrap();
+                futures::executor::block_on(TheGpuContext::with_default_shaders()).unwrap();
             let surface = gpu.create_surface(window.clone()).unwrap();
             gpu.set_surface(
                 width as u32,

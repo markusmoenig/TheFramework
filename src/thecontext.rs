@@ -11,7 +11,7 @@ pub struct TheContext<#[cfg(feature = "gpu_winit")] 'w, #[cfg(feature = "gpu_win
     #[cfg(feature = "ui")]
     pub ui: TheUIContext,
     #[cfg(feature = "gpu_winit")]
-    pub gpu: TheWgpuContext<'w, 's>,
+    pub gpu: TheGpuContext<'w, 's>,
 }
 
 #[cfg(not(feature = "gpu_winit"))]
@@ -50,7 +50,7 @@ impl TheContext {
 
 #[cfg(feature = "gpu_winit")]
 impl<'w, 's> TheContext<'w, 's> {
-    pub fn new(width: usize, height: usize, gpu: TheWgpuContext<'w, 's>) -> Self {
+    pub fn new(width: usize, height: usize, gpu: TheGpuContext<'w, 's>) -> Self {
         Self {
             width,
             height,
