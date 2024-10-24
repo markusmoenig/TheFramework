@@ -97,12 +97,18 @@ impl TheApp {
             (gpu, ui_layer)
         };
 
-        #[cfg(not(any(feature = "pixels_winit", feature = "wgpu_winit")))]
+        #[cfg(all(
+            feature = "gpu",
+            not(any(feature = "pixels_winit", feature = "wgpu_winit"))
+        ))]
         panic!("No suitable gpu backend was set.");
 
         let mut ui_frame = vec![0; width * height * 4];
 
+        #[cfg(feature = "gpu")]
         let mut ctx = TheContext::new(width, height, gpu);
+        #[cfg(not(feature = "gpu"))]
+        let mut ctx = TheContext::new(width, height);
         #[cfg(feature = "ui")]
         let mut ui = TheUI::new();
         #[cfg(feature = "ui")]
@@ -155,6 +161,7 @@ impl TheApp {
                                 ui_texture
                             };
 
+                            #[cfg(feature = "gpu")]
                             match ctx.gpu.draw().map_err(|e| error!("render failed: {}", e)) {
                                 Ok(texture) => {
                                     if let Some(texture) = texture {
@@ -308,9 +315,9 @@ impl TheApp {
 
                     if input.mouse_pressed(MouseButton::Left) {
                         if let Some(coords) = input.cursor() {
-                            let (x, y) = ctx
-                                .gpu
-                                .translate_coord_to_local(coords.0 as u32, coords.1 as u32);
+                            let (x, y) = (coords.0 as u32, coords.1 as u32);
+                            #[cfg(feature = "gpu")]
+                            let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
 
                             #[cfg(feature = "ui")]
                             if ui.touch_down(x as f32, y as f32, &mut ctx) {
@@ -325,9 +332,9 @@ impl TheApp {
 
                     if input.mouse_pressed(MouseButton::Right) {
                         if let Some(coords) = input.cursor() {
-                            let (x, y) = ctx
-                                .gpu
-                                .translate_coord_to_local(coords.0 as u32, coords.1 as u32);
+                            let (x, y) = (coords.0 as u32, coords.1 as u32);
+                            #[cfg(feature = "gpu")]
+                            let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
 
                             #[cfg(feature = "ui")]
                             if ui.context(x as f32, y as f32, &mut ctx) {
@@ -342,9 +349,9 @@ impl TheApp {
 
                     if input.mouse_released(MouseButton::Left) {
                         if let Some(coords) = input.cursor() {
-                            let (x, y) = ctx
-                                .gpu
-                                .translate_coord_to_local(coords.0 as u32, coords.1 as u32);
+                            let (x, y) = (coords.0 as u32, coords.1 as u32);
+                            #[cfg(feature = "gpu")]
+                            let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
 
                             #[cfg(feature = "ui")]
                             if ui.touch_up(x as f32, y as f32, &mut ctx) {
@@ -361,9 +368,9 @@ impl TheApp {
                         let diff = input.mouse_diff();
                         if diff.0 != 0.0 || diff.1 != 0.0 {
                             if let Some(coords) = input.cursor() {
-                                let (x, y) = ctx
-                                    .gpu
-                                    .translate_coord_to_local(coords.0 as u32, coords.1 as u32);
+                                let (x, y) = (coords.0 as u32, coords.1 as u32);
+                                #[cfg(feature = "gpu")]
+                                let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
 
                                 #[cfg(feature = "ui")]
                                 if ui.touch_dragged(x as f32, y as f32, &mut ctx) {
@@ -379,9 +386,9 @@ impl TheApp {
                         let diff = input.mouse_diff();
                         if diff.0 != 0.0 || diff.1 != 0.0 {
                             if let Some(coords) = input.cursor() {
-                                let (x, y) = ctx
-                                    .gpu
-                                    .translate_coord_to_local(coords.0 as u32, coords.1 as u32);
+                                let (x, y) = (coords.0 as u32, coords.1 as u32);
+                                #[cfg(feature = "gpu")]
+                                let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
 
                                 #[cfg(feature = "ui")]
                                 if ui.hover(x as f32, y as f32, &mut ctx) {
@@ -399,7 +406,9 @@ impl TheApp {
                     if let Some(size) = input.window_resized() {
                         let scale = window.scale_factor() as f32;
 
+                        #[cfg(feature = "gpu")]
                         ctx.gpu.resize(size.width, size.height);
+                        #[cfg(feature = "gpu")]
                         ctx.gpu.set_scale_factor(scale);
 
                         width = (size.width as f32 / scale) as usize;
