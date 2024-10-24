@@ -192,7 +192,7 @@ impl TheColor {
             g: 1.0,
             b: 1.0,
             a: 1.0,
-            name: str!("White"),
+            name: "White".to_string(),
         }
     }
 
@@ -203,7 +203,7 @@ impl TheColor {
             g: 0.5,
             b: 0.5,
             a: 1.0,
-            name: str!("Gray"),
+            name: "Gray".to_string(),
         }
     }
 
@@ -214,7 +214,7 @@ impl TheColor {
             g: 0.0,
             b: 0.0,
             a: 1.0,
-            name: str!("Black"),
+            name: "Black".to_string(),
         }
     }
 
@@ -225,7 +225,7 @@ impl TheColor {
             g: 0.0,
             b: 0.0,
             a: 0.0,
-            name: str!("Transparent"),
+            name: "Transparent".to_string(),
         }
     }
 
