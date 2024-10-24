@@ -78,9 +78,8 @@ impl TheApp {
         let window = Arc::new(window);
 
         #[cfg(feature = "gpu_winit")]
-        let (gpu, ui_layer) = {
-            let mut gpu =
-                futures::executor::block_on(TheGpuContext::with_default_shaders()).unwrap();
+        let (gpu, texture_renderer, ui_layer) = {
+            let mut gpu = futures::executor::block_on(TheGpuContext::new()).unwrap();
             let surface = gpu.create_surface(window.clone()).unwrap();
             gpu.set_surface(
                 width as u32,
@@ -89,9 +88,10 @@ impl TheApp {
                 surface,
             );
 
-            let ui_layer = gpu.add_layer();
+            let mut texture_renderer = TheTextureRenderPass::new(gpu.device());
+            let ui_layer = texture_renderer.add_layer();
 
-            (gpu, ui_layer)
+            (gpu, texture_renderer, ui_layer)
         };
 
         #[cfg(all(feature = "gpu", not(feature = "gpu_winit")))]
@@ -100,9 +100,10 @@ impl TheApp {
         let mut ui_frame = vec![0; width * height * 4];
 
         #[cfg(feature = "gpu")]
-        let mut ctx = TheContext::new(width, height, gpu);
+        let mut ctx = TheContext::new(width, height, gpu, texture_renderer);
         #[cfg(not(feature = "gpu"))]
         let mut ctx = TheContext::new(width, height);
+
         #[cfg(feature = "ui")]
         let mut ui = TheUI::new();
         #[cfg(feature = "ui")]
@@ -140,20 +141,32 @@ impl TheApp {
 
                             #[cfg(feature = "gpu_winit")]
                             let ui_texture = {
-                                let ui_texture =
-                                    ctx.gpu.load_texture(width as u32, height as u32, &ui_frame);
-                                ctx.gpu
-                                    .place_texture(ui_layer, ui_texture, Vec2::new(0.0, 0.0));
+                                let ui_texture = ctx.texture_renderer.load_texture(
+                                    ctx.gpu.device(),
+                                    ctx.gpu.queue(),
+                                    width as u32,
+                                    height as u32,
+                                    &ui_frame,
+                                );
+                                ctx.texture_renderer.place_texture(
+                                    ui_layer,
+                                    ui_texture,
+                                    Vec2::new(0.0, 0.0),
+                                );
 
                                 ui_texture
                             };
 
                             #[cfg(feature = "gpu")]
-                            match ctx.gpu.draw().map_err(|e| error!("render failed: {}", e)) {
+                            match ctx
+                                .gpu
+                                .draw(&ctx.texture_renderer)
+                                .map_err(|e| error!("render failed: {}", e))
+                            {
                                 Ok(texture) => {
-                                    if let Some(texture) = texture {
-                                        app.post_captured(texture, width as u32, height as u32);
-                                    }
+                                    // if let Some(texture) = texture {
+                                    //     app.post_captured(texture, width as u32, height as u32);
+                                    // }
                                 }
                                 Err(_) => {
                                     elwt.exit();
@@ -163,8 +176,8 @@ impl TheApp {
 
                             #[cfg(feature = "gpu_winit")]
                             {
-                                ctx.gpu.unload_texture(ui_texture);
-                                if let Some(layer) = ctx.gpu.layer_mut(ui_layer) {
+                                ctx.texture_renderer.unload_texture(ui_texture);
+                                if let Some(layer) = ctx.texture_renderer.layer_mut(ui_layer) {
                                     layer.clear();
                                 }
                             }

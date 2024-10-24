@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-pub struct TheContext<#[cfg(feature = "gpu_winit")] 'w, #[cfg(feature = "gpu_winit")] 's> {
+pub struct TheContext<#[cfg(feature = "gpu_winit")] 'w> {
     pub width: usize,
     pub height: usize,
     pub scale_factor: f32,
@@ -11,7 +11,9 @@ pub struct TheContext<#[cfg(feature = "gpu_winit")] 'w, #[cfg(feature = "gpu_win
     #[cfg(feature = "ui")]
     pub ui: TheUIContext,
     #[cfg(feature = "gpu_winit")]
-    pub gpu: TheGpuContext<'w, 's>,
+    pub gpu: TheGpuContext<'w>,
+    #[cfg(feature = "gpu_winit")]
+    pub texture_renderer: TheTextureRenderPass,
 }
 
 #[cfg(not(feature = "gpu_winit"))]
@@ -49,8 +51,13 @@ impl TheContext {
 }
 
 #[cfg(feature = "gpu_winit")]
-impl<'w, 's> TheContext<'w, 's> {
-    pub fn new(width: usize, height: usize, gpu: TheGpuContext<'w, 's>) -> Self {
+impl<'w> TheContext<'w> {
+    pub fn new(
+        width: usize,
+        height: usize,
+        gpu: TheGpuContext<'w>,
+        texture_renderer: TheTextureRenderPass,
+    ) -> Self {
         Self {
             width,
             height,
@@ -59,6 +66,7 @@ impl<'w, 's> TheContext<'w, 's> {
             #[cfg(feature = "ui")]
             ui: TheUIContext::new(),
             gpu,
+            texture_renderer,
         }
     }
 

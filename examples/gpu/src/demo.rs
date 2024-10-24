@@ -27,9 +27,9 @@ impl TheTrait for Demo {
     fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
         let sidebar_width: i32 = 400;
 
-        self.canvas_layer = ctx.gpu.add_layer();
+        self.canvas_layer = ctx.texture_renderer.add_layer();
         // Set zindex < 0 so that the ui layer can always be on top
-        ctx.gpu.set_layer_zindex(self.canvas_layer, -1);
+        ctx.texture_renderer.set_layer_zindex(self.canvas_layer, -1);
 
         // Request screen capture. We can get the buffer later in `post_captured` callback.
         // ctx.gpu.request_capture(true);
@@ -47,10 +47,18 @@ impl TheTrait for Demo {
                     100,
                 )
             })
-            .map(|buffer| ctx.gpu.load_texture(100, 100, &buffer))
+            .map(|buffer| {
+                ctx.texture_renderer.load_texture(
+                    ctx.gpu.device(),
+                    ctx.gpu.queue(),
+                    100,
+                    100,
+                    &buffer,
+                )
+            })
             .collect::<Vec<TheTextureId>>();
         for i in 0..1600 {
-            ctx.gpu.place_texture(
+            ctx.texture_renderer.place_texture(
                 self.canvas_layer,
                 textures[i % textures.len()],
                 Vec2::new(100.0 * (i % 40) as f32, 100.0 * (i / 40) as f32),
@@ -99,14 +107,18 @@ impl TheTrait for Demo {
                     TheEvent::ValueChanged(id, value) => {
                         if id.name == "Scale" {
                             if let TheValue::Float(scale) = value {
-                                if let Some(layer) = ctx.gpu.layer_mut(self.canvas_layer) {
+                                if let Some(layer) =
+                                    ctx.texture_renderer.layer_mut(self.canvas_layer)
+                                {
                                     layer.scale(scale);
                                     redraw = true;
                                 }
                             }
                         } else if id.name == "TranslateX" {
                             if let TheValue::Float(translate) = value {
-                                if let Some(layer) = ctx.gpu.layer_mut(self.canvas_layer) {
+                                if let Some(layer) =
+                                    ctx.texture_renderer.layer_mut(self.canvas_layer)
+                                {
                                     self.translate_x = translate;
                                     layer.translate(self.translate_x, self.translate_y);
                                     redraw = true;
@@ -114,7 +126,9 @@ impl TheTrait for Demo {
                             }
                         } else if id.name == "TranslateY" {
                             if let TheValue::Float(translate) = value {
-                                if let Some(layer) = ctx.gpu.layer_mut(self.canvas_layer) {
+                                if let Some(layer) =
+                                    ctx.texture_renderer.layer_mut(self.canvas_layer)
+                                {
                                     self.translate_y = translate;
                                     layer.translate(self.translate_x, self.translate_y);
                                     redraw = true;
