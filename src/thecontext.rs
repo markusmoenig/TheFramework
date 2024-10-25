@@ -20,11 +20,12 @@ pub struct TheContext<
 }
 
 #[cfg(not(any(feature = "pixels_gpu", feature = "wgpu_gpu")))]
-impl TheContext<'_> {
+impl TheContext {
     pub fn new(width: usize, height: usize) -> Self {
         Self {
             width,
             height,
+            scale_factor: 1.0,
             draw: TheDraw2D::new(),
             // #[cfg(feature = "renderer")]
             // renderer: TheRenderer::new(),
