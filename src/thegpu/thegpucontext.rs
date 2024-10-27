@@ -40,8 +40,6 @@ impl fmt::Display for TheGpuContextError {
     }
 }
 
-struct TheGpuComputeContext {}
-
 struct TheGpuRenderContext<'w> {
     scale_factor: f32,
 
@@ -148,11 +146,24 @@ pub struct TheGpuContext<'w> {
     instance: wgpu::Instance,
     queue: wgpu::Queue,
 
-    compute_context: Option<TheGpuComputeContext>,
     render_context: Option<TheGpuRenderContext<'w>>,
 }
 
 impl<'w> TheGpuContext<'w> {
+    pub fn compute(&self, compute_pass: &impl TheComputePass) -> Result<(), TheGpuContextError> {
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Command Encoder"),
+            });
+
+        compute_pass.compute(&self.device, &mut encoder)?;
+
+        self.queue.submit(once(encoder.finish()));
+
+        Ok(())
+    }
+
     pub fn create_surface<W>(&self, target: W) -> Result<wgpu::Surface<'w>, TheGpuContextError>
     where
         W: wgpu::WindowHandle + 'w,
@@ -261,8 +272,6 @@ impl<'w> TheGpuContext<'w> {
                 device,
                 instance,
                 queue,
-
-                compute_context: None,
 
                 render_context: None,
             })

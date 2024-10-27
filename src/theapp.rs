@@ -141,7 +141,7 @@ impl TheApp {
                             }
 
                             #[cfg(feature = "ui")]
-                            app.pre_ui();
+                            app.pre_ui(&mut ctx);
 
                             #[cfg(feature = "ui")]
                             ui.draw(&mut ui_frame, &mut ctx);
@@ -185,7 +185,7 @@ impl TheApp {
                             }
 
                             #[cfg(feature = "ui")]
-                            app.post_ui();
+                            app.post_ui(&mut ctx);
 
                             #[cfg(feature = "gpu_winit")]
                             {
