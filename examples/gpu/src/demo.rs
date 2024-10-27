@@ -93,9 +93,8 @@ impl TheTrait for Demo {
         self.event_receiver = Some(ui.add_state_listener("Main".into()));
     }
 
-    fn post_captured(&mut self, texture: Vec<u8>, width: u32, height: u32) -> bool {
+    fn post_captured(&mut self, texture: Vec<u8>, width: u32, height: u32) {
         // Handle screen buffer here.
-        false
     }
 
     fn update_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) -> bool {

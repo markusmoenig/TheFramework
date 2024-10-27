@@ -6,6 +6,7 @@ const U8_SIZE: u32 = std::mem::size_of::<u8>() as u32;
 
 #[derive(Debug)]
 pub enum TheGpuContextError {
+    ActivedFrameNotFound,
     AdapterNotFound,
     AsyncInternal { source: Box<dyn Error + 'static> },
     InvalidTextureFormat(wgpu::TextureFormat),
@@ -26,6 +27,7 @@ impl Error for TheGpuContextError {
 impl fmt::Display for TheGpuContextError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::ActivedFrameNotFound => write!(f, "No actived surface texture found."),
             Self::AdapterNotFound => write!(
                 f,
                 "No adapters are found that suffice all the 'hard' options."
@@ -45,6 +47,8 @@ struct TheGpuRenderContext<'w> {
 
     surface: wgpu::Surface<'w>,
     surface_config: wgpu::SurfaceConfiguration,
+
+    current_frame: Option<wgpu::SurfaceTexture>,
 }
 
 impl<'w> TheGpuRenderContext<'w> {
@@ -80,7 +84,18 @@ impl<'w> TheGpuRenderContext<'w> {
             scale_factor,
             surface,
             surface_config,
+            current_frame: None,
         }
+    }
+
+    fn begin_frame(&mut self) -> Result<(), TheGpuContextError> {
+        if self.current_frame.is_some() {
+            log::warn!("Unpresented frame");
+        }
+
+        self.current_frame = Some(self.surface.get_current_texture().map_err(map_wgpu_error)?);
+
+        Ok(())
     }
 
     fn draw(
@@ -88,21 +103,31 @@ impl<'w> TheGpuRenderContext<'w> {
         device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
         render_pass: &impl TheRenderPass,
-    ) -> Result<wgpu::SurfaceTexture, TheGpuContextError> {
-        let surface_texture = self.surface.get_current_texture().map_err(map_wgpu_error)?;
+    ) -> Result<(), TheGpuContextError> {
+        let Some(frame) = &self.current_frame else {
+            return Err(TheGpuContextError::ActivedFrameNotFound);
+        };
 
         render_pass.draw(
             device,
             encoder,
             self.scale_factor,
-            &surface_texture,
+            frame,
             &self.surface_config,
-        );
-
-        Ok(surface_texture)
+        )
     }
 
-    pub fn resize(&mut self, device: &wgpu::Device, width: u32, height: u32) {
+    fn end_frame(&mut self) -> Result<(), TheGpuContextError> {
+        let Some(frame) = self.current_frame.take() else {
+            return Err(TheGpuContextError::ActivedFrameNotFound);
+        };
+
+        frame.present();
+
+        Ok(())
+    }
+
+    fn resize(&mut self, device: &wgpu::Device, width: u32, height: u32) {
         if self.surface_config.width == width && self.surface_config.height == height {
             return;
         }
@@ -112,30 +137,9 @@ impl<'w> TheGpuRenderContext<'w> {
         self.surface.configure(device, &self.surface_config);
     }
 
-    pub fn set_scale_factor(&mut self, scale_factor: f32) {
+    fn set_scale_factor(&mut self, scale_factor: f32) {
         self.scale_factor = scale_factor;
     }
-}
-
-pub struct TheGpuShaderInfo<'s> {
-    pub entry: &'s str,
-    pub source: &'s str,
-}
-
-impl<'s> TheGpuShaderInfo<'s> {
-    pub fn from_source(source: &'s str) -> Self {
-        Self {
-            entry: "main",
-            source,
-        }
-    }
-}
-
-struct TheSurfaceInfo<'w> {
-    width: u32,
-    height: u32,
-    scale_factor: f32,
-    surface: wgpu::Surface<'w>,
 }
 
 pub struct TheGpuContext<'w> {
@@ -171,11 +175,9 @@ impl<'w> TheGpuContext<'w> {
                 label: Some("Command Encoder"),
             });
 
-        let surface_texture = context.draw(&self.device, &mut encoder, render_pass)?;
+        context.draw(&self.device, &mut encoder, render_pass)?;
 
         self.queue.submit(once(encoder.finish()));
-
-        surface_texture.present();
 
         Ok(())
     }
@@ -271,6 +273,22 @@ impl<'w> TheGpuContext<'w> {
 }
 
 impl<'w> TheGpuContext<'w> {
+    pub(crate) fn begin_frame(&mut self) -> Result<(), TheGpuContextError> {
+        let Some(context) = &mut self.render_context else {
+            return Err(TheGpuContextError::RenderContextNotFound);
+        };
+
+        context.begin_frame()
+    }
+
+    pub(crate) fn end_frame(&mut self) -> Result<(), TheGpuContextError> {
+        let Some(context) = &mut self.render_context else {
+            return Err(TheGpuContextError::RenderContextNotFound);
+        };
+
+        context.end_frame()
+    }
+
     fn capture(&self, texture: &wgpu::Texture) -> Result<Vec<u8>, TheGpuContextError> {
         let Some(context) = &self.render_context else {
             return Err(TheGpuContextError::RenderContextNotFound);

@@ -133,6 +133,16 @@ impl TheApp {
                 match &event {
                     Event::WindowEvent { event, .. } => match event {
                         WindowEvent::RedrawRequested => {
+                            #[cfg(feature = "gpu_winit")]
+                            if let Err(err) = ctx.gpu.begin_frame() {
+                                error!("Failed to begin next frame: {} ", err);
+                                elwt.exit();
+                                return;
+                            }
+
+                            #[cfg(feature = "ui")]
+                            app.pre_ui();
+
                             #[cfg(feature = "ui")]
                             ui.draw(&mut ui_frame, &mut ctx);
 
@@ -174,12 +184,20 @@ impl TheApp {
                                 }
                             }
 
+                            #[cfg(feature = "ui")]
+                            app.post_ui();
+
                             #[cfg(feature = "gpu_winit")]
                             {
                                 ctx.texture_renderer.unload_texture(ui_texture);
                                 if let Some(layer) = ctx.texture_renderer.layer_mut(ui_layer) {
                                     layer.clear();
                                 }
+                            }
+
+                            #[cfg(feature = "gpu_winit")]
+                            if let Err(err) = ctx.gpu.end_frame() {
+                                error!("Failed to end current frame: {} ", err);
                             }
                         }
                         WindowEvent::DroppedFile(path) => {
