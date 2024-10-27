@@ -1,11 +1,18 @@
-use std::sync::mpsc::Receiver;
+use std::{cell::OnceCell, sync::mpsc::Receiver};
 
 use theframework::prelude::*;
+
+use crate::compute::Compute;
 
 pub struct Demo {
     canvas_layer: usize,
     translate_x: f32,
     translate_y: f32,
+
+    compute: OnceCell<Compute>,
+    compute_enable: bool,
+    compute_output_layer: usize,
+    compute_texture: Option<TheTextureId>,
 
     event_receiver: Option<Receiver<TheEvent>>,
 }
@@ -20,16 +27,31 @@ impl TheTrait for Demo {
             translate_x: 0.0,
             translate_y: 0.0,
 
+            compute: OnceCell::new(),
+            compute_enable: false,
+            compute_output_layer: 0,
+            compute_texture: None,
+
             event_receiver: None,
+        }
+    }
+
+    fn init(&mut self, ctx: &mut TheContext) {
+        self.canvas_layer = ctx.texture_renderer.add_layer();
+        // Set zindex < 0 so that the ui layer can always be on top
+        ctx.texture_renderer.set_layer_zindex(self.canvas_layer, -1);
+
+        let _ = self
+            .compute
+            .set(Compute::new(ctx.gpu.device(), ctx.gpu.queue()));
+        self.compute_output_layer = ctx.texture_renderer.add_layer();
+        if let Some(layer) = ctx.texture_renderer.layer_mut(self.compute_output_layer) {
+            layer.scale(0.2);
         }
     }
 
     fn init_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) {
         let sidebar_width: i32 = 400;
-
-        self.canvas_layer = ctx.texture_renderer.add_layer();
-        // Set zindex < 0 so that the ui layer can always be on top
-        ctx.texture_renderer.set_layer_zindex(self.canvas_layer, -1);
 
         // Request screen capture. We can get the buffer later in `post_captured` callback.
         // ctx.gpu.request_capture(true);
@@ -83,6 +105,15 @@ impl TheTrait for Demo {
         translate_y.set_range(TheValue::RangeF32(0.0..=1000.0));
         layout.add_pair("Translate Y".to_string(), Box::new(translate_y));
 
+        let mut enable_compute = TheCheckButton::new(TheId::named("EnableCompute"));
+        if self.compute_enable {
+            enable_compute.set_state(TheWidgetState::Selected);
+        }
+        layout.add_pair(
+            "Enable Compute Shader".to_string(),
+            Box::new(enable_compute),
+        );
+
         layout.set_background_color(Some(SectionbarBackground));
 
         let mut sidebar = TheCanvas::new();
@@ -97,12 +128,50 @@ impl TheTrait for Demo {
         // Handle screen buffer here.
     }
 
+    fn post_ui(&mut self, ctx: &mut TheContext) {
+        if let Some(compute_texture) = self.compute_texture.take() {
+            ctx.texture_renderer.unload_texture(compute_texture);
+            if let Some(layer) = ctx.texture_renderer.layer_mut(self.compute_output_layer) {
+                layer.clear();
+            }
+        }
+    }
+
+    fn pre_ui(&mut self, ctx: &mut TheContext) {
+        if self.compute_enable {
+            let compute = self.compute.get().unwrap();
+            ctx.gpu.compute(compute).unwrap();
+
+            let device = ctx.gpu.device();
+            let buffer = compute.buffer(device);
+
+            let width = compute.width();
+            let height = compute.height();
+            let compute_texture =
+                ctx.texture_renderer
+                    .load_texture(device, ctx.gpu.queue(), width, height, &buffer);
+            ctx.texture_renderer.place_texture(
+                self.compute_output_layer,
+                compute_texture,
+                Vec2::zero(),
+            );
+
+            self.compute_texture = Some(compute_texture);
+        }
+    }
+
     fn update_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
 
         if let Some(receiver) = &mut self.event_receiver {
             while let Ok(event) = receiver.try_recv() {
                 match event {
+                    TheEvent::StateChanged(id, state) => {
+                        if id.name == "EnableCompute" {
+                            self.compute_enable = state == TheWidgetState::Selected;
+                            redraw = true;
+                        }
+                    }
                     TheEvent::ValueChanged(id, value) => {
                         if id.name == "Scale" {
                             if let TheValue::Float(scale) = value {

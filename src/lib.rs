@@ -14,6 +14,9 @@ pub mod thecode;
 #[cfg(feature = "gpu")]
 pub mod thegpu;
 
+#[cfg(feature = "gpu")]
+pub use wgpu;
+
 pub use crate::theapp::TheApp;
 pub use crate::thecontext::TheContext;
 pub use crate::thetrait::TheTrait;
