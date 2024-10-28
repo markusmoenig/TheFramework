@@ -19,7 +19,6 @@ maths-rs = { version = "0.2.6", features = [
     "serde",
     "hash",
 ] }
-pixels = { git = "https://github.com/fralonra/pixels.git", optional = true }
 winit = { version = "0.29", optional = true }
 winit_input_helper = { version = "0.16", optional = true }
 #therenderer = { version = "0.1.1", optional = true }
@@ -70,17 +69,12 @@ web-sys = { version = "0.3", features = ["GpuTextureFormat"] }
 #renderer = ["therenderer"]
 ui = ["futures", "rfd", "flate2", "rayon", "zeno"]
 code = []
-
 winit_app = ["winit", "winit_input_helper"]
-pixels_winit = ["winit_app", "pixels_gpu"]
-wgpu_winit = ["winit_app", "wgpu_gpu"]
+gpu = ["aict", "bytemuck", "futures", "wgpu"]
 
-gpu = []
-pixels_gpu = ["gpu", "pixels"]
-wgpu_gpu = ["gpu", "aict", "bytemuck", "futures", "wgpu"]
+gpu_winit = ["winit_app", "gpu"]
 
-default = ["wgpu_winit"]
-# default = ["pixels_winit"]
+default = ["gpu_winit"]
 
 [workspace]
 members = ["examples/*", "run-wasm"]

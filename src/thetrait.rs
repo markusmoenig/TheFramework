@@ -73,9 +73,15 @@ pub trait TheTrait {
         false
     }
 
-    fn post_captured(&mut self, texture: Vec<u8>, width: u32, height: u32) -> bool {
-        false
-    }
+    // Life Circles
+
+    fn post_captured(&mut self, texture: Vec<u8>, width: u32, height: u32) {}
+
+    #[cfg(feature = "ui")]
+    fn post_ui(&mut self, ctx: &mut TheContext) {}
+
+    #[cfg(feature = "ui")]
+    fn pre_ui(&mut self, ctx: &mut TheContext) {}
 
     /// Open a file requester
     fn open(&mut self) {}

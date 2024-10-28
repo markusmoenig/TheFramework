@@ -1,5 +1,6 @@
 use theframework::*;
 
+mod compute;
 pub mod demo;
 
 use crate::demo::Demo;

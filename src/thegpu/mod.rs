@@ -1,15 +1,13 @@
+mod thecomputepass;
 mod thegpucontext;
-
-#[cfg(feature = "pixels_gpu")]
-mod thepixelscontext;
-#[cfg(feature = "wgpu_gpu")]
-mod thewgpucontext;
+mod therenderpass;
+mod thetexturerenderpass;
 
 pub mod prelude {
-    pub use crate::thegpu::thegpucontext::TheGpuContext;
-
-    #[cfg(feature = "pixels_gpu")]
-    pub use crate::thegpu::thepixelscontext::ThePixelsContext;
-    #[cfg(feature = "wgpu_gpu")]
-    pub use crate::thegpu::thewgpucontext::{TheTextureId, TheWgpuContext};
+    pub use crate::thegpu::thecomputepass::TheComputePass;
+    pub use crate::thegpu::thegpucontext::{TheGpuContext, TheGpuContextError};
+    pub use crate::thegpu::therenderpass::TheRenderPass;
+    pub use crate::thegpu::thetexturerenderpass::{
+        TheTextureId, TheTextureRenderLayer, TheTextureRenderPass,
+    };
 }

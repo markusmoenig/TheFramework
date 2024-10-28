@@ -4,4 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-theframework = { path = "../..", features = ["ui", "wgpu_winit"] }
+image = "0.25"
+theframework = { path = "../..", features = ["ui"] }
