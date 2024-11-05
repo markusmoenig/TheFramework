@@ -95,7 +95,6 @@ impl TheTextureRenderLayer {
     }
 
     pub fn rotate(&mut self, theta: f32) {
-        todo!("Fix rotation skewing");
         self.transform.rotation = theta;
     }
 
@@ -329,6 +328,7 @@ impl TheRenderPass for TheTextureRenderPass {
                 self.transform.rotation + layer.transform.rotation,
                 self.transform.scale * layer.transform.scale,
                 2.0 * (self.transform.translation + layer.transform.translation) / surface_size,
+                surface_size.x / surface_size.y,
             );
             let mut transform = [0.0; 16];
             transform.copy_from_slice(matrix.as_ref());
@@ -547,19 +547,35 @@ fn transform_matrix(
     rotation: f32,
     scale: Vec2<f32>,
     translation: Vec2<f32>,
+    aspect_ratio: f32,
 ) -> Mat4<f32> {
-    let cos = rotation.cos();
-    let sin = rotation.sin();
-
-    let tx = -origin.x * scale.x * cos + origin.y * scale.y * sin + origin.x + translation.x;
-    let ty = -origin.x * scale.x * sin - origin.y * scale.y * cos + origin.y - translation.y;
+    #[rustfmt::skip]
+    let aspect_correction = Mat4::new(
+        1.0 / aspect_ratio, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        origin.x * (1.0 - 1.0 / aspect_ratio), 0.0, 0.0, 1.0,
+    );
 
     #[rustfmt::skip]
-    let matrix = Mat4::new(
-        scale.x * cos, -scale.y * sin, 0.0, 0.0,
-        scale.x * sin, scale.y * cos, 0.0, 0.0,
+    let reverse_aspect_correction = Mat4::new(
+        aspect_ratio, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
         0.0, 0.0, 1.0, 0.0,
-        tx, ty, 0.0, 1.0,
+        origin.x * (1.0 - aspect_ratio), 0.0, 0.0, 1.0,
     );
-    matrix
+
+    let rotate = Mat4::from_z_rotation(rotation);
+    let scale = Mat4::from_scale(Vec3::new(scale.x, scale.y, 1.0));
+    let translate_origin = Mat4::from_translation(Vec3::new(-origin.x, -origin.y, 0.0));
+    let translate_back = Mat4::from_translation(Vec3::new(origin.x, origin.y, 0.0));
+    let translate = Mat4::from_translation(Vec3::new(translation.x, -translation.y, 0.0));
+
+    reverse_aspect_correction
+        * translate_origin.transpose()
+        * scale
+        * rotate
+        * translate_back.transpose()
+        * aspect_correction
+        * translate.transpose()
 }
