@@ -129,10 +129,6 @@ impl TheTrait for Demo {
         self.event_receiver = Some(ui.add_state_listener("Main".into()));
     }
 
-    fn post_captured(&mut self, texture: Vec<u8>, width: u32, height: u32) {
-        // Handle screen buffer here.
-    }
-
     fn post_ui(&mut self, ctx: &mut TheContext) {
         if let Some(compute_texture) = self.compute_texture.take() {
             ctx.texture_renderer.unload_texture(compute_texture);

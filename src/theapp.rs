@@ -168,20 +168,14 @@ impl TheApp {
                             };
 
                             #[cfg(feature = "gpu")]
-                            match ctx
+                            if ctx
                                 .gpu
                                 .draw(&ctx.texture_renderer)
                                 .map_err(|e| error!("render failed: {}", e))
+                                .is_err()
                             {
-                                Ok(texture) => {
-                                    // if let Some(texture) = texture {
-                                    //     app.post_captured(texture, width as u32, height as u32);
-                                    // }
-                                }
-                                Err(_) => {
-                                    elwt.exit();
-                                    return;
-                                }
+                                elwt.exit();
+                                return;
                             }
 
                             #[cfg(feature = "ui")]

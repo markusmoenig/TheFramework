@@ -164,6 +164,106 @@ impl<'w> TheGpuContext<'w> {
         Ok(())
     }
 
+    pub fn capture_current_frame(&self) -> Result<Vec<u8>, TheGpuContextError> {
+        let Some(context) = &self.render_context else {
+            return Err(TheGpuContextError::RenderContextNotFound);
+        };
+
+        let Some(frame) = &context.current_frame else {
+            return Err(TheGpuContextError::ActivedFrameNotFound);
+        };
+        let texture = &frame.texture;
+
+        let width = context.surface_config.width;
+        let height = context.surface_config.height;
+        let size = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Capture Command Encoder"),
+            });
+
+        let output_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Capture Texture"),
+            size: texture.size(),
+            mip_level_count: texture.mip_level_count(),
+            sample_count: texture.sample_count(),
+            dimension: texture.dimension(),
+            format: texture.format(),
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                | wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        let output_texture = output_texture.as_image_copy();
+        encoder.copy_texture_to_texture(texture.as_image_copy(), output_texture, size);
+
+        let src = output_texture;
+
+        let align_width =
+            align_up(width * 4 * U8_SIZE, wgpu::COPY_BYTES_PER_ROW_ALIGNMENT) / U8_SIZE;
+        let output_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Capture Buffer"),
+            size: (align_width * height) as wgpu::BufferAddress,
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let dst = wgpu::ImageCopyBuffer {
+            buffer: &output_buffer,
+            layout: wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: Some(align_width),
+                rows_per_image: Some(height),
+            },
+        };
+
+        encoder.copy_texture_to_buffer(src, dst, size);
+
+        let submission_index = self.queue.submit(Some(encoder.finish()));
+
+        let buffer_slice = output_buffer.slice(..);
+
+        let (sender, receiver) = channel();
+        buffer_slice.map_async(wgpu::MapMode::Read, move |r| drop(sender.send(r)));
+
+        self.device
+            .poll(wgpu::Maintain::WaitForSubmissionIndex(submission_index));
+        receiver
+            .recv()
+            .map_err(map_async_error)?
+            .map_err(map_async_error)?;
+
+        let to_rgba = match texture.format() {
+            wgpu::TextureFormat::Rgba8Unorm | wgpu::TextureFormat::Rgba8UnormSrgb => {
+                Ok([0, 1, 2, 3])
+            }
+            wgpu::TextureFormat::Bgra8Unorm | wgpu::TextureFormat::Bgra8UnormSrgb => {
+                Ok([2, 1, 0, 3])
+            }
+            _ => return Err(TheGpuContextError::InvalidTextureFormat(texture.format())),
+        }?;
+
+        let mut output = Vec::with_capacity((width * height) as usize * 4);
+        for padded_row in buffer_slice.get_mapped_range().chunks(align_width as usize) {
+            let row = &padded_row[..width as usize * 4];
+            for color in row.chunks(4) {
+                output.push(color[to_rgba[0]]);
+                output.push(color[to_rgba[1]]);
+                output.push(color[to_rgba[2]]);
+                output.push(color[to_rgba[3]]);
+            }
+        }
+
+        output_buffer.unmap();
+
+        Ok(output)
+    }
+
     pub fn create_surface<W>(&self, target: W) -> Result<wgpu::Surface<'w>, TheGpuContextError>
     where
         W: wgpu::WindowHandle + 'w,
@@ -298,101 +398,6 @@ impl<'w> TheGpuContext<'w> {
         };
 
         context.end_frame()
-    }
-
-    fn capture(&self, texture: &wgpu::Texture) -> Result<Vec<u8>, TheGpuContextError> {
-        let Some(context) = &self.render_context else {
-            return Err(TheGpuContextError::RenderContextNotFound);
-        };
-
-        let width = context.surface_config.width;
-        let height = context.surface_config.height;
-        let size = wgpu::Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 1,
-        };
-
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Capture Command Encoder"),
-            });
-
-        let output_texture = self.device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Capture Texture"),
-            size: texture.size(),
-            mip_level_count: texture.mip_level_count(),
-            sample_count: texture.sample_count(),
-            dimension: texture.dimension(),
-            format: texture.format(),
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                | wgpu::TextureUsages::COPY_DST
-                | wgpu::TextureUsages::COPY_SRC,
-            view_formats: &[],
-        });
-        let output_texture = output_texture.as_image_copy();
-        encoder.copy_texture_to_texture(texture.as_image_copy(), output_texture, size);
-
-        let src = output_texture;
-
-        let align_width =
-            align_up(width * 4 * U8_SIZE, wgpu::COPY_BYTES_PER_ROW_ALIGNMENT) / U8_SIZE;
-        let output_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("Capture Buffer"),
-            size: (align_width * height) as wgpu::BufferAddress,
-            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        let dst = wgpu::ImageCopyBuffer {
-            buffer: &output_buffer,
-            layout: wgpu::ImageDataLayout {
-                offset: 0,
-                bytes_per_row: Some(align_width),
-                rows_per_image: Some(height),
-            },
-        };
-
-        encoder.copy_texture_to_buffer(src, dst, size);
-
-        let submission_index = self.queue.submit(Some(encoder.finish()));
-
-        let buffer_slice = output_buffer.slice(..);
-
-        let (sender, receiver) = channel();
-        buffer_slice.map_async(wgpu::MapMode::Read, move |r| drop(sender.send(r)));
-
-        self.device
-            .poll(wgpu::Maintain::WaitForSubmissionIndex(submission_index));
-        receiver
-            .recv()
-            .map_err(map_async_error)?
-            .map_err(map_async_error)?;
-
-        let to_rgba = match texture.format() {
-            wgpu::TextureFormat::Rgba8Unorm | wgpu::TextureFormat::Rgba8UnormSrgb => {
-                Ok([0, 1, 2, 3])
-            }
-            wgpu::TextureFormat::Bgra8Unorm | wgpu::TextureFormat::Bgra8UnormSrgb => {
-                Ok([2, 1, 0, 3])
-            }
-            _ => return Err(TheGpuContextError::InvalidTextureFormat(texture.format())),
-        }?;
-
-        let mut output = Vec::with_capacity((width * height) as usize * 4);
-        for padded_row in buffer_slice.get_mapped_range().chunks(align_width as usize) {
-            let row = &padded_row[..width as usize * 4];
-            for color in row.chunks(4) {
-                output.push(color[to_rgba[0]]);
-                output.push(color[to_rgba[1]]);
-                output.push(color[to_rgba[2]]);
-                output.push(color[to_rgba[3]]);
-            }
-        }
-
-        output_buffer.unmap();
-
-        Ok(output)
     }
 }
 
