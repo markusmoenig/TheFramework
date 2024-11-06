@@ -7,12 +7,20 @@ use std::{
 use aict::{Factory, FactoryBuilder};
 use bytemuck::{Pod, Zeroable};
 use indexmap::IndexSet;
+use itertools::multiunzip;
 use wgpu::util::DeviceExt;
 
 use crate::prelude::*;
 
 type TheRenderLayerId = usize;
 pub type TheTextureId = wgpu::Id<wgpu::Texture>;
+
+#[repr(C)]
+#[derive(Copy, Clone, Pod, Zeroable)]
+struct TheFragmentParams {
+    bounds: [f32; 2],
+    min_coord: [f32; 2],
+}
 
 struct TheTransformMatrix {
     origin: Vec2<f32>,
@@ -40,8 +48,8 @@ struct TheTextureCoordInfo {
 impl TheTextureCoordInfo {
     fn vertices(
         &self,
-        surface_size: Vec2<f32>,
         layer_coord: Vec2<f32>,
+        surface_size: Vec2<f32>,
         texture_size: Vec2<f32>,
     ) -> [[f32; 2]; 6] {
         let x = layer_coord.x + 2.0 * self.coord.x / surface_size.x;
@@ -95,7 +103,6 @@ impl TheTextureRenderLayer {
     }
 
     pub fn rotate(&mut self, theta: f32) {
-        todo!("Fix rotation skewing");
         self.transform.rotation = theta;
     }
 
@@ -125,6 +132,7 @@ impl TheTextureRenderLayer {
 struct TheVertexParams {
     transform: [f32; 16],
 }
+
 pub struct TheTextureRenderPass {
     layer_group: BTreeMap<isize, IndexSet<TheRenderLayerId>>,
     layer_zindex: HashMap<TheRenderLayerId, isize>,
@@ -161,41 +169,70 @@ impl TheRenderPass for TheTextureRenderPass {
             .filter_map(|id| self.layers.get(id))
             .collect::<Vec<&TheTextureRenderLayer>>();
 
+        let chunk_size = device
+            .limits()
+            .max_sampled_textures_per_shader_stage
+            .min(device.limits().max_storage_buffers_per_shader_stage)
+            as usize;
         let texture_groups = ordered_layers
             .iter()
             .enumerate()
             .filter(|(_, layer)| !layer.hidden)
             .map(|(index, layer)| {
-                let textures_and_vertices = layer
+                let textures_vertices_bounds = layer
                     .texture_array
                     .iter()
                     .filter_map(|texture_coord| {
                         self.texture_map.get(&texture_coord.id).map(|texture| {
                             let vertices = texture_coord.vertices(
-                                surface_size,
                                 ndc(layer.coord, surface_size),
+                                surface_size,
                                 texture.size,
                             );
+                            let bounds = texture.size / surface_size;
+                            let min_coord = Vec2::new(vertices[2][0], vertices[2][1]);
 
-                            (&texture.texture, vertices)
+                            (&texture.texture, vertices.to_vec(), (bounds, min_coord))
                         })
                     })
-                    .collect::<Vec<(&wgpu::TextureView, [[f32; 2]; 6])>>();
-                let chunked_textures_and_vertices = textures_and_vertices
-                    .chunks(device.limits().max_sampled_textures_per_shader_stage as usize)
-                    .map(|textures_and_vertices| textures_and_vertices.to_vec());
+                    .collect::<Vec<(&wgpu::TextureView, Vec<[f32; 2]>, (Vec2<f32>, Vec2<f32>))>>();
 
-                chunked_textures_and_vertices
-                    .map(move |textures_and_vertices| {
-                        let (textures, vertices): (Vec<&wgpu::TextureView>, Vec<[[f32; 2]; 6]>) =
-                            textures_and_vertices.into_iter().unzip();
+                textures_vertices_bounds
+                    .chunks(chunk_size)
+                    .map(|textures_vertices_bounds| {
+                        let (textures, vertices, bounds): (
+                            Vec<&wgpu::TextureView>,
+                            Vec<Vec<[f32; 2]>>,
+                            Vec<(Vec2<f32>, Vec2<f32>)>,
+                        ) = multiunzip(textures_vertices_bounds.to_vec());
 
-                        (index, (textures, vertices.into_flattened()))
+                        (
+                            index,
+                            (
+                                textures,
+                                vertices.into_iter().flatten().collect::<Vec<[f32; 2]>>(),
+                                bounds,
+                            ),
+                        )
                     })
-                    .collect::<Vec<(usize, (Vec<&wgpu::TextureView>, Vec<[f32; 2]>))>>()
+                    .collect::<Vec<(
+                        usize,
+                        (
+                            Vec<&wgpu::TextureView>,
+                            Vec<[f32; 2]>,
+                            Vec<(Vec2<f32>, Vec2<f32>)>,
+                        ),
+                    )>>()
             })
             .flatten()
-            .collect::<Vec<(usize, (Vec<&wgpu::TextureView>, Vec<[f32; 2]>))>>();
+            .collect::<Vec<(
+                usize,
+                (
+                    Vec<&wgpu::TextureView>,
+                    Vec<[f32; 2]>,
+                    Vec<(Vec2<f32>, Vec2<f32>)>,
+                ),
+            )>>();
 
         let view = &surface_texture
             .texture
@@ -221,7 +258,7 @@ impl TheRenderPass for TheTextureRenderPass {
 
         let mut bind_group_layout = None;
         let mut prev_group_texture_count = 0;
-        for (index, (textures, vertices)) in texture_groups {
+        for (index, (textures, vertices, bounds)) in texture_groups {
             if textures.is_empty() {
                 continue;
             }
@@ -271,6 +308,16 @@ impl TheRenderPass for TheTextureRenderPass {
                                 visibility: wgpu::ShaderStages::FRAGMENT,
                                 ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                                 count: None,
+                            },
+                            wgpu::BindGroupLayoutEntry {
+                                binding: 3,
+                                visibility: wgpu::ShaderStages::FRAGMENT,
+                                ty: wgpu::BindingType::Buffer {
+                                    ty: wgpu::BufferBindingType::Storage { read_only: true },
+                                    has_dynamic_offset: false,
+                                    min_binding_size: None,
+                                },
+                                count: NonZeroU32::new(texture_count),
                             },
                         ],
                     },
@@ -329,6 +376,7 @@ impl TheRenderPass for TheTextureRenderPass {
                 self.transform.rotation + layer.transform.rotation,
                 self.transform.scale * layer.transform.scale,
                 2.0 * (self.transform.translation + layer.transform.translation) / surface_size,
+                surface_size.x / surface_size.y,
             );
             let mut transform = [0.0; 16];
             transform.copy_from_slice(matrix.as_ref());
@@ -339,6 +387,22 @@ impl TheRenderPass for TheTextureRenderPass {
                     label: Some("Vertex Params Buffer"),
                     contents: bytemuck::cast_slice(&[vertex_params]),
                     usage: wgpu::BufferUsages::UNIFORM,
+                });
+
+            let fragment_params = (0..texture_count)
+                .map(|i| {
+                    let bounds = bounds[i as usize];
+                    TheFragmentParams {
+                        bounds: [bounds.0[0], bounds.0[1]],
+                        min_coord: [bounds.1[0], bounds.1[1]],
+                    }
+                })
+                .collect::<Vec<TheFragmentParams>>();
+            let fragment_params_buffer =
+                device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("Fragment Params Buffer"),
+                    contents: bytemuck::cast_slice(&fragment_params),
+                    usage: wgpu::BufferUsages::STORAGE,
                 });
 
             let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -356,6 +420,10 @@ impl TheRenderPass for TheTextureRenderPass {
                     wgpu::BindGroupEntry {
                         binding: 2,
                         resource: wgpu::BindingResource::Sampler(&self.sampler),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 3,
+                        resource: fragment_params_buffer.as_entire_binding(),
                     },
                 ],
             });
@@ -547,19 +615,35 @@ fn transform_matrix(
     rotation: f32,
     scale: Vec2<f32>,
     translation: Vec2<f32>,
+    aspect_ratio: f32,
 ) -> Mat4<f32> {
-    let cos = rotation.cos();
-    let sin = rotation.sin();
-
-    let tx = -origin.x * scale.x * cos + origin.y * scale.y * sin + origin.x + translation.x;
-    let ty = -origin.x * scale.x * sin - origin.y * scale.y * cos + origin.y - translation.y;
+    #[rustfmt::skip]
+    let aspect_correction = Mat4::new(
+        1.0 / aspect_ratio, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        origin.x * (1.0 - 1.0 / aspect_ratio), 0.0, 0.0, 1.0,
+    );
 
     #[rustfmt::skip]
-    let matrix = Mat4::new(
-        scale.x * cos, -scale.y * sin, 0.0, 0.0,
-        scale.x * sin, scale.y * cos, 0.0, 0.0,
+    let reverse_aspect_correction = Mat4::new(
+        aspect_ratio, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
         0.0, 0.0, 1.0, 0.0,
-        tx, ty, 0.0, 1.0,
+        origin.x * (1.0 - aspect_ratio), 0.0, 0.0, 1.0,
     );
-    matrix
+
+    let rotate = Mat4::from_z_rotation(rotation);
+    let scale = Mat4::from_scale(Vec3::new(scale.x, scale.y, 1.0));
+    let translate_origin = Mat4::from_translation(Vec3::new(-origin.x, -origin.y, 0.0));
+    let translate_back = Mat4::from_translation(Vec3::new(origin.x, origin.y, 0.0));
+    let translate = Mat4::from_translation(Vec3::new(translation.x, -translation.y, 0.0));
+
+    reverse_aspect_correction
+        * translate_origin.transpose()
+        * scale
+        * rotate
+        * translate_back.transpose()
+        * aspect_correction
+        * translate.transpose()
 }

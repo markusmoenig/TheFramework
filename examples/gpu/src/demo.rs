@@ -105,6 +105,11 @@ impl TheTrait for Demo {
         translate_y.set_range(TheValue::RangeF32(0.0..=1000.0));
         layout.add_pair("Translate Y".to_string(), Box::new(translate_y));
 
+        let mut rotate = TheSlider::new(TheId::named("Rotate"));
+        rotate.set_value(TheValue::Float(0.0));
+        rotate.set_range(TheValue::RangeF32(0.0..=360.0));
+        layout.add_pair("Rotate".to_string(), Box::new(rotate));
+
         let mut enable_compute = TheCheckButton::new(TheId::named("EnableCompute"));
         if self.compute_enable {
             enable_compute.set_state(TheWidgetState::Selected);
@@ -199,6 +204,15 @@ impl TheTrait for Demo {
                                 {
                                     self.translate_y = translate;
                                     layer.translate(self.translate_x, self.translate_y);
+                                    redraw = true;
+                                }
+                            }
+                        } else if id.name == "Rotate" {
+                            if let TheValue::Float(rotate) = value {
+                                if let Some(layer) =
+                                    ctx.texture_renderer.layer_mut(self.canvas_layer)
+                                {
+                                    layer.rotate(rotate.to_radians());
                                     redraw = true;
                                 }
                             }

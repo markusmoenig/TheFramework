@@ -47,6 +47,7 @@ flags = "0.1.5"
 wgpu = { version = "22.1", optional = true }
 aict = { version = "0.2.0", optional = true }
 bytemuck = { version = "1.18.0", features = ["derive"], optional = true }
+itertools = { version = "0.13.0", optional = true }
 
 [dependencies.uuid]
 version = "1.1.2"
@@ -70,7 +71,7 @@ web-sys = { version = "0.3", features = ["GpuTextureFormat"] }
 ui = ["futures", "rfd", "flate2", "rayon", "zeno"]
 code = []
 winit_app = ["winit", "winit_input_helper"]
-gpu = ["aict", "bytemuck", "futures", "wgpu"]
+gpu = ["aict", "bytemuck", "futures", "itertools", "wgpu"]
 
 gpu_winit = ["winit_app", "gpu"]
 
