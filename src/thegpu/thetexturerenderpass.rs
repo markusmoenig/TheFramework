@@ -169,6 +169,11 @@ impl TheRenderPass for TheTextureRenderPass {
             .filter_map(|id| self.layers.get(id))
             .collect::<Vec<&TheTextureRenderLayer>>();
 
+        let chunk_size = device
+            .limits()
+            .max_sampled_textures_per_shader_stage
+            .min(device.limits().max_storage_buffers_per_shader_stage)
+            as usize;
         let texture_groups = ordered_layers
             .iter()
             .enumerate()
@@ -193,7 +198,7 @@ impl TheRenderPass for TheTextureRenderPass {
                     .collect::<Vec<(&wgpu::TextureView, Vec<[f32; 2]>, (Vec2<f32>, Vec2<f32>))>>();
 
                 textures_vertices_bounds
-                    .chunks(device.limits().max_sampled_textures_per_shader_stage as usize)
+                    .chunks(chunk_size)
                     .map(|textures_vertices_bounds| {
                         let (textures, vertices, bounds): (
                             Vec<&wgpu::TextureView>,
