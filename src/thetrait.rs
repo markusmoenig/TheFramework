@@ -75,8 +75,6 @@ pub trait TheTrait {
 
     // Life Circles
 
-    fn post_captured(&mut self, texture: Vec<u8>, width: u32, height: u32) {}
-
     #[cfg(feature = "ui")]
     fn post_ui(&mut self, ctx: &mut TheContext) {}
 
