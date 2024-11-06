@@ -15,11 +15,29 @@ use crate::prelude::*;
 type TheRenderLayerId = usize;
 pub type TheTextureId = wgpu::Id<wgpu::Texture>;
 
+const MAX_TEXTURES_IN_GROUP: usize = 16;
+
+#[repr(C, align(16))]
+#[derive(Copy, Clone, Pod, Zeroable)]
+struct AlignedVec2 {
+    data: [f32; 2],
+    _padding: [f32; 2],
+}
+
+impl AlignedVec2 {
+    pub fn new(data: [f32; 2]) -> Self {
+        Self {
+            data,
+            _padding: [0.0; 2],
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Copy, Clone, Pod, Zeroable)]
 struct TheFragmentParams {
-    bounds: [f32; 2],
-    min_coord: [f32; 2],
+    bounds: [AlignedVec2; MAX_TEXTURES_IN_GROUP],
+    min_coords: [AlignedVec2; MAX_TEXTURES_IN_GROUP],
 }
 
 struct TheTransformMatrix {
@@ -174,6 +192,7 @@ impl TheRenderPass for TheTextureRenderPass {
             .max_sampled_textures_per_shader_stage
             .min(device.limits().max_storage_buffers_per_shader_stage)
             as usize;
+        let chunk_size = chunk_size.max(MAX_TEXTURES_IN_GROUP);
         let texture_groups = ordered_layers
             .iter()
             .enumerate()
@@ -190,20 +209,22 @@ impl TheRenderPass for TheTextureRenderPass {
                                 texture.size,
                             );
                             let bounds = texture.size / surface_size;
-                            let min_coord = Vec2::new(vertices[2][0], vertices[2][1]);
+                            let bounds = [bounds[0], bounds[1]];
+                            let min_coord = [vertices[2][0], vertices[2][1]];
 
-                            (&texture.texture, vertices.to_vec(), (bounds, min_coord))
+                            (&texture.texture, vertices.to_vec(), bounds, min_coord)
                         })
                     })
-                    .collect::<Vec<(&wgpu::TextureView, Vec<[f32; 2]>, (Vec2<f32>, Vec2<f32>))>>();
+                    .collect::<Vec<(&wgpu::TextureView, Vec<[f32; 2]>, [f32; 2], [f32; 2])>>();
 
                 textures_vertices_bounds
                     .chunks(chunk_size)
                     .map(|textures_vertices_bounds| {
-                        let (textures, vertices, bounds): (
+                        let (textures, vertices, bounds, min_coords): (
                             Vec<&wgpu::TextureView>,
                             Vec<Vec<[f32; 2]>>,
-                            Vec<(Vec2<f32>, Vec2<f32>)>,
+                            Vec<[f32; 2]>,
+                            Vec<[f32; 2]>,
                         ) = multiunzip(textures_vertices_bounds.to_vec());
 
                         (
@@ -212,6 +233,7 @@ impl TheRenderPass for TheTextureRenderPass {
                                 textures,
                                 vertices.into_iter().flatten().collect::<Vec<[f32; 2]>>(),
                                 bounds,
+                                min_coords,
                             ),
                         )
                     })
@@ -220,7 +242,8 @@ impl TheRenderPass for TheTextureRenderPass {
                         (
                             Vec<&wgpu::TextureView>,
                             Vec<[f32; 2]>,
-                            Vec<(Vec2<f32>, Vec2<f32>)>,
+                            Vec<[f32; 2]>,
+                            Vec<[f32; 2]>,
                         ),
                     )>>()
             })
@@ -230,7 +253,8 @@ impl TheRenderPass for TheTextureRenderPass {
                 (
                     Vec<&wgpu::TextureView>,
                     Vec<[f32; 2]>,
-                    Vec<(Vec2<f32>, Vec2<f32>)>,
+                    Vec<[f32; 2]>,
+                    Vec<[f32; 2]>,
                 ),
             )>>();
 
@@ -258,7 +282,7 @@ impl TheRenderPass for TheTextureRenderPass {
 
         let mut bind_group_layout = None;
         let mut prev_group_texture_count = 0;
-        for (index, (textures, vertices, bounds)) in texture_groups {
+        for (index, (textures, vertices, bounds, min_coords)) in texture_groups {
             if textures.is_empty() {
                 continue;
             }
@@ -313,11 +337,11 @@ impl TheRenderPass for TheTextureRenderPass {
                                 binding: 3,
                                 visibility: wgpu::ShaderStages::FRAGMENT,
                                 ty: wgpu::BindingType::Buffer {
-                                    ty: wgpu::BufferBindingType::Storage { read_only: true },
+                                    ty: wgpu::BufferBindingType::Uniform,
                                     has_dynamic_offset: false,
                                     min_binding_size: None,
                                 },
-                                count: NonZeroU32::new(texture_count),
+                                count: None,
                             },
                         ],
                     },
@@ -389,20 +413,19 @@ impl TheRenderPass for TheTextureRenderPass {
                     usage: wgpu::BufferUsages::UNIFORM,
                 });
 
-            let fragment_params = (0..texture_count)
-                .map(|i| {
-                    let bounds = bounds[i as usize];
-                    TheFragmentParams {
-                        bounds: [bounds.0[0], bounds.0[1]],
-                        min_coord: [bounds.1[0], bounds.1[1]],
-                    }
-                })
-                .collect::<Vec<TheFragmentParams>>();
+            let mut fragment_params = TheFragmentParams {
+                bounds: [AlignedVec2::new([0.0; 2]); MAX_TEXTURES_IN_GROUP],
+                min_coords: [AlignedVec2::new([0.0; 2]); MAX_TEXTURES_IN_GROUP],
+            };
+            for i in 0..texture_count as usize {
+                fragment_params.bounds[i].data = bounds[i];
+                fragment_params.min_coords[i].data = min_coords[i];
+            }
             let fragment_params_buffer =
                 device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("Fragment Params Buffer"),
-                    contents: bytemuck::cast_slice(&fragment_params),
-                    usage: wgpu::BufferUsages::STORAGE,
+                    contents: bytemuck::cast_slice(&[fragment_params]),
+                    usage: wgpu::BufferUsages::UNIFORM,
                 });
 
             let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {

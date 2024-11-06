@@ -355,9 +355,7 @@ impl<'w> TheGpuContext<'w> {
             let (device, queue) = adapter
                 .request_device(
                     &wgpu::DeviceDescriptor {
-                        required_features: wgpu::Features::BUFFER_BINDING_ARRAY
-                            | wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY
-                            | wgpu::Features::TEXTURE_BINDING_ARRAY,
+                        required_features: wgpu::Features::TEXTURE_BINDING_ARRAY,
                         #[cfg(target_arch = "wasm32")]
                         required_limits: wgpu::Limits::downlevel_webgl2_defaults(),
                         #[cfg(not(target_arch = "wasm32"))]
