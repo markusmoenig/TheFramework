@@ -407,12 +407,17 @@ impl TheTextEditState {
 
         // Select the empty space
         let col = self.cursor.column.min(text.len() - 1);
-        let (start, end) = if text.chars().nth(col).unwrap().is_whitespace() {
+        let current_char = text.chars().nth(col).unwrap();
+        let (start, end) = if current_char.is_whitespace() {
             find_range(text, col, |char| !char.is_whitespace())
         }
-        // Select a word or the entire row
-        else {
-            find_range(text, col, |char| char.is_whitespace())
+        // Select a word
+        else if might_be_word_char(current_char) {
+            find_range(text, col, |char| !might_be_word_char(char))
+        } else {
+            find_range(text, col, |char| {
+                char.is_whitespace() || might_be_word_char(char)
+            })
         };
 
         self.selection.start = row_start + start;
@@ -434,6 +439,10 @@ impl TheTextEditState {
                 .map_or(text.len(), |(i, _)| index + 1 + i);
 
             (start, end)
+        }
+
+        fn might_be_word_char(c: char) -> bool {
+            c.is_alphanumeric() || c == '_'
         }
     }
 
