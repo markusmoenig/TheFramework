@@ -9,6 +9,6 @@ theframework = { path = "../..", default-features = false, features = [
 ] }
 lazy_static = "1.4.0"
 
-[lib]
-name = "rustapi"
-crate-type = ["staticlib"]
+# [lib]
+# name = "rustapi"
+# crate-type = ["staticlib"]

@@ -15,7 +15,7 @@ pub struct Compute {
 impl TheComputePass for Compute {
     fn compute(
         &self,
-        device: &wgpu::Device,
+        _device: &wgpu::Device,
         encoder: &mut wgpu::CommandEncoder,
     ) -> Result<(), TheGpuContextError> {
         {

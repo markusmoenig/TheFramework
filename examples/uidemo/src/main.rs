@@ -23,5 +23,5 @@ fn main() {
     let demo = UIDemo::new();
     let mut app = TheApp::new();
 
-    _ = app.run(Box::new(demo));
+    () = app.run(Box::new(demo));
 }

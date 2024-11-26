@@ -161,7 +161,7 @@ impl TheTrait for Demo {
         }
     }
 
-    fn update_ui(&mut self, ui: &mut TheUI, ctx: &mut TheContext) -> bool {
+    fn update_ui(&mut self, _ui: &mut TheUI, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
 
         if let Some(receiver) = &mut self.event_receiver {

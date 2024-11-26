@@ -98,6 +98,12 @@ pub struct TheTextureRenderLayer {
     transform: TheTransformMatrix,
 }
 
+impl Default for TheTextureRenderLayer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TheTextureRenderLayer {
     pub fn new() -> Self {
         Self {
@@ -193,6 +199,8 @@ impl TheRenderPass for TheTextureRenderPass {
             .min(device.limits().max_storage_buffers_per_shader_stage)
             as usize;
         let chunk_size = chunk_size.max(MAX_TEXTURES_IN_GROUP);
+
+        #[allow(clippy::map_flatten)]
         let texture_groups = ordered_layers
             .iter()
             .enumerate()
@@ -220,6 +228,7 @@ impl TheRenderPass for TheTextureRenderPass {
                 textures_vertices_bounds
                     .chunks(chunk_size)
                     .map(|textures_vertices_bounds| {
+                        #[allow(clippy::type_complexity)]
                         let (textures, vertices, bounds, min_coords): (
                             Vec<&wgpu::TextureView>,
                             Vec<Vec<[f32; 2]>>,
@@ -287,6 +296,7 @@ impl TheRenderPass for TheTextureRenderPass {
                 continue;
             }
 
+            #[allow(clippy::iter_nth)]
             let Some(layer) = ordered_layers.iter().nth(index) else {
                 continue;
             };
@@ -600,13 +610,14 @@ impl TheTextureRenderPass {
 
     pub fn set_layer_zindex(&mut self, layer_id: TheRenderLayerId, zindex: isize) {
         if let Some(prev_zindex) = self.layer_zindex.get(&layer_id) {
-            if let Some(set) = self.layer_group.get_mut(&prev_zindex) {
+            if let Some(set) = self.layer_group.get_mut(prev_zindex) {
                 set.shift_remove(&layer_id);
             }
         }
 
         self.layer_zindex.insert(layer_id, zindex);
 
+        #[allow(clippy::map_entry)]
         if !self.layer_group.contains_key(&zindex) {
             self.layer_group.insert(zindex, IndexSet::new());
         }

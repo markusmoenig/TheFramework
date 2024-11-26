@@ -12,5 +12,5 @@ fn main() {
     let demo = Demo::new();
     let mut app = TheApp::new();
 
-    _ = app.run(Box::new(demo));
+    () = app.run(Box::new(demo));
 }

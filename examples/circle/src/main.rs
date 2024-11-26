@@ -7,5 +7,5 @@ fn main() {
     let circle = Circle::new();
     let mut app = TheApp::new();
 
-    _ = app.run(Box::new(circle));
+    () = app.run(Box::new(circle));
 }

@@ -19,5 +19,5 @@ fn main() {
     let code: CodeEditor = CodeEditor::new();
     let mut app = TheApp::new();
 
-    _ = app.run(Box::new(code));
+    () = app.run(Box::new(code));
 }
