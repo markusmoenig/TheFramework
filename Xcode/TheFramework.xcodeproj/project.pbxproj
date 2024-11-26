@@ -14,7 +14,6 @@
 		DD28F9362978F1670003766F /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD28F9352978F1670003766F /* File.swift */; };
 		DD28F9372978F1670003766F /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD28F9352978F1670003766F /* File.swift */; };
 		DD28F9382978F1670003766F /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD28F9352978F1670003766F /* File.swift */; };
-		DD4CC51129ED435700E563B5 /* librustapi.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DD219B7529741C3900E978F5 /* librustapi.a */; };
 		DD5B036D290E834C003F7C12 /* RMKTView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD5B036C290E834C003F7C12 /* RMKTView.swift */; };
 		DD5B036F290E83E3003F7C12 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD5B036E290E83E3003F7C12 /* Math.swift */; };
 		DD5B0370290E84B3003F7C12 /* RMKTView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD5B036C290E834C003F7C12 /* RMKTView.swift */; };
@@ -55,6 +54,8 @@
 		DD5FD13728FBD15C00853829 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DD5FD0FC28FBD15B00853829 /* Assets.xcassets */; };
 		DD86627B2978DE20003878C0 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD8662792978DE20003878C0 /* AudioToolbox.framework */; };
 		DD86627C2978DE20003878C0 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD86627A2978DE20003878C0 /* CoreAudio.framework */; };
+		DDB2401C2CF59DC000425D2F /* librustapi.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DD219B7529741C3900E978F5 /* librustapi.a */; };
+		DDB2401E2CF5A0F900425D2F /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDB2401D2CF5A0F900425D2F /* Carbon.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -103,6 +104,7 @@
 		DDAB9557290F6A9800B79AB8 /* librustapi.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = librustapi.a; path = rustapi/target/universal/release/librustapi.a; sourceTree = "<group>"; };
 		DDAB9559290F6AC900B79AB8 /* librustapiios.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = librustapiios.a; path = rustapi/libs_ios/librustapiios.a; sourceTree = "<group>"; };
 		DDAB955B290F6B6D00B79AB8 /* librustapiios.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = librustapiios.a; path = rustapi/libs/librustapiios.a; sourceTree = "<group>"; };
+		DDB2401D2CF5A0F900425D2F /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -127,7 +129,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DD4CC51129ED435700E563B5 /* librustapi.a in Frameworks */,
+				DDB2401C2CF59DC000425D2F /* librustapi.a in Frameworks */,
+				DDB2401E2CF5A0F900425D2F /* Carbon.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -212,6 +215,7 @@
 		DD976A98290E62C2007131BA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				DDB2401D2CF5A0F900425D2F /* Carbon.framework */,
 				DD8662792978DE20003878C0 /* AudioToolbox.framework */,
 				DD86627A2978DE20003878C0 /* CoreAudio.framework */,
 				DD8662772978DC85003878C0 /* librustapi_ios.a */,

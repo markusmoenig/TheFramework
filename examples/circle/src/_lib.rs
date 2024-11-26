@@ -48,6 +48,12 @@ pub unsafe extern "C" fn rust_draw(pixels: *mut u8, width: u32, height: u32) {
 }
 
 #[no_mangle]
+pub extern "C" fn rust_update() -> bool {
+    //println!("update");
+    APP.lock().unwrap().update(&mut CTX.lock().unwrap())
+}
+
+#[no_mangle]
 pub extern "C" fn rust_target_fps() -> u32 {
     30
 }
