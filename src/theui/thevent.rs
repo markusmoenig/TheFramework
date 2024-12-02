@@ -60,6 +60,7 @@ pub enum TheEvent {
     RenderViewHoverChanged(TheId, Vec2i),
     RenderViewLostHover(TheId),
     RenderViewScrollBy(TheId, Vec2i),
+    RenderViewUp(TheId, Vec2i),
 
     // CodeEditor
     #[cfg(feature = "code")]

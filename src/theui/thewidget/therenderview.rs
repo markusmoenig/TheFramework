@@ -65,6 +65,10 @@ impl TheWidget for TheRenderView {
                 ctx.ui
                     .send(TheEvent::RenderViewDragged(self.id().clone(), *coord));
             }
+            TheEvent::MouseUp(coord) => {
+                ctx.ui
+                    .send(TheEvent::RenderViewUp(self.id().clone(), *coord));
+            }
             TheEvent::Hover(coord) => {
                 if !self.id().equals(&ctx.ui.hover) {
                     self.is_dirty = true;
