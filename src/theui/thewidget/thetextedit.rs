@@ -622,7 +622,7 @@ impl TheTextEditState {
     }
 
     fn glyphs_in_row(&self, row_number: usize) -> usize {
-        return self.rows[row_number].graphemes(true).count();
+        self.rows[row_number].graphemes(true).count()
     }
 
     // Inclusive on both end

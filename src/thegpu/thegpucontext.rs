@@ -381,6 +381,7 @@ impl<'w> TheGpuContext<'w> {
     }
 }
 
+#[allow(clippy::needless_lifetimes)]
 impl<'w> TheGpuContext<'w> {
     pub(crate) fn begin_frame(&mut self) -> Result<(), TheGpuContextError> {
         let Some(context) = &mut self.render_context else {
