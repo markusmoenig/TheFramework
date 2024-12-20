@@ -33,7 +33,9 @@ impl TheTheme for TheDarkTheme {
         colors.insert(TextLayoutBackground, [82, 82, 82, 255]);
         colors.insert(TextLayoutBorder, [139, 139, 139, 255]);
 
-        colors.insert(TextEditBackground, [82, 82, 82, 255]);
+        colors.insert(TextEditBackground, [148, 148, 148, 255]);
+
+        colors.insert(TextAreaEditBackground, [82, 82, 82, 255]);
         colors.insert(TextEditRange, [178, 178, 178, 255]);
         colors.insert(SelectedTextEditBorder1, [202, 113, 230, 255]);
         colors.insert(SelectedTextEditBorder2, [187, 122, 208, 255]);
