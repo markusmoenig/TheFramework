@@ -132,6 +132,12 @@ impl TheApp {
             .run(move |event, elwt| {
                 match &event {
                     Event::WindowEvent { event, .. } => match event {
+                        WindowEvent::CloseRequested => {
+                            if app.closing() {
+                                elwt.exit();
+                                return;
+                            }
+                        }
                         WindowEvent::RedrawRequested => {
                             #[cfg(feature = "gpu_winit")]
                             if let Err(err) = ctx.gpu.begin_frame() {

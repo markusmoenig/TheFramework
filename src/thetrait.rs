@@ -73,6 +73,10 @@ pub trait TheTrait {
         false
     }
 
+    fn closing(&self) -> bool {
+        false
+    }
+
     // Life Circles
 
     #[cfg(feature = "ui")]
