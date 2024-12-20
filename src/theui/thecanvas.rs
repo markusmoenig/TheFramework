@@ -11,6 +11,7 @@ pub struct TheCanvas {
 
     pub root: bool,
     pub top_is_expanding: bool,
+    pub bottom_is_expanding: bool,
 
     pub buffer: TheRGBABuffer,
 
@@ -43,6 +44,7 @@ impl TheCanvas {
 
             root: false,
             top_is_expanding: true,
+            bottom_is_expanding: false,
 
             buffer: TheRGBABuffer::empty(),
 
@@ -361,6 +363,19 @@ impl TheCanvas {
             }
         }
 
+        if self.bottom_is_expanding {
+            if let Some(bottom) = &mut self.bottom {
+                let bottom_width = w;
+                let bottom_height = bottom.get_limiter_height(h);
+                bottom.set_dim(
+                    TheDim::new(x, y + h - bottom_height, bottom_width, bottom_height),
+                    ctx,
+                );
+                bottom.offset = vec2i(buffer_x, buffer_y + h - bottom_height);
+                h -= bottom_height;
+            }
+        }
+
         let mut left_width = 0;
         if let Some(left) = &mut self.left {
             left_width = left.get_limiter_width(w);
@@ -404,15 +419,17 @@ impl TheCanvas {
             }
         }
 
-        if let Some(bottom) = &mut self.bottom {
-            let bottom_width = w;
-            let bottom_height = bottom.get_limiter_height(h);
-            bottom.set_dim(
-                TheDim::new(x, y + h - bottom_height, bottom_width, bottom_height),
-                ctx,
-            );
-            bottom.offset = vec2i(buffer_x, buffer_y + h - bottom_height);
-            h -= bottom_height;
+        if !self.bottom_is_expanding {
+            if let Some(bottom) = &mut self.bottom {
+                let bottom_width = w;
+                let bottom_height = bottom.get_limiter_height(h);
+                bottom.set_dim(
+                    TheDim::new(x, y + h - bottom_height, bottom_width, bottom_height),
+                    ctx,
+                );
+                bottom.offset = vec2i(buffer_x, buffer_y + h - bottom_height);
+                h -= bottom_height;
+            }
         }
 
         if let Some(center) = &mut self.center {
