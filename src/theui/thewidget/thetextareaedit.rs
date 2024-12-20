@@ -858,14 +858,14 @@ impl TheWidget for TheTextAreaEdit {
                     buffer.pixels_mut(),
                     &dim.to_buffer_utuple(),
                     stride,
-                    style.theme().color(TextAreaEditBackground),
+                    style.theme().color(TextEditBackground),
                 );
             } else {
                 ctx.draw.blend_rect(
                     buffer.pixels_mut(),
                     &dim.to_buffer_utuple(),
                     stride,
-                    style.theme().color_disabled_t(TextAreaEditBackground),
+                    style.theme().color_disabled_t(TextEditBackground),
                 );
             }
             ctx.draw.rect(
@@ -902,14 +902,14 @@ impl TheWidget for TheTextAreaEdit {
                     buffer.pixels_mut(),
                     &dim.to_buffer_utuple(),
                     stride,
-                    style.theme().color(TextAreaEditBackground),
+                    style.theme().color(TextEditBackground),
                 );
             } else {
                 ctx.draw.blend_rect(
                     buffer.pixels_mut(),
                     &dim.to_buffer_utuple(),
                     stride,
-                    style.theme().color_disabled_t(TextAreaEditBackground),
+                    style.theme().color_disabled_t(TextEditBackground),
                 );
             }
             ctx.draw.rect(
