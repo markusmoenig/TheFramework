@@ -2,7 +2,7 @@ use fontdue::layout::{
     CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle, VerticalAlign,
 };
 use fontdue::Font;
-use maths_rs::prelude::*;
+use vek::*;
 
 #[derive(PartialEq, Clone, Eq)]
 pub enum TheHorizontalAlign {
@@ -421,13 +421,13 @@ impl TheDraw2D {
             for x in rect.0..rect.0 + rect.2 {
                 let i = x * 4 + y * stride * 4;
 
-                let mut p = vec2f(abs(x as f32 - center.0), abs(y as f32 - center.1));
+                let mut p: Vec2<f32> =
+                    Vec2::new((x as f32 - center.0).abs(), (y as f32 - center.1).abs());
                 let r = rect.2 as f32 / 2.33;
-
-                let k = vec3f(-0.866_025_4, 0.5, 0.577_350_26);
-                p -= 2.0 * min(dot(k.xy(), p), 0.0) * k.xy();
-                p -= vec2f(clamp(p.x, -k.z * r, k.z * r), r);
-                let d = length(p) * signum(p.y);
+                let k: Vec3<f32> = Vec3::new(-0.866_025_4, 0.5, 0.577_350_26);
+                p -= 2.0 * k.xy() * k.xy().dot(p).min(0.0);
+                p = p.clamped(Vec2::broadcast(-k.z * r), Vec2::broadcast(k.z * r));
+                let d = p.magnitude() * p.y.signum();
 
                 if d < 1.0 {
                     let t = self.fill_mask(d);
@@ -464,9 +464,9 @@ impl TheDraw2D {
             (rect.1 as f32 + rect.3 as f32 / 2.0 - hb).round(),
         );
 
-        fn ndot(a: Vec2f, b: Vec2f) -> f32 {
-            a.x * b.x - a.y * b.y
-        }
+        // fn ndot(a: Vec2<f32>, b: Vec2<f32>) -> f32 {
+        //     a.x * b.x - a.y * b.y
+        // }
 
         for y in rect.1..rect.1 + rect.3 {
             for x in rect.0..rect.0 + rect.2 {
@@ -482,12 +482,12 @@ impl TheDraw2D {
                     return d * sign( p.x*b.y + p.y*b.x - b.x*b.y );
                 }*/
 
-                let p = vec2f(abs(x as f32 - center.0), abs(y as f32 - center.1));
-                let b = vec2f(rect.2 as f32 / 2.0, rect.3 as f32 / 2.0);
+                let p = Vec2::new((x as f32 - center.0).abs(), (y as f32 - center.1).abs());
+                let b = Vec2::new(rect.2 as f32 / 2.0, rect.3 as f32 / 2.0);
 
-                let h = clamp(ndot(b - 2.0 * p, b) / dot(b, b), -1.0, 1.0);
-                let mut d = length(p - 0.5 * b * vec2f(1.0 - h, 1.0 + h));
-                d *= signum(p.x * b.y + p.y * b.x - b.x * b.y);
+                let h = (Vec2::dot(b - 2.0 * p, b) / Vec2::dot(b, b)).clamp(-1.0, 1.0);
+                let mut d = (p - 0.5 * b * Vec2::new(1.0 - h, 1.0 + h)).magnitude();
+                d *= (p.x * b.y + p.y * b.x - b.x * b.y).signum();
 
                 if d < 1.0 {
                     let t = self.fill_mask(d);

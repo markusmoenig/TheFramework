@@ -7,7 +7,7 @@ pub struct TheNodeTerminal {
 
 pub struct TheNode {
     pub name: String,
-    pub position: Vec2i,
+    pub position: Vec2<i32>,
 
     pub inputs: Vec<TheNodeTerminal>,
     pub outputs: Vec<TheNodeTerminal>,
@@ -31,7 +31,7 @@ pub struct TheNodeCanvas {
     pub connections: Vec<(u16, u8, u16, u8)>,
 
     /// The scroll offset.
-    pub offset: Vec2i,
+    pub offset: Vec2<i32>,
 
     /// The currently selected node.
     pub selected_node: Option<usize>,
@@ -52,7 +52,7 @@ impl TheNodeCanvas {
             nodes: Vec::new(),
             node_width: 128,
             connections: Vec::new(),
-            offset: Vec2i::zero(),
+            offset: Vec2::zero(),
             selected_node: None,
             zoom: 1.0,
         }

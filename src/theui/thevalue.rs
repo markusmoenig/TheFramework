@@ -21,21 +21,21 @@ macro_rules! impl_arithmetic_op {
             }
             else if let TheValue::Position(a) = self {
                 match other {
-                    TheValue::Int(b) => Some(TheValue::Position(vec3f(a.x $op *b as f32, a.y, a.z))),
-                    TheValue::Int2(b) => Some(TheValue::Position(vec3f(
+                    TheValue::Int(b) => Some(TheValue::Position(Vec3::new(a.x $op *b as f32, a.y, a.z))),
+                    TheValue::Int2(b) => Some(TheValue::Position(Vec3::new(
                         a.x $op b.x as f32,
                         a.z $op b.y as f32,
                         a.z,
                     ))),
-                    TheValue::Int3(b) => Some(TheValue::Position(vec3f(
+                    TheValue::Int3(b) => Some(TheValue::Position(Vec3::new(
                         a.x $op b.x as f32,
                         a.y $op b.y as f32,
                         a.z $op b.z as f32,
                     ))),
-                    TheValue::Float(b) => Some(TheValue::Position(vec3f(a.x $op *b, a.y, a.z))),
-                    TheValue::Float2(b) => Some(TheValue::Position(vec3f(a.x $op b.x, a.y, a.z $op b.y))),
+                    TheValue::Float(b) => Some(TheValue::Position(Vec3::new(a.x $op *b, a.y, a.z))),
+                    TheValue::Float2(b) => Some(TheValue::Position(Vec3::new(a.x $op b.x, a.y, a.z $op b.y))),
                     TheValue::Float3(b) => {
-                        Some(TheValue::Position(vec3f(a.x $op b.x, a.y $op b.y, a.z $op b.z)))
+                        Some(TheValue::Position(Vec3::new(a.x $op b.x, a.y $op b.y, a.z $op b.z)))
                     }
                     _ => None,
                 }
@@ -80,13 +80,13 @@ pub enum TheValue {
     Text(String),
     TextList(i32, Vec<String>),
     Char(char),
-    Int2(Vec2i),
-    Float2(Vec2f),
-    Int3(Vec3i),
-    Float3(Vec3f),
-    Int4(Vec4i),
-    Float4(Vec4f),
-    Position(Vec3f),
+    Int2(Vec2<i32>),
+    Float2(Vec2<f32>),
+    Int3(Vec3<i32>),
+    Float3(Vec3<f32>),
+    Int4(Vec4<i32>),
+    Float4(Vec4<f32>),
+    Position(Vec3<f32>),
     Tile(String, Uuid),
     KeyCode(TheKeyCode),
     RangeI32(RangeInclusive<i32>),
@@ -96,7 +96,7 @@ pub enum TheValue {
     Comparison(TheValueComparison),
     Assignment(TheValueAssignment),
     Id(Uuid),
-    Direction(Vec3f),
+    Direction(Vec3<f32>),
     List(Vec<TheValue>),
     Time(TheTime),
     TimeDuration(TheTime, TheTime),
@@ -109,24 +109,24 @@ pub enum TheValue {
 use TheValue::*;
 
 impl TheValue {
-    pub fn to_vec2i(&self) -> Option<Vec2i> {
+    pub fn to_vec2i(&self) -> Option<Vec2<i32>> {
         match self {
             Int2(v) => Some(*v),
             _ => None,
         }
     }
 
-    pub fn to_vec2f(&self) -> Option<Vec2f> {
+    pub fn to_vec2f(&self) -> Option<Vec2<f32>> {
         match self {
             Float2(v) => Some(*v),
             _ => None,
         }
     }
 
-    pub fn to_vec3f(&self) -> Option<Vec3f> {
+    pub fn to_vec3f(&self) -> Option<Vec3<f32>> {
         match self {
             Float3(v) => Some(*v),
-            ColorObject(color) => Some(color.to_vec3f()),
+            ColorObject(color) => Some(color.to_vec3()),
             _ => None,
         }
     }

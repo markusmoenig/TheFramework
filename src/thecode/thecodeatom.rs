@@ -20,8 +20,8 @@ pub enum TheCodeAtom {
     ObjectSet(String, String, TheValueAssignment),
     Get(String),
     Set(String, TheValueAssignment),
-    RandInt(Vec2i),
-    RandFloat(Vec2f),
+    RandInt(Vec2<i32>),
+    RandFloat(Vec2<f32>),
     /// A call into a native function defined by the host.
     ExternalCall(String, String, Vec<String>, Vec<TheValue>, Option<TheValue>),
     /// A call into a module, identified by the bundle id and the codegrid id the module is based on.
@@ -1396,7 +1396,7 @@ impl TheCodeAtom {
                     create_float2_widgets(
                         layout,
                         TheId::named("Atom Direction Float2"),
-                        vec2f(value.x, value.z),
+                        Vec2::new(value.x, value.z),
                         vec!["X", "Y"],
                     );
                 }
@@ -1412,7 +1412,7 @@ impl TheCodeAtom {
                     create_float2_widgets(
                         layout,
                         TheId::named("Atom Position"),
-                        vec2f(v.x, v.z),
+                        Vec2::new(v.x, v.z),
                         vec!["X", "Y"],
                     );
                 }

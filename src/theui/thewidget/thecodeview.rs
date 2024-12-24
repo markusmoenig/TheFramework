@@ -21,7 +21,7 @@ pub struct TheCodeView {
 
     buffer: TheRGBABuffer,
 
-    scroll_offset: Vec2i,
+    scroll_offset: Vec2<i32>,
     zoom: f32,
 
     selected: Option<(u16, u16)>,
@@ -29,7 +29,7 @@ pub struct TheCodeView {
     drop: Option<(u16, u16)>,
     drop_atom: Option<TheCodeAtom>,
 
-    mouse_down_pos: Vec2i,
+    mouse_down_pos: Vec2<i32>,
 
     hscrollbar: TheId,
     vscrollbar: TheId,
@@ -68,7 +68,7 @@ impl TheWidget for TheCodeView {
 
             debug_module: TheDebugModule::default(),
 
-            scroll_offset: vec2i(0, 0),
+            scroll_offset: Vec2::new(0, 0),
             zoom: 1.0,
 
             selected: None,
@@ -76,7 +76,7 @@ impl TheWidget for TheCodeView {
             drop: None,
             drop_atom: None,
 
-            mouse_down_pos: Vec2i::zero(),
+            mouse_down_pos: Vec2::zero(),
 
             hscrollbar: TheId::empty(),
             vscrollbar: TheId::empty(),
@@ -119,13 +119,16 @@ impl TheWidget for TheCodeView {
             TheEvent::MouseDragged(coord) => {
                 if let Some(selected) = &self.selected {
                     if ctx.ui.drop.is_none()
-                        && distance(Vec2f::from(self.mouse_down_pos), Vec2f::from(*coord)) >= 5.0
+                        && Vec2::new(self.mouse_down_pos.x as f32, self.mouse_down_pos.y as f32)
+                            .distance(Vec2::new(coord.x as f32, coord.y as f32))
+                            >= 5.0
                     {
                         if let Some(atom) = self.codegrid.code.get(selected) {
                             let mut drop = TheDrop::new(TheId::named("Code Editor Atom"));
                             drop.title = atom.describe();
                             drop.set_data(atom.to_json());
-                            drop.start_position = Some(vec2i(selected.0 as i32, selected.1 as i32));
+                            drop.start_position =
+                                Some(Vec2::new(selected.0 as i32, selected.1 as i32));
                             drop.operation = if self.drag_copy {
                                 TheDropOperation::Copy
                             } else {
@@ -353,7 +356,7 @@ impl TheWidget for TheCodeView {
                 }
             }
             TheEvent::MouseWheel(delta) => {
-                let d = vec2i(
+                let d = Vec2::new(
                     (delta.x as f32 * -0.4) as i32,
                     (delta.y as f32 * -0.4) as i32,
                 );
@@ -496,7 +499,7 @@ impl TheWidget for TheCodeView {
             // let border_color = dark;
             let font_size = 12.5_f32 * self.zoom;
 
-            let grid_size = ceil(self.grid_size as f32 * self.zoom) as i32;
+            let grid_size = (self.grid_size as f32 * self.zoom).ceil() as i32;
             //let rounding = 10.0 * self.zoom;
             //let border_size = 1.5 * self.zoom;
 
@@ -1091,7 +1094,7 @@ pub trait TheCodeViewTrait: TheWidget {
 
     /// Sets the scroll offset for the code view.
     /// This affects the portion of the content that is visible in the view.
-    fn set_scroll_offset(&mut self, offset: Vec2i);
+    fn set_scroll_offset(&mut self, offset: Vec2<i32>);
 
     /// Sets the IDs of the horizontal and vertical scrollbars.
     /// These IDs are used to interact with the scrollbars in the UI.
@@ -1115,7 +1118,7 @@ pub trait TheCodeViewTrait: TheWidget {
 
     /// Calculates and returns the grid coordinates corresponding to a given screen position.
     /// This is used for translating screen interactions into grid operations.
-    fn get_code_grid_offset(&self, coord: Vec2i) -> Option<(u16, u16)>;
+    fn get_code_grid_offset(&self, coord: Vec2<i32>) -> Option<(u16, u16)>;
 }
 
 impl TheCodeViewTrait for TheCodeView {
@@ -1152,7 +1155,7 @@ impl TheCodeViewTrait for TheCodeView {
             grid_y = 2;
         }
 
-        let grid_size = ceil(self.grid_size as f32 * self.zoom) as i32;
+        let grid_size = (self.grid_size as f32 * self.zoom).ceil() as i32;
 
         let d = self.buffer().dim();
         if d.width != grid_x * grid_size || d.height != grid_y * grid_size {
@@ -1204,7 +1207,7 @@ impl TheCodeViewTrait for TheCodeView {
         self.code_is_dirty = true;
         self.hover = None;
     }
-    fn set_scroll_offset(&mut self, offset: Vec2i) {
+    fn set_scroll_offset(&mut self, offset: Vec2<i32>) {
         self.scroll_offset = offset;
     }
     fn set_associated_layout(&mut self, layout_id: TheId) {
@@ -1225,7 +1228,7 @@ impl TheCodeViewTrait for TheCodeView {
         self.code_is_dirty = true;
         self.is_dirty = true;
     }
-    fn get_code_grid_offset(&self, coord: Vec2i) -> Option<(u16, u16)> {
+    fn get_code_grid_offset(&self, coord: Vec2<i32>) -> Option<(u16, u16)> {
         let centered_offset_x = 0.0;
         // if (self.zoom * self.buffer.dim().width as f32) < self.dim.width as f32 {
         //     (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32) / 2.0
@@ -1239,7 +1242,7 @@ impl TheCodeViewTrait for TheCodeView {
         //     0.0
         // };
 
-        let grid_size = ceil(self.grid_size as f32 * self.zoom) as i32;
+        let grid_size = (self.grid_size as f32 * self.zoom).ceil() as i32;
 
         let source_x = ((coord.x as f32 - centered_offset_x) / 1.0//self.zoom
             + self.scroll_offset.x as f32)

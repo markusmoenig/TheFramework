@@ -330,7 +330,7 @@ impl TheCodeGrid {
     }
 
     /// Move all Position values by the given amount.
-    pub fn move_positions_by(&mut self, move_by: Vec2i) {
+    pub fn move_positions_by(&mut self, move_by: Vec2<i32>) {
         for atom in self.code.values_mut() {
             if let TheCodeAtom::Value(TheValue::Position(p)) = atom {
                 p.x += move_by.x as f32;

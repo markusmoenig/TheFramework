@@ -44,7 +44,7 @@ impl Sidebar {
         vlayout.add_widget(Box::new(sphere_sectionbar_button));
         vlayout.add_widget(Box::new(cube_sectionbar_button));
         vlayout.add_widget(Box::new(pyramid_sectionbar_button));
-        vlayout.set_margin(vec4i(5, 10, 5, 10));
+        vlayout.set_margin(Vec4::new(5, 10, 5, 10));
         vlayout.set_padding(4);
         vlayout.set_background_color(Some(SectionbarBackground));
         vlayout.limiter_mut().set_max_width(90);
@@ -73,7 +73,7 @@ impl Sidebar {
         text_layout.limiter_mut().set_max_width(width);
 
         let mut color_picker = TheColorPicker::new(TheId::named("Color Picker"));
-        color_picker.set_color(vec3f(
+        color_picker.set_color(Vec3::new(
             project.material.rgb.x,
             project.material.rgb.y,
             project.material.rgb.z,
@@ -195,7 +195,7 @@ impl Sidebar {
             TheEvent::ValueChanged(id, value) => {
                 if id.name == "Color Picker" {
                     if let TheValue::ColorObject(v) = value {
-                        let c = v.to_vec3f();
+                        let c = v.to_vec3();
                         project.material.rgb = rust_pathtracer::prelude::F3::new(c.x, c.y, c.z);
                         self.send_material(project.material.clone());
                     }

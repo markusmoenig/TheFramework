@@ -17,7 +17,7 @@ impl TheWidget for TheDirectionPicker {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(200, 200));
+        limiter.set_max_size(Vec2::new(200, 200));
 
         Self {
             id,
@@ -27,7 +27,7 @@ impl TheWidget for TheDirectionPicker {
             dim: TheDim::zero(),
             is_dirty: false,
 
-            value: TheValue::Direction(vec3f(0.0, 0.0, -1.0)),
+            value: TheValue::Direction(Vec3::new(0.0, 0.0, -1.0)),
         }
     }
 
@@ -48,13 +48,13 @@ impl TheWidget for TheDirectionPicker {
                 ctx.ui.set_focus(self.id());
 
                 if let TheValue::Direction(_) = self.value {
-                    let v = vec2i(
-                        coord.x - self.dim().width / 2,
-                        coord.y - self.dim().height / 2,
+                    let v = Vec2::new(
+                        (coord.x - self.dim().width / 2) as f32,
+                        (coord.y - self.dim().height / 2) as f32,
                     );
-                    let norm = normalize(Vec2f::from(v));
+                    let norm = v.normalized();
 
-                    let value = vec3f(norm.x, 0.0, norm.y);
+                    let value = Vec3::new(norm.x, 0.0, norm.y);
                     self.value = TheValue::Direction(value);
                     ctx.ui
                         .send(TheEvent::ValueChanged(self.id.clone(), self.value.clone()));
@@ -64,16 +64,14 @@ impl TheWidget for TheDirectionPicker {
                 redraw = true;
             }
             TheEvent::MouseDragged(coord) => {
-                println!("here 0");
-
                 if let TheValue::Direction(_) = self.value {
-                    let v = vec2i(
-                        coord.x - self.dim().width / 2,
-                        coord.y - self.dim().height / 2,
+                    let v = Vec2::new(
+                        (coord.x - self.dim().width / 2) as f32,
+                        (coord.y - self.dim().height / 2) as f32,
                     );
-                    let norm = normalize(Vec2f::from(v));
+                    let norm = v.normalized();
 
-                    let value = vec3f(norm.x, 0.0, norm.y);
+                    let value = Vec3::new(norm.x, 0.0, norm.y);
                     self.value = TheValue::Direction(value);
                     ctx.ui
                         .send(TheEvent::ValueChanged(self.id.clone(), self.value.clone()));

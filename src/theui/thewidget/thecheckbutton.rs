@@ -15,7 +15,7 @@ impl TheWidget for TheCheckButton {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(16, 18));
+        limiter.set_max_size(Vec2::new(16, 18));
 
         Self {
             id,

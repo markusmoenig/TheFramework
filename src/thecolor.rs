@@ -115,7 +115,7 @@ impl TheColor {
     }
 
     /// Creates a color from an vec3.
-    pub fn from_vec3f(color: Vec3f) -> Self {
+    pub fn from_vec3(color: Vec3<f32>) -> Self {
         Self {
             r: color.x,
             g: color.y,
@@ -126,7 +126,7 @@ impl TheColor {
     }
 
     /// Creates a color from an vec4.
-    pub fn from_vec4f(color: Vec4f) -> Self {
+    pub fn from_vec4f(color: Vec4<f32>) -> Self {
         Self {
             r: color.x,
             g: color.y,
@@ -245,26 +245,26 @@ impl TheColor {
     }
 
     /// Convert the color to Vec3f.
-    pub fn to_vec3f(&self) -> Vec3f {
-        vec3f(self.r, self.g, self.b)
+    pub fn to_vec3(&self) -> Vec3<f32> {
+        Vec3::new(self.r, self.g, self.b)
     }
 
     /// Convert the color to Vec4f.
-    pub fn to_vec4f(&self) -> Vec4f {
-        vec4f(self.r, self.g, self.b, self.a)
+    pub fn to_vec4(&self) -> Vec4<f32> {
+        Vec4::new(self.r, self.g, self.b, self.a)
     }
 
     pub fn as_srgba(&self) -> TheColor {
         TheColor::new(
-            powf(self.r, 0.45),
-            powf(self.g, 0.45),
-            powf(self.b, 0.45),
-            powf(self.a, 0.45),
+            self.r.powf(0.45),
+            self.g.powf(0.45),
+            self.b.powf(0.45),
+            self.a.powf(0.45),
         )
     }
 
     /// Convert the color to HSL
-    pub fn as_hsl(&self) -> Vec3f {
+    pub fn as_hsl(&self) -> Vec3<f32> {
         let max = self.r.max(self.g.max(self.b));
         let min = self.r.min(self.g.min(self.b));
 
@@ -294,7 +294,7 @@ impl TheColor {
             h /= 6.0;
         }
 
-        vec3f(h, clamp(s, 0.0, 1.0), clamp(l, 0.0, 1.0))
+        Vec3::new(h, s.clamp(0.0, 1.0), l.clamp(0.0, 1.0))
     }
 
     /// Lights or darken the color by the given amount.
@@ -344,14 +344,14 @@ impl IndexMut<usize> for TheColor {
 
 // From<T>
 
-impl From<Vec3f> for TheColor {
-    fn from(color: Vec3f) -> Self {
-        Self::from_vec3f(color)
+impl From<Vec3<f32>> for TheColor {
+    fn from(color: Vec3<f32>) -> Self {
+        Self::from_vec3(color)
     }
 }
 
-impl From<Vec4f> for TheColor {
-    fn from(color: Vec4f) -> Self {
+impl From<Vec4<f32>> for TheColor {
+    fn from(color: Vec4<f32>) -> Self {
         Self::from_vec4f(color)
     }
 }

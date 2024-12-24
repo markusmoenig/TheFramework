@@ -9,7 +9,7 @@ pub struct TheHorizontalScrollbar {
     scroll_offset: i32,
     total_width: i32,
 
-    mouse_down_coord: Vec2i,
+    mouse_down_coord: Vec2<i32>,
 
     dim: TheDim,
     is_dirty: bool,
@@ -32,7 +32,7 @@ impl TheWidget for TheHorizontalScrollbar {
             scroll_offset: 0,
             total_width: 0,
 
-            mouse_down_coord: Vec2i::zero(),
+            mouse_down_coord: Vec2::zero(),
 
             dim: TheDim::zero(),
             is_dirty: false,

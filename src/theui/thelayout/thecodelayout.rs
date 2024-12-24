@@ -16,7 +16,7 @@ pub struct TheCodeLayout {
     horizontal_scrollbar: Box<dyn TheWidget>,
     horizontal_scrollbar_visible: bool,
 
-    margin: Vec4i,
+    margin: Vec4<i32>,
 
     background: Option<TheThemeColors>,
 }
@@ -58,7 +58,7 @@ impl TheLayout for TheCodeLayout {
             horizontal_scrollbar,
             horizontal_scrollbar_visible: false,
 
-            margin: vec4i(0, 0, 0, 0),
+            margin: Vec4::new(0, 0, 0, 0),
 
             background: Some(TextLayoutBackground),
         }
@@ -68,7 +68,7 @@ impl TheLayout for TheCodeLayout {
         &self.id
     }
 
-    fn set_margin(&mut self, margin: Vec4i) {
+    fn set_margin(&mut self, margin: Vec4<i32>) {
         self.margin = margin;
     }
 
@@ -80,7 +80,7 @@ impl TheLayout for TheCodeLayout {
         &mut self.widgets
     }
 
-    fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+    fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         if !self.dim.contains(coord) {
             return None;
         }
@@ -93,9 +93,9 @@ impl TheLayout for TheCodeLayout {
             return Some(&mut self.horizontal_scrollbar);
         }
 
-        let mut scroll_offset = vec2i(0, 0);
+        let mut scroll_offset = Vec2::new(0, 0);
         if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
-            scroll_offset = vec2i(0, scroll_bar.scroll_offset());
+            scroll_offset = Vec2::new(0, scroll_bar.scroll_offset());
         }
 
         if self.code_view.dim().contains(coord) {
@@ -243,7 +243,7 @@ impl TheLayout for TheCodeLayout {
 
         //
 
-        let mut scroll_offset = vec2i(0, 0);
+        let mut scroll_offset = Vec2::new(0, 0);
 
         if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
             scroll_offset.y = scroll_bar.scroll_offset();
@@ -320,9 +320,9 @@ pub trait TheCodeLayoutTrait {
     /// Set the buffer to be displayed.
     fn set_buffer(&mut self, buffer: TheRGBABuffer);
     /// Get the current scroll offset for the scrollbars.
-    fn scroll_offset(&mut self) -> Vec2i;
+    fn scroll_offset(&mut self) -> Vec2<i32>;
     /// Set the scroll offset for the scrollbars.
-    fn set_scroll_offset(&mut self, offset: Vec2i);
+    fn set_scroll_offset(&mut self, offset: Vec2<i32>);
     /// Returns a mutable reference to the underlying TheRGBAView.
     fn code_view_mut(&mut self) -> &mut Box<dyn TheWidget>;
 }
@@ -333,8 +333,8 @@ impl TheCodeLayoutTrait for TheCodeLayout {
             rgba.set_buffer(buffer);
         }
     }
-    fn scroll_offset(&mut self) -> Vec2i {
-        let mut offset = Vec2i::zero();
+    fn scroll_offset(&mut self) -> Vec2<i32> {
+        let mut offset = Vec2::zero();
         if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
             offset.y = scroll_bar.scroll_offset();
         }
@@ -343,7 +343,7 @@ impl TheCodeLayoutTrait for TheCodeLayout {
         }
         offset
     }
-    fn set_scroll_offset(&mut self, offset: Vec2i) {
+    fn set_scroll_offset(&mut self, offset: Vec2<i32>) {
         if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
             scroll_bar.set_scroll_offset(offset.y);
         }

@@ -122,7 +122,7 @@ impl TheContextMenu {
     }
 
     /// Sets the position of the context menu while making it sure it fits on the screen.
-    pub fn set_position(&mut self, position: Vec2i, _ctx: &mut TheContext) {
+    pub fn set_position(&mut self, position: Vec2<i32>, _ctx: &mut TheContext) {
         let mut height = 2 * 8; // Borders
         for item in self.items.iter() {
             if item.name.is_empty() {
@@ -149,7 +149,7 @@ impl TheContextMenu {
                 for item in self.items.iter_mut() {
                     if let Some(sub_menu) = item.sub_menu.as_mut() {
                         if sub_menu.is_open {
-                            let local = Vec2i::new(
+                            let local = Vec2::new(
                                 coord.x - sub_menu.dim.width,
                                 coord.y - sub_menu.cascading_y_offset,
                             );
@@ -180,7 +180,7 @@ impl TheContextMenu {
     }
 
     /// Returns true if the context menu (or its sub_menus) contains the given coordinate.
-    pub fn contains(&mut self, coord: Vec2i) -> bool {
+    pub fn contains(&mut self, coord: Vec2<i32>) -> bool {
         if self.dim.contains(coord) {
             return true;
         }
@@ -312,7 +312,7 @@ impl TheContextMenu {
                 if !is_disabled {
                     if Some(item.id.clone()) == self.hovered {
                         sub_menu
-                            .set_position(Vec2i::new((rect.0 + rect.2) as i32, rect.1 as i32), ctx);
+                            .set_position(Vec2::new((rect.0 + rect.2) as i32, rect.1 as i32), ctx);
                         sub_menu.draw(pixels, style, ctx);
                         sub_menu.is_open = true;
                         sub_menu.cascading_y_offset = y as i32 - tuple.1 as i32;

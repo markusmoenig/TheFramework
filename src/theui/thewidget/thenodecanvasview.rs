@@ -40,7 +40,7 @@ pub struct TheNodeCanvasView {
 
     render_buffer: TheRGBABuffer,
     wheel_scale: f32,
-    accumulated_wheel_delta: Vec2f,
+    accumulated_wheel_delta: Vec2<f32>,
 
     canvas: TheNodeCanvas,
     node_rects: Vec<TheDim>,
@@ -52,8 +52,8 @@ pub struct TheNodeCanvasView {
 
     node_ui_images: FxHashMap<TheNodeUIImages, TheRGBABuffer>,
 
-    drag_start: Vec2i,
-    drag_offset: Vec2i,
+    drag_start: Vec2<i32>,
+    drag_offset: Vec2<i32>,
 
     action_changed: bool,
 
@@ -66,7 +66,7 @@ impl TheWidget for TheNodeCanvasView {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(20, 20));
+        limiter.set_max_size(Vec2::new(20, 20));
         Self {
             id,
             limiter,
@@ -76,7 +76,7 @@ impl TheWidget for TheNodeCanvasView {
 
             render_buffer: TheRGBABuffer::new(TheDim::new(0, 0, 20, 20)),
             wheel_scale: -0.4,
-            accumulated_wheel_delta: Vec2f::zero(),
+            accumulated_wheel_delta: Vec2::zero(),
 
             canvas: TheNodeCanvas::default(),
             node_rects: Vec::new(),
@@ -88,8 +88,8 @@ impl TheWidget for TheNodeCanvasView {
 
             node_ui_images: FxHashMap::default(),
 
-            drag_start: Vec2i::zero(),
-            drag_offset: Vec2i::zero(),
+            drag_start: Vec2::zero(),
+            drag_offset: Vec2::zero(),
 
             action_changed: false,
 
@@ -137,7 +137,7 @@ impl TheWidget for TheNodeCanvasView {
                         self.drag_start = *coord;
                         self.drag_offset = *coord;
                         if let Some(rect) = self.terminal_rect_for(index, terminal.0, terminal.1) {
-                            self.drag_start = vec2i(
+                            self.drag_start = Vec2::new(
                                 self.canvas.nodes[index].position.x + rect.x + rect.width / 2,
                                 self.canvas.nodes[index].position.y + rect.y + rect.height / 2,
                             );
@@ -168,7 +168,7 @@ impl TheWidget for TheNodeCanvasView {
                 } else if self.action == TheNodeAction::DragNode {
                     if let Some(index) = self.canvas.selected_node {
                         let displacement =
-                            vec2i(coord.x - self.drag_start.x, coord.y - self.drag_start.y);
+                            Vec2::new(coord.x - self.drag_start.x, coord.y - self.drag_start.y);
 
                         // Move the selected node
                         self.canvas.nodes[index].position.x += displacement.x;
@@ -335,11 +335,11 @@ impl TheWidget for TheNodeCanvasView {
                     || self.accumulated_wheel_delta.y.abs() > minimum_delta_threshold
                 {
                     // Convert accumulated deltas to integer and reset
-                    let d = vec2i(
+                    let d = Vec2::new(
                         self.accumulated_wheel_delta.x as i32,
                         self.accumulated_wheel_delta.y as i32,
                     );
-                    self.accumulated_wheel_delta = Vec2f::zero();
+                    self.accumulated_wheel_delta = Vec2::zero();
 
                     self.canvas.offset += d;
 
@@ -513,7 +513,7 @@ impl TheWidget for TheNodeCanvasView {
 
         // Draw a node
         let draw_node = |index: usize, node: &TheNode| {
-            let max_terminals = max(node.inputs.len(), node.outputs.len()) as i32;
+            let max_terminals = node.inputs.len().max(node.outputs.len()) as i32;
             let mut body_height = 7 + max_terminals * 10 + (max_terminals - 1) * 4 + 7;
             let mut node_height = 19 + body_height + 19;
             let mut preview_height = 0;
@@ -569,7 +569,7 @@ impl TheWidget for TheNodeCanvasView {
 
             if let Some(font) = &ctx.ui.font {
                 nb.draw_text(
-                    vec2i(12, 4),
+                    Vec2::new(12, 4),
                     font,
                     &node.name,
                     10.0,
@@ -635,7 +635,7 @@ impl TheWidget for TheNodeCanvasView {
                     let text_width = 80;
                     let mut tb = TheRGBABuffer::new(TheDim::sized(text_width, 10));
                     tb.draw_text(
-                        vec2i(0, 0),
+                        Vec2::new(0, 0),
                         font,
                         &i.name,
                         9.5,
@@ -659,7 +659,7 @@ impl TheWidget for TheNodeCanvasView {
                     let text_width = 80;
                     let mut tb = TheRGBABuffer::new(TheDim::sized(text_width, 10));
                     tb.draw_text(
-                        vec2i(0, 0),
+                        Vec2::new(0, 0),
                         font,
                         &o.name,
                         9.5,
@@ -897,8 +897,8 @@ pub trait TheNodeCanvasViewTrait: TheWidget {
     fn set_overlay(&mut self, overlay: Option<TheRGBABuffer>);
     fn set_node_preview(&mut self, index: usize, buffer: TheRGBABuffer);
     fn fill_node_ui_images(&mut self, ctx: &mut TheContext);
-    fn node_index_at(&self, coord: &Vec2i) -> Option<usize>;
-    fn terminal_at(&self, node_index: usize, coord: Vec2i) -> Option<(bool, u8)>;
+    fn node_index_at(&self, coord: &Vec2<i32>) -> Option<usize>;
+    fn terminal_at(&self, node_index: usize, coord: Vec2<i32>) -> Option<(bool, u8)>;
     fn terminal_rect_for(&self, node_index: usize, input: bool, index: u8) -> Option<TheDim>;
 }
 
@@ -1000,7 +1000,7 @@ impl TheNodeCanvasViewTrait for TheNodeCanvasView {
             ctx.ui.icon("dark_node_preview_area").unwrap().clone(),
         );
     }
-    fn node_index_at(&self, coord: &Vec2i) -> Option<usize> {
+    fn node_index_at(&self, coord: &Vec2<i32>) -> Option<usize> {
         for (i, r) in self.node_rects.iter().enumerate().rev() {
             if r.contains(*coord) {
                 return Some(i);
@@ -1008,7 +1008,7 @@ impl TheNodeCanvasViewTrait for TheNodeCanvasView {
         }
         None
     }
-    fn terminal_at(&self, node_index: usize, coord: Vec2i) -> Option<(bool, u8)> {
+    fn terminal_at(&self, node_index: usize, coord: Vec2<i32>) -> Option<(bool, u8)> {
         if let Some((i_vec, o_vec)) = self.terminal_rects.get(node_index) {
             for (i, r) in i_vec.iter().enumerate() {
                 if r.contains(coord) {

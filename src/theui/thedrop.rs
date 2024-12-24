@@ -18,9 +18,9 @@ pub struct TheDrop {
 
     pub operation: TheDropOperation,
 
-    pub start_position: Option<Vec2i>,
-    pub position: Option<Vec2i>,
-    pub offset: Vec2i,
+    pub start_position: Option<Vec2<i32>>,
+    pub position: Option<Vec2<i32>>,
+    pub offset: Vec2<i32>,
 }
 
 impl TheDrop {
@@ -36,15 +36,15 @@ impl TheDrop {
             operation: TheDropOperation::Move,
             start_position: None,
             position: None,
-            offset: Vec2i::zero(),
+            offset: Vec2::zero(),
         }
     }
 
-    pub fn set_position(&mut self, position: Vec2i) {
+    pub fn set_position(&mut self, position: Vec2<i32>) {
         self.position = Some(position);
     }
 
-    pub fn set_offset(&mut self, offset: Vec2i) {
+    pub fn set_offset(&mut self, offset: Vec2<i32>) {
         self.offset = offset;
     }
 

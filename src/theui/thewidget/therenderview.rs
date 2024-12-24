@@ -7,7 +7,7 @@ pub struct TheRenderView {
 
     render_buffer: TheRGBABuffer,
     wheel_scale: f32,
-    accumulated_wheel_delta: Vec2f,
+    accumulated_wheel_delta: Vec2<f32>,
 
     dim: TheDim,
 
@@ -20,7 +20,7 @@ impl TheWidget for TheRenderView {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(20, 20));
+        limiter.set_max_size(Vec2::new(20, 20));
         Self {
             id,
             limiter,
@@ -28,7 +28,7 @@ impl TheWidget for TheRenderView {
 
             render_buffer: TheRGBABuffer::new(TheDim::new(0, 0, 20, 20)),
             wheel_scale: -0.4,
-            accumulated_wheel_delta: Vec2f::zero(),
+            accumulated_wheel_delta: Vec2::zero(),
 
             dim: TheDim::zero(),
 
@@ -110,11 +110,11 @@ impl TheWidget for TheRenderView {
                     || self.accumulated_wheel_delta.y.abs() > minimum_delta_threshold
                 {
                     // Convert accumulated deltas to integer and reset
-                    let d = vec2i(
+                    let d = Vec2::new(
                         self.accumulated_wheel_delta.x as i32,
                         self.accumulated_wheel_delta.y as i32,
                     );
-                    self.accumulated_wheel_delta = Vec2f::zero();
+                    self.accumulated_wheel_delta = Vec2::zero();
 
                     ctx.ui
                         .send(TheEvent::RenderViewScrollBy(self.id().clone(), d));

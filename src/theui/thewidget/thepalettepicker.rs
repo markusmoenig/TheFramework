@@ -20,7 +20,7 @@ impl TheWidget for ThePalettePicker {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(200, 400));
+        limiter.set_max_size(Vec2::new(200, 400));
 
         Self {
             id,

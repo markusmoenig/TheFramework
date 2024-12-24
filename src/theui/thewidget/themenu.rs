@@ -57,7 +57,7 @@ impl TheWidget for TheMenu {
                         if let Some(selected) = self.selected {
                             ctx.ui.send(TheEvent::ShowMenu(
                                 self.id().clone(),
-                                vec2i(
+                                Vec2::new(
                                     self.dim.x + self.menus_text[selected].x,
                                     self.dim.y + self.menus_text[selected].y + 22,
                                 ),
@@ -81,7 +81,7 @@ impl TheWidget for TheMenu {
                             if let Some(selected) = self.selected {
                                 ctx.ui.send(TheEvent::ShowMenu(
                                     self.id().clone(),
-                                    vec2i(
+                                    Vec2::new(
                                         self.dim.x + self.menus_text[selected].x,
                                         self.dim.y + self.menus_text[selected].y + 22,
                                     ),

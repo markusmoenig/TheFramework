@@ -64,7 +64,7 @@ impl TheSDFCanvas {
                     let mut color = self.background.clone();
                     let mut distance = f32::MAX;
 
-                    let p = vec2f(x as f32, y as f32);
+                    let p = Vec2::new(x as f32, y as f32);
                     let mut i: Option<usize> = None;
 
                     for (index, sdf) in self.sdfs.iter().enumerate() {
@@ -117,7 +117,7 @@ impl TheSDFCanvas {
     }
 
     /// Returns the index of the sdf at the given position.
-    pub fn index_at(&self, p: Vec2f) -> Option<usize> {
+    pub fn index_at(&self, p: Vec2<f32>) -> Option<usize> {
         for (index, sdf) in self.sdfs.iter().enumerate() {
             let d = sdf.distance(p);
             if d < 0.0 {

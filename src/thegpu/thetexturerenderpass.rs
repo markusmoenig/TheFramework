@@ -413,7 +413,7 @@ impl TheRenderPass for TheTextureRenderPass {
                 surface_size.x / surface_size.y,
             );
             let mut transform = [0.0; 16];
-            transform.copy_from_slice(matrix.as_ref());
+            transform.copy_from_slice(matrix.as_col_slice());
 
             let vertex_params = TheVertexParams { transform };
             let vertex_params_buffer =
@@ -667,17 +667,17 @@ fn transform_matrix(
         origin.x * (1.0 - aspect_ratio), 0.0, 0.0, 1.0,
     );
 
-    let rotate = Mat4::from_z_rotation(rotation);
-    let scale = Mat4::from_scale(Vec3::new(scale.x, scale.y, 1.0));
-    let translate_origin = Mat4::from_translation(Vec3::new(-origin.x, -origin.y, 0.0));
-    let translate_back = Mat4::from_translation(Vec3::new(origin.x, origin.y, 0.0));
-    let translate = Mat4::from_translation(Vec3::new(translation.x, -translation.y, 0.0));
+    let rotate = Mat4::rotation_z(rotation);
+    let scale = Mat4::scaling_3d(Vec3::new(scale.x, scale.y, 1.0));
+    let translate_origin: Mat4<f32> = Mat4::translation_3d(Vec3::new(-origin.x, -origin.y, 0.0));
+    let translate_back: Mat4<f32> = Mat4::translation_3d(Vec3::new(origin.x, origin.y, 0.0));
+    let translate: Mat4<f32> = Mat4::translation_3d(Vec3::new(translation.x, -translation.y, 0.0));
 
     reverse_aspect_correction
-        * translate_origin.transpose()
+        * translate_origin.transposed()
         * scale
         * rotate
-        * translate_back.transpose()
+        * translate_back.transposed()
         * aspect_correction
-        * translate.transpose()
+        * translate.transposed()
 }

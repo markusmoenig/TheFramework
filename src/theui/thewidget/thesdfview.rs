@@ -66,7 +66,10 @@ impl TheWidget for TheSDFView {
                     ctx.ui
                         .send_widget_state_changed(self.id(), TheWidgetState::Clicked);
                 }
-                if let Some(index) = self.canvas.index_at(vec2f(coord.x as f32, coord.y as f32)) {
+                if let Some(index) = self
+                    .canvas
+                    .index_at(Vec2::new(coord.x as f32, coord.y as f32))
+                {
                     if Some(index) != self.canvas.selected {
                         self.canvas.selected = Some(index);
                         self.is_dirty = true;
@@ -82,7 +85,10 @@ impl TheWidget for TheSDFView {
                     ctx.ui.set_hover(self.id());
                     redraw = true;
                 }
-                if let Some(index) = self.canvas.index_at(vec2f(coord.x as f32, coord.y as f32)) {
+                if let Some(index) = self
+                    .canvas
+                    .index_at(Vec2::new(coord.x as f32, coord.y as f32))
+                {
                     if Some(index) != self.canvas.hover {
                         self.canvas.hover = Some(index);
                         self.is_dirty = true;
@@ -181,7 +187,7 @@ impl TheWidget for TheSDFView {
             if let Some(font) = &ctx.ui.font {
                 let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
                 self.limiter_mut()
-                    .set_max_width(ceil(size.0 as f32) as i32 + 15);
+                    .set_max_width((size.0 as f32).ceil() as i32 + 15);
             }
         }
     }

@@ -175,13 +175,13 @@ impl TheRGBBuffer {
     }
 
     /// Returns the pixel at the given UV coordinate as [f32;3]
-    pub fn at_f_vec3f(&self, uv: Vec2f) -> Option<Vec3f> {
+    pub fn at_f_vec3f(&self, uv: Vec2<f32>) -> Option<Vec3<f32>> {
         let x = (uv.x * self.dim.width as f32) as i32;
         let y = (uv.y * self.dim.height as f32) as i32;
 
         if x >= 0 && x < self.dim.width && y >= 0 && y < self.dim.height {
             let pixel_index = (y * self.dim.width + x) as usize * 3;
-            Some(vec3f(
+            Some(Vec3::new(
                 (self.buffer[pixel_index] as f32) / 255.0,
                 (self.buffer[pixel_index + 1] as f32) / 255.0,
                 (self.buffer[pixel_index + 2] as f32) / 255.0,
@@ -192,7 +192,7 @@ impl TheRGBBuffer {
     }
 
     /// Returns the pixel at the given UV coordinate.
-    pub fn at_f(&self, uv: Vec2f) -> Option<[u8; 3]> {
+    pub fn at_f(&self, uv: Vec2<f32>) -> Option<[u8; 3]> {
         let x = (uv.x * self.dim.width as f32) as i32;
         let y = (uv.y * self.dim.height as f32) as i32;
 
@@ -209,7 +209,7 @@ impl TheRGBBuffer {
     }
 
     /// Returns the pixel at the given position.
-    pub fn at(&self, position: Vec2i) -> Option<[u8; 3]> {
+    pub fn at(&self, position: Vec2<i32>) -> Option<[u8; 3]> {
         let x = position.x;
         let y = position.y;
 
@@ -225,13 +225,13 @@ impl TheRGBBuffer {
         }
     }
 
-    pub fn at_vec3(&self, position: Vec2i) -> Option<Vec3f> {
+    pub fn at_vec3(&self, position: Vec2<i32>) -> Option<Vec3<f32>> {
         let x = position.x;
         let y = position.y;
 
         if x >= 0 && x < self.dim.width && y >= 0 && y < self.dim.height {
             let pixel_index = (y * self.dim.width + x) as usize * 3;
-            Some(vec3f(
+            Some(Vec3::new(
                 (self.buffer[pixel_index] as f32) / 255.0,
                 (self.buffer[pixel_index + 1] as f32) / 255.0,
                 (self.buffer[pixel_index + 2] as f32) / 255.0,
@@ -294,7 +294,7 @@ impl TheRGBBuffer {
     }
 
     /// Sets the color of a pixel at (x, y).
-    pub fn set_pixel_vec3f(&mut self, x: i32, y: i32, color: &Vec3f) {
+    pub fn set_pixel_vec3f(&mut self, x: i32, y: i32, color: &Vec3<f32>) {
         if let Some(index) = self.pixel_index(x, y) {
             let color = [
                 (color.x * 255.0) as u8,

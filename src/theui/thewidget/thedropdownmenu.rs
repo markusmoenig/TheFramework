@@ -16,7 +16,7 @@ pub struct TheDropdownMenu {
     dim: TheDim,
     is_dirty: bool,
 
-    safety_offset: Vec2i,
+    safety_offset: Vec2<i32>,
 }
 
 impl TheWidget for TheDropdownMenu {
@@ -44,7 +44,7 @@ impl TheWidget for TheDropdownMenu {
             dim: TheDim::zero(),
             is_dirty: false,
 
-            safety_offset: vec2i(0, 0),
+            safety_offset: Vec2::new(0, 0),
         }
     }
 
@@ -280,7 +280,7 @@ impl TheWidget for TheDropdownMenu {
 
         let mut dim = TheDim::new(self.dim.x, self.dim.y + 20, width as i32, height as i32);
 
-        self.safety_offset = Vec2i::zero();
+        self.safety_offset = Vec2::zero();
 
         // Safety check for width being larger than the window width
         if dim.x + width as i32 > ctx.width as i32 {

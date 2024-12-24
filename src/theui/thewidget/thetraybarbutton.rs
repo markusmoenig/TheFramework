@@ -9,7 +9,7 @@ pub struct TheTraybarButton {
 
     icon_name: String,
     icon: Option<TheRGBABuffer>,
-    icon_offset: Vec2i,
+    icon_offset: Vec2<i32>,
 
     status: Option<String>,
 
@@ -30,7 +30,7 @@ impl TheWidget for TheTraybarButton {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(20, 20));
+        limiter.set_max_size(Vec2::new(20, 20));
 
         Self {
             id,
@@ -38,7 +38,7 @@ impl TheWidget for TheTraybarButton {
             state: TheWidgetState::None,
 
             icon_name: "".to_string(),
-            icon_offset: vec2i(0, 0),
+            icon_offset: Vec2::new(0, 0),
             icon: None,
 
             status: None,
@@ -91,7 +91,7 @@ impl TheWidget for TheTraybarButton {
                 if let Some(context_menu) = &self.context_menu {
                     ctx.ui.send(TheEvent::ShowContextMenu(
                         self.id().clone(),
-                        vec2i(self.dim.x, self.dim.y + self.dim.height),
+                        Vec2::new(self.dim.x, self.dim.y + self.dim.height),
                         context_menu.clone(),
                     ));
 
@@ -183,7 +183,7 @@ impl TheWidget for TheTraybarButton {
             if let Some(font) = &ctx.ui.font {
                 let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
                 self.limiter_mut()
-                    .set_max_width(ceil(size.0 as f32) as i32 + 15);
+                    .set_max_width((size.0 as f32).ceil() as i32 + 15);
             }
         }
     }
@@ -341,7 +341,7 @@ impl TheWidget for TheTraybarButton {
 
 pub trait TheTraybarButtonTrait {
     fn set_icon_name(&mut self, text: String);
-    fn set_icon_offset(&mut self, offset: Vec2i);
+    fn set_icon_offset(&mut self, offset: Vec2<i32>);
     fn set_text(&mut self, text: String);
     fn set_icon(&mut self, icon: TheRGBABuffer);
     fn set_fixed_size(&mut self, fixed_size: bool);
@@ -354,7 +354,7 @@ impl TheTraybarButtonTrait for TheTraybarButton {
     fn set_icon(&mut self, icon: TheRGBABuffer) {
         self.icon = Some(icon);
     }
-    fn set_icon_offset(&mut self, offset: Vec2i) {
+    fn set_icon_offset(&mut self, offset: Vec2<i32>) {
         self.icon_offset = offset;
     }
     fn set_text(&mut self, text: String) {

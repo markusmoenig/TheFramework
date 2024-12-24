@@ -3,7 +3,7 @@ use crate::prelude::*;
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub struct TheTileMask {
     #[serde(with = "vectorize")]
-    pub pixels: FxHashMap<Vec2i, bool>,
+    pub pixels: FxHashMap<Vec2<i32>, bool>,
 }
 
 impl Default for TheTileMask {
@@ -26,17 +26,17 @@ impl TheTileMask {
     }
 
     /// Returns true if the physical pixel is contained in the tile mask.
-    pub fn contains(&self, position: Vec2i) -> bool {
+    pub fn contains(&self, position: Vec2<i32>) -> bool {
         self.pixels.contains_key(&position)
     }
 
     // Add a pixel.
-    pub fn add_pixel(&mut self, position: Vec2i, value: bool) {
+    pub fn add_pixel(&mut self, position: Vec2<i32>, value: bool) {
         self.pixels.insert(position, value);
     }
 
     // Remove a pixel pixel.
-    pub fn remove_pixel(&mut self, position: Vec2i) {
+    pub fn remove_pixel(&mut self, position: Vec2<i32>) {
         self.pixels.remove(&position);
     }
 }

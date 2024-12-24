@@ -502,7 +502,7 @@ impl TheCodeEditor {
                             self.start_undo(ui);
                             self.set_selected_atom(
                                 ui,
-                                TheCodeAtom::Value(TheValue::Direction(vec3f(
+                                TheCodeAtom::Value(TheValue::Direction(Vec3::new(
                                     value.x, 0.0, value.y,
                                 ))),
                             );
@@ -541,7 +541,7 @@ impl TheCodeEditor {
                         self.start_undo(ui);
                         self.set_selected_atom(
                             ui,
-                            TheCodeAtom::Value(TheValue::Position(vec3f(v.x, 0.0, v.y))),
+                            TheCodeAtom::Value(TheValue::Position(Vec3::new(v.x, 0.0, v.y))),
                         );
                         self.finish_undo(ui, ctx);
                     }
@@ -743,19 +743,19 @@ impl TheCodeEditor {
             "Object" => TheCodeAtom::Value(TheValue::CodeObject(TheCodeObject::default())),
             "List" => TheCodeAtom::Value(TheValue::List(vec![])),
             "Tile" => TheCodeAtom::Value(TheValue::Tile("name".into(), Uuid::nil())),
-            "Int2" => TheCodeAtom::Value(TheValue::Int2(vec2i(0, 0))),
-            "Float2" => TheCodeAtom::Value(TheValue::Float2(vec2f(0.0, 0.0))),
-            "Float3" => TheCodeAtom::Value(TheValue::Float3(vec3f(0.0, 0.0, 0.0))),
-            "Position" => TheCodeAtom::Value(TheValue::Position(vec3f(0.0, 0.0, 0.0))),
+            "Int2" => TheCodeAtom::Value(TheValue::Int2(Vec2::new(0, 0))),
+            "Float2" => TheCodeAtom::Value(TheValue::Float2(Vec2::new(0.0, 0.0))),
+            "Float3" => TheCodeAtom::Value(TheValue::Float3(Vec3::new(0.0, 0.0, 0.0))),
+            "Position" => TheCodeAtom::Value(TheValue::Position(Vec3::new(0.0, 0.0, 0.0))),
             "Add" => TheCodeAtom::Add,
             "Subtract" => TheCodeAtom::Subtract,
             "Multiply" => TheCodeAtom::Multiply,
             "Divide" => TheCodeAtom::Divide,
             "Modulus" => TheCodeAtom::Modulus,
-            "RInt" => TheCodeAtom::RandInt(vec2i(0, 3)),
-            "RFloat" => TheCodeAtom::RandFloat(vec2f(0.0, 1.0)),
+            "RInt" => TheCodeAtom::RandInt(Vec2::new(0, 3)),
+            "RFloat" => TheCodeAtom::RandFloat(Vec2::new(0.0, 1.0)),
             "Color" => TheCodeAtom::Value(TheValue::ColorObject(TheColor::default())),
-            "Direction" => TheCodeAtom::Value(TheValue::Direction(vec3f(0.0, 0.0, -1.0))),
+            "Direction" => TheCodeAtom::Value(TheValue::Direction(Vec3::new(0.0, 0.0, -1.0))),
             _ => {
                 if let Some((bundle_name, bundle_id, module)) = self.modules.get(&id) {
                     return TheCodeAtom::ModuleCall(
@@ -849,7 +849,7 @@ impl TheCodeEditor {
         let mut top_toolbar_canvas = TheCanvas::new();
         let mut toolbar_hlayout = TheHLayout::new(TheId::named("Code Top Toolbar"));
         toolbar_hlayout.set_background_color(None);
-        toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
+        toolbar_hlayout.set_margin(Vec4::new(5, 2, 5, 2));
         toolbar_hlayout.set_padding(10);
         top_toolbar_canvas.set_layout(toolbar_hlayout);
         top_toolbar_canvas.set_widget(TheTraybar::new(TheId::empty()));
@@ -877,7 +877,7 @@ impl TheCodeEditor {
 
         let mut toolbar_hlayout = TheHLayout::new(TheId::named("Code Bottom Toolbar Layout"));
         toolbar_hlayout.set_background_color(None);
-        toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
+        toolbar_hlayout.set_margin(Vec4::new(5, 2, 5, 2));
         toolbar_hlayout.add_widget(Box::new(compile_button));
         toolbar_hlayout.add_widget(Box::new(divider1));
         toolbar_hlayout.add_widget(Box::new(text));
@@ -970,7 +970,7 @@ impl TheCodeEditor {
 
         let mut toolbar_hlayout = TheHLayout::new(TheId::empty());
         toolbar_hlayout.set_background_color(None);
-        toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
+        toolbar_hlayout.set_margin(Vec4::new(5, 2, 5, 2));
         toolbar_hlayout.add_widget(Box::new(add_button));
         toolbar_hlayout.add_widget(Box::new(remove_button));
         toolbar_hlayout.add_widget(Box::new(TheHDivider::new(TheId::empty())));

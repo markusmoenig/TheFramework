@@ -4,29 +4,29 @@ use crate::prelude::*;
 #[derive(Clone, Debug)]
 pub enum TheEvent {
     // These events are passed to the on_event function of the widgets and cover user interaction.
-    Context(Vec2i),
-    MouseDown(Vec2i),
-    Hover(Vec2i),
-    MouseDragged(Vec2i),
-    MouseUp(Vec2i),
-    MouseWheel(Vec2i),
+    Context(Vec2<i32>),
+    MouseDown(Vec2<i32>),
+    Hover(Vec2<i32>),
+    MouseDragged(Vec2<i32>),
+    MouseUp(Vec2<i32>),
+    MouseWheel(Vec2<i32>),
 
     KeyDown(TheValue),
     KeyCodeDown(TheValue),
     ModifierChanged(bool, bool, bool, bool),
-    DropPreview(Vec2i, TheDrop),
-    Drop(Vec2i, TheDrop),
+    DropPreview(Vec2<i32>, TheDrop),
+    Drop(Vec2<i32>, TheDrop),
 
     // These events define widget states.
     StateChanged(TheId, TheWidgetState),
     SetState(String, TheWidgetState),
 
-    DragStarted(TheId, String, Vec2i),
+    DragStarted(TheId, String, Vec2<i32>),
     DragStartedWithNoImage(TheDrop),
 
     ValueChanged(TheId, TheValue),
     SetValue(Uuid, TheValue),
-    ScrollBy(TheId, Vec2i),
+    ScrollBy(TheId, Vec2<i32>),
 
     GainedFocus(TheId),
     LostFocus(TheId),
@@ -47,20 +47,20 @@ pub enum TheEvent {
 
     // Tile / Code Editor
     TileSelectionChanged(TheId),
-    TilePicked(TheId, Vec2i),
-    TileEditorClicked(TheId, Vec2i),
-    TileEditorDragged(TheId, Vec2i),
-    TileEditorHoverChanged(TheId, Vec2i),
-    TileEditorDrop(TheId, Vec2i, TheDrop),
+    TilePicked(TheId, Vec2<i32>),
+    TileEditorClicked(TheId, Vec2<i32>),
+    TileEditorDragged(TheId, Vec2<i32>),
+    TileEditorHoverChanged(TheId, Vec2<i32>),
+    TileEditorDrop(TheId, Vec2<i32>, TheDrop),
     TileEditorDelete(TheId, FxHashSet<(i32, i32)>),
     TileEditorUp(TheId),
 
-    RenderViewClicked(TheId, Vec2i),
-    RenderViewDragged(TheId, Vec2i),
-    RenderViewHoverChanged(TheId, Vec2i),
+    RenderViewClicked(TheId, Vec2<i32>),
+    RenderViewDragged(TheId, Vec2<i32>),
+    RenderViewHoverChanged(TheId, Vec2<i32>),
     RenderViewLostHover(TheId),
-    RenderViewScrollBy(TheId, Vec2i),
-    RenderViewUp(TheId, Vec2i),
+    RenderViewScrollBy(TheId, Vec2<i32>),
+    RenderViewUp(TheId, Vec2<i32>),
 
     // CodeEditor
     #[cfg(feature = "code")]
@@ -77,18 +77,18 @@ pub enum TheEvent {
     SDFIndexChanged(TheId, u32),
 
     // Show the given context menu at the given (global) coordinates.
-    ShowContextMenu(TheId, Vec2i, TheContextMenu),
-    ShowMenu(TheId, Vec2i, TheContextMenu),
+    ShowContextMenu(TheId, Vec2<i32>, TheContextMenu),
+    ShowMenu(TheId, Vec2<i32>, TheContextMenu),
     ContextMenuSelected(TheId, TheId),
     ContextMenuClosed(TheId),
 
     // Nodes
     NodeSelectedIndexChanged(TheId, Option<usize>),
-    NodeDragged(TheId, usize, Vec2i),
+    NodeDragged(TheId, usize, Vec2<i32>),
     NodeConnectionAdded(TheId, Vec<(u16, u8, u16, u8)>),
     NodeConnectionRemoved(TheId, Vec<(u16, u8, u16, u8)>),
     NodeDeleted(TheId, usize, Vec<(u16, u8, u16, u8)>),
-    NodeViewScrolled(TheId, Vec2i),
+    NodeViewScrolled(TheId, Vec2<i32>),
 
     //
     DialogValueOnClose(TheDialogButtonRole, String, Uuid, TheValue),
@@ -96,7 +96,7 @@ pub enum TheEvent {
     // These events define layout states.
     SetStackIndex(TheId, usize),
     NewListItemSelected(TheId, TheId),
-    ScrollLayout(TheId, Vec2i),
+    ScrollLayout(TheId, Vec2<i32>),
 
     // Utility
     FileRequesterResult(TheId, Vec<std::path::PathBuf>),

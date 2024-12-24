@@ -17,7 +17,7 @@ pub struct TheRGBAView {
 
     buffer: TheRGBABuffer,
 
-    scroll_offset: Vec2i,
+    scroll_offset: Vec2<i32>,
     zoom: f32,
 
     grid: Option<i32>,
@@ -33,7 +33,7 @@ pub struct TheRGBAView {
     rectangle_start: Option<(i32, i32)>,
 
     last_loc: (i32, i32),
-    float_pos: Vec2f,
+    float_pos: Vec2<f32>,
 
     hscrollbar: TheId,
     vscrollbar: TheId,
@@ -44,7 +44,7 @@ pub struct TheRGBAView {
     dim: TheDim,
     is_dirty: bool,
 
-    accumulated_wheel_delta: Vec2f,
+    accumulated_wheel_delta: Vec2<f32>,
 
     layout_id: TheId,
 
@@ -67,7 +67,7 @@ impl TheWidget for TheRGBAView {
             background: BLACK,
 
             buffer: TheRGBABuffer::empty(),
-            scroll_offset: vec2i(0, 0),
+            scroll_offset: Vec2::new(0, 0),
             zoom: 1.0,
 
             grid: None,
@@ -83,7 +83,7 @@ impl TheWidget for TheRGBAView {
             rectangle_start: None,
 
             last_loc: (0, 0),
-            float_pos: Vec2f::zero(),
+            float_pos: Vec2::zero(),
 
             hscrollbar: TheId::empty(),
             vscrollbar: TheId::empty(),
@@ -94,7 +94,7 @@ impl TheWidget for TheRGBAView {
             dim: TheDim::zero(),
             is_dirty: true,
 
-            accumulated_wheel_delta: Vec2f::zero(),
+            accumulated_wheel_delta: Vec2::zero(),
 
             layout_id: TheId::empty(),
 
@@ -142,7 +142,7 @@ impl TheWidget for TheRGBAView {
                     if let Some(loc) = self.get_grid_location(*coord) {
                         self.last_loc = loc;
                         if let Some(fgrid) = self.get_grid_location_f(*coord) {
-                            self.float_pos = vec2f(fgrid.0, fgrid.1);
+                            self.float_pos = Vec2::new(fgrid.0, fgrid.1);
                         }
                         if self.mode == TheRGBAViewMode::TileSelection {
                             if self.rectangular_selection {
@@ -160,12 +160,14 @@ impl TheWidget for TheRGBAView {
                         } else if self.mode == TheRGBAViewMode::TilePicker {
                             self.selected.clear();
                             self.selected.insert((loc.0, loc.1));
-                            ctx.ui
-                                .send(TheEvent::TilePicked(self.id.clone(), vec2i(loc.0, loc.1)));
+                            ctx.ui.send(TheEvent::TilePicked(
+                                self.id.clone(),
+                                Vec2::new(loc.0, loc.1),
+                            ));
                         } else if self.mode == TheRGBAViewMode::TileEditor {
                             ctx.ui.send(TheEvent::TileEditorClicked(
                                 self.id.clone(),
-                                vec2i(loc.0, loc.1),
+                                Vec2::new(loc.0, loc.1),
                             ));
                         }
                     }
@@ -190,7 +192,7 @@ impl TheWidget for TheRGBAView {
                         if loc != self.last_loc {
                             self.last_loc = loc;
                             if let Some(fgrid) = self.get_grid_location_f(*coord) {
-                                self.float_pos = vec2f(fgrid.0, fgrid.1);
+                                self.float_pos = Vec2::new(fgrid.0, fgrid.1);
                             }
                             if self.mode == TheRGBAViewMode::TileSelection {
                                 if self.rectangular_selection {
@@ -228,12 +230,12 @@ impl TheWidget for TheRGBAView {
                                 self.selected.insert((loc.0, loc.1));
                                 ctx.ui.send(TheEvent::TilePicked(
                                     self.id.clone(),
-                                    vec2i(loc.0, loc.1),
+                                    Vec2::new(loc.0, loc.1),
                                 ));
                             } else if self.mode == TheRGBAViewMode::TileEditor {
                                 ctx.ui.send(TheEvent::TileEditorDragged(
                                     self.id.clone(),
-                                    vec2i(loc.0, loc.1),
+                                    Vec2::new(loc.0, loc.1),
                                 ));
                                 self.hover = Some((loc.0, loc.1));
                             }
@@ -331,7 +333,7 @@ impl TheWidget for TheRGBAView {
                                 self.hover = Some((grid_x, grid_y));
                                 ctx.ui.send(TheEvent::TileEditorHoverChanged(
                                     self.id.clone(),
-                                    vec2i(grid_x, grid_y),
+                                    Vec2::new(grid_x, grid_y),
                                 ));
                             }
                         }
@@ -353,7 +355,7 @@ impl TheWidget for TheRGBAView {
                     if let Some(loc) = self.get_grid_location(*coord) {
                         ctx.ui.send(TheEvent::TileEditorDrop(
                             self.id.clone(),
-                            vec2i(loc.0, loc.1),
+                            Vec2::new(loc.0, loc.1),
                             drop.clone(),
                         ));
                     }
@@ -388,11 +390,11 @@ impl TheWidget for TheRGBAView {
                     || self.accumulated_wheel_delta.y.abs() > minimum_delta_threshold
                 {
                     // Convert accumulated deltas to integer and reset
-                    let d = vec2i(
+                    let d = Vec2::new(
                         self.accumulated_wheel_delta.x as i32,
                         self.accumulated_wheel_delta.y as i32,
                     );
-                    self.accumulated_wheel_delta = Vec2f::zero();
+                    self.accumulated_wheel_delta = Vec2::zero();
 
                     // Send scroll events
                     ctx.ui.send(TheEvent::ScrollBy(self.hscrollbar.clone(), d));
@@ -700,10 +702,10 @@ impl TheWidget for TheRGBAView {
 }
 
 pub trait TheRGBAViewTrait: TheWidget {
-    fn get_grid_location(&self, coord: Vec2i) -> Option<(i32, i32)>;
-    fn get_grid_location_f(&self, coord: Vec2i) -> Option<(f32, f32)>;
+    fn get_grid_location(&self, coord: Vec2<i32>) -> Option<(i32, i32)>;
+    fn get_grid_location_f(&self, coord: Vec2<i32>) -> Option<(f32, f32)>;
 
-    fn float_pos(&self) -> Vec2f;
+    fn float_pos(&self) -> Vec2<f32>;
 
     fn buffer(&self) -> &TheRGBABuffer;
     fn buffer_mut(&mut self) -> &mut TheRGBABuffer;
@@ -712,7 +714,7 @@ pub trait TheRGBAViewTrait: TheWidget {
     fn zoom(&self) -> f32;
     fn set_zoom(&mut self, zoom: f32);
     fn visible_rect(&mut self) -> TheDim;
-    fn set_scroll_offset(&mut self, offset: Vec2i);
+    fn set_scroll_offset(&mut self, offset: Vec2<i32>);
     fn grid(&self) -> Option<i32>;
     fn set_grid(&mut self, grid: Option<i32>);
     fn set_grid_color(&mut self, color: RGBA);
@@ -738,7 +740,7 @@ impl TheRGBAViewTrait for TheRGBAView {
     fn set_rectangular_selection(&mut self, rectangular_selection: bool) {
         self.rectangular_selection = rectangular_selection;
     }
-    fn get_grid_location(&self, coord: Vec2i) -> Option<(i32, i32)> {
+    fn get_grid_location(&self, coord: Vec2<i32>) -> Option<(i32, i32)> {
         if let Some(grid) = self.grid {
             let centered_offset_x =
                 if (self.zoom * self.buffer.dim().width as f32) < self.dim.width as f32 {
@@ -784,7 +786,7 @@ impl TheRGBAViewTrait for TheRGBAView {
         None
     }
 
-    fn get_grid_location_f(&self, coord: Vec2i) -> Option<(f32, f32)> {
+    fn get_grid_location_f(&self, coord: Vec2<i32>) -> Option<(f32, f32)> {
         if let Some(grid) = self.grid {
             let centered_offset_x =
                 if (self.zoom * self.buffer.dim().width as f32) < self.dim.width as f32 {
@@ -818,7 +820,7 @@ impl TheRGBAViewTrait for TheRGBAView {
         None
     }
 
-    fn float_pos(&self) -> Vec2f {
+    fn float_pos(&self) -> Vec2<f32> {
         self.float_pos
     }
 
@@ -854,7 +856,7 @@ impl TheRGBAViewTrait for TheRGBAView {
             self.dim.height,
         )
     }
-    fn set_scroll_offset(&mut self, offset: Vec2i) {
+    fn set_scroll_offset(&mut self, offset: Vec2<i32>) {
         self.scroll_offset = offset;
     }
     fn set_associated_layout(&mut self, layout_id: TheId) {

@@ -11,7 +11,7 @@ pub struct TheSnapperLayout {
     layouts: Vec<Box<dyn TheLayout>>,
     widgets: Vec<Box<dyn TheWidget>>,
 
-    margin: Vec4i,
+    margin: Vec4<i32>,
 
     background: Option<TheThemeColors>,
 }
@@ -32,7 +32,7 @@ impl TheLayout for TheSnapperLayout {
             layouts: vec![],
             widgets: vec![],
 
-            margin: vec4i(0, 0, 0, 0),
+            margin: Vec4::new(0, 0, 0, 0),
 
             background: Some(TextLayoutBackground),
         }
@@ -42,7 +42,7 @@ impl TheLayout for TheSnapperLayout {
         &self.id
     }
 
-    fn set_margin(&mut self, margin: Vec4i) {
+    fn set_margin(&mut self, margin: Vec4<i32>) {
         self.margin = margin;
     }
 
@@ -54,7 +54,7 @@ impl TheLayout for TheSnapperLayout {
         &mut self.widgets
     }
 
-    fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+    fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         let mut open_states = vec![];
 
         for b in &mut self.bars {

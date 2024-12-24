@@ -13,7 +13,7 @@ pub struct TheRowListLayout {
     horizontal_scrollbar: Box<dyn TheWidget>,
     horizontal_scrollbar_visible: bool,
 
-    margin: Vec4i,
+    margin: Vec4<i32>,
 
     background: Option<TheThemeColors>,
     item_size: i32,
@@ -40,7 +40,7 @@ impl TheLayout for TheRowListLayout {
             ))),
             horizontal_scrollbar_visible: false,
 
-            margin: vec4i(3, 3, 3, 3),
+            margin: Vec4::new(3, 3, 3, 3),
 
             background: Some(TextLayoutBackground),
             item_size: 115,
@@ -53,7 +53,7 @@ impl TheLayout for TheRowListLayout {
         &self.id
     }
 
-    fn set_margin(&mut self, margin: Vec4i) {
+    fn set_margin(&mut self, margin: Vec4<i32>) {
         self.margin = margin;
     }
 
@@ -65,7 +65,7 @@ impl TheLayout for TheRowListLayout {
         &mut self.widgets
     }
 
-    fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+    fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         if !self.dim.contains(coord) {
             return None;
         }
@@ -74,9 +74,9 @@ impl TheLayout for TheRowListLayout {
             return Some(&mut self.horizontal_scrollbar);
         }
 
-        let mut scroll_offset = vec2i(0, 0);
+        let mut scroll_offset = Vec2::new(0, 0);
         if let Some(scroll_bar) = self.horizontal_scrollbar.as_horizontal_scrollbar() {
-            scroll_offset = vec2i(scroll_bar.scroll_offset(), 0);
+            scroll_offset = Vec2::new(scroll_bar.scroll_offset(), 0);
         }
 
         let widgets = self.widgets();
@@ -290,7 +290,7 @@ pub trait TheRowListLayoutTrait: TheLayout {
     /// Sets the image for an item.
     fn set_item_image(&mut self, id: Uuid, image: TheRGBABuffer);
     /// Scroll by the given amount.
-    fn scroll_by(&mut self, delta: Vec2i);
+    fn scroll_by(&mut self, delta: Vec2<i32>);
 }
 
 impl TheRowListLayoutTrait for TheRowListLayout {
@@ -390,7 +390,7 @@ impl TheRowListLayoutTrait for TheRowListLayout {
             }
         }
     }
-    fn scroll_by(&mut self, delta: Vec2i) {
+    fn scroll_by(&mut self, delta: Vec2<i32>) {
         if let Some(scroll_bar) = self.horizontal_scrollbar.as_horizontal_scrollbar() {
             scroll_bar.scroll_by(((delta.x as f32) * -1.0) as i32);
         }

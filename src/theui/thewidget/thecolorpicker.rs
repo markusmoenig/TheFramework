@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use maths_rs::prelude::*;
 use rayon::prelude::*;
 
 pub struct TheColorPicker {
@@ -37,7 +38,7 @@ impl TheWidget for TheColorPicker {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(200, 200));
+        limiter.set_max_size(vek::Vec2::new(200, 200));
 
         Self {
             id,
@@ -95,7 +96,11 @@ impl TheWidget for TheColorPicker {
                 if self.continuous {
                     ctx.ui.send(TheEvent::ValueChanged(
                         self.id.clone(),
-                        TheValue::ColorObject(TheColor::from_vec3f(self.color)),
+                        TheValue::ColorObject(TheColor::from_vec3(vek::Vec3::new(
+                            self.color.x,
+                            self.color.y,
+                            self.color.z,
+                        ))),
                     ));
                 }
                 self.is_dirty = true;
@@ -105,7 +110,11 @@ impl TheWidget for TheColorPicker {
                 self.calc_color(*coord, false);
                 ctx.ui.send(TheEvent::ValueChanged(
                     self.id.clone(),
-                    TheValue::ColorObject(TheColor::from_vec3f(self.color)),
+                    TheValue::ColorObject(TheColor::from_vec3(vek::Vec3::new(
+                        self.color.x,
+                        self.color.y,
+                        self.color.z,
+                    ))),
                 ));
                 self.is_dirty = true;
                 redraw = true;
@@ -291,14 +300,15 @@ impl TheWidget for TheColorPicker {
     }
 
     fn value(&self) -> TheValue {
-        TheValue::Float3(self.color)
+        TheValue::Float3(vek::Vec3::new(self.color.x, self.color.y, self.color.z))
     }
 
     #[allow(clippy::single_match)]
     fn set_value(&mut self, value: TheValue) {
         match value {
             TheValue::ColorObject(color) => {
-                self.color = color.to_vec3f();
+                let col = color.to_vec3();
+                self.color = vec3f(col.x, col.y, col.z);
                 let hsl = color.as_hsl();
                 self.h = hsl.x * 360.0;
                 self.s = hsl.y;
@@ -306,8 +316,8 @@ impl TheWidget for TheColorPicker {
                 self.is_dirty = true;
             }
             TheValue::Float3(color) => {
-                self.color = color;
-                let hsl = TheColor::from_vec3f(color).as_hsl();
+                self.color = vec3f(color.x, color.y, color.z);
+                let hsl = TheColor::from_vec3(color).as_hsl();
                 self.h = hsl.x * 360.0;
                 self.s = hsl.y;
                 self.l = hsl.z;
@@ -322,13 +332,13 @@ pub trait TheColorPickerTrait: TheWidget {
     fn set_background_color(&mut self, color: [u8; 4]);
     fn set_border_color(&mut self, color: [u8; 4]);
 
-    fn set_color(&mut self, color: Vec3f);
+    fn set_color(&mut self, color: vek::Vec3<f32>);
     fn set_continuous(&mut self, continuous: bool);
 
     fn compute_points(&mut self);
-    fn calc_color(&mut self, coord: Vec2i, new_op: bool);
-    fn get_hue_at(&mut self, coord: Vec2i);
-    fn get_sl_at(&mut self, coord: Vec2i);
+    fn calc_color(&mut self, coord: vek::Vec2<i32>, new_op: bool);
+    fn get_hue_at(&mut self, coord: vek::Vec2<i32>);
+    fn get_sl_at(&mut self, coord: vek::Vec2<i32>);
 }
 
 impl TheColorPickerTrait for TheColorPicker {
@@ -340,9 +350,9 @@ impl TheColorPickerTrait for TheColorPicker {
         self.border = Some(color);
     }
 
-    fn set_color(&mut self, color: Vec3f) {
-        self.color = color;
-        let hsl = TheColor::from_vec3f(color).as_hsl();
+    fn set_color(&mut self, color: vek::Vec3<f32>) {
+        self.color = vec3f(color.x, color.y, color.z);
+        let hsl = TheColor::from_vec3(color).as_hsl();
         self.h = hsl.x * 360.0;
         self.s = hsl.y;
         self.l = hsl.z;
@@ -352,7 +362,9 @@ impl TheColorPickerTrait for TheColorPicker {
         self.continuous = continuous;
     }
 
-    fn calc_color(&mut self, coord: Vec2i, new_op: bool) {
+    fn calc_color(&mut self, co: vek::Vec2<i32>, new_op: bool) {
+        let coord = vec2i(co.x, co.y);
+
         if new_op {
             let x = coord.x as f32;
             let y = coord.y as f32;
@@ -367,15 +379,17 @@ impl TheColorPickerTrait for TheColorPicker {
         }
 
         if !self.inside {
-            self.get_hue_at(coord);
+            self.get_hue_at(co);
             self.compute_points();
         } else {
-            self.get_sl_at(coord);
+            self.get_sl_at(co);
             self.compute_points();
         }
     }
 
-    fn get_sl_at(&mut self, coord: Vec2i) {
+    fn get_sl_at(&mut self, co: vek::Vec2<i32>) {
+        let coord = vec2i(co.x, co.y);
+
         let x = coord.x as f32 - self.dot_size / 1.0;
         let y = coord.y as f32 - self.dot_size / 1.0;
 
@@ -433,15 +447,19 @@ impl TheColorPickerTrait for TheColorPicker {
                 let temp = if self.l < 0.5 { self.l } else { 1.0 - self.l };
                 self.s = dot(ev, up) / length(up) / length(up) * 0.5 / temp;
             }
-            self.color = TheColor::from_hsl(self.h, self.s, self.l).to_vec3f();
+            let color = TheColor::from_hsl(self.h, self.s, self.l).to_vec3();
+            self.color = vec3f(color.x, color.y, color.z);
         }
     }
 
-    fn get_hue_at(&mut self, coord: Vec2i) {
+    fn get_hue_at(&mut self, co: vek::Vec2<i32>) {
+        let coord = vec2i(co.x, co.y);
+
         let x = coord.x as f32;
         let y = coord.y as f32;
 
-        let hsv = TheColor::from_vec3f(self.color).as_hsl();
+        let hsv =
+            TheColor::from_vec3(vek::Vec3::new(self.color.x, self.color.y, self.color.z)).as_hsl();
 
         let circle_size = min(self.dim.width, self.dim.height) as f32;
 
@@ -453,7 +471,7 @@ impl TheColorPickerTrait for TheColorPicker {
         mouse *= circle_size / 2.0 - (circle_size * 0.75) / 2.0;
         let v = center + mouse;
         let angle = atan2(v.x - center.x, v.y - center.y) * 180.0 / std::f32::consts::PI;
-        let rgb = TheColor::from_hsl(angle + 180.0, hsv.y, hsv.z).to_vec3f();
+        let rgb = TheColor::from_hsl(angle + 180.0, hsv.y, hsv.z).to_vec3();
         self.h = angle + 180.0;
         self.color.x = rgb.x;
         self.color.y = rgb.y;

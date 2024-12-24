@@ -5,7 +5,7 @@ pub struct TheCanvas {
     pub limiter: TheSizeLimiter,
 
     /// The relative offset to the parent canvas
-    pub offset: Vec2i,
+    pub offset: Vec2<i32>,
 
     pub dim: TheDim,
 
@@ -38,7 +38,7 @@ impl TheCanvas {
             uuid: Uuid::new_v4(),
             limiter: TheSizeLimiter::new(),
 
-            offset: Vec2i::zero(),
+            offset: Vec2::zero(),
 
             dim: TheDim::zero(),
 
@@ -290,7 +290,7 @@ impl TheCanvas {
     }
 
     /// Returns the widget at the given screen coordinate (if any)
-    pub fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+    pub fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         if let Some(left) = &mut self.left {
             if let Some(widget) = left.get_widget_at_coord(coord) {
                 return Some(widget);
@@ -356,7 +356,7 @@ impl TheCanvas {
                     TheDim::new(x + width - top_width, y, top_width, top_height),
                     ctx,
                 );
-                top.offset = vec2i(0, 0);
+                top.offset = Vec2::new(0, 0);
                 y += top_height;
                 buffer_y += top_height;
                 h -= top_height;
@@ -371,7 +371,7 @@ impl TheCanvas {
                     TheDim::new(x, y + h - bottom_height, bottom_width, bottom_height),
                     ctx,
                 );
-                bottom.offset = vec2i(buffer_x, buffer_y + h - bottom_height);
+                bottom.offset = Vec2::new(buffer_x, buffer_y + h - bottom_height);
                 h -= bottom_height;
             }
         }
@@ -381,7 +381,7 @@ impl TheCanvas {
             left_width = left.get_limiter_width(w);
             let left_height = left.get_limiter_height(h);
             left.set_dim(TheDim::new(x, y, left_width, left_height), ctx);
-            left.offset = vec2i(0, buffer_y);
+            left.offset = Vec2::new(0, buffer_y);
             x += left_width;
             buffer_x += left_width;
             w -= left_width;
@@ -395,7 +395,7 @@ impl TheCanvas {
                 TheDim::new(x + w - right_width, y, right_width, right_height),
                 ctx,
             );
-            right.offset = vec2i(width - right_width, buffer_y);
+            right.offset = Vec2::new(width - right_width, buffer_y);
             w -= right_width;
         }
 
@@ -412,7 +412,7 @@ impl TheCanvas {
                     ),
                     ctx,
                 );
-                top.offset = vec2i(buffer_x, 0);
+                top.offset = Vec2::new(buffer_x, 0);
                 y += top_height;
                 buffer_y += top_height;
                 h -= top_height;
@@ -427,7 +427,7 @@ impl TheCanvas {
                     TheDim::new(x, y + h - bottom_height, bottom_width, bottom_height),
                     ctx,
                 );
-                bottom.offset = vec2i(buffer_x, buffer_y + h - bottom_height);
+                bottom.offset = Vec2::new(buffer_x, buffer_y + h - bottom_height);
                 h -= bottom_height;
             }
         }
@@ -436,7 +436,7 @@ impl TheCanvas {
             //let width = center.get_limiter_width(w);
 
             center.set_dim(TheDim::new(x, y, w, h), ctx);
-            center.offset = vec2i(buffer_x, buffer_y);
+            center.offset = Vec2::new(buffer_x, buffer_y);
         } else {
             if let Some(widget) = &mut self.widget {
                 let dim = TheDim::new(x, y, w, h);

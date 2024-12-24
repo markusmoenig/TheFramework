@@ -34,7 +34,7 @@ impl TheLayout for TheStackLayout {
         &self.id
     }
 
-    fn set_margin(&mut self, margin: Vec4i) {
+    fn set_margin(&mut self, margin: Vec4<i32>) {
         if !self.layouts.is_empty() && self.index < self.layouts.len() {
             self.layouts[self.index].set_margin(margin);
         }
@@ -64,7 +64,7 @@ impl TheLayout for TheStackLayout {
         &mut self.widgets
     }
 
-    fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+    fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         if !self.canvas.is_empty() && self.index < self.canvas.len() {
             return self.canvas[self.index].get_widget_at_coord(coord);
         }

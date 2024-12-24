@@ -11,7 +11,7 @@ use ThePattern::*;
 impl ThePattern {
     pub fn get_color(
         &self,
-        _p: Vec2f,
+        _p: Vec2<f32>,
         distance: &f32,
         background: &TheColor,
         highlight: Option<&TheColor>,

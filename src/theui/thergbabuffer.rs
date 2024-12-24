@@ -456,12 +456,12 @@ impl TheRGBABuffer {
     }
 
     /// Returns the pixel at the given UV coordinate as [f32;4]
-    pub fn at_f_vec4f(&self, uv: Vec2f) -> Option<Vec4f> {
+    pub fn at_f_vec4f(&self, uv: Vec2<f32>) -> Option<Vec4<f32>> {
         let x = (uv.x * self.dim.width as f32) as i32;
         let y = (uv.y * self.dim.height as f32) as i32;
 
         self.pixel_index(x, y).map(|pixel_index| {
-            vec4f(
+            Vec4::new(
                 (self.buffer[pixel_index] as f32) / 255.0,
                 (self.buffer[pixel_index + 1] as f32) / 255.0,
                 (self.buffer[pixel_index + 2] as f32) / 255.0,
@@ -471,7 +471,7 @@ impl TheRGBABuffer {
     }
 
     /// Returns the pixel at the given UV coordinate.
-    pub fn at_f(&self, uv: Vec2f) -> Option<[u8; 4]> {
+    pub fn at_f(&self, uv: Vec2<f32>) -> Option<[u8; 4]> {
         let x = (uv.x * self.dim.width as f32) as i32;
         let y = (uv.y * self.dim.height as f32) as i32;
 
@@ -489,7 +489,7 @@ impl TheRGBABuffer {
     }
 
     /// Returns the pixel at the given position.
-    pub fn at(&self, position: Vec2i) -> Option<[u8; 4]> {
+    pub fn at(&self, position: Vec2<i32>) -> Option<[u8; 4]> {
         let x = position.x;
         let y = position.y;
 
@@ -506,13 +506,13 @@ impl TheRGBABuffer {
         }
     }
 
-    pub fn at_vec4(&self, position: Vec2i) -> Option<Vec4f> {
+    pub fn at_vec4(&self, position: Vec2<i32>) -> Option<Vec4<f32>> {
         let x = position.x;
         let y = position.y;
 
         if x >= 0 && x < self.dim.width && y >= 0 && y < self.dim.height {
             let pixel_index = (y * self.dim.width + x) as usize * 4;
-            Some(vec4f(
+            Some(Vec4::new(
                 (self.buffer[pixel_index] as f32) / 255.0,
                 (self.buffer[pixel_index + 1] as f32) / 255.0,
                 (self.buffer[pixel_index + 2] as f32) / 255.0,
@@ -670,7 +670,7 @@ impl TheRGBABuffer {
                 if d < 1.0 {
                     let t = self.fill_mask(d);
 
-                    if let Some(background) = self.at(vec2i(x, y)) {
+                    if let Some(background) = self.at(Vec2::new(x, y)) {
                         let mut mixed_color =
                             self.mix_color(&background, color, t * (color[3] as f32 / 255.0));
 
@@ -699,15 +699,15 @@ impl TheRGBABuffer {
         );
         for y in dim.y..dim.y + dim.height {
             for x in dim.x..dim.x + dim.width {
-                let p = vec2f(x as f32 - center.0, y as f32 - center.1);
+                let p = Vec2::new(x as f32 - center.0, y as f32 - center.1);
                 let r = dim.width as f32 / 2.0 - hb;
 
-                let d = length(p) - r;
+                let d = p.magnitude() - r;
 
                 if d < 1.0 {
                     let t = self.fill_mask(d);
 
-                    if let Some(background) = self.at(vec2i(x, y)) {
+                    if let Some(background) = self.at(Vec2::new(x, y)) {
                         let mut mixed_color =
                             self.mix_color(&background, color, t * (color[3] as f32 / 255.0));
 
@@ -750,7 +750,7 @@ impl TheRGBABuffer {
     /// Render an aligned text in the buffer.
     pub fn draw_text(
         &mut self,
-        position: Vec2i,
+        position: Vec2<i32>,
         font: &fontdue::Font,
         text: &str,
         size: f32,

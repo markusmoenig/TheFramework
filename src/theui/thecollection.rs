@@ -59,7 +59,7 @@ impl TheCollection {
     }
 
     /// Get an Float3 value, if not found return the default.
-    pub fn get_float3_default(&self, key: &str, default: Vec3f) -> Vec3f {
+    pub fn get_float3_default(&self, key: &str, default: Vec3<f32>) -> Vec3<f32> {
         if let Some(v) = self.keys.get(key) {
             if let Some(v) = v.to_vec3f() {
                 return v;

@@ -28,7 +28,7 @@ impl TheWidget for TheTimeSlider {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(300, 20));
+        limiter.set_max_size(Vec2::new(300, 20));
 
         Self {
             id,

@@ -49,9 +49,9 @@ pub mod prelude {
 
     pub use serde::{Deserialize, Serialize};
 
-    pub use maths_rs::prelude::*;
     pub use rustc_hash::*;
     pub use uuid::Uuid;
+    pub use vek::*;
 
     pub use crate::theapp::TheApp;
     pub use crate::thecolor::TheColor;

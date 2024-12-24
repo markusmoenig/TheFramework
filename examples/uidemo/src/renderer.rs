@@ -62,7 +62,7 @@ impl Renderer {
 
         let mut toolbar_hlayout = TheHLayout::new(TheId::empty());
         toolbar_hlayout.set_background_color(None);
-        toolbar_hlayout.set_margin(vec4i(10, 2, 5, 2));
+        toolbar_hlayout.set_margin(Vec4::new(10, 2, 5, 2));
         toolbar_hlayout.add_widget(Box::new(width_name_text));
         toolbar_hlayout.add_widget(Box::new(width_name_edit));
         let mut spacer = TheSpacer::new(TheId::empty());

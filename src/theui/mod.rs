@@ -665,7 +665,7 @@ impl TheUI {
 
     pub fn context(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
-        let coord = vec2i(x as i32, y as i32);
+        let coord = Vec2::new(x as i32, y as i32);
         if let Some(widget) = self.get_widget_at_coord(coord) {
             let event = TheEvent::Context(coord);
             redraw = widget.on_event(&event, ctx);
@@ -677,7 +677,7 @@ impl TheUI {
 
     pub fn touch_down(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
-        let coord = vec2i(x as i32, y as i32);
+        let coord = Vec2::new(x as i32, y as i32);
 
         ctx.ui.send(TheEvent::MouseDown(coord));
 
@@ -735,7 +735,7 @@ impl TheUI {
 
     pub fn touch_dragged(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
-        let coord = vec2i(x as i32, y as i32);
+        let coord = Vec2::new(x as i32, y as i32);
 
         if let Some(context) = &mut self.context_menu {
             return redraw;
@@ -768,7 +768,7 @@ impl TheUI {
 
     pub fn touch_up(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
-        let coord = vec2i(x as i32, y as i32);
+        let coord = Vec2::new(x as i32, y as i32);
 
         ctx.ui.send(TheEvent::MouseUp(coord));
 
@@ -806,7 +806,7 @@ impl TheUI {
 
     pub fn hover(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
-        let coord = vec2i(x as i32, y as i32);
+        let coord = Vec2::new(x as i32, y as i32);
 
         if let Some(context) = &mut self.context_menu {
             if context.contains(coord) {
@@ -853,7 +853,7 @@ impl TheUI {
         let mut redraw = false;
         if let Some(id) = &ctx.ui.hover {
             if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
-                redraw = widget.on_event(&TheEvent::MouseWheel(vec2i(delta.0, delta.1)), ctx);
+                redraw = widget.on_event(&TheEvent::MouseWheel(Vec2::new(delta.0, delta.1)), ctx);
                 self.process_events(ctx);
             }
         }
@@ -953,7 +953,7 @@ impl TheUI {
     }
 
     /// Returns the absolute widget at the given position.
-    pub fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+    pub fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         if let Some(dialog) = &mut self.dialog {
             if let Some(widget) = dialog.get_widget_at_coord(coord) {
                 return Some(widget);
@@ -1262,7 +1262,7 @@ impl TheUI {
             let mut toolbar_hlayout = TheHLayout::new(TheId::empty());
             toolbar_hlayout.set_background_color(Some(TheThemeColors::ListLayoutBackground));
             toolbar_hlayout.limiter_mut().set_max_width(width);
-            toolbar_hlayout.set_margin(vec4i(5, 2, 5, 2));
+            toolbar_hlayout.set_margin(Vec4::new(5, 2, 5, 2));
 
             for b in &buttons {
                 let mut button = TheTraybarButton::new(TheId::named(b.to_id()));
@@ -1323,7 +1323,7 @@ impl TheUI {
 
             let mut tuple = dialog_canvas.dim.to_buffer_utuple();
 
-            let window_margin = vec4i(3, 29, 3, 3);
+            let window_margin = Vec4::new(3, 29, 3, 3);
 
             let mut border_shrinker = TheDimShrinker::zero();
             let mut border_dim = TheDim::new(

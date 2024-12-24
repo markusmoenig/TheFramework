@@ -57,7 +57,7 @@ impl TheCodeBundle {
     }
 
     /// Move all positions by the given amount.
-    pub fn move_positions_by(&mut self, move_by: Vec2i) {
+    pub fn move_positions_by(&mut self, move_by: Vec2<i32>) {
         for grid in self.grids.values_mut() {
             grid.move_positions_by(move_by);
         }

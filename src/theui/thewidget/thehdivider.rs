@@ -13,7 +13,7 @@ impl TheWidget for TheHDivider {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(16, 20));
+        limiter.set_max_size(Vec2::new(16, 20));
 
         Self {
             id,

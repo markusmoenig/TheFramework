@@ -20,7 +20,7 @@ pub struct TheTextLayout {
     text_margin: i32,
     fixed_text_width: Option<i32>,
 
-    margin: Vec4i,
+    margin: Vec4<i32>,
     padding: i32,
 
     background: Option<TheThemeColors>,
@@ -54,7 +54,7 @@ impl TheLayout for TheTextLayout {
             text_margin: 10,
             fixed_text_width: None,
 
-            margin: vec4i(10, 10, 10, 10),
+            margin: Vec4::new(10, 10, 10, 10),
             padding: 10,
 
             background: Some(TextLayoutBackground),
@@ -66,7 +66,7 @@ impl TheLayout for TheTextLayout {
         &self.id
     }
 
-    fn set_margin(&mut self, margin: Vec4i) {
+    fn set_margin(&mut self, margin: Vec4<i32>) {
         self.margin = margin;
     }
 
@@ -82,7 +82,7 @@ impl TheLayout for TheTextLayout {
         &mut self.widgets
     }
 
-    fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+    fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         if !self.dim.contains(coord) {
             return None;
         }
@@ -90,9 +90,9 @@ impl TheLayout for TheTextLayout {
             return Some(&mut self.vertical_scrollbar);
         }
 
-        let mut scroll_offset = vec2i(0, 0);
+        let mut scroll_offset = Vec2::new(0, 0);
         if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
-            scroll_offset = vec2i(0, scroll_bar.scroll_offset());
+            scroll_offset = Vec2::new(0, scroll_bar.scroll_offset());
         }
 
         let widgets = self.widgets();

@@ -18,7 +18,7 @@ pub struct TheVLayout {
 
     widgets: Vec<Box<dyn TheWidget>>,
 
-    margin: Vec4i,
+    margin: Vec4<i32>,
     padding: i32,
 
     background: Option<TheThemeColors>,
@@ -41,7 +41,7 @@ impl TheLayout for TheVLayout {
 
             widgets: vec![],
 
-            margin: vec4i(10, 10, 10, 10),
+            margin: Vec4::new(10, 10, 10, 10),
             padding: 5,
 
             background: Some(DefaultWidgetBackground),
@@ -55,7 +55,7 @@ impl TheLayout for TheVLayout {
         &self.id
     }
 
-    fn set_margin(&mut self, margin: Vec4i) {
+    fn set_margin(&mut self, margin: Vec4<i32>) {
         self.margin = margin;
     }
 
@@ -71,7 +71,7 @@ impl TheLayout for TheVLayout {
         &mut self.widgets
     }
 
-    fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+    fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         let widgets = self.widgets();
         widgets.iter_mut().find(|w| w.dim().contains(coord))
     }

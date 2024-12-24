@@ -12,7 +12,7 @@ pub struct TheRowListItem {
     dim: TheDim,
     is_dirty: bool,
 
-    mouse_down_pos: Vec2i,
+    mouse_down_pos: Vec2<i32>,
 
     icon: Option<TheRGBABuffer>,
     status: Option<String>,
@@ -45,7 +45,7 @@ impl TheWidget for TheRowListItem {
             dim: TheDim::zero(),
             is_dirty: true,
 
-            mouse_down_pos: Vec2i::zero(),
+            mouse_down_pos: Vec2::zero(),
 
             icon: None,
             status: None,
@@ -94,13 +94,15 @@ impl TheWidget for TheRowListItem {
                     ));
                     redraw = true;
                 }
-                self.mouse_down_pos = vec2i(coord.x + self.scroll_offset, coord.y);
+                self.mouse_down_pos = Vec2::new(coord.x + self.scroll_offset, coord.y);
                 ctx.ui.set_focus(self.id());
             }
             TheEvent::MouseDragged(coord) => {
-                let coord = vec2i(coord.x + self.scroll_offset, coord.y);
+                let coord = Vec2::new(coord.x + self.scroll_offset, coord.y);
                 if ctx.ui.drop.is_none()
-                    && distance(Vec2f::from(self.mouse_down_pos), Vec2f::from(coord)) >= 5.0
+                    && Vec2::new(self.mouse_down_pos.x as f32, self.mouse_down_pos.y as f32)
+                        .distance(Vec2::new(coord.x as f32, coord.y as f32))
+                        > 5.0
                 {
                     ctx.ui.send(TheEvent::DragStarted(
                         self.id().clone(),

@@ -42,7 +42,7 @@ impl TheTrait for UIDemo {
 
         let mut save_as_button = TheMenubarButton::new(TheId::named("Save As"));
         save_as_button.set_icon_name("icon_role_save_as".to_string());
-        save_as_button.set_icon_offset(vec2i(2, -5));
+        save_as_button.set_icon_offset(Vec2::new(2, -5));
 
         let mut undo_button = TheMenubarButton::new(TheId::named("Undo"));
         undo_button.set_icon_name("icon_role_undo".to_string());
@@ -52,7 +52,7 @@ impl TheTrait for UIDemo {
 
         let mut hlayout = TheHLayout::new(TheId::named("Menu Layout"));
         hlayout.set_background_color(None);
-        hlayout.set_margin(vec4i(40, 5, 20, 0));
+        hlayout.set_margin(Vec4::new(40, 5, 20, 0));
         hlayout.add_widget(Box::new(open_button));
         hlayout.add_widget(Box::new(save_button));
         hlayout.add_widget(Box::new(save_as_button));

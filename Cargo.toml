@@ -1,6 +1,6 @@
 [package]
 name = "theframework"
-version = "0.1.31"
+version = "0.1.32"
 edition = "2021"
 description = "A cross platform application UI framework."
 license = "MIT"
@@ -19,6 +19,7 @@ maths-rs = { version = "0.2.6", features = [
     "serde",
     "hash",
 ] }
+vek = { version = "0.17.1", default-features = true }
 winit = { version = "0.29", optional = true }
 winit_input_helper = { version = "0.16", optional = true }
 #therenderer = { version = "0.1.1", optional = true }

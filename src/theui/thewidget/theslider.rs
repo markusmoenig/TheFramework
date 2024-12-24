@@ -138,7 +138,7 @@ impl TheWidget for TheSlider {
                     ctx.ui
                         .send_widget_value_changed(self.id(), self.value.clone());
                 } else if let Some(range_f32) = self.range.to_range_f32() {
-                    let d = abs(range_f32.end() - range_f32.start())
+                    let d = (range_f32.end() - range_f32.start()).abs()
                         * (coord.x as f32 / (self.dim.width - self.text_width) as f32)
                             .clamp(0.0, 1.0);
                     let v = *range_f32.start() + d;
@@ -156,7 +156,7 @@ impl TheWidget for TheSlider {
             TheEvent::MouseDragged(coord) => {
                 if coord.x > self.dim.width - self.text_width + 5 {
                 } else if let Some(range_f32) = self.range.to_range_f32() {
-                    let d = abs(range_f32.end() - range_f32.start())
+                    let d = (range_f32.end() - range_f32.start()).abs()
                         * (coord.x as f32 / (self.dim.width - self.text_width) as f32)
                             .clamp(0.0, 1.0);
                     let v = *range_f32.start() + d;

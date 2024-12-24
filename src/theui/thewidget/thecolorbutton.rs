@@ -18,7 +18,7 @@ impl TheWidget for TheColorButton {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(20, 20));
+        limiter.set_max_size(Vec2::new(20, 20));
         Self {
             id,
             limiter,

@@ -35,13 +35,13 @@ impl TheLayout for TheTabLayout {
         &self.id
     }
 
-    fn set_margin(&mut self, _margin: Vec4i) {}
+    fn set_margin(&mut self, _margin: Vec4<i32>) {}
 
     fn widgets(&mut self) -> &mut Vec<Box<dyn TheWidget>> {
         &mut self.widgets
     }
 
-    fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+    fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         if self.tabbar.dim().contains(coord) {
             return Some(&mut self.tabbar);
         }

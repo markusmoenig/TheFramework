@@ -6,7 +6,7 @@ pub struct TheToolbarButton {
     state: TheWidgetState,
 
     icon_name: String,
-    icon_offset: Vec2i,
+    icon_offset: Vec2<i32>,
 
     text: String,
     text_size: f32,
@@ -21,7 +21,7 @@ impl TheWidget for TheToolbarButton {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(20, 20));
+        limiter.set_max_size(Vec2::new(20, 20));
 
         Self {
             id,
@@ -29,7 +29,7 @@ impl TheWidget for TheToolbarButton {
             state: TheWidgetState::None,
 
             icon_name: "".to_string(),
-            icon_offset: vec2i(0, 0),
+            icon_offset: Vec2::new(0, 0),
 
             text: "".to_string(),
             text_size: 13.0,
@@ -126,7 +126,7 @@ impl TheWidget for TheToolbarButton {
             if let Some(font) = &ctx.ui.font {
                 let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
                 self.limiter_mut()
-                    .set_max_width(ceil(size.0 as f32) as i32 + 15);
+                    .set_max_width((size.0 as f32).ceil() as i32 + 15);
             }
         }
     }
@@ -241,7 +241,7 @@ impl TheWidget for TheToolbarButton {
 
 pub trait TheToolbarButtonTrait {
     fn set_icon_name(&mut self, text: String);
-    fn set_icon_offset(&mut self, offset: Vec2i);
+    fn set_icon_offset(&mut self, offset: Vec2<i32>);
     fn set_text(&mut self, text: String);
 }
 
@@ -249,7 +249,7 @@ impl TheToolbarButtonTrait for TheToolbarButton {
     fn set_icon_name(&mut self, text: String) {
         self.icon_name = text;
     }
-    fn set_icon_offset(&mut self, offset: Vec2i) {
+    fn set_icon_offset(&mut self, offset: Vec2<i32>) {
         self.icon_offset = offset;
     }
     fn set_text(&mut self, text: String) {

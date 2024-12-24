@@ -58,7 +58,7 @@ pub trait TheLayout: Send {
     fn limiter_mut(&mut self) -> &mut TheSizeLimiter;
 
     /// Sets the margin for content in the layout
-    fn set_margin(&mut self, margin: Vec4i) {}
+    fn set_margin(&mut self, margin: Vec4<i32>) {}
 
     /// Set the padding for content in the layout
     fn set_padding(&mut self, padding: i32) {}
@@ -93,7 +93,7 @@ pub trait TheLayout: Send {
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheWidget>>;
 
-    fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>>;
+    fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>>;
 
     fn widgets(&mut self) -> &mut Vec<Box<dyn TheWidget>>;
 

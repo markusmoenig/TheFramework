@@ -6,9 +6,9 @@ pub struct TheMenubarButton {
     state: TheWidgetState,
 
     icon_name: String,
-    icon_offset: Vec2i,
+    icon_offset: Vec2<i32>,
 
-    fixed_size: Option<Vec2i>,
+    fixed_size: Option<Vec2<i32>>,
 
     status: Option<String>,
 
@@ -22,7 +22,7 @@ impl TheWidget for TheMenubarButton {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(35, 35));
+        limiter.set_max_size(Vec2::new(35, 35));
 
         Self {
             id,
@@ -30,7 +30,7 @@ impl TheWidget for TheMenubarButton {
             state: TheWidgetState::None,
 
             icon_name: "".to_string(),
-            icon_offset: vec2i(0, 0),
+            icon_offset: Vec2::new(0, 0),
 
             fixed_size: None,
 
@@ -260,13 +260,13 @@ impl TheWidget for TheMenubarButton {
 }
 
 pub trait TheMenubarButtonTrait {
-    fn set_fixed_size(&mut self, size: Vec2i);
+    fn set_fixed_size(&mut self, size: Vec2<i32>);
     fn set_icon_name(&mut self, text: String);
-    fn set_icon_offset(&mut self, offset: Vec2i);
+    fn set_icon_offset(&mut self, offset: Vec2<i32>);
 }
 
 impl TheMenubarButtonTrait for TheMenubarButton {
-    fn set_fixed_size(&mut self, size: Vec2i) {
+    fn set_fixed_size(&mut self, size: Vec2<i32>) {
         self.fixed_size = Some(size);
         self.is_dirty = true;
     }
@@ -274,7 +274,7 @@ impl TheMenubarButtonTrait for TheMenubarButton {
         self.icon_name = text;
         self.is_dirty = true;
     }
-    fn set_icon_offset(&mut self, offset: Vec2i) {
+    fn set_icon_offset(&mut self, offset: Vec2<i32>) {
         self.icon_offset = offset;
     }
 }

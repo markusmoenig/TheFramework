@@ -56,8 +56,8 @@ impl TheDim {
         self.buffer_y = buffer_y;
     }
 
-    pub fn screen_coord(&self) -> Vec2i {
-        Vec2i::new(self.x, self.y)
+    pub fn screen_coord(&self) -> Vec2<i32> {
+        Vec2::new(self.x, self.y)
     }
 
     /// Check for size validity
@@ -66,7 +66,7 @@ impl TheDim {
     }
 
     /// Checks if the given coordinate is inside the dimension.
-    pub fn contains(&self, coord: Vec2i) -> bool {
+    pub fn contains(&self, coord: Vec2<i32>) -> bool {
         self.x <= coord.x
             && self.x + self.width > coord.x
             && self.y <= coord.y
@@ -74,7 +74,7 @@ impl TheDim {
     }
 
     /// Returns the given screen coordinate as a local coordinate.
-    pub fn to_local(&self, coord: Vec2i) -> Vec2i {
+    pub fn to_local(&self, coord: Vec2<i32>) -> Vec2<i32> {
         coord - self.screen_coord()
     }
 
@@ -102,8 +102,8 @@ impl TheDim {
     }
 
     /// Returns the center of the buffer.
-    pub fn center(&self) -> Vec2f {
-        Vec2f::new(
+    pub fn center(&self) -> Vec2<f32> {
+        Vec2::new(
             self.x as f32 + self.width as f32 / 2.0,
             self.y as f32 + self.height as f32 / 2.0,
         )
@@ -111,7 +111,7 @@ impl TheDim {
 
     /// Return the radius of the dimension.
     pub fn radius(&self) -> f32 {
-        min(self.width, self.height) as f32 / 2.0
+        self.width.min(self.height) as f32 / 2.0
     }
 }
 

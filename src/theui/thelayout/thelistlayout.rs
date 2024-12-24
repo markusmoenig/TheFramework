@@ -13,7 +13,7 @@ pub struct TheListLayout {
     vertical_scrollbar: Box<dyn TheWidget>,
     vertical_scrollbar_visible: bool,
 
-    margin: Vec4i,
+    margin: Vec4<i32>,
 
     background: Option<TheThemeColors>,
     item_size: i32,
@@ -40,7 +40,7 @@ impl TheLayout for TheListLayout {
             ))),
             vertical_scrollbar_visible: false,
 
-            margin: vec4i(0, 0, 0, 0),
+            margin: Vec4::new(0, 0, 0, 0),
 
             background: Some(TextLayoutBackground),
             item_size: 17,
@@ -53,7 +53,7 @@ impl TheLayout for TheListLayout {
         &self.id
     }
 
-    fn set_margin(&mut self, margin: Vec4i) {
+    fn set_margin(&mut self, margin: Vec4<i32>) {
         self.margin = margin;
     }
 
@@ -65,7 +65,7 @@ impl TheLayout for TheListLayout {
         &mut self.widgets
     }
 
-    fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+    fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         if !self.dim.contains(coord) {
             return None;
         }
@@ -74,9 +74,9 @@ impl TheLayout for TheListLayout {
             return Some(&mut self.vertical_scrollbar);
         }
 
-        let mut scroll_offset = vec2i(0, 0);
+        let mut scroll_offset = Vec2::new(0, 0);
         if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
-            scroll_offset = vec2i(0, scroll_bar.scroll_offset());
+            scroll_offset = Vec2::new(0, scroll_bar.scroll_offset());
         }
 
         let widgets = self.widgets();
@@ -284,7 +284,7 @@ pub trait TheListLayoutTrait: TheLayout {
     /// Sets the text for an item
     fn set_item_text(&mut self, id: Uuid, text: String);
     /// Scroll by the given amount.
-    fn scroll_by(&mut self, delta: Vec2i);
+    fn scroll_by(&mut self, delta: Vec2<i32>);
 }
 
 impl TheListLayoutTrait for TheListLayout {
@@ -384,7 +384,7 @@ impl TheListLayoutTrait for TheListLayout {
             }
         }
     }
-    fn scroll_by(&mut self, delta: Vec2i) {
+    fn scroll_by(&mut self, delta: Vec2<i32>) {
         if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
             scroll_bar.scroll_by(((delta.y as f32) * -1.0) as i32);
         }

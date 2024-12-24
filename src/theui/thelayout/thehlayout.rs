@@ -18,7 +18,7 @@ pub struct TheHLayout {
 
     widgets: Vec<Box<dyn TheWidget>>,
 
-    margin: Vec4i,
+    margin: Vec4<i32>,
     padding: i32,
 
     background: Option<TheThemeColors>,
@@ -41,7 +41,7 @@ impl TheLayout for TheHLayout {
 
             widgets: vec![],
 
-            margin: vec4i(10, 10, 10, 10),
+            margin: Vec4::new(10, 10, 10, 10),
             padding: 5,
 
             background: Some(DefaultWidgetBackground),
@@ -55,7 +55,7 @@ impl TheLayout for TheHLayout {
         &self.id
     }
 
-    fn set_margin(&mut self, margin: Vec4i) {
+    fn set_margin(&mut self, margin: Vec4<i32>) {
         self.margin = margin;
     }
 
@@ -71,7 +71,7 @@ impl TheLayout for TheHLayout {
         &mut self.widgets
     }
 
-    fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+    fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         self.widgets.iter_mut().find(|w| w.dim().contains(coord))
     }
 
@@ -229,7 +229,7 @@ impl TheLayout for TheHLayout {
                     if let Some(y) = self.widgets[3].value().to_i32() {
                         ctx.ui.send(TheEvent::ValueChanged(
                             id.clone(),
-                            TheValue::Int2(vec2i(v, y)),
+                            TheValue::Int2(Vec2::new(v, y)),
                         ));
                     }
                 }
@@ -238,7 +238,7 @@ impl TheLayout for TheHLayout {
                     if let Some(x) = self.widgets[1].value().to_i32() {
                         ctx.ui.send(TheEvent::ValueChanged(
                             id.clone(),
-                            TheValue::Int2(vec2i(x, v)),
+                            TheValue::Int2(Vec2::new(x, v)),
                         ));
                     }
                 }
@@ -247,7 +247,7 @@ impl TheLayout for TheHLayout {
                     if let Some(y) = self.widgets[3].value().to_f32() {
                         ctx.ui.send(TheEvent::ValueChanged(
                             id.clone(),
-                            TheValue::Float2(vec2f(v, y)),
+                            TheValue::Float2(Vec2::new(v, y)),
                         ));
                     }
                 }
@@ -256,7 +256,7 @@ impl TheLayout for TheHLayout {
                     if let Some(x) = self.widgets[1].value().to_f32() {
                         ctx.ui.send(TheEvent::ValueChanged(
                             id.clone(),
-                            TheValue::Float2(vec2f(x, v)),
+                            TheValue::Float2(Vec2::new(x, v)),
                         ));
                     }
                 }

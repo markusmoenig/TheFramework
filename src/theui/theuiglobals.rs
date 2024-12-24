@@ -4,7 +4,7 @@ use crate::prelude::*;
 pub fn create_int2_widgets(
     layout: &mut dyn TheHLayoutTrait,
     redirect_as: TheId,
-    value: Vec2i,
+    value: Vec2<i32>,
     labels: Vec<&str>,
 ) {
     layout.set_redirect_as(redirect_as);
@@ -34,7 +34,7 @@ pub fn create_int2_widgets(
 pub fn create_float2_widgets(
     layout: &mut dyn TheHLayoutTrait,
     redirect_as: TheId,
-    value: Vec2f,
+    value: Vec2<f32>,
     labels: Vec<&str>,
 ) {
     layout.set_redirect_as(redirect_as);
@@ -85,10 +85,10 @@ pub fn open_text_dialog(
     let height = 100;
 
     let mut canvas = TheCanvas::new();
-    canvas.limiter_mut().set_max_size(vec2i(width, height));
+    canvas.limiter_mut().set_max_size(Vec2::new(width, height));
 
     let mut text_layout: TheTextLayout = TheTextLayout::new(TheId::empty());
-    text_layout.set_margin(vec4i(20, 20, 20, 20));
+    text_layout.set_margin(Vec4::new(20, 20, 20, 20));
 
     text_layout.limiter_mut().set_max_width(width);
     let mut name_edit = TheTextLineEdit::new(TheId::named_with_id("Dialog Value", uuid));
@@ -106,7 +106,7 @@ pub fn open_info_dialog(window_title: &str, text: &str, ui: &mut TheUI, ctx: &mu
     let height = 100;
 
     let mut canvas = TheCanvas::new();
-    canvas.limiter_mut().set_max_size(vec2i(width, height));
+    canvas.limiter_mut().set_max_size(Vec2::new(width, height));
 
     let mut hlayout: TheHLayout = TheHLayout::new(TheId::empty());
     // text_layout.set_margin(vec4i(20, 20, 20, 20));
@@ -133,7 +133,7 @@ pub fn open_delete_confirmation_dialog(
     let height = 100;
 
     let mut canvas = TheCanvas::new();
-    canvas.limiter_mut().set_max_size(vec2i(width, height));
+    canvas.limiter_mut().set_max_size(Vec2::new(width, height));
 
     let mut hlayout: TheHLayout = TheHLayout::new(TheId::empty());
     // text_layout.set_margin(vec4i(20, 20, 20, 20));

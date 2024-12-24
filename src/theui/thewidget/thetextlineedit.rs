@@ -1,5 +1,7 @@
 use std::time::Instant;
 
+use num_traits::ToPrimitive;
+
 use crate::prelude::*;
 
 use super::thetextedit::{TheCursor, TheTextEditState, TheTextRenderer};
@@ -219,8 +221,9 @@ impl TheWidget for TheTextLineEdit {
                 // If we have an i32 or f32 range, we treat the text line edit as a slider
                 if let Some(range) = &self.range {
                     if let Some(range_f32) = range.to_range_f32() {
-                        let d = abs(range_f32.end() - range_f32.start())
-                            * (coord.x.as_f32() / (self.dim.width).as_f32()).clamp(0.0, 1.0);
+                        let d = (range_f32.end() - range_f32.start()).abs()
+                            * (coord.x.to_f32().unwrap() / (self.dim.width).to_f32().unwrap())
+                                .clamp(0.0, 1.0);
                         let v = *range_f32.start() + d;
                         self.state.set_text(format!("{:.3}", v));
                         self.modified_since_last_tick = true;
@@ -273,7 +276,7 @@ impl TheWidget for TheTextLineEdit {
                             4
                         };
                         self.renderer
-                            .scroll(&vec2i(delta_x / ratio, delta_y / ratio), true);
+                            .scroll(&Vec2::new(delta_x / ratio, delta_y / ratio), true);
                     }
 
                     self.state.set_cursor(self.renderer.find_cursor(coord));
@@ -312,7 +315,10 @@ impl TheWidget for TheTextLineEdit {
                 }
             }
             TheEvent::MouseWheel(delta) => {
-                if self.renderer.scroll(&vec2i(delta.x / 4, delta.y / 4), true) {
+                if self
+                    .renderer
+                    .scroll(&Vec2::new(delta.x / 4, delta.y / 4), true)
+                {
                     redraw = true;
                 }
             }
@@ -586,10 +592,10 @@ impl TheWidget for TheTextLineEdit {
 
         if self.is_range() && !self.is_disabled {
             shrinker.shrink_by(
-                -self.renderer.padding.0.as_i32(),
-                -self.renderer.padding.1.as_i32(),
-                -self.renderer.padding.2.as_i32(),
-                -self.renderer.padding.3.as_i32(),
+                -self.renderer.padding.0.to_i32().unwrap(),
+                -self.renderer.padding.1.to_i32().unwrap(),
+                -self.renderer.padding.2.to_i32().unwrap(),
+                -self.renderer.padding.3.to_i32().unwrap(),
             );
             let rect = self.dim.to_buffer_shrunk_utuple(&shrinker);
             let value = self.range.as_ref().and_then(|range| {
@@ -597,19 +603,21 @@ impl TheWidget for TheTextLineEdit {
                     if let Ok(value) = self.state.to_text().parse::<f32>() {
                         let normalized =
                             (value - range_f32.start()) / (range_f32.end() - range_f32.start());
-                        return Some((normalized * rect.2.as_f32()).as_usize());
+                        return Some((normalized * rect.2.to_f32().unwrap()).to_usize());
                     }
                 } else if let Some(range_i32) = range.to_range_i32() {
                     if let Ok(value) = self.state.to_text().parse::<i32>() {
                         let range_diff = range_i32.end() - range_i32.start();
-                        let normalized = (value - range_i32.start()) * rect.2.as_i32() / range_diff;
-                        return Some(normalized.as_usize());
+                        let normalized =
+                            (value - range_i32.start()) * rect.2.to_i32().unwrap() / range_diff;
+                        return Some(normalized.to_usize());
                     }
                 }
                 None
             });
 
-            if let Some(value) = value {
+            // TODO: CHECK Option<Option<usize>>
+            if let Some(Some(value)) = value {
                 let pos = value.clamp(0, rect.2);
                 let stride = buffer.stride();
                 ctx.draw.rect(

@@ -18,7 +18,7 @@ impl TheWidget for TheToolListButton {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(46, 43));
+        limiter.set_max_size(Vec2::new(46, 43));
 
         Self {
             id,

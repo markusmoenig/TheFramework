@@ -12,7 +12,7 @@ pub struct TheGroupButton {
     hover_index: Option<usize>,
     selected_index: Option<usize>,
 
-    icon_size: Vec2i,
+    icon_size: Vec2<i32>,
     item_width: usize,
 
     dim: TheDim,
@@ -27,7 +27,7 @@ impl TheWidget for TheGroupButton {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(60, 20));
+        limiter.set_max_size(Vec2::new(60, 20));
         Self {
             id,
             limiter,
@@ -41,7 +41,7 @@ impl TheWidget for TheGroupButton {
             hover_index: None,
             selected_index: Some(0),
 
-            icon_size: vec2i(18, 18),
+            icon_size: Vec2::new(18, 18),
             item_width: 60,
 
             dim: TheDim::zero(),

@@ -15,7 +15,7 @@ pub struct TheSharedHLayout {
     mode: TheSharedHLayoutMode,
     dim: TheDim,
 
-    margin: Vec4i,
+    margin: Vec4<i32>,
     padding: i32,
 
     canvas: Vec<TheCanvas>,
@@ -40,7 +40,7 @@ impl TheLayout for TheSharedHLayout {
             canvas: vec![],
             widgets: vec![],
 
-            margin: vec4i(10, 10, 10, 10),
+            margin: Vec4::new(10, 10, 10, 10),
             padding: 5,
 
             background: Some(DefaultWidgetBackground),
@@ -52,7 +52,7 @@ impl TheLayout for TheSharedHLayout {
         &self.id
     }
 
-    fn set_margin(&mut self, margin: Vec4i) {
+    fn set_margin(&mut self, margin: Vec4<i32>) {
         self.margin = margin;
     }
 
@@ -68,7 +68,7 @@ impl TheLayout for TheSharedHLayout {
         &mut self.widgets
     }
 
-    fn get_widget_at_coord(&mut self, coord: Vec2i) -> Option<&mut Box<dyn TheWidget>> {
+    fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         if self.canvas.len() < 2 {
             return None;
         }

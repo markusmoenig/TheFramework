@@ -25,7 +25,7 @@ impl TheWidget for TheIconView {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_size(vec2i(24, 24));
+        limiter.set_max_size(Vec2::new(24, 24));
 
         Self {
             id,

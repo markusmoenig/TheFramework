@@ -1,4 +1,5 @@
 use fontdue::{layout::LayoutSettings, Font};
+use num_traits::ToPrimitive;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::prelude::*;
@@ -629,13 +630,13 @@ impl TheTextEditState {
     fn move_lines(&mut self, start: usize, end: usize, vector: isize) -> bool {
         if vector == 0
             || (start as isize) + vector < 0
-            || ((end as isize) + vector).abs().as_usize() >= self.row_count()
+            || ((end as isize) + vector).abs() >= self.row_count() as isize
         {
             return false;
         }
 
         if vector < 0 {
-            let vector = vector.abs().as_usize();
+            let vector = vector.unsigned_abs();
             if !self.selection.is_none() {
                 let row_len = self.glyphs_in_row(start - vector) + 1;
                 self.selection.start -= row_len;
@@ -646,7 +647,7 @@ impl TheTextEditState {
             }
             self.cursor.row -= vector;
         } else {
-            let vector = vector.abs().as_usize();
+            let vector = vector.unsigned_abs();
             if !self.selection.is_none() {
                 let row_len = self.glyphs_in_row(end + vector) + 1;
                 self.selection.start += row_len;
@@ -722,17 +723,17 @@ impl Default for TheTextRenderer {
 impl TheTextRenderer {
     pub fn dim(&self) -> TheDim {
         TheDim::new(
-            (self.left - self.padding.0).as_i32(),
-            (self.top - self.padding.1).as_i32(),
-            (self.width + self.padding.0 + self.padding.2).as_i32(),
-            (self.height + self.padding.1 + self.padding.3).as_i32(),
+            (self.left - self.padding.0) as i32,
+            (self.top - self.padding.1) as i32,
+            (self.width + self.padding.0 + self.padding.2) as i32,
+            (self.height + self.padding.1 + self.padding.3) as i32,
         )
     }
 
     pub fn find_cursor(&self, coord: &Vec2<i32>) -> TheCursor {
-        let coord = vec2i(
-            coord.x + self.scroll_offset.x.as_i32() - self.padding.0.as_i32(),
-            coord.y + self.scroll_offset.y.as_i32() - self.padding.1.as_i32(),
+        let coord = Vec2::new(
+            coord.x + self.scroll_offset.x as i32 - self.padding.0 as i32,
+            coord.y + self.scroll_offset.y as i32 - self.padding.1 as i32,
         );
         let mut cursor = TheCursor::zero();
 
@@ -742,7 +743,7 @@ impl TheTextRenderer {
         }
 
         for (row_number, row) in self.row_info.iter().enumerate() {
-            if coord.y <= row.bottom.as_i32() {
+            if coord.y <= row.bottom as i32 {
                 cursor.row = row_number;
 
                 let start_index = self.row_info[row_number].glyph_start;
@@ -754,7 +755,7 @@ impl TheTextRenderer {
 
                 for i in start_index..=end_index {
                     let glyph = &self.glyphs[i];
-                    if (glyph.x + glyph.width.as_f32()).as_i32() > coord.x {
+                    if (glyph.x + glyph.width.to_f32().unwrap()).to_i32().unwrap() > coord.x {
                         cursor.column = i - start_index;
                         break;
                     }
@@ -797,7 +798,7 @@ impl TheTextRenderer {
         let layout = draw.get_text_layout(font, self.font_size, "  ", LayoutSettings::default());
         let space_width = layout.glyphs().last().unwrap().x
             - layout.glyphs().first().unwrap().x
-            - layout.glyphs().first().unwrap().width.as_f32();
+            - layout.glyphs().first().unwrap().width.to_f32().unwrap();
 
         let layout = draw.get_text_layout(font, self.font_size, &text, LayoutSettings::default());
         let glyph_positions = layout.glyphs();
@@ -817,22 +818,16 @@ impl TheTextRenderer {
             .unwrap()
             .iter()
             .map(|line| {
-                let top = (line.baseline_y - line.max_ascent).ceil().as_usize();
-                let left = self
-                    .glyphs
-                    .get(line.glyph_start)
-                    .unwrap()
-                    .x
-                    .ceil()
-                    .as_usize();
-                let bottom = (line.baseline_y - line.min_descent).ceil().as_usize();
+                let top = (line.baseline_y - line.max_ascent).ceil() as usize;
+                let left = self.glyphs.get(line.glyph_start).unwrap().x.ceil() as usize;
+                let bottom = (line.baseline_y - line.min_descent).ceil() as usize;
                 let right = {
                     let last_glyph = self.glyphs.get_mut(line.glyph_end).unwrap();
                     // Manually set trailing space width
                     if last_glyph.parent == ' ' && last_glyph.width == 0 {
-                        last_glyph.width = space_width.ceil().as_usize();
+                        last_glyph.width = space_width.ceil() as usize;
                     }
-                    (last_glyph.x + last_glyph.width.as_f32()).ceil().as_usize()
+                    (last_glyph.x + last_glyph.width.to_f32().unwrap()).ceil() as usize
                 };
 
                 self.actual_size.x = self.actual_size.x.max(right);
@@ -843,7 +838,7 @@ impl TheTextRenderer {
                     left,
                     bottom,
                     right,
-                    baseline: line.baseline_y.ceil().as_usize(),
+                    baseline: line.baseline_y.ceil() as usize,
                     glyph_start: line.glyph_start,
                     glyph_end: line.glyph_end,
                     highlights: None,
@@ -938,10 +933,10 @@ impl TheTextRenderer {
         }
 
         shrinker.shrink_by(
-            self.padding.0.as_i32(),
-            self.padding.1.as_i32(),
-            self.padding.2.as_i32(),
-            self.padding.3.as_i32(),
+            self.padding.0 as i32,
+            self.padding.1 as i32,
+            self.padding.2 as i32,
+            self.padding.3 as i32,
         );
     }
 
@@ -974,15 +969,17 @@ impl TheTextRenderer {
             })
             .unwrap_or(self.actual_size.x);
         let rightmost = max_width.saturating_sub(self.width);
-        self.scroll_offset.x = (self.scroll_offset.x.as_i32() + delta.x)
+        self.scroll_offset.x = (self.scroll_offset.x as i32 + delta.x)
             .max(0)
-            .as_usize()
+            .to_usize()
+            .unwrap()
             .min(rightmost);
 
         let downmost = self.actual_size.y.saturating_sub(self.height);
-        self.scroll_offset.y = (self.scroll_offset.y.as_i32() + delta.y)
+        self.scroll_offset.y = (self.scroll_offset.y as i32 + delta.y)
             .max(0)
-            .as_usize()
+            .to_usize()
+            .unwrap()
             .min(downmost);
 
         previous_offset != self.scroll_offset
@@ -1083,11 +1080,11 @@ impl TheTextRenderer {
         }
 
         if let Some(glyph) = self.glyphs.get(index) {
-            return glyph.x.ceil().as_usize();
+            return glyph.x.ceil().to_usize().unwrap();
         }
 
         let last_glyph = &self.glyphs[self.glyphs.len() - 1];
-        last_glyph.x.ceil().as_usize() + last_glyph.width
+        last_glyph.x.ceil().to_usize().unwrap() + last_glyph.width
     }
 
     // Support single row only
@@ -1100,7 +1097,7 @@ impl TheTextRenderer {
 
         let left = start.min(end);
         let right = start.max(end);
-        let last_char_end = self.glyphs[right].x + self.glyphs[right].width.as_f32();
+        let last_char_end = self.glyphs[right].x + self.glyphs[right].width.to_f32().unwrap();
         let right_end = self
             .glyphs
             .get(right + 1)
@@ -1112,7 +1109,7 @@ impl TheTextRenderer {
                 }
             });
 
-        (right_end - self.glyphs[left].x).ceil().as_usize()
+        (right_end - self.glyphs[left].x).ceil().to_usize().unwrap()
     }
 
     fn is_rect_out_of_visible_area(
@@ -1129,7 +1126,7 @@ impl TheTextRenderer {
     }
 
     fn linebreak_width(&self) -> usize {
-        (self.font_size * 0.5).ceil().as_usize()
+        (self.font_size * 0.5).ceil().to_usize().unwrap()
     }
 
     fn render_cursor(
@@ -1144,29 +1141,32 @@ impl TheTextRenderer {
             .row_height()
             .saturating_sub(self.cursor_vertical_shrink * 2);
 
-        let left = self.get_text_left(cursor_index).as_i32() - (self.cursor_width / 2).as_i32();
-        let top = self.row_baseline(cursor.row).as_i32() - height.as_i32();
+        let left = self.get_text_left(cursor_index).to_i32().unwrap()
+            - (self.cursor_width / 2).to_i32().unwrap();
+        let top = self.row_baseline(cursor.row).to_i32().unwrap() - height.to_i32().unwrap();
         if self.is_rect_out_of_visible_area(
-            left.max(0).as_usize(),
-            top.max(0).as_usize(),
+            left.max(0).to_usize().unwrap(),
+            top.max(0).to_usize().unwrap(),
             self.cursor_width,
             height,
         ) {
             return;
         }
 
-        let left = (self.left.as_i32() + left - self.scroll_offset.x.as_i32())
+        let left = (self.left.to_i32().unwrap() + left - self.scroll_offset.x.to_i32().unwrap())
             .max(0)
-            .as_usize()
+            .to_usize()
+            .unwrap()
             .max(self.left);
-        let top = self.top.as_i32() + top - self.scroll_offset.y.as_i32();
+        let top = self.top.to_i32().unwrap() + top - self.scroll_offset.y.to_i32().unwrap();
 
-        let bottom = (top + height.as_i32())
+        let bottom = (top + height.to_i32().unwrap())
             .max(0)
-            .as_usize()
+            .to_usize()
+            .unwrap()
             .min(self.top + self.height);
 
-        let top = top.max(0).as_usize().max(self.top);
+        let top = top.max(0).to_usize().unwrap().max(self.top);
 
         let stride = buffer.stride();
         let color = &self
@@ -1224,10 +1224,11 @@ impl TheTextRenderer {
 
         // Render text and clip
         // Make sure row x start at 0 TODO
-        let left = self.left.as_i32()
-            - self.scroll_offset.x.as_i32()
-            - self.get_text_left(glyph_start).as_i32();
-        let top = self.top.as_i32() - self.scroll_offset.y.as_i32() + row.top.as_i32();
+        let left = self.left.to_i32().unwrap()
+            - self.scroll_offset.x.to_i32().unwrap()
+            - self.get_text_left(glyph_start).to_i32().unwrap();
+        let top = self.top.to_i32().unwrap() - self.scroll_offset.y.to_i32().unwrap()
+            + row.top.to_i32().unwrap();
 
         let stride = buffer.stride();
         if let Some(highlights) = &row.highlights {
@@ -1242,10 +1243,14 @@ impl TheTextRenderer {
                     continue;
                 }
 
-                let left = left + self.get_text_left(glyph_start + token_start).as_i32();
+                let left = left
+                    + self
+                        .get_text_left(glyph_start + token_start)
+                        .to_i32()
+                        .unwrap();
                 draw.text_rect_blend_clip(
                     buffer.pixels_mut(),
-                    &vec2i(left, top - 1),
+                    &Vec2::new(left, top - 1),
                     &(self.left, self.top, self.width, self.height),
                     stride,
                     font,
@@ -1260,7 +1265,8 @@ impl TheTextRenderer {
             let left = left
                 + self
                     .get_text_left(glyph_start + visible_text_start_index)
-                    .as_i32();
+                    .to_i32()
+                    .unwrap();
             let row_start_index = self.get_glyph_text_range(glyph_start).0;
             let start = self
                 .get_glyph_text_range(glyph_start + visible_text_start_index)
@@ -1273,7 +1279,7 @@ impl TheTextRenderer {
             let end = text.len().min(end);
             draw.text_rect_blend_clip(
                 buffer.pixels_mut(),
-                &vec2i(left, top - 1),
+                &Vec2::new(left, top - 1),
                 &(self.left, self.top, self.width, self.height),
                 stride,
                 font,
@@ -1310,21 +1316,26 @@ impl TheTextRenderer {
             width
         };
 
-        let left = (self.left + self.get_text_left(start)).as_i32() - self.scroll_offset.x.as_i32();
-        let top = (self.top + row.baseline - height + self.selection_extend).as_i32()
-            - self.scroll_offset.y.as_i32();
+        let left = (self.left + self.get_text_left(start)).to_i32().unwrap()
+            - self.scroll_offset.x.to_i32().unwrap();
+        let top = (self.top + row.baseline - height + self.selection_extend)
+            .to_i32()
+            .unwrap()
+            - self.scroll_offset.y.to_i32().unwrap();
 
-        let right = (left + width.as_i32())
+        let right = (left + width.to_i32().unwrap())
             .max(0)
-            .as_usize()
+            .to_usize()
+            .unwrap()
             .min(self.left + self.width);
-        let bottom = (top + height.as_i32())
+        let bottom = (top + height.to_i32().unwrap())
             .max(0)
-            .as_usize()
+            .to_usize()
+            .unwrap()
             .min(self.top + self.height);
 
-        let left = left.max(0).as_usize().max(self.left);
-        let top = top.max(0).as_usize().max(self.top);
+        let left = left.max(0).to_usize().unwrap().max(self.left);
+        let top = top.max(0).to_usize().unwrap().max(self.top);
 
         let stride = buffer.stride();
         let color = &self
@@ -1342,6 +1353,6 @@ impl TheTextRenderer {
     }
 
     fn row_height(&self) -> usize {
-        self.font_size.ceil().as_usize()
+        self.font_size.ceil().to_usize().unwrap()
     }
 }
