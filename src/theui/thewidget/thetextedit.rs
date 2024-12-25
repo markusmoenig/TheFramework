@@ -604,6 +604,24 @@ impl TheTextEditState {
         true
     }
 
+    pub fn get_selected_text(&self) -> Option<String> {
+        if self.selection.is_none() {
+            return None;
+        }
+
+        let start_row = self.find_row_number_of_index(self.selection.start);
+        let end_row = self.find_row_number_of_index(self.selection.end);
+
+        // Find selection range of first row,
+        // to be used in the future
+        let (row_start, row_end) = self.find_range_of_row(start_row);
+        let (start, end) = self
+            .find_selected_range_of_row(start_row)
+            .unwrap_or((row_end, row_end + 1));
+
+        Some(self.get_text(start, end))
+    }
+
     fn get_text(&self, start: usize, end: usize) -> String {
         let (start_row, start_col) = self.find_row_col_of_index(start);
         let (end_row, end_col) = self.find_row_col_of_index(end);

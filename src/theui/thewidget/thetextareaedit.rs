@@ -188,6 +188,10 @@ impl TheWidget for TheTextAreaEdit {
         true
     }
 
+    fn supports_clipboard(&mut self) -> bool {
+        true
+    }
+
     #[allow(clippy::single_match)]
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         if self.is_disabled {
@@ -197,6 +201,38 @@ impl TheWidget for TheTextAreaEdit {
         let mut redraw = false;
         let mut update_status = false;
         match event {
+            // TODO: How to get the text of the selection ?
+            TheEvent::Copy => {
+                if let Some(selection) = self.state.get_selected_text() {
+                    ctx.ui
+                        .send(TheEvent::SetClipboard(TheValue::Text(selection), None));
+                }
+            }
+            TheEvent::Cut => {
+                if let Some(selection) = self.state.get_selected_text() {
+                    ctx.ui
+                        .send(TheEvent::SetClipboard(TheValue::Text(selection), None));
+                }
+                if self.state.delete_text() {
+                    self.modified_since_last_tick = true;
+                    self.is_dirty = true;
+                    redraw = true;
+                    update_status = true;
+                }
+            }
+            TheEvent::Paste(value, _) => {
+                if let Some(text) = value.to_string() {
+                    self.state.insert_text(text);
+                    self.modified_since_last_tick = true;
+                    self.is_dirty = true;
+                    redraw = true;
+                    update_status = true;
+
+                    if self.continuous {
+                        self.emit_value_changed(ctx);
+                    }
+                }
+            }
             TheEvent::ModifierChanged(_shift, ctrl, alt, logo) => {
                 self.modifier_alt = *alt;
                 self.modifier_ctrl = *ctrl;

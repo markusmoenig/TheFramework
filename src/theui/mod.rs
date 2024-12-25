@@ -681,7 +681,7 @@ impl TheUI {
 
         ctx.ui.send(TheEvent::MouseDown(coord));
 
-        ctx.ui.clear_focus();
+        //ctx.ui.clear_focus();
 
         if let Some(context) = &mut self.context_menu {
             if context.contains(coord) {
