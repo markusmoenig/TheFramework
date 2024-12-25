@@ -996,6 +996,11 @@ impl TheTextRenderer {
         let rightmost = (text_width_before_cursor + self.cursor_width).saturating_sub(self.width);
         self.scroll_offset.x = self.scroll_offset.x.max(rightmost);
         // Scroll down
+        // Bug fix to prevent cursor bound problems after set_value
+        // Should probably get a proper fix
+        if cursor_row >= self.row_info.len() {
+            return;
+        }
         let upmost = self.row_info[cursor_row].top;
         self.scroll_offset.y = self.scroll_offset.y.min(upmost);
         // Scroll up
