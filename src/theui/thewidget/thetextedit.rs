@@ -1316,12 +1316,9 @@ impl TheTextRenderer {
             width
         };
 
-        let left = (self.left + self.get_text_left(start)).to_i32().unwrap()
-            - self.scroll_offset.x.to_i32().unwrap();
-        let top = (self.top + row.baseline - height + self.selection_extend)
-            .to_i32()
-            .unwrap()
-            - self.scroll_offset.y.to_i32().unwrap();
+        let left = (self.left + self.get_text_left(start)) as i32 - self.scroll_offset.x as i32;
+        let top = (self.top + row.baseline - height + self.selection_extend) as i32
+            - self.scroll_offset.y as i32;
 
         let right = (left + width.to_i32().unwrap())
             .max(0)
