@@ -221,7 +221,8 @@ impl TheWidget for TheTextAreaEdit {
                             &TheEvent::MouseDown(self.vscrollbar.dim().to_local(global_coord)),
                             ctx,
                         );
-                    } else if self.renderer.dim().contains(global_coord) {
+                    // Changed from } else if self.renderer.dim().contains(global_coord) {
+                    } else if self.renderer.dim().contains(*coord) {
                         {
                             let mut coord = *coord;
                             if let Some(dim) = &self.ln_area_dim {
