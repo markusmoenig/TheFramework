@@ -428,13 +428,26 @@ impl TheWidget for TheTextAreaEdit {
                     redraw = true;
                 }
             }
+
             TheEvent::KeyDown(key) => {
                 if !self.readonly {
                     if let Some(c) = key.to_char() {
-                        if self.modifier_ctrl && c == 'a' {
+                        if (self.modifier_ctrl || self.modifier_logo) && c == 'a' {
                             self.state.select_all();
                             self.is_dirty = true;
                             redraw = true;
+                        } else if (self.modifier_ctrl || self.modifier_logo) && c == '+' {
+                            self.renderer.font_size += 1.0;
+                            self.is_dirty = true;
+                            self.modified_since_last_tick = true;
+                            redraw = true;
+                        } else if (self.modifier_ctrl || self.modifier_logo) && c == '-' {
+                            if self.renderer.font_size > 5.0 {
+                                self.renderer.font_size -= 1.0;
+                                self.is_dirty = true;
+                                self.modified_since_last_tick = true;
+                                redraw = true;
+                            }
                         } else {
                             self.state.insert_char(c);
                             self.modified_since_last_tick = true;
@@ -693,7 +706,7 @@ impl TheWidget for TheTextAreaEdit {
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
-        if !self.dim.is_valid() || ctx.ui.font.is_none() {
+        if !self.dim.is_valid() || ctx.ui.code_font.is_none() {
             return;
         }
 
@@ -708,7 +721,7 @@ impl TheWidget for TheTextAreaEdit {
             ctx,
         );
 
-        let font = ctx.ui.font.as_ref().unwrap();
+        let font = ctx.ui.code_font.as_ref().unwrap();
         if self.modified_since_last_tick || self.renderer.row_count() == 0 {
             self.renderer
                 .prepare(&self.state.to_text(), font, &ctx.draw);
@@ -1085,7 +1098,7 @@ impl TheTextAreaEdit {
 
     fn statusbar_text(&self) -> String {
         let mut text = format!(
-            "Ln{}, Col{}",
+            "Ln {}, Col {}",
             self.state.cursor.row + 1,
             self.state.cursor.column + 1
         );
