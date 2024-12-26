@@ -203,21 +203,28 @@ impl TheWidget for TheTextAreaEdit {
         match event {
             // TODO: How to get the text of the selection ?
             TheEvent::Copy => {
-                if let Some(selection) = self.state.get_selected_text() {
-                    ctx.ui
-                        .send(TheEvent::SetClipboard(TheValue::Text(selection), None));
-                }
-            }
-            TheEvent::Cut => {
-                if let Some(selection) = self.state.get_selected_text() {
-                    ctx.ui
-                        .send(TheEvent::SetClipboard(TheValue::Text(selection), None));
-                }
-                if self.state.delete_text() {
+                let text = self.state.cut_text();
+                if !text.is_empty() {
+                    let (start, end) = self.state.insert_text(text.clone());
+                    self.state.select(start, end);
                     self.modified_since_last_tick = true;
                     self.is_dirty = true;
                     redraw = true;
                     update_status = true;
+
+                    ctx.ui
+                        .send(TheEvent::SetClipboard(TheValue::Text(text), None));
+                }
+            }
+            TheEvent::Cut => {
+                let text = self.state.cut_text();
+                if !text.is_empty() {
+                    self.modified_since_last_tick = true;
+                    self.is_dirty = true;
+                    redraw = true;
+                    update_status = true;
+                    ctx.ui
+                        .send(TheEvent::SetClipboard(TheValue::Text(text), None));
                 }
             }
             TheEvent::Paste(value, _) => {
