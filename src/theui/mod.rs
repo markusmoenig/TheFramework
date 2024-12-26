@@ -369,6 +369,17 @@ impl TheUI {
         supports
     }
 
+    /// Returns true if the current focus widget supports internal undo / redo operations.
+    pub fn focus_widget_supports_undo_redo(&mut self, ctx: &mut TheContext) -> bool {
+        let mut supports = false;
+        if let Some(id) = &ctx.ui.focus {
+            if let Some(widget) = self.get_widget_abs(None, Some(&id.uuid)) {
+                supports = widget.supports_undo_redo();
+            }
+        }
+        supports
+    }
+
     /// Initiate a cut operation on the current focus widget.
     pub fn cut(&mut self, ctx: &mut TheContext) {
         if let Some(id) = &ctx.ui.focus {
@@ -400,6 +411,28 @@ impl TheUI {
                     self.is_dirty = widget.on_event(&event, ctx);
                     self.process_events(ctx);
                 }
+            }
+        }
+    }
+
+    /// Initiate a widget based undo.
+    pub fn undo(&mut self, ctx: &mut TheContext) {
+        if let Some(id) = &ctx.ui.focus {
+            if let Some(widget) = self.get_widget_abs(None, Some(&id.uuid)) {
+                let event = TheEvent::Undo;
+                self.is_dirty = widget.on_event(&event, ctx);
+                self.process_events(ctx);
+            }
+        }
+    }
+
+    /// Initiate a widget based redo.
+    pub fn redo(&mut self, ctx: &mut TheContext) {
+        if let Some(id) = &ctx.ui.focus {
+            if let Some(widget) = self.get_widget_abs(None, Some(&id.uuid)) {
+                let event = TheEvent::Redo;
+                self.is_dirty = widget.on_event(&event, ctx);
+                self.process_events(ctx);
             }
         }
     }

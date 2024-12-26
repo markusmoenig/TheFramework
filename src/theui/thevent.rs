@@ -118,6 +118,9 @@ pub enum TheEvent {
     // Send when the content of the Clipboard changed.
     ClipboardChanged,
 
+    // Undo / Redo, mostly only for TheTextAreaEdit.
+    Undo,
+    Redo,
     // Custom event for applications.
     Custom(TheId, TheValue),
 }

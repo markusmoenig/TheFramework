@@ -63,6 +63,8 @@ pub struct TheTextAreaEdit {
     embedded: bool,
 
     continuous: bool,
+
+    undo_stack: TheUndoStack,
 }
 
 impl TheWidget for TheTextAreaEdit {
@@ -122,6 +124,8 @@ impl TheWidget for TheTextAreaEdit {
             embedded: false,
 
             continuous: false,
+
+            undo_stack: TheUndoStack::default(),
         }
     }
 
@@ -192,6 +196,10 @@ impl TheWidget for TheTextAreaEdit {
         true
     }
 
+    fn supports_undo_redo(&mut self) -> bool {
+        true
+    }
+
     #[allow(clippy::single_match)]
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         if self.is_disabled {
@@ -201,7 +209,26 @@ impl TheWidget for TheTextAreaEdit {
         let mut redraw = false;
         let mut update_status = false;
         match event {
-            // TODO: How to get the text of the selection ?
+            TheEvent::Undo => {
+                if self.undo_stack.has_undo() {
+                    let (_id, text) = self.undo_stack.undo();
+                    self.state.set_text(text);
+                    self.modified_since_last_tick = true;
+                    self.is_dirty = true;
+                    redraw = true;
+                    update_status = true;
+                }
+            }
+            TheEvent::Redo => {
+                if self.undo_stack.has_redo() {
+                    let (_id, text) = self.undo_stack.redo();
+                    self.state.set_text(text);
+                    self.modified_since_last_tick = true;
+                    self.is_dirty = true;
+                    redraw = true;
+                    update_status = true;
+                }
+            }
             TheEvent::Copy => {
                 let text = self.state.cut_text();
                 if !text.is_empty() {
@@ -217,6 +244,7 @@ impl TheWidget for TheTextAreaEdit {
                 }
             }
             TheEvent::Cut => {
+                let prev_state = self.state.to_text();
                 let text = self.state.cut_text();
                 if !text.is_empty() {
                     self.modified_since_last_tick = true;
@@ -225,9 +253,16 @@ impl TheWidget for TheTextAreaEdit {
                     update_status = true;
                     ctx.ui
                         .send(TheEvent::SetClipboard(TheValue::Text(text), None));
+
+                    let mut undo = TheUndo::new(TheId::named("Cut"));
+                    undo.set_undo_data(prev_state);
+                    undo.set_redo_data(self.state.to_text());
+                    self.undo_stack.add(undo);
                 }
             }
             TheEvent::Paste(value, _) => {
+                let prev_state = self.state.to_text();
+
                 if let Some(text) = value.to_string() {
                     self.state.insert_text(text);
                     self.modified_since_last_tick = true;
@@ -238,6 +273,11 @@ impl TheWidget for TheTextAreaEdit {
                     if self.continuous {
                         self.emit_value_changed(ctx);
                     }
+
+                    let mut undo = TheUndo::new(TheId::named("Cut"));
+                    undo.set_undo_data(prev_state);
+                    undo.set_redo_data(self.state.to_text());
+                    self.undo_stack.add(undo);
                 }
             }
             TheEvent::ModifierChanged(_shift, ctrl, alt, logo) => {
@@ -474,6 +514,7 @@ impl TheWidget for TheTextAreaEdit {
 
             TheEvent::KeyDown(key) => {
                 if !self.readonly {
+                    let prev_state = self.state.to_text();
                     if let Some(c) = key.to_char() {
                         if (self.modifier_ctrl || self.modifier_logo) && c == 'a' {
                             self.state.select_all();
@@ -503,9 +544,16 @@ impl TheWidget for TheTextAreaEdit {
                             }
                         }
                     }
+                    if self.is_dirty {
+                        let mut undo = TheUndo::new(TheId::named("Input"));
+                        undo.set_undo_data(prev_state);
+                        undo.set_redo_data(self.state.to_text());
+                        self.undo_stack.add(undo);
+                    }
                 }
             }
             TheEvent::KeyCodeDown(key_code) => {
+                let prev_state = self.state.to_text();
                 if let Some(key) = key_code.to_key_code() {
                     if !self.readonly {
                         match key {
@@ -674,6 +722,12 @@ impl TheWidget for TheTextAreaEdit {
                         }
                     }
                 }
+                if self.is_dirty {
+                    let mut undo = TheUndo::new(TheId::named("Input"));
+                    undo.set_undo_data(prev_state);
+                    undo.set_redo_data(self.state.to_text());
+                    self.undo_stack.add(undo);
+                }
             }
             TheEvent::LostFocus(_id) => {
                 if self.modified_since_last_return {
@@ -741,6 +795,7 @@ impl TheWidget for TheTextAreaEdit {
             }
             _ => {}
         }
+        self.undo_stack.clear();
     }
 
     fn draw(

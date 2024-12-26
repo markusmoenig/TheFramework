@@ -216,6 +216,11 @@ pub trait TheWidget: Send {
         false
     }
 
+    /// Widgets who support internal undo / redo
+    fn supports_undo_redo(&mut self) -> bool {
+        false
+    }
+
     /// Sets the internal redraw flag of the widget to the given value.
     fn set_needs_redraw(&mut self, redraw: bool) {}
 
