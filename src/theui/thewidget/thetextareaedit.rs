@@ -211,8 +211,8 @@ impl TheWidget for TheTextAreaEdit {
         match event {
             TheEvent::Undo => {
                 if self.undo_stack.has_undo() {
-                    let (_id, text) = self.undo_stack.undo();
-                    self.state.set_text(text);
+                    let (_id, state) = self.undo_stack.undo();
+                    self.state = TheTextEditState::load(&state);
                     self.modified_since_last_tick = true;
                     self.is_dirty = true;
                     redraw = true;
@@ -221,8 +221,8 @@ impl TheWidget for TheTextAreaEdit {
             }
             TheEvent::Redo => {
                 if self.undo_stack.has_redo() {
-                    let (_id, text) = self.undo_stack.redo();
-                    self.state.set_text(text);
+                    let (_id, state) = self.undo_stack.redo();
+                    self.state = TheTextEditState::load(&state);
                     self.modified_since_last_tick = true;
                     self.is_dirty = true;
                     redraw = true;
@@ -244,7 +244,7 @@ impl TheWidget for TheTextAreaEdit {
                 }
             }
             TheEvent::Cut => {
-                let prev_state = self.state.to_text();
+                let prev_state = self.state.save();
                 let text = self.state.cut_text();
                 if !text.is_empty() {
                     self.modified_since_last_tick = true;
@@ -256,12 +256,12 @@ impl TheWidget for TheTextAreaEdit {
 
                     let mut undo = TheUndo::new(TheId::named("Cut"));
                     undo.set_undo_data(prev_state);
-                    undo.set_redo_data(self.state.to_text());
+                    undo.set_redo_data(self.state.save());
                     self.undo_stack.add(undo);
                 }
             }
             TheEvent::Paste(value, _) => {
-                let prev_state = self.state.to_text();
+                let prev_state = self.state.save();
 
                 if let Some(text) = value.to_string() {
                     self.state.insert_text(text);
@@ -276,7 +276,7 @@ impl TheWidget for TheTextAreaEdit {
 
                     let mut undo = TheUndo::new(TheId::named("Cut"));
                     undo.set_undo_data(prev_state);
-                    undo.set_redo_data(self.state.to_text());
+                    undo.set_redo_data(self.state.save());
                     self.undo_stack.add(undo);
                 }
             }
@@ -514,7 +514,7 @@ impl TheWidget for TheTextAreaEdit {
 
             TheEvent::KeyDown(key) => {
                 if !self.readonly {
-                    let prev_state = self.state.to_text();
+                    let prev_state = self.state.save();
                     if let Some(c) = key.to_char() {
                         if (self.modifier_ctrl || self.modifier_logo) && c == 'a' {
                             self.state.select_all();
@@ -547,13 +547,13 @@ impl TheWidget for TheTextAreaEdit {
                     if self.is_dirty {
                         let mut undo = TheUndo::new(TheId::named("Input"));
                         undo.set_undo_data(prev_state);
-                        undo.set_redo_data(self.state.to_text());
+                        undo.set_redo_data(self.state.save());
                         self.undo_stack.add(undo);
                     }
                 }
             }
             TheEvent::KeyCodeDown(key_code) => {
-                let prev_state = self.state.to_text();
+                let prev_state = self.state.save();
                 if let Some(key) = key_code.to_key_code() {
                     if !self.readonly {
                         match key {
@@ -725,7 +725,7 @@ impl TheWidget for TheTextAreaEdit {
                 if self.is_dirty {
                     let mut undo = TheUndo::new(TheId::named("Input"));
                     undo.set_undo_data(prev_state);
-                    undo.set_redo_data(self.state.to_text());
+                    undo.set_redo_data(self.state.save());
                     self.undo_stack.add(undo);
                 }
             }

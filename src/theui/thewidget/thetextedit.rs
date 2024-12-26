@@ -4,7 +4,7 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use crate::prelude::*;
 
-#[derive(Default, PartialEq)]
+#[derive(Serialize, Deserialize, Default, PartialEq, Clone)]
 pub struct TheCursor {
     pub row: usize,
     pub column: usize,
@@ -52,7 +52,7 @@ struct TheRowInfo {
     highlights: Option<Vec<(TheColor, usize)>>,
 }
 
-#[derive(Default)]
+#[derive(Serialize, Deserialize, Default, Clone)]
 pub struct TheSelection {
     pub start: usize,
     pub end: usize,
@@ -77,6 +77,7 @@ impl TheSelection {
 //  glyph index    0   1   2   3
 //       cursor  |   |   |   |   |
 //         text    a   b   c   \n
+#[derive(Serialize, Deserialize, Clone)]
 pub struct TheTextEditState {
     // Use cursor index
     pub cursor: TheCursor,
@@ -97,6 +98,14 @@ impl Default for TheTextEditState {
 }
 
 impl TheTextEditState {
+    pub fn load(json: &str) -> Self {
+        serde_json::from_str(json).unwrap_or(TheTextEditState::default())
+    }
+
+    pub fn save(&self) -> String {
+        serde_json::to_string(&self).unwrap_or_default()
+    }
+
     pub fn cut_text(&mut self) -> String {
         let text = self.get_text(self.selection.start, self.selection.end);
         self.delete_text_by_selection();
