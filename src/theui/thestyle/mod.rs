@@ -38,6 +38,18 @@ pub trait TheStyle: Send {
     ) {
     }
 
+    /// Draw the widget border
+    fn draw_text_area_border(
+        &mut self,
+        buffer: &mut TheRGBABuffer,
+        widget: &dyn TheWidget,
+        shrinker: &mut TheDimShrinker,
+        ctx: &mut TheContext,
+        draw_focus: bool,
+        disabled: bool,
+    ) {
+    }
+
     /// Creates a preview image for the drop.
     fn create_drop_image(&mut self, drop: &mut TheDrop, ctx: &mut TheContext) {
         let mut width: i32 = 120;

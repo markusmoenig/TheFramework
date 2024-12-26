@@ -111,4 +111,74 @@ impl TheStyle for TheClassicStyle {
             shrinker.shrink(1);
         }
     }
+
+    fn draw_text_area_border(
+        &mut self,
+        buffer: &mut TheRGBABuffer,
+        widget: &dyn TheWidget,
+        shrinker: &mut TheDimShrinker,
+        ctx: &mut TheContext,
+        embedded: bool,
+        disabled: bool,
+    ) {
+        let stride = buffer.stride();
+
+        if widget.id().equals(&ctx.ui.focus) {
+            if !embedded {
+                ctx.draw.rect_outline(
+                    buffer.pixels_mut(),
+                    &widget.dim().to_buffer_shrunk_utuple(shrinker),
+                    stride,
+                    if disabled {
+                        self.theme().color_disabled(SelectedTextEditBorder1)
+                    } else {
+                        self.theme().color(SelectedTextEditBorder1)
+                    },
+                    // 2,
+                );
+            }
+
+            shrinker.shrink(1);
+
+            /*
+            if !embedded {
+                ctx.draw.rect_outline(
+                    buffer.pixels_mut(),
+                    &widget.dim().to_buffer_shrunk_utuple(shrinker),
+                    stride,
+                    if disabled {
+                        self.theme().color_disabled(SelectedTextEditBorder2)
+                    } else {
+                        self.theme().color(SelectedTextEditBorder2)
+                    },
+                );
+            } else {
+                ctx.draw.rect_outline(
+                    buffer.pixels_mut(),
+                    &widget.dim().to_buffer_shrunk_utuple(shrinker),
+                    stride,
+                    if disabled {
+                        self.theme().color_disabled(TextEditBorder)
+                    } else {
+                        self.theme().color(TextEditBorder)
+                    },
+                );
+            }
+            shrinker.shrink(1);*/
+        } else {
+            // shrinker.shrink(1);
+            ctx.draw.rect_outline(
+                buffer.pixels_mut(),
+                &widget.dim().to_buffer_shrunk_utuple(shrinker),
+                stride,
+                if disabled {
+                    self.theme().color_disabled(TextEditBorder)
+                } else {
+                    self.theme().color(TextEditBorder)
+                },
+                // 1,
+            );
+            shrinker.shrink(1);
+        }
+    }
 }

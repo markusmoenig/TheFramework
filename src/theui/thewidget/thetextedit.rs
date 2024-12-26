@@ -902,9 +902,14 @@ impl TheTextRenderer {
         buffer: &mut TheRGBABuffer,
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
+        is_text_area: bool,
     ) {
         let stride = buffer.stride();
-        style.draw_text_edit_border(buffer, widget, shrinker, ctx, embedded, disabled);
+        if is_text_area {
+            style.draw_text_area_border(buffer, widget, shrinker, ctx, embedded, disabled);
+        } else {
+            style.draw_text_edit_border(buffer, widget, shrinker, ctx, embedded, disabled);
+        }
 
         if !disabled {
             ctx.draw.rect(

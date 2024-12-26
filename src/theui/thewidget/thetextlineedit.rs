@@ -573,6 +573,7 @@ impl TheWidget for TheTextLineEdit {
             buffer,
             style,
             ctx,
+            false,
         );
 
         let font = ctx.ui.font.as_ref().unwrap();

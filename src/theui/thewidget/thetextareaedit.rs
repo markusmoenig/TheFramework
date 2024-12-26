@@ -817,6 +817,7 @@ impl TheWidget for TheTextAreaEdit {
             buffer,
             style,
             ctx,
+            true,
         );
 
         let font = ctx.ui.code_font.as_ref().unwrap();
