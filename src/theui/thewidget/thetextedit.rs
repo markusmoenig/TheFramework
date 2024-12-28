@@ -880,10 +880,8 @@ impl TheTextRenderer {
     ) {
         if let Some((start_row, end_row)) = self.visible_rows() {
             for i in start_row..=end_row {
-                if focused {
-                    if let Some((start, end)) = state.find_selected_range_of_row(i) {
-                        self.render_selection(i, start, end, buffer, style, draw);
-                    }
+                if let Some((start, end)) = state.find_selected_range_of_row(i) {
+                    self.render_selection(i, start, end, buffer, style, draw);
                 }
 
                 self.render_row(&state.rows[i], i, buffer, style, font, draw);
