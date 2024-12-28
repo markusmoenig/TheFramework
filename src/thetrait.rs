@@ -61,6 +61,15 @@ pub trait TheTrait {
         false
     }
 
+    fn key_up(
+        &mut self,
+        char: Option<char>,
+        key: Option<TheKeyCode>,
+        ctx: &mut TheContext,
+    ) -> bool {
+        false
+    }
+
     fn mouse_wheel(&mut self, delta: (isize, isize), ctx: &mut TheContext) -> bool {
         false
     }

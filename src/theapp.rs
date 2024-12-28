@@ -265,6 +265,45 @@ impl TheApp {
                                     }
                                 }
                             }
+                            if event.state == ElementState::Released {
+                                // Key up events only for non-ui apps for now
+                                let key = match &event.logical_key {
+                                    Key::Named(NamedKey::Delete)
+                                    | Key::Named(NamedKey::Backspace) => Some(TheKeyCode::Delete),
+                                    Key::Named(NamedKey::ArrowUp) => Some(TheKeyCode::Up),
+                                    Key::Named(NamedKey::ArrowRight) => Some(TheKeyCode::Right),
+                                    Key::Named(NamedKey::ArrowDown) => Some(TheKeyCode::Down),
+                                    Key::Named(NamedKey::ArrowLeft) => Some(TheKeyCode::Left),
+                                    Key::Named(NamedKey::Space) => Some(TheKeyCode::Space),
+                                    Key::Named(NamedKey::Tab) => Some(TheKeyCode::Tab),
+                                    Key::Named(NamedKey::Enter) => Some(TheKeyCode::Return),
+                                    Key::Named(NamedKey::Escape) => Some(TheKeyCode::Escape),
+                                    Key::Character(str) => {
+                                        if str.is_ascii() {
+                                            for ch in str.chars() {
+                                                // #[cfg(feature = "ui")]
+                                                // if ui.key_up(Some(ch), None, &mut ctx) {
+                                                //     window.request_redraw();
+                                                // }
+                                                if app.key_up(Some(ch), None, &mut ctx) {
+                                                    window.request_redraw();
+                                                }
+                                            }
+                                        }
+                                        None
+                                    }
+                                    _ => None,
+                                };
+                                if key.is_some() {
+                                    // #[cfg(feature = "ui")]
+                                    // if ui.key_down(None, key.clone(), &mut ctx) {
+                                    //     window.request_redraw();
+                                    // }
+                                    if app.key_up(None, key, &mut ctx) {
+                                        window.request_redraw();
+                                    }
+                                }
+                            }
                         }
                         _ => (),
                     },
