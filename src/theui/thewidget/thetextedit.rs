@@ -1116,7 +1116,7 @@ impl TheTextRenderer {
             .get(right + 1)
             .map_or(last_char_end, |next_glyph| {
                 if last_char_end < next_glyph.x {
-                    next_glyph.x - 1.0
+                    next_glyph.x
                 } else {
                     last_char_end
                 }
