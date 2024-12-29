@@ -1314,7 +1314,18 @@ impl TheTextRenderer {
                     TheVerticalAlign::Center,
                 );
             }
+
+            // Render linebreak selection if needed
+            if let Some((_, end)) = selected_range {
+                if glyph_start + token_end_in_row < end {
+                    self.render_selection(row_number, end - 1, end, buffer, style, draw);
+                }
+            }
         } else {
+            if let Some((start, end)) = selected_range {
+                self.render_selection(row_number, start, end, buffer, style, draw);
+            }
+
             let left = left
                 + self
                     .get_text_left(glyph_start + visible_text_start_index)
