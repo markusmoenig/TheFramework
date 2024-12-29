@@ -36,7 +36,7 @@ pub trait TheCodeHighlighterTrait: Send {
     fn caret(&self) -> Option<TheColor>;
     fn selection_background(&self) -> Option<TheColor>;
 
-    fn highlight_line(&self, line: &str) -> Vec<(TheColor, usize)>;
+    fn highlight_line(&self, line: &str) -> Vec<(TheColor, TheColor, usize)>;
 }
 
 impl TheCodeHighlighterTrait for TheCodeHighlighter {
@@ -77,7 +77,7 @@ impl TheCodeHighlighterTrait for TheCodeHighlighter {
             .map(|color| TheColor::from_u8(color.r, color.g, color.b, color.a))
     }
 
-    fn highlight_line(&self, line: &str) -> Vec<(TheColor, usize)> {
+    fn highlight_line(&self, line: &str) -> Vec<(TheColor, TheColor, usize)> {
         let mut h = HighlightLines::new(self.syntax, self.theme);
         h.highlight_line(line, &SYNTAX_SET)
             .map(|ranges| {
@@ -91,11 +91,21 @@ impl TheCodeHighlighterTrait for TheCodeHighlighter {
                                 style.foreground.b,
                                 style.foreground.a,
                             ),
+                            TheColor::from_u8(
+                                style.background.r,
+                                style.background.g,
+                                style.background.b,
+                                style.background.a,
+                            ),
                             token.len(),
                         )
                     })
-                    .collect::<Vec<(TheColor, usize)>>()
+                    .collect::<Vec<(TheColor, TheColor, usize)>>()
             })
-            .unwrap_or(vec![(TheColor::default(), line.len())])
+            .unwrap_or(vec![(
+                TheColor::default(),
+                TheColor::default().lighten_darken(0.1),
+                line.len(),
+            )])
     }
 }

@@ -287,7 +287,7 @@ impl TheWidget for TheTextAreaEdit {
             }
             TheEvent::MouseDown(coord) => {
                 if !self.state.is_empty() {
-                    let global_coord = coord + self.dim.screen_coord();
+                    let global_coord = coord + Vec2::new(self.dim.buffer_x, self.dim.buffer_y);
                     if self.renderer.is_horizontal_overflow()
                         && self.hscrollbar.dim().contains(global_coord)
                     {
@@ -304,8 +304,7 @@ impl TheWidget for TheTextAreaEdit {
                             &TheEvent::MouseDown(self.vscrollbar.dim().to_local(global_coord)),
                             ctx,
                         );
-                    // Changed from } else if self.renderer.dim().contains(global_coord) {
-                    } else if self.renderer.dim().contains(*coord) {
+                    } else if self.renderer.dim().contains(global_coord) {
                         {
                             let mut coord = *coord;
                             if let Some(dim) = &self.ln_area_dim {
