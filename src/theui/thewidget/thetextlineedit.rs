@@ -691,6 +691,7 @@ impl TheTextLineEditTrait for TheTextLineEdit {
         self.state.to_text()
     }
     fn set_text(&mut self, text: String) {
+        self.state.reset();
         if let Some(range) = &self.range {
             if let Some(range) = range.to_range_f32() {
                 let v = text.parse::<f32>().unwrap_or(*range.start());
