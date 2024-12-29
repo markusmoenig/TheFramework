@@ -788,6 +788,7 @@ impl TheWidget for TheTextAreaEdit {
                 self.is_dirty = true;
             }
             TheValue::Text(text) => {
+                self.state.reset();
                 self.state.set_text(text);
                 self.modified_since_last_tick = true;
                 self.is_dirty = true;
