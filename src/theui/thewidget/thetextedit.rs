@@ -802,13 +802,6 @@ impl TheTextRenderer {
             text.push('\n');
         }
 
-        // Hack: to get the width of a normal space,
-        // for that fontdue will render the tailing space with zero width
-        let layout = draw.get_text_layout(font, self.font_size, "  ", LayoutSettings::default());
-        let space_width = layout.glyphs().last().unwrap().x
-            - layout.glyphs().first().unwrap().x
-            - layout.glyphs().first().unwrap().width.to_f32().unwrap();
-
         let layout = draw.get_text_layout(font, self.font_size, &text, LayoutSettings::default());
         let glyph_positions = layout.glyphs();
         self.glyphs = glyph_positions
@@ -822,6 +815,22 @@ impl TheTextRenderer {
             })
             .collect();
 
+        // Hack: to get the width of a normal space,
+        // for that fontdue will render the tailing space with zero width
+        let space_width = {
+            let layout =
+                draw.get_text_layout(font, self.font_size, "  ", LayoutSettings::default());
+            layout.glyphs().last().unwrap().x
+                - layout.glyphs().first().unwrap().x
+                - layout.glyphs().first().unwrap().width.to_f32().unwrap()
+        };
+        // Manually set space width
+        self.glyphs.iter_mut().for_each(|glyph| {
+            if glyph.parent == ' ' {
+                glyph.width = space_width.ceil() as usize;
+            }
+        });
+
         self.row_info = layout
             .lines()
             .unwrap()
@@ -832,10 +841,6 @@ impl TheTextRenderer {
                 let bottom = (line.baseline_y - line.min_descent).ceil() as usize;
                 let right = {
                     let last_glyph = self.glyphs.get_mut(line.glyph_end).unwrap();
-                    // Manually set trailing space width
-                    if last_glyph.parent == ' ' && last_glyph.width == 0 {
-                        last_glyph.width = space_width.ceil() as usize;
-                    }
                     (last_glyph.x + last_glyph.width.to_f32().unwrap()).ceil() as usize
                 };
 
@@ -1105,19 +1110,13 @@ impl TheTextRenderer {
 
         let left = start.min(end);
         let right = start.max(end);
-        let last_char_end = self.glyphs[right].x + self.glyphs[right].width.to_f32().unwrap();
-        let right_end = self
-            .glyphs
-            .get(right + 1)
-            .map_or(last_char_end, |next_glyph| {
-                if last_char_end < next_glyph.x {
-                    next_glyph.x
-                } else {
-                    last_char_end
-                }
-            });
+        let last_glyph = &self.glyphs[right];
+        let last_glyph_end = last_glyph.x + last_glyph.width.to_f32().unwrap();
 
-        (right_end - self.glyphs[left].x).ceil().to_usize().unwrap()
+        (last_glyph_end - self.glyphs[left].x)
+            .ceil()
+            .to_usize()
+            .unwrap()
     }
 
     fn is_rect_out_of_visible_area(
@@ -1131,10 +1130,6 @@ impl TheTextRenderer {
             || top + height < self.scroll_offset.y
             || left > self.scroll_offset.x + self.width
             || left + width < self.scroll_offset.x
-    }
-
-    fn linebreak_width(&self) -> usize {
-        (self.font_size * 0.5).ceil().to_usize().unwrap()
     }
 
     fn render_cursor(
@@ -1386,14 +1381,28 @@ impl TheTextRenderer {
             return;
         }
 
-        let width = self.get_text_width(start, end - 1);
-        let width = if width == 0 {
-            self.linebreak_width()
+        let mut width = if start == end - 1 && row.glyph_end == start {
+            // Linebreak
+            (self.font_size * 0.5).ceil().to_usize().unwrap()
         } else {
-            width
+            self.get_text_width(start, end - 1)
         };
 
-        let left = (self.left + self.get_text_left(start)) as i32 - self.scroll_offset.x as i32;
+        let mut left = self.get_text_left(start);
+        // If leftmost is the first glyph of current row,
+        // we expand the left of the text background to 0
+        if row.glyph_start == start {
+            width += left;
+            left = 0;
+        }
+        // If rightmost is not the last glyph of current row,
+        // we expand the right of the text background to
+        // left of the next glyph to avoid possible gap
+        if row.glyph_end > end - 1 {
+            width = self.get_text_left(end) - left;
+        }
+
+        let left = (self.left + left) as i32 - self.scroll_offset.x as i32;
         let top = (self.top + row.baseline - height + self.selection_extend) as i32
             - self.scroll_offset.y as i32;
 
