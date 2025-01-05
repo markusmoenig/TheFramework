@@ -191,13 +191,40 @@ impl TheApp {
                             #[cfg(feature = "cpu_render")]
                             {
                                 let mut buffer = ctx.surface.buffer_mut().unwrap();
-                                for i in 0..(width * height) {
-                                    let index = i * 4;
-                                    let red = ui_frame[index] as u32;
-                                    let green = ui_frame[index + 1] as u32;
-                                    let blue = ui_frame[index + 2] as u32;
+                                let scale_factor = ctx.scale_factor as usize;
 
-                                    buffer[i] = blue | (green << 8) | (red << 16);
+                                if scale_factor == 1 {
+                                    for i in 0..(width * height) {
+                                        let index = i * 4;
+                                        let red = ui_frame[index] as u32;
+                                        let green = ui_frame[index + 1] as u32;
+                                        let blue = ui_frame[index + 2] as u32;
+
+                                        buffer[i] = blue | (green << 8) | (red << 16);
+                                    }
+                                } else {
+                                    let dest_width = width * scale_factor;
+                                    let dest_height = height * scale_factor;
+                                    for y in 0..height {
+                                        for x in 0..width {
+                                            let src_index = (y * width + x) * 4;
+                                            let red = ui_frame[src_index] as u32;
+                                            let green = ui_frame[src_index + 1] as u32;
+                                            let blue = ui_frame[src_index + 2] as u32;
+
+                                            // Write the pixel into the scaled region
+                                            for y2 in 0..scale_factor as usize {
+                                                for x2 in 0..scale_factor as usize {
+                                                    let dest_x = x * scale_factor as usize + x2;
+                                                    let dest_y = y * scale_factor as usize + y2;
+
+                                                    let dest_index = dest_y * dest_width + dest_x;
+                                                    buffer[dest_index] =
+                                                        blue | (green << 8) | (red << 16);
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
 
                                 if buffer
