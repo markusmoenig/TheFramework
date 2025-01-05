@@ -31,6 +31,8 @@ impl TheApp {
     #[cfg(not(target_arch = "wasm32"))]
     #[cfg(feature = "winit_app")]
     pub fn run(&mut self, mut app: Box<dyn crate::TheTrait>) {
+        #[cfg(feature = "cpu_render")]
+        use std::num::NonZeroU32;
         use std::sync::Arc;
 
         use log::error;
@@ -101,7 +103,9 @@ impl TheApp {
 
         #[cfg(feature = "gpu")]
         let mut ctx = TheContext::new(width, height, gpu, texture_renderer);
-        #[cfg(not(feature = "gpu"))]
+        #[cfg(feature = "cpu_render")]
+        let mut ctx = TheContext::new(width, height, window.clone());
+        #[cfg(not(any(feature = "gpu", feature = "cpu_render")))]
         let mut ctx = TheContext::new(width, height);
 
         #[cfg(feature = "ui")]
@@ -182,6 +186,28 @@ impl TheApp {
                             {
                                 elwt.exit();
                                 return;
+                            }
+
+                            #[cfg(feature = "cpu_render")]
+                            {
+                                let mut buffer = ctx.surface.buffer_mut().unwrap();
+                                for i in 0..(width * height) {
+                                    let index = i * 4;
+                                    let red = ui_frame[index] as u32;
+                                    let green = ui_frame[index + 1] as u32;
+                                    let blue = ui_frame[index + 2] as u32;
+
+                                    buffer[i] = blue | (green << 8) | (red << 16);
+                                }
+
+                                if buffer
+                                    .present()
+                                    .map_err(|e| error!("render failed: {}", e))
+                                    .is_err()
+                                {
+                                    elwt.exit();
+                                    return;
+                                }
                             }
 
                             #[cfg(feature = "ui")]
@@ -467,6 +493,14 @@ impl TheApp {
                         ctx.gpu.resize(size.width, size.height);
                         #[cfg(feature = "gpu")]
                         ctx.gpu.set_scale_factor(scale);
+
+                        #[cfg(feature = "cpu_render")]
+                        ctx.surface
+                            .resize(
+                                NonZeroU32::new(size.width).unwrap(),
+                                NonZeroU32::new(size.height).unwrap(),
+                            )
+                            .unwrap();
 
                         width = (size.width as f32 / scale) as usize;
                         height = (size.height as f32 / scale) as usize;

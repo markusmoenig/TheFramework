@@ -22,8 +22,6 @@ maths-rs = { version = "0.2.6", features = [
 vek = { version = "0.17.1", default-features = true }
 winit = { version = "0.29", optional = true }
 winit_input_helper = { version = "0.16", optional = true }
-#therenderer = { version = "0.1.1", optional = true }
-# therenderer = { path = "../therenderer", optional = true }
 rust-embed = { version = "8", default-features = true, features = [
     "include-exclude",
 ] }
@@ -49,6 +47,7 @@ wgpu = { version = "22.1", optional = true }
 aict = { version = "0.2.0", optional = true }
 bytemuck = { version = "1.18.0", features = ["derive"], optional = true }
 itertools = { version = "0.13.0", optional = true }
+softbuffer = { version = "0.4.6", optional = true }
 
 [dependencies.uuid]
 version = "1.1.2"
@@ -68,11 +67,13 @@ wasm-bindgen-futures = "0.4"
 web-sys = { version = "0.3", features = ["GpuTextureFormat"] }
 
 [features]
-#renderer = ["therenderer"]
 ui = ["futures", "rfd", "flate2", "rayon", "zeno"]
 code = []
 winit_app = ["winit", "winit_input_helper"]
 gpu = ["aict", "bytemuck", "futures", "itertools", "wgpu"]
+
+cpu_render = ["softbuffer", "winit_app"]
+gpu_render = ["gpu"]
 
 gpu_winit = ["winit_app", "gpu"]
 
