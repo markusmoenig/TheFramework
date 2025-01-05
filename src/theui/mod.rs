@@ -8,6 +8,7 @@ pub mod thedrop;
 pub mod theflattenedmap;
 pub mod theid;
 pub mod thelayout;
+pub mod thenodeui;
 pub mod thergbabuffer;
 pub mod thergbbuffer;
 pub mod thesdf;
@@ -121,6 +122,8 @@ pub mod prelude {
     pub use crate::theui::TheAccelerator;
     pub use crate::theui::TheAcceleratorKey;
     pub use crate::theui::TheDialogButtonRole;
+
+    pub use crate::theui::thenodeui::*;
 }
 
 // Define a macro named `str!`.
