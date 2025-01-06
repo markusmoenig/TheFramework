@@ -1,6 +1,6 @@
 [package]
 name = "theframework"
-version = "0.1.33"
+version = "0.1.34"
 edition = "2021"
 description = "A cross platform application UI framework."
 license = "MIT"
@@ -31,7 +31,7 @@ rfd = { version = "0.13", optional = true }
 futures = { version = "0.3", optional = true }
 serde = { version = "1.0", features = ["derive"], optional = false }
 serde_json = { version = "1.0", optional = false }
-flate2 = { version = "1.0", optional = true }
+flate2 = { version = "1.0" }
 rayon = { version = "1", optional = true }
 vectorize = "0.2.0"
 rand = "0.8.5"
@@ -67,7 +67,7 @@ wasm-bindgen-futures = "0.4"
 web-sys = { version = "0.3", features = ["GpuTextureFormat"] }
 
 [features]
-ui = ["futures", "rfd", "flate2", "rayon", "zeno"]
+ui = ["futures", "rfd", "rayon", "zeno"]
 code = []
 winit_app = ["winit", "winit_input_helper"]
 gpu = ["aict", "bytemuck", "futures", "itertools", "wgpu"]

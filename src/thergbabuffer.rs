@@ -1,5 +1,5 @@
-use super::{compress, decompress};
 use crate::prelude::*;
+use crate::{compress, decompress};
 use arboard::{Clipboard, ImageData};
 use fontdue::layout::{
     CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle, VerticalAlign,

@@ -3,13 +3,11 @@ pub mod thecodehighlighter;
 pub mod thecollection;
 pub mod thecontextmenu;
 pub mod thecurrency;
-pub mod thedim;
 pub mod thedrop;
 pub mod theflattenedmap;
 pub mod theid;
 pub mod thelayout;
 pub mod thenodeui;
-pub mod thergbabuffer;
 pub mod thergbbuffer;
 pub mod thesdf;
 pub mod thesizelimiter;
@@ -80,10 +78,7 @@ pub mod prelude {
 
     pub use crate::theui::thecanvas::*;
     pub use crate::theui::thecodehighlighter::{TheCodeHighlighter, TheCodeHighlighterTrait};
-    pub use crate::theui::thedim::*;
-    pub use crate::theui::thergbabuffer::{
-        TheRGBABuffer, TheRGBARegion, TheRGBARegionSequence, TheRGBATile,
-    };
+
     pub use crate::theui::thergbbuffer::TheRGBBuffer;
     pub use crate::theui::thesizelimiter::TheSizeLimiter;
     pub use crate::theui::theuicontext::*;
