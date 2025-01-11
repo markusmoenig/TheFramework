@@ -11,6 +11,9 @@ pub struct ThePalettePicker {
 
     rectangles: Vec<TheDim>,
 
+    rows: i32,
+    columns: i32,
+
     dim: TheDim,
 }
 
@@ -32,6 +35,9 @@ impl TheWidget for ThePalettePicker {
             index: 0,
 
             rectangles: vec![],
+
+            rows: 20,
+            columns: 14,
 
             dim: TheDim::zero(),
         }
@@ -153,9 +159,9 @@ impl TheWidget for ThePalettePicker {
 
         let mut index = 0;
         let mut y_off = 8;
-        for _ in 0..20 {
+        for _ in 0..self.rows {
             let mut x_off = 10;
-            for _ in 0..14 {
+            for _ in 0..self.columns {
                 if self.index == index {
                     ctx.draw.rect_outline(
                         buffer.pixels_mut(),
@@ -224,6 +230,7 @@ pub trait ThePalettePickerTrait {
     fn set_palette(&mut self, palette: ThePalette);
     fn index(&self) -> usize;
     fn set_color(&mut self, color: TheColor);
+    fn set_rows_columns(&mut self, rows: i32, columns: i32);
 }
 
 impl ThePalettePickerTrait for ThePalettePicker {
@@ -238,5 +245,9 @@ impl ThePalettePickerTrait for ThePalettePicker {
     fn set_color(&mut self, color: TheColor) {
         self.palette.colors[self.index] = Some(color);
         self.is_dirty = true;
+    }
+    fn set_rows_columns(&mut self, rows: i32, columns: i32) {
+        self.rows = rows;
+        self.columns = columns;
     }
 }

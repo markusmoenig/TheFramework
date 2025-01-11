@@ -111,8 +111,15 @@ impl TheLayout for TheStackLayout {
     fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {
         if self.dim != dim || ctx.ui.relayout {
             self.dim = dim;
-            if !self.canvas.is_empty() && self.index < self.canvas.len() {
-                self.canvas[self.index].set_dim(dim, ctx);
+            // if !self.canvas.is_empty() && self.index < self.canvas.len() {
+            //     self.canvas[self.index].set_dim(dim, ctx);
+            // }
+
+            // As all canvas have the same size anyway, there is no harm initializing them all.
+            // This solves the problem  that when switching to a new canvas it is properly
+            // configured and does not need a refresh.
+            for c in &mut self.canvas {
+                c.set_dim(dim, ctx);
             }
         }
     }

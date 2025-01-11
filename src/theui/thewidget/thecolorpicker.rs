@@ -118,6 +118,7 @@ impl TheWidget for TheColorPicker {
                 ));
                 self.is_dirty = true;
                 redraw = true;
+                ctx.ui.clear_focus();
             }
             _ => {}
         }
