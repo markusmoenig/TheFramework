@@ -7,10 +7,16 @@ use std::ops::RangeInclusive;
 pub enum TheNodeUIItem {
     /// Text: Id, Name, Status, Value, DefaultValue, Continuous
     Text(String, String, String, String, Option<String>, bool),
+    /// Selector: Id, Name, Status, Values, Value
+    Selector(String, String, String, Vec<String>, i32),
     /// Float Edit Slider: Id, Name, Status, Value, Range, Continuous
     FloatEditSlider(String, String, String, f32, RangeInclusive<f32>, bool),
-    /// Float Edit Slider: Id, Name, Status, Value, Range, DefaultValue, Continuous
+    /// Float Slider: Id, Name, Status, Value, Range, DefaultValue, Continuous
     FloatSlider(String, String, String, f32, RangeInclusive<f32>, f32, bool),
+    /// Int Edit Slider: Id, Name, Status, Value, Range, Continuous
+    IntEditSlider(String, String, String, i32, RangeInclusive<i32>, bool),
+    /// Int Slider: Id, Name, Status, Value, Range, DefaultValue, Continuous
+    IntSlider(String, String, String, i32, RangeInclusive<i32>, i32, bool),
 }
 
 impl TheNodeUIItem {
@@ -18,8 +24,11 @@ impl TheNodeUIItem {
     pub fn id(&self) -> &str {
         match self {
             TheNodeUIItem::Text(id, _, _, _, _, _) => id,
+            TheNodeUIItem::Selector(id, _, _, _, _) => id,
             TheNodeUIItem::FloatEditSlider(id, _, _, _, _, _) => id,
             TheNodeUIItem::FloatSlider(id, _, _, _, _, _, _) => id,
+            TheNodeUIItem::IntEditSlider(id, _, _, _, _, _) => id,
+            TheNodeUIItem::IntSlider(id, _, _, _, _, _, _) => id,
         }
     }
 }
@@ -83,6 +92,15 @@ impl TheNodeUI {
                     edit.set_info_text(default_value.clone());
                     layout.add_pair(name.clone(), Box::new(edit));
                 }
+                Selector(id, name, status, values, value) => {
+                    let mut dropdown = TheDropdownMenu::new(TheId::named(id));
+                    for item in values {
+                        dropdown.add_option(item.clone());
+                    }
+                    dropdown.set_selected_index(*value);
+                    dropdown.set_status_text(status);
+                    layout.add_pair(name.clone(), Box::new(dropdown));
+                }
                 FloatEditSlider(id, name, status, value, range, continous) => {
                     let mut slider = TheTextLineEdit::new(TheId::named(id));
                     slider.set_value(TheValue::Float(*value));
@@ -96,6 +114,23 @@ impl TheNodeUI {
                     slider.set_value(TheValue::Float(*value));
                     slider.set_default_value(TheValue::Float(*default_value));
                     slider.set_range(TheValue::RangeF32(range.clone()));
+                    slider.set_continuous(*continous);
+                    slider.set_status_text(status);
+                    layout.add_pair(name.clone(), Box::new(slider));
+                }
+                IntEditSlider(id, name, status, value, range, continous) => {
+                    let mut slider = TheTextLineEdit::new(TheId::named(id));
+                    slider.set_value(TheValue::Int(*value));
+                    slider.set_range(TheValue::RangeI32(range.clone()));
+                    slider.set_continuous(*continous);
+                    slider.set_status_text(status);
+                    layout.add_pair(name.clone(), Box::new(slider));
+                }
+                IntSlider(id, name, status, value, range, default_value, continous) => {
+                    let mut slider = TheSlider::new(TheId::named(id));
+                    slider.set_value(TheValue::Int(*value));
+                    slider.set_default_value(TheValue::Int(*default_value));
+                    slider.set_range(TheValue::RangeI32(range.clone()));
                     slider.set_continuous(*continous);
                     slider.set_status_text(status);
                     layout.add_pair(name.clone(), Box::new(slider));
@@ -118,6 +153,12 @@ impl TheNodeUI {
                                 updated = true;
                             }
                         }
+                        Selector(_, _, _, _, value) => {
+                            if let TheValue::Int(v) = event_value {
+                                *value = v;
+                                updated = true;
+                            }
+                        }
                         FloatEditSlider(_, _, _, value, _, _) => {
                             if let TheValue::Float(v) = event_value {
                                 *value = v;
@@ -126,6 +167,18 @@ impl TheNodeUI {
                         }
                         FloatSlider(_, _, _, value, _, _, _) => {
                             if let TheValue::Float(v) = event_value {
+                                *value = v;
+                                updated = true;
+                            }
+                        }
+                        IntEditSlider(_, _, _, value, _, _) => {
+                            if let TheValue::Int(v) = event_value {
+                                *value = v;
+                                updated = true;
+                            }
+                        }
+                        IntSlider(_, _, _, value, _, _, _) => {
+                            if let TheValue::Int(v) = event_value {
                                 *value = v;
                                 updated = true;
                             }
