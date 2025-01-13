@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::{compress, decompress};
-use arboard::{Clipboard, ImageData};
 use fontdue::layout::{
     CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle, VerticalAlign,
 };
@@ -877,18 +876,6 @@ impl TheRGBABuffer {
             writer.write_image_data(&self.buffer)?;
         }
         Ok(png_data)
-    }
-
-    /// Copy the buffer to the clipboard.
-    pub fn to_clipboard(&self) {
-        let img_data = ImageData {
-            width: self.dim.width as usize,
-            height: self.dim.height as usize,
-            bytes: self.buffer.clone().into(),
-        };
-        if let Ok(mut ctx) = Clipboard::new() {
-            ctx.set_image(img_data).unwrap();
-        }
     }
 }
 
