@@ -17,6 +17,8 @@ pub enum TheNodeUIItem {
     IntEditSlider(String, String, String, i32, RangeInclusive<i32>, bool),
     /// Int Slider: Id, Name, Status, Value, Range, DefaultValue, Continuous
     IntSlider(String, String, String, i32, RangeInclusive<i32>, i32, bool),
+    /// Button: Id, Name, Status, LayoutText
+    Button(String, String, String, String),
 }
 
 impl TheNodeUIItem {
@@ -29,6 +31,7 @@ impl TheNodeUIItem {
             TheNodeUIItem::FloatSlider(id, _, _, _, _, _, _) => id,
             TheNodeUIItem::IntEditSlider(id, _, _, _, _, _) => id,
             TheNodeUIItem::IntSlider(id, _, _, _, _, _, _) => id,
+            TheNodeUIItem::Button(id, _, _, _) => id,
         }
     }
 }
@@ -135,6 +138,12 @@ impl TheNodeUI {
                     slider.set_status_text(status);
                     layout.add_pair(name.clone(), Box::new(slider));
                 }
+                Button(id, name, status, layout_text) => {
+                    let mut button = TheTraybarButton::new(TheId::named(id));
+                    button.set_text(name.clone());
+                    button.set_status_text(status);
+                    layout.add_pair(layout_text.clone(), Box::new(button));
+                }
             }
         }
     }
@@ -183,6 +192,7 @@ impl TheNodeUI {
                                 updated = true;
                             }
                         }
+                        _ => {}
                     }
                 }
             }

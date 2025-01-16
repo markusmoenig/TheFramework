@@ -312,6 +312,7 @@ impl TheUIContext {
     }
 
     /// Decode image
+    /// Decode image
     pub fn decode_image(&mut self, id: TheId, path: PathBuf) {
         if let Ok(data) = std::fs::File::open(path.clone()) {
             let decoder = png::Decoder::new(data);
@@ -320,7 +321,49 @@ impl TheUIContext {
                 let info = reader.next_frame(&mut buf).unwrap();
                 let bytes = &buf[..info.buffer_size()];
 
-                let buffer = TheRGBABuffer::from(bytes.to_vec(), info.width, info.height);
+                // Ensure the image data has 4 channels (RGBA)
+                let rgba_bytes = match info.color_type {
+                    png::ColorType::Rgb => {
+                        // Image is RGB, expand to RGBA
+                        let mut expanded_buf =
+                            Vec::with_capacity(info.width as usize * info.height as usize * 4);
+                        for chunk in bytes.chunks(3) {
+                            expanded_buf.push(chunk[0]); // R
+                            expanded_buf.push(chunk[1]); // G
+                            expanded_buf.push(chunk[2]); // B
+                            expanded_buf.push(255); // A (opaque)
+                        }
+                        expanded_buf
+                    }
+                    png::ColorType::Rgba => {
+                        // Image is already RGBA
+                        bytes.to_vec()
+                    }
+                    png::ColorType::Indexed => {
+                        // Image is Indexed, decode using the palette
+                        if let Some(palette) = reader.info().palette.as_ref() {
+                            let mut expanded_buf =
+                                Vec::with_capacity(info.width as usize * info.height as usize * 4);
+                            for &index in bytes {
+                                let palette_index = index as usize * 3;
+                                expanded_buf.push(palette[palette_index]); // R
+                                expanded_buf.push(palette[palette_index + 1]); // G
+                                expanded_buf.push(palette[palette_index + 2]); // B
+                                expanded_buf.push(255); // A (opaque)
+                            }
+                            expanded_buf
+                        } else {
+                            eprintln!("Indexed image does not have a palette");
+                            return;
+                        }
+                    }
+                    _ => {
+                        eprintln!("Unsupported color type: {:?}", info.color_type);
+                        return;
+                    }
+                };
+
+                let buffer = TheRGBABuffer::from(rgba_bytes, info.width, info.height);
                 let name = path.file_stem().and_then(|f| f.to_str()).unwrap_or("");
 
                 self.send(TheEvent::ImageDecodeResult(id, name.to_string(), buffer));
