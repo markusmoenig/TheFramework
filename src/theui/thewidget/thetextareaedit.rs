@@ -1,6 +1,5 @@
-use std::time::Instant;
-
 use fontdue::layout::{HorizontalAlign, LayoutSettings};
+use web_time::Instant;
 
 use crate::prelude::*;
 
