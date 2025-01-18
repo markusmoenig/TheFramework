@@ -1,6 +1,5 @@
-use std::time::Instant;
-
 use num_traits::ToPrimitive;
+use web_time::Instant;
 
 use crate::prelude::*;
 

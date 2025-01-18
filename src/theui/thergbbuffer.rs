@@ -1,6 +1,5 @@
 use super::{compress, decompress};
 use crate::prelude::*;
-use arboard::{Clipboard, ImageData};
 use png::{BitDepth, ColorType, Encoder};
 
 #[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]
@@ -319,27 +318,6 @@ impl TheRGBBuffer {
             writer.write_image_data(&self.buffer)?;
         }
         Ok(png_data)
-    }
-
-    /// Copy the buffer to the clipboard.
-    pub fn to_clipboard(&self) {
-        let mut rgba_buffer = Vec::with_capacity(self.buffer.len() / 3 * 4);
-        for chunk in self.buffer.chunks(3) {
-            rgba_buffer.extend_from_slice(chunk);
-            rgba_buffer.push(255); // Add alpha channel
-        }
-        let img_data = ImageData {
-            width: self.dim.width as usize,
-            height: self.dim.height as usize,
-            bytes: rgba_buffer.into(),
-        };
-        if let Ok(mut ctx) = Clipboard::new() {
-            if let Err(e) = ctx.set_image(img_data) {
-                eprintln!("Failed to set image to clipboard: {}", e);
-            }
-        } else {
-            eprintln!("Failed to initialize clipboard context");
-        }
     }
 
     /// Convert the buffer to an TheRGBABuffer.
