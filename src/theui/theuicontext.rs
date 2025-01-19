@@ -312,7 +312,6 @@ impl TheUIContext {
     }
 
     /// Decode image
-    /// Decode image
     pub fn decode_image(&mut self, id: TheId, path: PathBuf) {
         if let Ok(data) = std::fs::File::open(path.clone()) {
             let decoder = png::Decoder::new(data);

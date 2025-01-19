@@ -19,6 +19,8 @@ pub enum TheNodeUIItem {
     IntSlider(String, String, String, i32, RangeInclusive<i32>, i32, bool),
     /// Button: Id, Name, Status, LayoutText
     Button(String, String, String, String),
+    /// Text: Id, Name, Status, Value, DefaultValue, Continuous
+    ColorPicker(String, String, String, TheColor, bool),
 }
 
 impl TheNodeUIItem {
@@ -32,6 +34,7 @@ impl TheNodeUIItem {
             TheNodeUIItem::IntEditSlider(id, _, _, _, _, _) => id,
             TheNodeUIItem::IntSlider(id, _, _, _, _, _, _) => id,
             TheNodeUIItem::Button(id, _, _, _) => id,
+            TheNodeUIItem::ColorPicker(id, _, _, _, _) => id,
         }
     }
 }
@@ -143,6 +146,13 @@ impl TheNodeUI {
                     button.set_text(name.clone());
                     button.set_status_text(status);
                     layout.add_pair(layout_text.clone(), Box::new(button));
+                }
+                ColorPicker(id, name, status, value, continuous) => {
+                    let mut picker = TheColorPicker::new(TheId::named(id));
+                    picker.set_value(TheValue::ColorObject(value.clone()));
+                    picker.set_status_text(status);
+                    picker.set_continuous(*continuous);
+                    layout.add_pair(name.clone(), Box::new(picker));
                 }
             }
         }

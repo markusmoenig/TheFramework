@@ -234,6 +234,11 @@ impl TheColor {
         [self.r, self.g, self.b, self.a]
     }
 
+    /// Creates an [f32;3] array
+    pub fn to_array_3(&self) -> [f32; 3] {
+        [self.r, self.g, self.b]
+    }
+
     /// Creates an [u8;4] array
     pub fn to_u8_array(&self) -> [u8; 4] {
         [
@@ -377,5 +382,17 @@ impl From<&str> for TheColor {
 impl From<(f32, f32, f32)> for TheColor {
     fn from(color: (f32, f32, f32)) -> Self {
         Self::from_hsl(color.0, color.1, color.2)
+    }
+}
+
+impl From<[f32; 3]> for TheColor {
+    fn from(color: [f32; 3]) -> Self {
+        Self {
+            name: "".into(),
+            r: color[0],
+            g: color[1],
+            b: color[2],
+            a: 1.0,
+        }
     }
 }
