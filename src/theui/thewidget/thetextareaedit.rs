@@ -347,14 +347,13 @@ impl TheWidget for TheTextAreaEdit {
 
                 if !self.state.is_empty() {
                     if self.is_hscrollbar_clicked {
-                        redraw = self.hscrollbar.on_event(
-                            &TheEvent::MouseDragged(
-                                self.hscrollbar
-                                    .dim()
-                                    .to_local(coord + self.dim.screen_coord()),
-                            ),
-                            ctx,
-                        );
+                        redraw =
+                            self.hscrollbar.on_event(
+                                &TheEvent::MouseDragged(self.hscrollbar.dim().to_local(
+                                    coord + Vec2::new(self.dim.buffer_x, self.dim.buffer_y),
+                                )),
+                                ctx,
+                            );
                         if let Some(scrollbar) = self.hscrollbar.as_horizontal_scrollbar() {
                             redraw = self.renderer.scroll(
                                 &Vec2::new(
@@ -366,14 +365,13 @@ impl TheWidget for TheTextAreaEdit {
                             ) || redraw;
                         }
                     } else if self.is_vscrollbar_clicked {
-                        redraw = self.vscrollbar.on_event(
-                            &TheEvent::MouseDragged(
-                                self.vscrollbar
-                                    .dim()
-                                    .to_local(coord + self.dim.screen_coord()),
-                            ),
-                            ctx,
-                        );
+                        redraw =
+                            self.vscrollbar.on_event(
+                                &TheEvent::MouseDragged(self.vscrollbar.dim().to_local(
+                                    coord + Vec2::new(self.dim.buffer_x, self.dim.buffer_y),
+                                )),
+                                ctx,
+                            );
                         if let Some(scrollbar) = self.vscrollbar.as_vertical_scrollbar() {
                             redraw = self.renderer.scroll(
                                 &Vec2::new(
@@ -434,28 +432,18 @@ impl TheWidget for TheTextAreaEdit {
                 }
             }
             TheEvent::MouseUp(coord) => {
+                let global_coord = coord + Vec2::new(self.dim.buffer_x, self.dim.buffer_y);
                 if self.is_hscrollbar_clicked {
                     self.hscrollbar.on_event(
-                        &TheEvent::MouseUp(
-                            self.hscrollbar
-                                .dim()
-                                .to_local(coord + self.dim.screen_coord()),
-                        ),
+                        &TheEvent::MouseUp(self.hscrollbar.dim().to_local(global_coord)),
                         ctx,
                     );
                 } else if self.is_vscrollbar_clicked {
                     self.vscrollbar.on_event(
-                        &TheEvent::MouseUp(
-                            self.vscrollbar
-                                .dim()
-                                .to_local(coord + self.dim.screen_coord()),
-                        ),
+                        &TheEvent::MouseUp(self.vscrollbar.dim().to_local(global_coord)),
                         ctx,
                     );
-                } else if self
-                    .renderer
-                    .dim()
-                    .contains(coord + self.dim.screen_coord())
+                } else if self.renderer.dim().contains(global_coord)
                     && self.is_clicking_on_selection
                 {
                     // Drag selection then cut/paste
@@ -485,7 +473,8 @@ impl TheWidget for TheTextAreaEdit {
                 self.drag_start_index = 0;
             }
             TheEvent::MouseWheel(delta) => {
-                let global_coord = self.hover_coord + self.dim.screen_coord();
+                let global_coord =
+                    self.hover_coord + Vec2::new(self.dim.buffer_x, self.dim.buffer_y);
                 let scrolled = if self.hscrollbar.dim().contains(global_coord) {
                     let delta = if delta.x.abs() > delta.y.abs() {
                         delta.x / 4
@@ -735,7 +724,7 @@ impl TheWidget for TheTextAreaEdit {
             TheEvent::Hover(coord) => {
                 // The hovered widget is always current widget not scrollbars
                 // We should manually draw hovered style to scrollbar hovered
-                let global_coord = coord + self.dim.screen_coord();
+                let global_coord = coord + Vec2::new(self.dim.buffer_x, self.dim.buffer_y);
                 if self.renderer.is_horizontal_overflow() {
                     self.hscrollbar.on_event(
                         &TheEvent::Hover(self.hscrollbar.dim().to_local(global_coord)),
