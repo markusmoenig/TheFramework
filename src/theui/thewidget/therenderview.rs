@@ -120,6 +120,14 @@ impl TheWidget for TheRenderView {
                         .send(TheEvent::RenderViewScrollBy(self.id().clone(), d));
                 }
             }
+            TheEvent::Drop(coord, drop) => {
+                ctx.ui.send(TheEvent::RenderViewDrop(
+                    self.id.clone(),
+                    *coord,
+                    drop.clone(),
+                ));
+                redraw = true;
+            }
             _ => {}
         }
         redraw
