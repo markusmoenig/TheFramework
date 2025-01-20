@@ -1054,9 +1054,9 @@ impl TheWidget for TheTextAreaEdit {
                     let top = dim.y - self.renderer.scroll_offset.y as i32
                         + (self.renderer.row_baseline(i) as f32 - line.max_ascent).ceil() as i32;
                     let color = if self.state.cursor.row == i {
-                        style.theme().color(TextEditTextColor)
+                        style.theme().color(TextEditLineNumberHighlightColor)
                     } else {
-                        style.theme().color_disabled_t(TextEditTextColor)
+                        style.theme().color_disabled_t(TextEditLineNumberColor)
                     };
                     ctx.draw.text_rect_blend_clip(
                         buffer.pixels_mut(),
