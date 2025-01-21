@@ -40,6 +40,8 @@ impl TheTheme for TheDarkTheme {
         colors.insert(TextEditBorder, [209, 209, 209, 255]);
         colors.insert(TextEditTextColor, [242, 242, 242, 255]);
         colors.insert(TextEditCursorColor, [119, 119, 119, 255]);
+        colors.insert(TextEditLineNumberColor, [219, 219, 219, 255]);
+        colors.insert(TextEditLineNumberHighlightColor, [242, 242, 242, 255]);
 
         colors.insert(MenubarPopupBackground, [124, 124, 124, 255]);
         colors.insert(MenubarPopupBorder, [153, 153, 153, 255]);

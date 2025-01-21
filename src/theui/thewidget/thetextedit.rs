@@ -989,11 +989,22 @@ impl TheTextRenderer {
             .min(rightmost);
 
         let downmost = self.actual_size.y.saturating_sub(self.height);
-        self.scroll_offset.y = (self.scroll_offset.y as i32 + delta.y)
-            .max(0)
-            .to_usize()
-            .unwrap()
-            .min(downmost);
+        #[cfg(target_os = "macos")]
+        {
+            self.scroll_offset.y = (self.scroll_offset.y as i32 - delta.y)
+                .max(0)
+                .to_usize()
+                .unwrap()
+                .min(downmost);
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            self.scroll_offset.y = (self.scroll_offset.y as i32 + delta.y)
+                .max(0)
+                .to_usize()
+                .unwrap()
+                .min(downmost);
+        }
 
         previous_offset != self.scroll_offset
     }
