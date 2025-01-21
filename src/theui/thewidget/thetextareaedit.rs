@@ -488,10 +488,10 @@ impl TheWidget for TheTextAreaEdit {
                     } else {
                         delta.y / 4
                     };
-                    self.renderer.scroll(&Vec2::new(0, delta), false)
+                    self.renderer.scroll(&Vec2::new(0, -delta), false)
                 } else {
                     self.renderer
-                        .scroll(&Vec2::new(delta.x / 4, delta.y / 4), false)
+                        .scroll(&Vec2::new(delta.x / 4, -delta.y / 4), false)
                 };
                 if scrolled {
                     self.is_dirty = true;
