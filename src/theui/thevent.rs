@@ -12,7 +12,9 @@ pub enum TheEvent {
     MouseWheel(Vec2<i32>),
 
     KeyDown(TheValue),
+    KeyUp(TheValue),
     KeyCodeDown(TheValue),
+    KeyCodeUp(TheValue),
     ModifierChanged(bool, bool, bool, bool),
     DropPreview(Vec2<i32>, TheDrop),
     Drop(Vec2<i32>, TheDrop),

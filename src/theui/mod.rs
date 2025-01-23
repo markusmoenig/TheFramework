@@ -949,6 +949,24 @@ impl TheUI {
         redraw
     }
 
+    pub fn key_up(
+        &mut self,
+        char: Option<char>,
+        key: Option<TheKeyCode>,
+        ctx: &mut TheContext,
+    ) -> bool {
+        let mut redraw = false;
+
+        let event = if let Some(c) = char {
+            TheEvent::KeyUp(TheValue::Char(c))
+        } else {
+            TheEvent::KeyCodeUp(TheValue::KeyCode(key.unwrap()))
+        };
+        ctx.ui.send(event.clone());
+
+        false
+    }
+
     pub fn modifier_changed(
         &mut self,
         shift: bool,

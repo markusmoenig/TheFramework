@@ -328,7 +328,6 @@ impl TheApp {
                                 }
                             }
                             if event.state == ElementState::Released {
-                                // Key up events only for non-ui apps for now
                                 let key = match &event.logical_key {
                                     Key::Named(NamedKey::Delete)
                                     | Key::Named(NamedKey::Backspace) => Some(TheKeyCode::Delete),
@@ -343,10 +342,10 @@ impl TheApp {
                                     Key::Character(str) => {
                                         if str.is_ascii() {
                                             for ch in str.chars() {
-                                                // #[cfg(feature = "ui")]
-                                                // if ui.key_up(Some(ch), None, &mut ctx) {
-                                                //     window.request_redraw();
-                                                // }
+                                                #[cfg(feature = "ui")]
+                                                if ui.key_up(Some(ch), None, &mut ctx) {
+                                                    window.request_redraw();
+                                                }
                                                 if app.key_up(Some(ch), None, &mut ctx) {
                                                     window.request_redraw();
                                                 }
