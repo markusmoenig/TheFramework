@@ -25,7 +25,7 @@ impl TheTime {
         }
     }
 
-    /// Creates a new TheDateTime with specified hours and minutes, and seconds set to 0.
+    /// Creates a new TheTime with specified hours and minutes, and seconds set to 0.
     /// Validates the input to ensure it falls within the correct range.
     pub fn new_time(hours: u8, minutes: u8) -> Result<Self, String> {
         if hours > 23 || minutes > 59 {

@@ -14,7 +14,6 @@ pub mod thesizelimiter;
 pub mod thestyle;
 pub mod thetheme;
 pub mod thetilemask;
-pub mod thetime;
 pub mod thetimeline;
 pub mod theuicontext;
 pub mod theuiglobals;
@@ -112,7 +111,6 @@ pub mod prelude {
     pub use crate::theui::thecurrency::TheCurrency;
     pub use crate::theui::theflattenedmap::{TheFlattenedMap, TheFlattenedMap3D};
     pub use crate::theui::thetilemask::TheTileMask;
-    pub use crate::theui::thetime::TheTime;
     pub use crate::theui::thetimeline::{TheInterpolation, TheTimeline};
     pub use crate::theui::TheAccelerator;
     pub use crate::theui::TheAcceleratorKey;

@@ -5,6 +5,7 @@ pub mod thedim;
 pub mod thedraw2d;
 pub mod thepalette;
 pub mod thergbabuffer;
+pub mod thetime;
 pub mod thetrait;
 
 #[cfg(feature = "ui")]
@@ -97,6 +98,7 @@ pub mod prelude {
     pub use crate::thedraw2d::TheHorizontalAlign;
     pub use crate::thedraw2d::TheVerticalAlign;
     pub use crate::thepalette::ThePalette;
+    pub use crate::thetime::TheTime;
 
     pub use crate::thetrait::TheTrait;
     pub use crate::TheKeyCode;
