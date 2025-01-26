@@ -125,7 +125,7 @@ impl TheLayout for TheTabLayout {
             self.dim = dim;
 
             self.tabbar
-                .set_dim(TheDim::new(dim.x, dim.y, dim.width, 22));
+                .set_dim(TheDim::new(dim.x, dim.y, dim.width, 22), ctx);
 
             self.tabbar
                 .dim_mut()

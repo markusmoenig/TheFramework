@@ -178,12 +178,10 @@ impl TheLayout for TheCodeLayout {
 
             // Vertical
 
-            self.vertical_scrollbar.set_dim(TheDim::new(
-                dim.x + width - 13,
-                dim.y,
-                13,
-                dim.height - 13,
-            ));
+            self.vertical_scrollbar.set_dim(
+                TheDim::new(dim.x + width - 13, dim.y, 13, dim.height - 13),
+                ctx,
+            );
             self.vertical_scrollbar
                 .dim_mut()
                 .set_buffer_offset(self.dim.buffer_x + width - 13, self.dim.buffer_y);
@@ -195,12 +193,8 @@ impl TheLayout for TheCodeLayout {
 
             // Horizontal
 
-            self.horizontal_scrollbar.set_dim(TheDim::new(
-                dim.x,
-                dim.y + height - 13,
-                width - 13,
-                13,
-            ));
+            self.horizontal_scrollbar
+                .set_dim(TheDim::new(dim.x, dim.y + height - 13, width - 13, 13), ctx);
             self.horizontal_scrollbar
                 .dim_mut()
                 .set_buffer_offset(self.dim.buffer_x, self.dim.buffer_y + height - 13);
@@ -216,7 +210,7 @@ impl TheLayout for TheCodeLayout {
             }
 
             self.code_view
-                .set_dim(TheDim::new(dim.x, dim.y, width, height));
+                .set_dim(TheDim::new(dim.x, dim.y, width, height), ctx);
             self.code_view
                 .dim_mut()
                 .set_buffer_offset(self.dim.buffer_x, self.dim.buffer_y);

@@ -147,7 +147,7 @@ impl TheLayout for TheSnapperLayout {
             for index in 0..sections {
                 let i = index as usize;
 
-                self.bars[i].set_dim(TheDim::new(dim.x + x, dim.y + y, width, 22));
+                self.bars[i].set_dim(TheDim::new(dim.x + x, dim.y + y, width, 22), ctx);
                 self.bars[i]
                     .dim_mut()
                     .set_buffer_offset(self.dim.buffer_x, self.dim.buffer_y + y);

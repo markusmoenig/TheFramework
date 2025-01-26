@@ -128,7 +128,8 @@ impl TheLayout for TheHLayout {
                             }
                         }
 
-                        self.widgets[i].set_dim(TheDim::new(dim.x + x, dim.y + y, width, height));
+                        self.widgets[i]
+                            .set_dim(TheDim::new(dim.x + x, dim.y + y, width, height), ctx);
                         self.widgets[i]
                             .dim_mut()
                             .set_buffer_offset(self.dim.buffer_x + x, self.dim.buffer_y + y);
@@ -163,12 +164,8 @@ impl TheLayout for TheHLayout {
                                 }
                             }
 
-                            self.widgets[i].set_dim(TheDim::new(
-                                dim.x + x,
-                                dim.y + y,
-                                width,
-                                height,
-                            ));
+                            self.widgets[i]
+                                .set_dim(TheDim::new(dim.x + x, dim.y + y, width, height), ctx);
                             self.widgets[i]
                                 .dim_mut()
                                 .set_buffer_offset(self.dim.buffer_x + x, self.dim.buffer_y + y);
@@ -192,7 +189,7 @@ impl TheLayout for TheHLayout {
 
                         let y = self.margin.y;
 
-                        w.set_dim(TheDim::new(dim.x + x, dim.y + y, width, height));
+                        w.set_dim(TheDim::new(dim.x + x, dim.y + y, width, height), ctx);
                         w.dim_mut()
                             .set_buffer_offset(self.dim.buffer_x + x, self.dim.buffer_y + y);
                         x += width + self.padding;

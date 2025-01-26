@@ -153,7 +153,7 @@ impl TheLayout for TheTextLayout {
             let width = dim.width;
 
             self.vertical_scrollbar
-                .set_dim(TheDim::new(dim.x + width - 13, dim.y, 13, dim.height));
+                .set_dim(TheDim::new(dim.x + width - 13, dim.y, 13, dim.height), ctx);
             self.vertical_scrollbar
                 .dim_mut()
                 .set_buffer_offset(self.dim.buffer_x + width - 13, self.dim.buffer_y);
@@ -227,16 +227,17 @@ impl TheLayout for TheTextLayout {
 
                 if text_is_empty {
                     let offset = (max_width + text_width as i32 - width) / 2;
-                    w.set_dim(TheDim::new(dim.x + x + offset, dim.y + y, width, height));
+                    w.set_dim(
+                        TheDim::new(dim.x + x + offset, dim.y + y, width, height),
+                        ctx,
+                    );
                     w.dim_mut()
                         .set_buffer_offset(self.dim.buffer_x + x + offset, self.dim.buffer_y + y);
                 } else {
-                    w.set_dim(TheDim::new(
-                        dim.x + x + text_width as i32,
-                        dim.y + y,
-                        width,
-                        height,
-                    ));
+                    w.set_dim(
+                        TheDim::new(dim.x + x + text_width as i32, dim.y + y, width, height),
+                        ctx,
+                    );
                     w.dim_mut().set_buffer_offset(
                         self.dim.buffer_x + x + text_width as i32,
                         self.dim.buffer_y + y,

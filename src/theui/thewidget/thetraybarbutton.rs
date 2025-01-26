@@ -130,7 +130,7 @@ impl TheWidget for TheTraybarButton {
         &mut self.dim
     }
 
-    fn set_dim(&mut self, dim: TheDim) {
+    fn set_dim(&mut self, dim: TheDim, _ctx: &mut TheContext) {
         if self.dim != dim {
             self.dim = dim;
             self.is_dirty = true;

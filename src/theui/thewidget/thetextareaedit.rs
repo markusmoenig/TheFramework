@@ -159,7 +159,7 @@ impl TheWidget for TheTextAreaEdit {
         &mut self.dim
     }
 
-    fn set_dim(&mut self, dim: TheDim) {
+    fn set_dim(&mut self, dim: TheDim, _ctx: &mut TheContext) {
         if self.dim != dim {
             self.dim = dim;
             self.modified_since_last_tick = true;
@@ -808,10 +808,12 @@ impl TheWidget for TheTextAreaEdit {
             true,
         );
 
-        let font = ctx.ui.code_font.as_ref().unwrap();
         if self.modified_since_last_tick || self.renderer.row_count() == 0 {
-            self.renderer
-                .prepare(&self.state.to_text(), font, &ctx.draw);
+            self.renderer.prepare(
+                &self.state.to_text(),
+                ctx.ui.code_font.as_ref().unwrap(),
+                &ctx.draw,
+            );
 
             shrinker.shrink_by(
                 -(self.renderer.padding.0 as i32),
@@ -848,7 +850,11 @@ impl TheWidget for TheTextAreaEdit {
                 let line_number_width = ctx
                     .draw
                     // We assume '9' is one of the widest chars within 0-9
-                    .get_text_size(font, font_size, &"9".repeat(digit_count))
+                    .get_text_size(
+                        ctx.ui.code_font.as_ref().unwrap(),
+                        font_size,
+                        &"9".repeat(digit_count),
+                    )
                     .0;
                 let line_number_area_width = line_number_width + font_size.round() as usize;
                 dim.x = outer_area.0 as i32;
@@ -902,7 +908,7 @@ impl TheWidget for TheTextAreaEdit {
                     self.scrollbar_size as i32,
                 );
                 dim.set_buffer_offset(dim.x, dim.y);
-                self.hscrollbar.set_dim(dim);
+                self.hscrollbar.set_dim(dim, ctx);
             }
             if let Some(scrollbar) = self.hscrollbar.as_horizontal_scrollbar() {
                 scrollbar.set_total_width(
@@ -923,7 +929,7 @@ impl TheWidget for TheTextAreaEdit {
                         as i32,
                 );
                 dim.set_buffer_offset(dim.x, dim.y);
-                self.vscrollbar.set_dim(dim);
+                self.vscrollbar.set_dim(dim, ctx);
             }
             if let Some(scrollbar) = self.vscrollbar.as_vertical_scrollbar() {
                 scrollbar.set_total_height(
@@ -940,7 +946,7 @@ impl TheWidget for TheTextAreaEdit {
             self.readonly,
             buffer,
             style,
-            font,
+            ctx.ui.code_font.as_ref().unwrap(),
             &ctx.draw,
         );
 
@@ -970,7 +976,9 @@ impl TheWidget for TheTextAreaEdit {
 
             let font_size = self.renderer.font_size * 0.8;
             let text = self.statusbar_text();
-            let text_size = ctx.draw.get_text_size(font, font_size, &text);
+            let text_size =
+                ctx.draw
+                    .get_text_size(ctx.ui.code_font.as_ref().unwrap(), font_size, &text);
             let right = dim.x + dim.width - font_size.ceil() as i32;
             let top = dim.y + (dim.height as f32 * 0.5).round() as i32
                 - (text_size.1 as f32 * 0.5).round() as i32;
@@ -979,7 +987,7 @@ impl TheWidget for TheTextAreaEdit {
                 &Vec2::new(right - text_size.0 as i32, top - 1),
                 &dim.to_buffer_utuple(),
                 stride,
-                font,
+                ctx.ui.code_font.as_ref().unwrap(),
                 font_size,
                 &text,
                 style.theme().color_disabled_t(TextEditTextColor),
@@ -1023,7 +1031,7 @@ impl TheWidget for TheTextAreaEdit {
                     .map(|i| format!("{}", i + 1))
                     .collect::<Vec<String>>();
                 let layout = ctx.draw.get_text_layout(
-                    font,
+                    ctx.ui.code_font.as_ref().unwrap(),
                     font_size,
                     &text.join("\n"),
                     LayoutSettings {
@@ -1055,7 +1063,7 @@ impl TheWidget for TheTextAreaEdit {
                         ),
                         &rect,
                         stride,
-                        font,
+                        ctx.ui.code_font.as_ref().unwrap(),
                         font_size,
                         &text[i - start_row],
                         color,

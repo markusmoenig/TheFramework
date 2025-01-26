@@ -114,7 +114,7 @@ impl TheWidget for ThePalettePicker {
         &mut self.dim
     }
 
-    fn set_dim(&mut self, dim: TheDim) {
+    fn set_dim(&mut self, dim: TheDim, _ctx: &mut TheContext) {
         if self.dim != dim {
             self.dim = dim;
         }

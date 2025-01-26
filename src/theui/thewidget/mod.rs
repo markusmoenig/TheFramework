@@ -145,7 +145,7 @@ pub trait TheWidget: Send {
     fn limiter_mut(&mut self) -> &mut TheSizeLimiter;
 
     /// Set the dimensions of the widget
-    fn set_dim(&mut self, dim: TheDim) {}
+    fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {}
 
     /// Returns the current state of the widget.
     fn state(&self) -> TheWidgetState {

@@ -440,7 +440,7 @@ impl TheCanvas {
         } else {
             if let Some(widget) = &mut self.widget {
                 let dim = TheDim::new(x, y, w, h);
-                widget.set_dim(dim);
+                widget.set_dim(dim, ctx);
                 widget.dim_mut().set_buffer_offset(buffer_x, buffer_y);
             }
 

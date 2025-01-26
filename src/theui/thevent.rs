@@ -107,6 +107,8 @@ pub enum TheEvent {
 
     // The top canvas has been resized.
     Resize,
+    // A widget has been resized,
+    WidgetResized(TheId, TheDim),
 
     // --- Clipboard
 

@@ -139,12 +139,8 @@ impl TheLayout for TheRowListLayout {
                 total_width = dim.width;
             }
 
-            self.horizontal_scrollbar.set_dim(TheDim::new(
-                dim.x,
-                dim.y + height - 13,
-                dim.width,
-                13,
-            ));
+            self.horizontal_scrollbar
+                .set_dim(TheDim::new(dim.x, dim.y + height - 13, dim.width, 13), ctx);
             self.horizontal_scrollbar
                 .dim_mut()
                 .set_buffer_offset(self.dim.buffer_x, self.dim.buffer_y + height - 13);
@@ -164,12 +160,10 @@ impl TheLayout for TheRowListLayout {
             for index in 0..items {
                 let i = index as usize;
 
-                self.widgets[i].set_dim(TheDim::new(
-                    dim.x + x,
-                    dim.y + y,
-                    self.item_size,
-                    height - 4,
-                ));
+                self.widgets[i].set_dim(
+                    TheDim::new(dim.x + x, dim.y + y, self.item_size, height - 4),
+                    ctx,
+                );
                 self.widgets[i].dim_mut().set_buffer_offset(x, y);
 
                 x += self.item_size + 3;

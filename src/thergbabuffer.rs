@@ -963,8 +963,6 @@ pub struct TheRGBATile {
     pub name: String,
     pub buffer: Vec<TheRGBABuffer>,
     pub role: u8,
-    pub blocking: bool,
-    pub billboard: bool,
 }
 
 impl Default for TheRGBATile {
@@ -981,8 +979,6 @@ impl TheRGBATile {
             name: String::default(),
             buffer: vec![],
             role: 0,
-            blocking: false,
-            billboard: false,
         }
     }
 
@@ -992,8 +988,6 @@ impl TheRGBATile {
             name: String::default(),
             buffer: vec![buffer],
             role: 0,
-            blocking: false,
-            billboard: false,
         }
     }
 }

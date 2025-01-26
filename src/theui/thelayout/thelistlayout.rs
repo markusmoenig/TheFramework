@@ -138,7 +138,7 @@ impl TheLayout for TheListLayout {
             }
 
             self.vertical_scrollbar
-                .set_dim(TheDim::new(dim.x + width - 13, dim.y, 13, dim.height));
+                .set_dim(TheDim::new(dim.x + width - 13, dim.y, 13, dim.height), ctx);
             self.vertical_scrollbar
                 .dim_mut()
                 .set_buffer_offset(self.dim.buffer_x + width - 13, self.dim.buffer_y);
@@ -158,12 +158,10 @@ impl TheLayout for TheListLayout {
             for index in 0..items {
                 let i = index as usize;
 
-                self.widgets[i].set_dim(TheDim::new(
-                    dim.x + x,
-                    dim.y + y,
-                    width - 2,
-                    self.item_size,
-                ));
+                self.widgets[i].set_dim(
+                    TheDim::new(dim.x + x, dim.y + y, width - 2, self.item_size),
+                    ctx,
+                );
                 self.widgets[i].dim_mut().set_buffer_offset(x, y);
 
                 y += self.item_size + 3;

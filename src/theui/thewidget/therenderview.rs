@@ -141,10 +141,12 @@ impl TheWidget for TheRenderView {
         &mut self.dim
     }
 
-    fn set_dim(&mut self, dim: TheDim) {
+    fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {
         if self.dim != dim {
             self.dim = dim;
             self.is_dirty = true;
+            ctx.ui
+                .send(TheEvent::WidgetResized(self.id.clone(), dim.clone()));
         }
     }
 
