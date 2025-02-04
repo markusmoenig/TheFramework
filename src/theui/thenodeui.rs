@@ -85,6 +85,27 @@ impl TheNodeUI {
         self.items.iter()
     }
 
+    /// Get an i32 value.
+    pub fn get_i32_value(&self, id: &str) -> Option<i32> {
+        for (item_id, item) in &self.items {
+            if id == item_id {
+                match item {
+                    IntEditSlider(_, _, _, value, _, _) => {
+                        return Some(*value);
+                    }
+                    IntSlider(_, _, _, value, _, _, _) => {
+                        return Some(*value);
+                    }
+                    Selector(_, _, _, _, value) => {
+                        return Some(*value);
+                    }
+                    _ => {}
+                }
+            }
+        }
+        None
+    }
+
     /// Add the items to the given text layout.
     pub fn apply_to_text_layout(&self, layout: &mut dyn TheTextLayoutTrait) {
         layout.clear();
@@ -161,7 +182,6 @@ impl TheNodeUI {
     /// Handle an event and update the item values if necessary
     pub fn handle_event(&mut self, event: TheEvent) -> bool {
         let mut updated = false;
-        #[allow(clippy::single_match)]
         match event {
             TheEvent::ValueChanged(id, event_value) => {
                 if let Some(item) = self.get_item_mut(&id.name) {
@@ -192,6 +212,9 @@ impl TheNodeUI {
                         }
                         IntEditSlider(_, _, _, value, _, _) => {
                             if let TheValue::Int(v) = event_value {
+                                *value = v;
+                                updated = true;
+                            } else if let TheValue::IntRange(v, _) = event_value {
                                 *value = v;
                                 updated = true;
                             }

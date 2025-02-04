@@ -49,6 +49,8 @@ pub struct TheRGBAView {
     layout_id: TheId,
 
     context_menu: Option<TheContextMenu>,
+
+    icon_mode: bool,
 }
 
 impl TheWidget for TheRGBAView {
@@ -99,6 +101,8 @@ impl TheWidget for TheRGBAView {
             layout_id: TheId::empty(),
 
             context_menu: None,
+
+            icon_mode: false,
         }
     }
 
@@ -602,9 +606,23 @@ impl TheWidget for TheRGBAView {
                             target.pixels_mut()[target_index..target_index + 4]
                                 .copy_from_slice(&WHITE);
                             copy = false;
-                        }
+                        } else if self.icon_mode
+                            && !self.selected.contains(&(src_x / grid, src_y / grid))
+                        {
+                            let s = self.buffer.pixels();
+                            let c = &[
+                                s[src_index] / 2,
+                                s[src_index + 1] / 2,
+                                s[src_index + 2] / 2,
+                                s[src_index + 3],
+                            ];
+                            target.pixels_mut()[target_index..target_index + 4].copy_from_slice(c);
+                            copy = false;
+                        } else
                         // Selected
-                        else if self.selected.contains(&(src_x / grid, src_y / grid)) {
+                        if !self.icon_mode
+                            && self.selected.contains(&(src_x / grid, src_y / grid))
+                        {
                             let s = self.buffer.pixels();
                             let c = &[
                                 s[src_index],
@@ -621,19 +639,22 @@ impl TheWidget for TheRGBAView {
                             copy = false;
                         }
                         // Hover
-                        else if let Some(hover_color) = self.hover_color {
-                            if self.hover == Some((src_x / grid, src_y / grid)) {
-                                let s = self.buffer.pixels();
-                                let c = &[
-                                    s[src_index],
-                                    s[src_index + 1],
-                                    s[src_index + 2],
-                                    s[src_index + 3],
-                                ];
-                                let m = mix_color(c, &hover_color, hover_color[3] as f32 / 255.0);
-                                target.pixels_mut()[target_index..target_index + 4]
-                                    .copy_from_slice(&m);
-                                copy = false;
+                        else if !self.icon_mode {
+                            if let Some(hover_color) = self.hover_color {
+                                if self.hover == Some((src_x / grid, src_y / grid)) {
+                                    let s = self.buffer.pixels();
+                                    let c = &[
+                                        s[src_index],
+                                        s[src_index + 1],
+                                        s[src_index + 2],
+                                        s[src_index + 3],
+                                    ];
+                                    let m =
+                                        mix_color(c, &hover_color, hover_color[3] as f32 / 255.0);
+                                    target.pixels_mut()[target_index..target_index + 4]
+                                        .copy_from_slice(&m);
+                                    copy = false;
+                                }
                             }
                         }
                     }
@@ -723,6 +744,7 @@ pub trait TheRGBAViewTrait: TheWidget {
     fn set_wheel_scale(&mut self, wheel_scale: f32);
     fn set_hover_color(&mut self, color: Option<RGBA>);
     fn set_scrollbar_ids(&mut self, hscrollbar: TheId, vscrollbar: TheId);
+    fn set_icon_mode(&mut self, icon_mode: bool);
 
     fn set_associated_layout(&mut self, id: TheId);
 
@@ -885,6 +907,9 @@ impl TheRGBAViewTrait for TheRGBAView {
     fn set_hover_color(&mut self, color: Option<RGBA>) {
         self.hover_color = color;
         self.is_dirty = true;
+    }
+    fn set_icon_mode(&mut self, icon_mode: bool) {
+        self.icon_mode = icon_mode;
     }
     fn selection(&self) -> FxHashSet<(i32, i32)> {
         self.selected.clone()
