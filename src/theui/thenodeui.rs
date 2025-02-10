@@ -21,6 +21,8 @@ pub enum TheNodeUIItem {
     Button(String, String, String, String),
     /// Text: Id, Name, Status, Value, DefaultValue, Continuous
     ColorPicker(String, String, String, TheColor, bool),
+    /// Separator: Name
+    Separator(String),
 }
 
 impl TheNodeUIItem {
@@ -35,6 +37,7 @@ impl TheNodeUIItem {
             TheNodeUIItem::IntSlider(id, _, _, _, _, _, _) => id,
             TheNodeUIItem::Button(id, _, _, _) => id,
             TheNodeUIItem::ColorPicker(id, _, _, _, _) => id,
+            TheNodeUIItem::Separator(name) => name,
         }
     }
 }
@@ -174,6 +177,10 @@ impl TheNodeUI {
                     picker.set_status_text(status);
                     picker.set_continuous(*continuous);
                     layout.add_pair(name.clone(), Box::new(picker));
+                }
+                Separator(name) => {
+                    let sep = TheSeparator::new(TheId::named_with_id("Separator", Uuid::new_v4()));
+                    layout.add_pair(name.clone(), Box::new(sep));
                 }
             }
         }

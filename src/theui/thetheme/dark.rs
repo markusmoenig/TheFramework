@@ -155,6 +155,8 @@ impl TheTheme for TheDarkTheme {
         colors.insert(ToolListButtonHoverBackground, [157, 157, 157, 255]);
         colors.insert(ToolListButtonSelectedBackground, [149, 149, 149, 255]);
 
+        colors.insert(LayoutSeparator, [160, 160, 160, 255]);
+
         Self {
             temp_color: BLACK,
             colors,

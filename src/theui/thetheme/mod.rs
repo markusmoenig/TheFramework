@@ -170,4 +170,6 @@ pub enum TheThemeColors {
     ToolListButtonHoverBorder,
     ToolListButtonHoverBackground,
     ToolListButtonSelectedBackground,
+
+    LayoutSeparator,
 }

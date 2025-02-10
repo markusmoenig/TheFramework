@@ -25,6 +25,7 @@ pub mod therowlistitem;
 pub mod thesdfview;
 pub mod thesectionbar;
 pub mod thesectionbarbutton;
+pub mod theseparator;
 pub mod theslider;
 pub mod thesnapperbar;
 pub mod thespacer;
@@ -103,6 +104,7 @@ pub mod prelude {
         TheNodeCanvasView, TheNodeCanvasViewTrait,
     };
     pub use crate::theui::thewidget::thepalettepicker::{ThePalettePicker, ThePalettePickerTrait};
+    pub use crate::theui::thewidget::theseparator::TheSeparator;
     pub use crate::theui::thewidget::thetimeslider::{TheTimeSlider, TheTimeSliderTrait};
     pub use crate::theui::thewidget::TheWidget;
     pub use crate::theui::thewidget::TheWidgetState;

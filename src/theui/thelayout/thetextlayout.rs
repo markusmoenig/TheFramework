@@ -322,6 +322,15 @@ impl TheLayout for TheTextLayout {
             if self.text[i].is_empty() {
                 continue;
             }
+            let mut color = [240, 240, 240, 255];
+            if self.widgets[i]
+                .as_any()
+                .downcast_ref::<TheSeparator>()
+                .is_some()
+            {
+                color = [160, 160, 160, 255];
+            }
+
             if let Some(font) = &ctx.ui.font {
                 ctx.draw.text_rect_blend(
                     self.list_buffer.pixels_mut(),
@@ -330,7 +339,7 @@ impl TheLayout for TheTextLayout {
                     font,
                     self.text_size,
                     &self.text[i],
-                    &WHITE,
+                    &color,
                     self.text_align.clone(),
                     TheVerticalAlign::Top,
                 );
