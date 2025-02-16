@@ -1,27 +1,30 @@
 use lazy_static::lazy_static;
+use std::sync::Arc;
 use syntect::{
     easy::HighlightLines,
     highlighting::{Theme, ThemeSet},
-    parsing::{SyntaxReference, SyntaxSet},
+    parsing::{SyntaxDefinition, SyntaxReference, SyntaxSet},
 };
 
 use crate::prelude::*;
 
 lazy_static! {
-    static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
     static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();
 }
 
 pub struct TheCodeHighlighter {
-    syntax: &'static SyntaxReference,
+    syntax_set: SyntaxSet,
+    syntax: Arc<SyntaxReference>,
     theme: &'static Theme,
 }
 
 impl Default for TheCodeHighlighter {
     fn default() -> Self {
+        let syntax_set = SyntaxSet::load_defaults_newlines();
         Self {
-            syntax: SYNTAX_SET.find_syntax_plain_text(),
+            syntax: Arc::new(syntax_set.find_syntax_plain_text().clone()),
             theme: &THEME_SET.themes["Solarized (light)"],
+            syntax_set,
         }
     }
 }
@@ -31,6 +34,7 @@ pub trait TheCodeHighlighterTrait: Send {
 
     fn set_syntax_by_name(&mut self, name: &str);
     fn set_theme(&mut self, theme: &str);
+    fn add_syntax_from_string(&mut self, syntax_str: &str) -> Result<(), String>;
 
     fn background(&self) -> Option<TheColor>;
     fn caret(&self) -> Option<TheColor>;
@@ -45,14 +49,28 @@ impl TheCodeHighlighterTrait for TheCodeHighlighter {
     }
 
     fn set_syntax_by_name(&mut self, name: &str) {
-        if let Some(syntax) = SYNTAX_SET.find_syntax_by_name(name) {
-            self.syntax = syntax;
+        if let Some(syntax) = self.syntax_set.find_syntax_by_name(name) {
+            self.syntax = Arc::new(syntax.clone());
         }
     }
 
     fn set_theme(&mut self, theme: &str) {
         if let Some(theme) = THEME_SET.themes.get(theme) {
             self.theme = theme;
+        }
+    }
+
+    fn add_syntax_from_string(&mut self, syntax_str: &str) -> Result<(), String> {
+        let mut builder = SyntaxSet::load_defaults_newlines().into_builder();
+
+        // Parse the new syntax from the provided string
+        match SyntaxDefinition::load_from_str(syntax_str, true, None) {
+            Ok(syntax) => {
+                builder.add(syntax); // Correct method
+                self.syntax_set = builder.build();
+                Ok(())
+            }
+            Err(e) => Err(format!("Failed to load syntax: {}", e)),
         }
     }
 
@@ -78,8 +96,8 @@ impl TheCodeHighlighterTrait for TheCodeHighlighter {
     }
 
     fn highlight_line(&self, line: &str) -> Vec<(TheColor, TheColor, usize)> {
-        let mut h = HighlightLines::new(self.syntax, self.theme);
-        h.highlight_line(line, &SYNTAX_SET)
+        let mut h = HighlightLines::new(&self.syntax, self.theme);
+        h.highlight_line(line, &self.syntax_set)
             .map(|ranges| {
                 ranges
                     .iter()

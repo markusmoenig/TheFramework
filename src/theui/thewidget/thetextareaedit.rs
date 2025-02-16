@@ -1123,6 +1123,7 @@ pub trait TheTextAreaEditTrait: TheWidget {
     fn set_embedded(&mut self, embedded: bool);
     fn set_continuous(&mut self, continuous: bool);
     fn set_code_type(&mut self, code_type: &str);
+    fn add_syntax_from_string(&mut self, syntax: &str);
     fn set_code_theme(&mut self, code_theme: &str);
     fn display_line_number(&mut self, display_line_number: bool);
     fn readonly(&mut self, readonly: bool);
@@ -1152,6 +1153,11 @@ impl TheTextAreaEditTrait for TheTextAreaEdit {
     }
     fn set_code_type(&mut self, code_type: &str) {
         self.renderer.set_code_type(code_type);
+        self.modified_since_last_tick = true;
+        self.is_dirty = true;
+    }
+    fn add_syntax_from_string(&mut self, code_type: &str) {
+        self.renderer.add_syntax_from_string(code_type);
         self.modified_since_last_tick = true;
         self.is_dirty = true;
     }
