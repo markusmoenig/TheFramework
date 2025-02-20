@@ -965,6 +965,7 @@ pub struct TheRGBATile {
     pub role: u8,
     pub render_mode: u8,
     pub blocking: bool,
+    pub scale: f32,
 }
 
 impl Default for TheRGBATile {
@@ -983,6 +984,7 @@ impl TheRGBATile {
             role: 0,
             render_mode: 0,
             blocking: false,
+            scale: 1.0,
         }
     }
 
@@ -994,6 +996,7 @@ impl TheRGBATile {
             role: 0,
             render_mode: 0,
             blocking: false,
+            scale: 1.0,
         }
     }
 }
