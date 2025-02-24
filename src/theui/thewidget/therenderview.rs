@@ -145,8 +145,7 @@ impl TheWidget for TheRenderView {
         if self.dim != dim {
             self.dim = dim;
             self.is_dirty = true;
-            ctx.ui
-                .send(TheEvent::WidgetResized(self.id.clone(), dim.clone()));
+            ctx.ui.send(TheEvent::WidgetResized(self.id.clone(), dim));
         }
     }
 

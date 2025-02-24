@@ -16,6 +16,10 @@ pub trait TheTrait {
         "TheFramework based App".to_string()
     }
 
+    fn target_fps(&self) -> f64 {
+        30.0
+    }
+
     fn window_icon(&self) -> Option<(Vec<u8>, u32, u32)> {
         None
     }

@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use std::time::{Duration, Instant};
 
 /// TheApp class handles running an application on the current backend.
 pub struct TheApp {
@@ -139,11 +140,29 @@ impl TheApp {
             ui.canvas.layout(width as i32, height as i32, &mut ctx);
         }
 
+        // Setup the target frame time
+        let target_frame_time = Duration::from_secs_f64(1.0 / app.target_fps());
+        let mut last_frame_time = Instant::now();
+
         // Loop
         event_loop.set_control_flow(ControlFlow::Poll);
         event_loop
             .run(move |event, elwt| {
                 match &event {
+                    // Try to maintain the target frame time
+                    Event::AboutToWait => {
+                        let now = Instant::now();
+                        let elapsed = now.duration_since(last_frame_time);
+
+                        if elapsed >= target_frame_time {
+                            last_frame_time = now;
+                            window.request_redraw();
+                        } else {
+                            std::thread::sleep(target_frame_time - elapsed);
+                        }
+
+                        elwt.set_control_flow(ControlFlow::Poll);
+                    }
                     Event::WindowEvent { event, .. } => match event {
                         WindowEvent::CloseRequested => {
                             if app.closing() {
