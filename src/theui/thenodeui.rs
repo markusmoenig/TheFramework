@@ -176,6 +176,7 @@ impl TheNodeUI {
                     picker.set_value(TheValue::ColorObject(value.clone()));
                     picker.set_status_text(status);
                     picker.set_continuous(*continuous);
+                    picker.limiter_mut().set_max_size(Vec2::new(130, 130));
                     layout.add_pair(name.clone(), Box::new(picker));
                 }
                 Separator(name) => {
@@ -189,6 +190,7 @@ impl TheNodeUI {
     /// Handle an event and update the item values if necessary
     pub fn handle_event(&mut self, event: TheEvent) -> bool {
         let mut updated = false;
+        #[allow(clippy::single_match)]
         match event {
             TheEvent::ValueChanged(id, event_value) => {
                 if let Some(item) = self.get_item_mut(&id.name) {

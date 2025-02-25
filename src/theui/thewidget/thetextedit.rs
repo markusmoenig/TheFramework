@@ -294,6 +294,7 @@ impl TheTextEditState {
     }
 
     pub fn is_row_all_selected(&self, row_number: usize) -> bool {
+        #[allow(clippy::unnecessary_map_or)]
         self.find_selected_range_of_row(row_number)
             .map_or(false, |selected_range| {
                 let range = self.find_range_of_row(row_number);
