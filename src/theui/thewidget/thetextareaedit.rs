@@ -1,3 +1,6 @@
+#[cfg(not(target_arch = "wasm32"))]
+use arboard::Clipboard;
+
 use fontdue::layout::{HorizontalAlign, LayoutSettings};
 use web_time::Instant;
 
@@ -238,6 +241,12 @@ impl TheWidget for TheTextAreaEdit {
                     redraw = true;
                     update_status = true;
 
+                    #[cfg(not(target_arch = "wasm32"))]
+                    {
+                        let mut clipboard = Clipboard::new().unwrap();
+                        clipboard.set_text(text.clone()).unwrap();
+                    }
+
                     ctx.ui
                         .send(TheEvent::SetClipboard(TheValue::Text(text), None));
                 }
@@ -250,6 +259,13 @@ impl TheWidget for TheTextAreaEdit {
                     self.is_dirty = true;
                     redraw = true;
                     update_status = true;
+
+                    #[cfg(not(target_arch = "wasm32"))]
+                    {
+                        let mut clipboard = Clipboard::new().unwrap();
+                        clipboard.set_text(text.clone()).unwrap();
+                    }
+
                     ctx.ui
                         .send(TheEvent::SetClipboard(TheValue::Text(text), None));
 
@@ -260,9 +276,13 @@ impl TheWidget for TheTextAreaEdit {
                 }
             }
             TheEvent::Paste(value, _) => {
-                let prev_state = self.state.save();
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    let mut clipboard = Clipboard::new().unwrap();
+                    let text = clipboard.get_text().unwrap();
 
-                if let Some(text) = value.to_string() {
+                    let prev_state = self.state.save();
+
                     self.state.insert_text(text);
                     self.modified_since_last_tick = true;
                     self.is_dirty = true;
@@ -277,6 +297,28 @@ impl TheWidget for TheTextAreaEdit {
                     undo.set_undo_data(prev_state);
                     undo.set_redo_data(self.state.save());
                     self.undo_stack.add(undo);
+                }
+
+                #[cfg(target_arch = "wasm32")]
+                {
+                    let prev_state = self.state.save();
+
+                    if let Some(text) = value.to_string() {
+                        self.state.insert_text(text);
+                        self.modified_since_last_tick = true;
+                        self.is_dirty = true;
+                        redraw = true;
+                        update_status = true;
+
+                        if self.continuous {
+                            self.emit_value_changed(ctx);
+                        }
+
+                        let mut undo = TheUndo::new(TheId::named("Cut"));
+                        undo.set_undo_data(prev_state);
+                        undo.set_redo_data(self.state.save());
+                        self.undo_stack.add(undo);
+                    }
                 }
             }
             TheEvent::ModifierChanged(_shift, ctrl, alt, logo) => {

@@ -59,6 +59,7 @@ features = [
 ]
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+arboard = "3.4.1"
 syntect = "5.2.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
