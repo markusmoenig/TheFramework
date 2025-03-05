@@ -275,7 +275,7 @@ impl TheWidget for TheTextAreaEdit {
                     self.undo_stack.add(undo);
                 }
             }
-            TheEvent::Paste(value, _) => {
+            TheEvent::Paste(_value, _) => {
                 #[cfg(not(target_arch = "wasm32"))]
                 {
                     let mut clipboard = Clipboard::new().unwrap();
@@ -303,7 +303,7 @@ impl TheWidget for TheTextAreaEdit {
                 {
                     let prev_state = self.state.save();
 
-                    if let Some(text) = value.to_string() {
+                    if let Some(text) = _value.to_string() {
                         self.state.insert_text(text);
                         self.modified_since_last_tick = true;
                         self.is_dirty = true;
@@ -592,6 +592,10 @@ impl TheWidget for TheTextAreaEdit {
                                 self.is_dirty = true;
                                 redraw = true;
                                 update_status = true;
+
+                                if self.continuous {
+                                    self.emit_value_changed(ctx);
+                                }
                             }
                             TheKeyCode::Delete => {
                                 if self.state.delete_text() {
@@ -599,6 +603,10 @@ impl TheWidget for TheTextAreaEdit {
                                     self.is_dirty = true;
                                     redraw = true;
                                     update_status = true;
+
+                                    if self.continuous {
+                                        self.emit_value_changed(ctx);
+                                    }
                                 }
                             }
                             TheKeyCode::Up => {
@@ -739,6 +747,10 @@ impl TheWidget for TheTextAreaEdit {
                                 self.is_dirty = true;
                                 redraw = true;
                                 update_status = true;
+
+                                if self.continuous {
+                                    self.emit_value_changed(ctx);
+                                }
                             }
                             TheKeyCode::Tab => {
                                 self.state.insert_text(" ".repeat(self.tab_spaces));
@@ -746,6 +758,10 @@ impl TheWidget for TheTextAreaEdit {
                                 self.is_dirty = true;
                                 redraw = true;
                                 update_status = true;
+
+                                if self.continuous {
+                                    self.emit_value_changed(ctx);
+                                }
                             }
                             _ => {}
                         }
@@ -759,9 +775,9 @@ impl TheWidget for TheTextAreaEdit {
                 }
             }
             TheEvent::LostFocus(_id) => {
-                if self.modified_since_last_return {
-                    self.emit_value_changed(ctx);
-                }
+                // if self.modified_since_last_return {
+                //     self.emit_value_changed(ctx);
+                // }
             }
             TheEvent::Hover(coord) => {
                 // The hovered widget is always current widget not scrollbars
