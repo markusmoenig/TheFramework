@@ -11,7 +11,7 @@ exclude = ["Xcode"]
 [dependencies]
 env_logger = "0.11"
 log = "0.4"
-fontdue = "0.8.0"
+fontdue = "0.9.3"
 maths-rs = { version = "0.2.6", features = [
     "short_types",
     "short_hand_constructors",
