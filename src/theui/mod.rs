@@ -402,11 +402,13 @@ impl TheUI {
     pub fn paste(&mut self, ctx: &mut TheContext) {
         if let Some(id) = &ctx.ui.focus {
             if let Some(widget) = self.get_widget_abs(None, Some(&id.uuid)) {
-                if let Some(value) = &ctx.ui.clipboard {
-                    let event = TheEvent::Paste(value.clone(), ctx.ui.clipboard_app_type.clone());
-                    self.is_dirty = widget.on_event(&event, ctx);
-                    self.process_events(ctx);
-                }
+                let event = if let Some(value) = &ctx.ui.clipboard {
+                    TheEvent::Paste(value.clone(), ctx.ui.clipboard_app_type.clone())
+                } else {
+                    TheEvent::Paste(TheValue::Empty, ctx.ui.clipboard_app_type.clone())
+                };
+                self.is_dirty = widget.on_event(&event, ctx);
+                self.process_events(ctx);
             }
         }
     }
