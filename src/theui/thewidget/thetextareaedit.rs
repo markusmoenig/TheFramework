@@ -273,6 +273,10 @@ impl TheWidget for TheTextAreaEdit {
                     undo.set_undo_data(prev_state);
                     undo.set_redo_data(self.state.save());
                     self.undo_stack.add(undo);
+
+                    if self.continuous {
+                        self.emit_value_changed(ctx);
+                    }
                 }
             }
             TheEvent::Paste(_value, _) => {
@@ -297,6 +301,10 @@ impl TheWidget for TheTextAreaEdit {
                     undo.set_undo_data(prev_state);
                     undo.set_redo_data(self.state.save());
                     self.undo_stack.add(undo);
+
+                    if self.continuous {
+                        self.emit_value_changed(ctx);
+                    }
                 }
 
                 #[cfg(target_arch = "wasm32")]
