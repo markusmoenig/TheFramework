@@ -158,18 +158,26 @@ impl TheContextMenu {
                     }
                 }
                 if coord.x >= 0 && coord.x < self.dim.width {
-                    if coord.y >= 7 && coord.y < self.dim.height - 7 {
-                        let index = (coord.y - 7) / self.item_height;
-                        if index < self.items.len() as i32 {
-                            if !ctx.ui.is_disabled(&self.items[index as usize].id.name) {
-                                self.hovered = Some(self.items[index as usize].id.clone());
-                            }
+                    let mut y = 7; // initial y offset inside the menu
+                    self.hovered = None;
+
+                    for item in &self.items {
+                        let item_height = if item.name.is_empty() {
+                            self.item_height / 2
                         } else {
-                            self.hovered = None;
+                            self.item_height
+                        };
+
+                        if coord.y >= y && coord.y < y + item_height {
+                            if !ctx.ui.is_disabled(&item.id.name) && !item.name.is_empty() {
+                                self.hovered = Some(item.id.clone());
+                            }
+                            break;
                         }
-                    } else {
-                        self.hovered = None;
+
+                        y += item_height;
                     }
+
                     redraw = true;
                 }
             }
