@@ -236,6 +236,8 @@ impl TheLayout for TheSharedVLayout {
 pub trait TheSharedVLayoutTrait: TheLayout {
     /// Add a canvas.
     fn add_canvas(&mut self, canvas: TheCanvas);
+    /// Get a canvas.
+    fn get_canvas_mut(&mut self, index: usize) -> Option<&mut TheCanvas>;
     /// Get the mode
     fn mode(&mut self) -> TheSharedVLayoutMode;
     /// Set the layout mode.
@@ -249,6 +251,12 @@ pub trait TheSharedVLayoutTrait: TheLayout {
 impl TheSharedVLayoutTrait for TheSharedVLayout {
     fn add_canvas(&mut self, canvas: TheCanvas) {
         self.canvas.push(canvas);
+    }
+    fn get_canvas_mut(&mut self, index: usize) -> Option<&mut TheCanvas> {
+        if index < self.canvas.len() {
+            return Some(&mut self.canvas[index]);
+        }
+        None
     }
     fn mode(&mut self) -> TheSharedVLayoutMode {
         self.mode.clone()
