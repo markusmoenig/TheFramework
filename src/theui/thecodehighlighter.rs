@@ -32,6 +32,9 @@ impl Default for TheCodeHighlighter {
 pub trait TheCodeHighlighterTrait: Send {
     fn syntax(&self) -> &str;
 
+    fn syntect_syntax(&self) -> &SyntaxReference;
+    fn syntect_theme(&self) -> &Theme;
+
     fn set_syntax_by_name(&mut self, name: &str);
     fn set_theme(&mut self, theme: &str);
     fn add_syntax_from_string(&mut self, syntax_str: &str) -> Result<(), String>;
@@ -40,12 +43,24 @@ pub trait TheCodeHighlighterTrait: Send {
     fn caret(&self) -> Option<TheColor>;
     fn selection_background(&self) -> Option<TheColor>;
 
-    fn highlight_line(&self, line: &str) -> Vec<(TheColor, TheColor, usize)>;
+    fn highlight_line(
+        &self,
+        line: &str,
+        h: &mut HighlightLines,
+    ) -> Vec<(TheColor, TheColor, usize)>;
 }
 
 impl TheCodeHighlighterTrait for TheCodeHighlighter {
     fn syntax(&self) -> &str {
         &self.syntax.name
+    }
+
+    fn syntect_syntax(&self) -> &SyntaxReference {
+        &self.syntax
+    }
+
+    fn syntect_theme(&self) -> &Theme {
+        self.theme
     }
 
     fn set_syntax_by_name(&mut self, name: &str) {
@@ -95,8 +110,11 @@ impl TheCodeHighlighterTrait for TheCodeHighlighter {
             .map(|color| TheColor::from_u8(color.r, color.g, color.b, color.a))
     }
 
-    fn highlight_line(&self, line: &str) -> Vec<(TheColor, TheColor, usize)> {
-        let mut h = HighlightLines::new(&self.syntax, self.theme);
+    fn highlight_line(
+        &self,
+        line: &str,
+        h: &mut HighlightLines,
+    ) -> Vec<(TheColor, TheColor, usize)> {
         h.highlight_line(line, &self.syntax_set)
             .map(|ranges| {
                 ranges

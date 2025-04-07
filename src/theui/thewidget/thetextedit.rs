@@ -862,9 +862,14 @@ impl TheTextRenderer {
             .collect();
 
         if let Some(highlighter) = &self.highlighter {
+            let mut h = syntect::easy::HighlightLines::new(
+                highlighter.syntect_syntax(),
+                highlighter.syntect_theme(),
+            );
+
             for (idx, line) in text.split('\n').enumerate() {
                 if let Some(row) = self.row_info.get_mut(idx) {
-                    row.highlights = Some(highlighter.highlight_line(line));
+                    row.highlights = Some(highlighter.highlight_line(line, &mut h));
                 }
             }
         }
