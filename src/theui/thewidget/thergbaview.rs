@@ -24,7 +24,9 @@ pub struct TheRGBAView {
     grid_color: RGBA,
     dont_show_grid: bool,
     selected: FxHashSet<(i32, i32)>,
+    used: FxHashSet<(i32, i32)>,
     selection_color: RGBA,
+    used_color: RGBA,
     hover_color: Option<RGBA>,
     hover: Option<(i32, i32)>,
     drop: Option<(i32, i32)>,
@@ -76,7 +78,9 @@ impl TheWidget for TheRGBAView {
             grid_color: [200, 200, 200, 255],
             dont_show_grid: false,
             selected: FxHashSet::default(),
+            used: FxHashSet::default(),
             selection_color: [255, 255, 255, 180],
+            used_color: [255, 255, 255, 100],
             hover_color: None,
             hover: None,
             drop: None,
@@ -638,6 +642,20 @@ impl TheWidget for TheRGBAView {
                             target.pixels_mut()[target_index..target_index + 4].copy_from_slice(&m);
                             copy = false;
                         }
+                        // SelecUsedted
+                        if !self.icon_mode && self.used.contains(&(src_x / grid, src_y / grid)) {
+                            let s = self.buffer.pixels();
+                            let c = &[
+                                s[src_index],
+                                s[src_index + 1],
+                                s[src_index + 2],
+                                s[src_index + 3],
+                            ];
+                            let m =
+                                mix_color(c, &self.used_color, self.used_color[3] as f32 / 255.0);
+                            target.pixels_mut()[target_index..target_index + 4].copy_from_slice(&m);
+                            copy = false;
+                        }
                         // Hover
                         else if !self.icon_mode {
                             if let Some(hover_color) = self.hover_color {
@@ -741,6 +759,7 @@ pub trait TheRGBAViewTrait: TheWidget {
     fn set_grid_color(&mut self, color: RGBA);
     fn set_dont_show_grid(&mut self, dont_show_grid: bool);
     fn set_selection_color(&mut self, color: RGBA);
+    fn set_used_color(&mut self, color: RGBA);
     fn set_wheel_scale(&mut self, wheel_scale: f32);
     fn set_hover_color(&mut self, color: Option<RGBA>);
     fn set_scrollbar_ids(&mut self, hscrollbar: TheId, vscrollbar: TheId);
@@ -754,6 +773,7 @@ pub trait TheRGBAViewTrait: TheWidget {
     fn selection_as_sequence(&self) -> TheRGBARegionSequence;
     fn selection_as_tile(&self) -> TheRGBATile;
     fn set_selection(&mut self, selection: FxHashSet<(i32, i32)>);
+    fn set_used(&mut self, selection: FxHashSet<(i32, i32)>);
     fn set_mode(&mut self, mode: TheRGBAViewMode);
     fn set_rectangular_selection(&mut self, rectangular_selection: bool);
 }
@@ -901,6 +921,10 @@ impl TheRGBAViewTrait for TheRGBAView {
         self.selection_color = color;
         self.is_dirty = true;
     }
+    fn set_used_color(&mut self, color: RGBA) {
+        self.used_color = color;
+        self.is_dirty = true;
+    }
     fn set_wheel_scale(&mut self, wheel_scale: f32) {
         self.wheel_scale = wheel_scale;
     }
@@ -967,6 +991,10 @@ impl TheRGBAViewTrait for TheRGBAView {
     }
     fn set_selection(&mut self, selection: FxHashSet<(i32, i32)>) {
         self.selected = selection;
+        self.is_dirty = true;
+    }
+    fn set_used(&mut self, used: FxHashSet<(i32, i32)>) {
+        self.used = used;
         self.is_dirty = true;
     }
     fn set_mode(&mut self, mode: TheRGBAViewMode) {
