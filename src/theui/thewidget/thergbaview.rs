@@ -641,9 +641,11 @@ impl TheWidget for TheRGBAView {
                             );
                             target.pixels_mut()[target_index..target_index + 4].copy_from_slice(&m);
                             copy = false;
-                        }
-                        // SelecUsedted
-                        if !self.icon_mode && self.used.contains(&(src_x / grid, src_y / grid)) {
+                        } else
+                        // Used
+                        if !self.icon_mode
+                            && self.used.contains(&(src_x / grid, src_y / grid))
+                        {
                             let s = self.buffer.pixels();
                             let c = &[
                                 s[src_index],

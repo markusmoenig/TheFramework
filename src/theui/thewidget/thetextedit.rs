@@ -975,6 +975,7 @@ impl TheTextRenderer {
 
         let previous_offset = self.scroll_offset;
 
+        #[allow(clippy::obfuscated_if_else)]
         let max_width = visible_constrained
             .then(|| {
                 self.visible_rows()
