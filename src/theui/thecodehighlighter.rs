@@ -20,7 +20,7 @@ pub struct TheCodeHighlighter {
 
 impl Default for TheCodeHighlighter {
     fn default() -> Self {
-        let syntax_set = SyntaxSet::load_defaults_newlines();
+        let syntax_set = SyntaxSet::load_defaults_nonewlines();
         Self {
             syntax: Arc::new(syntax_set.find_syntax_plain_text().clone()),
             theme: &THEME_SET.themes["Solarized (light)"],
