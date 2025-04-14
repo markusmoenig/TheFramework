@@ -16,7 +16,6 @@ pub mod themenu;
 pub mod themenubar;
 pub mod themenubarbutton;
 pub mod themenubarseparator;
-pub mod thenodecanvas;
 pub mod thenodecanvasview;
 pub mod thepalettepicker;
 pub mod therenderview;
@@ -99,7 +98,6 @@ pub mod prelude {
 
     pub use crate::theui::thewidget::thecolorpicker::{TheColorPicker, TheColorPickerTrait};
     pub use crate::theui::thewidget::thedirectionpicker::TheDirectionPicker;
-    pub use crate::theui::thewidget::thenodecanvas::*;
     pub use crate::theui::thewidget::thenodecanvasview::{
         TheNodeCanvasView, TheNodeCanvasViewTrait,
     };

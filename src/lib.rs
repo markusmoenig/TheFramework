@@ -3,6 +3,7 @@ pub mod thecolor;
 pub mod thecontext;
 pub mod thedim;
 pub mod thedraw2d;
+pub mod thenodecanvas;
 pub mod thepalette;
 pub mod thergbabuffer;
 pub mod thetime;
@@ -97,6 +98,7 @@ pub mod prelude {
     pub use crate::thedraw2d::TheDraw2D;
     pub use crate::thedraw2d::TheHorizontalAlign;
     pub use crate::thedraw2d::TheVerticalAlign;
+    pub use crate::thenodecanvas::{TheNode, TheNodeCanvas, TheNodeTerminal};
     pub use crate::thepalette::ThePalette;
     pub use crate::thetime::TheTime;
 
