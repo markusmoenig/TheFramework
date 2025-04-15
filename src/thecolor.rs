@@ -2,7 +2,7 @@ pub use crate::prelude::*;
 use std::ops::{Index, IndexMut};
 
 /// Holds a normalized color value and offers several import and export methods.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TheColor {
     pub r: f32,
     pub g: f32,
@@ -15,6 +15,16 @@ pub struct TheColor {
 impl Default for TheColor {
     fn default() -> Self {
         Self::gray()
+    }
+}
+
+impl PartialEq for TheColor {
+    fn eq(&self, other: &Self) -> bool {
+        const EPSILON: f32 = 0.0001;
+        (self.r - other.r).abs() < EPSILON
+            && (self.g - other.g).abs() < EPSILON
+            && (self.b - other.b).abs() < EPSILON
+            && (self.a - other.a).abs() < EPSILON
     }
 }
 

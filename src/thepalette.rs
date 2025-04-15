@@ -111,6 +111,30 @@ impl ThePalette {
             }
         }
     }
+
+    /// Adds a color to the palette if it doesn't already exist.
+    /// Returns the index where the color exists or was inserted.
+    pub fn add_unique_color(&mut self, color: TheColor) -> Option<usize> {
+        // Check if color already exists
+        for (i, existing) in self.colors.iter().enumerate() {
+            if let Some(existing_color) = existing {
+                if *existing_color == color {
+                    return Some(i);
+                }
+            }
+        }
+
+        // Try to insert into the first empty slot
+        for (i, slot) in self.colors.iter_mut().enumerate() {
+            if slot.is_none() {
+                *slot = Some(color);
+                return Some(i);
+            }
+        }
+
+        // Palette is full
+        None
+    }
 }
 
 impl Index<usize> for ThePalette {

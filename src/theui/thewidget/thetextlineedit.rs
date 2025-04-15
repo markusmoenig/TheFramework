@@ -1,3 +1,5 @@
+use std::f64::consts::PI;
+
 use num_traits::ToPrimitive;
 use web_time::Instant;
 
@@ -54,6 +56,8 @@ pub struct TheTextLineEdit {
 
     content_type: TheTextLineEditContentType,
     info_text: Option<String>,
+
+    palette: Option<ThePalette>,
 }
 
 impl TheWidget for TheTextLineEdit {
@@ -98,6 +102,8 @@ impl TheWidget for TheTextLineEdit {
 
             content_type: TheTextLineEditContentType::Unknown,
             info_text: None,
+
+            palette: None,
         }
     }
 
@@ -441,6 +447,56 @@ impl TheWidget for TheTextLineEdit {
                                 }
                             }
                         }
+                        TheKeyCode::Up => {
+                            if let Some(range) = &self.range {
+                                if let Some(range_f32) = range.to_range_f32() {
+                                    if let Ok(v) = self.state.to_text().parse::<f32>() {
+                                        if range_f32.contains(&(v + 1.0)) {
+                                            ctx.ui.send_widget_value_changed(
+                                                self.id(),
+                                                TheValue::FloatRange(v + 1.0, range_f32),
+                                            );
+                                            self.set_value(TheValue::Float(v + 1.0));
+                                        }
+                                    }
+                                } else if let Some(range_i32) = range.to_range_i32() {
+                                    if let Ok(v) = self.state.to_text().parse::<i32>() {
+                                        if range_i32.contains(&(v + 1)) {
+                                            ctx.ui.send_widget_value_changed(
+                                                self.id(),
+                                                TheValue::IntRange(v + 1, range_i32),
+                                            );
+                                            self.set_value(TheValue::Int(v + 1));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        TheKeyCode::Down => {
+                            if let Some(range) = &self.range {
+                                if let Some(range_f32) = range.to_range_f32() {
+                                    if let Ok(v) = self.state.to_text().parse::<f32>() {
+                                        if range_f32.contains(&(v - 1.0)) {
+                                            ctx.ui.send_widget_value_changed(
+                                                self.id(),
+                                                TheValue::FloatRange(v - 1.0, range_f32),
+                                            );
+                                            self.set_value(TheValue::Float(v - 1.0));
+                                        }
+                                    }
+                                } else if let Some(range_i32) = range.to_range_i32() {
+                                    if let Ok(v) = self.state.to_text().parse::<i32>() {
+                                        if range_i32.contains(&(v - 1)) {
+                                            ctx.ui.send_widget_value_changed(
+                                                self.id(),
+                                                TheValue::IntRange(v - 1, range_i32),
+                                            );
+                                            self.set_value(TheValue::Int(v - 1));
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         TheKeyCode::Space => {
                             self.state.insert_text(" ".to_owned());
                             self.modified_since_last_tick = true;
@@ -639,6 +695,20 @@ impl TheWidget for TheTextLineEdit {
             &ctx.draw,
         );
 
+        if let Some(palette) = &self.palette {
+            if let Some(value) = self.value().to_i32() {
+                let stride = buffer.stride();
+                shrinker.shrink_by(50, 0, 0, 0);
+                let utuple: (usize, usize, usize, usize) =
+                    self.dim.to_buffer_shrunk_utuple(&shrinker);
+
+                if let Some(Some(color)) = palette.colors.get(value as usize) {
+                    ctx.draw
+                        .rect(buffer.pixels_mut(), &utuple, stride, &color.to_u8_array());
+                }
+            }
+        }
+
         if let Some(info_text) = &self.info_text {
             let stride = buffer.stride();
             shrinker.shrink_by(0, 0, 5, 0);
@@ -683,6 +753,7 @@ pub trait TheTextLineEditTrait: TheWidget {
     fn set_range(&mut self, range: TheValue);
     fn set_associated_layout(&mut self, id: TheId);
     fn set_continuous(&mut self, continuous: bool);
+    fn set_palette(&mut self, palette: ThePalette);
 }
 
 impl TheTextLineEditTrait for TheTextLineEdit {
@@ -745,6 +816,10 @@ impl TheTextLineEditTrait for TheTextLineEdit {
     }
     fn set_continuous(&mut self, continuous: bool) {
         self.continuous = continuous;
+    }
+    fn set_palette(&mut self, palette: ThePalette) {
+        self.palette = Some(palette);
+        self.is_dirty = true;
     }
 }
 

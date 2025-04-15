@@ -15,6 +15,8 @@ pub enum TheNodeUIItem {
     FloatSlider(String, String, String, f32, RangeInclusive<f32>, f32, bool),
     /// Int Edit Slider: Id, Name, Status, Value, Range, Continuous
     IntEditSlider(String, String, String, i32, RangeInclusive<i32>, bool),
+    /// Palette Slider: Id, Name, Status, Value, ThePalette, Continuous
+    PaletteSlider(String, String, String, i32, ThePalette, bool),
     /// Int Slider: Id, Name, Status, Value, Range, DefaultValue, Continuous
     IntSlider(String, String, String, i32, RangeInclusive<i32>, i32, bool),
     /// Button: Id, Name, Status, LayoutText
@@ -34,6 +36,7 @@ impl TheNodeUIItem {
             TheNodeUIItem::FloatEditSlider(id, _, _, _, _, _) => id,
             TheNodeUIItem::FloatSlider(id, _, _, _, _, _, _) => id,
             TheNodeUIItem::IntEditSlider(id, _, _, _, _, _) => id,
+            TheNodeUIItem::PaletteSlider(id, _, _, _, _, _) => id,
             TheNodeUIItem::IntSlider(id, _, _, _, _, _, _) => id,
             TheNodeUIItem::Button(id, _, _, _) => id,
             TheNodeUIItem::ColorPicker(id, _, _, _, _) => id,
@@ -154,6 +157,15 @@ impl TheNodeUI {
                     slider.set_range(TheValue::RangeI32(range.clone()));
                     slider.set_continuous(*continous);
                     slider.set_status_text(status);
+                    layout.add_pair(name.clone(), Box::new(slider));
+                }
+                PaletteSlider(id, name, status, value, palette, continous) => {
+                    let mut slider = TheTextLineEdit::new(TheId::named(id));
+                    slider.set_value(TheValue::Int(*value));
+                    slider.set_range(TheValue::RangeI32(0..=255));
+                    slider.set_continuous(*continous);
+                    slider.set_status_text(status);
+                    slider.set_palette(palette.clone());
                     layout.add_pair(name.clone(), Box::new(slider));
                 }
                 IntSlider(id, name, status, value, range, default_value, continous) => {
