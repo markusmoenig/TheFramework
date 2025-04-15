@@ -135,6 +135,32 @@ impl ThePalette {
         // Palette is full
         None
     }
+
+    /// Returns the index of the closest matching color in the palette.
+    /// Returns `None` if the palette is empty.
+    pub fn find_closest_color_index(&self, color: &TheColor) -> Option<usize> {
+        let mut best_index = None;
+        let mut best_distance = f32::MAX;
+
+        for (i, entry) in self.colors.iter().enumerate() {
+            if let Some(existing) = entry {
+                // Compute squared Euclidean distance in RGBA space
+                let dr = existing.r - color.r;
+                let dg = existing.g - color.g;
+                let db = existing.b - color.b;
+                let da = existing.a - color.a;
+
+                let dist_sq = dr * dr + dg * dg + db * db + da * da;
+
+                if dist_sq < best_distance {
+                    best_distance = dist_sq;
+                    best_index = Some(i);
+                }
+            }
+        }
+
+        best_index
+    }
 }
 
 impl Index<usize> for ThePalette {
