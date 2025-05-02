@@ -172,6 +172,11 @@ impl TheTime {
         format!("{:02}:{:02} {}", adjusted_hour, self.minutes, period)
     }
 
+    /// Returns a normalized value between 0.0..1.0
+    pub fn to_normalized(&self) -> f32 {
+        self.to_total_seconds() as f32 / 86400.0
+    }
+
     /// Checks if the current TheTime instance is between two other TheTime instances.
     pub fn is_time_between(&self, start: &TheTime, end: &TheTime) -> bool {
         let current_time_in_minutes = self.hours as u16 * 60 + self.minutes as u16;
