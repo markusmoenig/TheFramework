@@ -19,6 +19,7 @@ pub struct TheTraybarButton {
     dim: TheDim,
     is_dirty: bool,
 
+    custom_color: Option<TheColor>,
     context_menu: Option<TheContextMenu>,
 
     fixed_size: bool,
@@ -50,6 +51,7 @@ impl TheWidget for TheTraybarButton {
             is_dirty: false,
             is_disabled: false,
 
+            custom_color: None,
             context_menu: None,
             fixed_size: false,
         }
@@ -310,6 +312,11 @@ impl TheWidget for TheTraybarButton {
 
         if !self.text.is_empty() {
             if let Some(font) = &ctx.ui.font {
+                let color = if let Some(custom) = &self.custom_color {
+                    &custom.to_u8_array()
+                } else {
+                    &WHITE
+                };
                 ctx.draw.text_rect_blend(
                     buffer.pixels_mut(),
                     &self.dim.to_buffer_shrunk_utuple(&shrinker),
@@ -317,7 +324,7 @@ impl TheWidget for TheTraybarButton {
                     font,
                     self.text_size,
                     &self.text,
-                    &WHITE,
+                    color,
                     TheHorizontalAlign::Center,
                     TheVerticalAlign::Center,
                 );
@@ -345,6 +352,7 @@ pub trait TheTraybarButtonTrait {
     fn set_text(&mut self, text: String);
     fn set_icon(&mut self, icon: TheRGBABuffer);
     fn set_fixed_size(&mut self, fixed_size: bool);
+    fn set_custom_color(&mut self, color: Option<TheColor>);
 }
 
 impl TheTraybarButtonTrait for TheTraybarButton {
@@ -362,5 +370,8 @@ impl TheTraybarButtonTrait for TheTraybarButton {
     }
     fn set_fixed_size(&mut self, fixed_size: bool) {
         self.fixed_size = fixed_size;
+    }
+    fn set_custom_color(&mut self, color: Option<TheColor>) {
+        self.custom_color = color;
     }
 }

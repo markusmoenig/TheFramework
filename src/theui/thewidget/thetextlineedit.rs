@@ -1,5 +1,3 @@
-use std::f64::consts::PI;
-
 use num_traits::ToPrimitive;
 use web_time::Instant;
 

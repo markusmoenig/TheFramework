@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 pub struct TheNodeTerminal {
     pub name: String,
-    pub color: TheColor,
+    pub category_name: String,
 }
 
 pub struct TheNode {
@@ -38,6 +38,9 @@ pub struct TheNodeCanvas {
 
     /// The zoom level.
     pub zoom: f32,
+
+    /// The node categories
+    pub categories: FxHashMap<String, TheColor>,
 }
 
 impl Default for TheNodeCanvas {
@@ -55,6 +58,7 @@ impl TheNodeCanvas {
             offset: Vec2::zero(),
             selected_node: None,
             zoom: 1.0,
+            categories: FxHashMap::default(),
         }
     }
 }

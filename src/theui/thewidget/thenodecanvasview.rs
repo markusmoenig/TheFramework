@@ -646,7 +646,12 @@ impl TheWidget for TheNodeCanvasView {
                     nb.blend_into(dim.x + 10 + 2, y, &tb)
                 }
 
-                nb.draw_disc(&dim, &i.color.to_u8_array(), 1.0, &[105, 105, 105, 255]);
+                nb.draw_disc(
+                    &dim,
+                    &self.color_for(&i.category_name).to_u8_array(),
+                    1.0,
+                    &[105, 105, 105, 255],
+                );
                 terminal_rects.0.push(dim);
                 y += 10 + 4;
             }
@@ -671,7 +676,12 @@ impl TheWidget for TheNodeCanvasView {
                 }
 
                 // nb.draw_disc(&dim, &[245, 245, 245, 255], 1.0, &[105, 105, 105, 255]);
-                nb.draw_disc(&dim, &o.color.to_u8_array(), 1.0, &[105, 105, 105, 255]);
+                nb.draw_disc(
+                    &dim,
+                    &self.color_for(&o.category_name).to_u8_array(),
+                    1.0,
+                    &[105, 105, 105, 255],
+                );
                 terminal_rects.1.push(dim);
                 y += 10 + 4;
             }
@@ -900,6 +910,7 @@ pub trait TheNodeCanvasViewTrait: TheWidget {
     fn node_index_at(&self, coord: &Vec2<i32>) -> Option<usize>;
     fn terminal_at(&self, node_index: usize, coord: Vec2<i32>) -> Option<(bool, u8)>;
     fn terminal_rect_for(&self, node_index: usize, input: bool, index: u8) -> Option<TheDim>;
+    fn color_for(&self, name: &str) -> TheColor;
 }
 
 impl TheNodeCanvasViewTrait for TheNodeCanvasView {
@@ -1035,6 +1046,14 @@ impl TheNodeCanvasViewTrait for TheNodeCanvasView {
             }
         }
         None
+    }
+
+    fn color_for(&self, name: &str) -> TheColor {
+        if let Some(col) = self.canvas.categories.get(name) {
+            col.clone()
+        } else {
+            TheColor::default()
+        }
     }
 }
 

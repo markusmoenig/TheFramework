@@ -285,7 +285,6 @@ impl TheLayout for TheTextLayout {
         }
 
         let stride: usize = buffer.stride();
-
         if let Some(background) = self.background {
             ctx.draw.rect(
                 buffer.pixels_mut(),
@@ -294,12 +293,12 @@ impl TheLayout for TheTextLayout {
                 style.theme().color(background),
             );
 
-            ctx.draw.rect_outline(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_utuple(),
-                stride,
-                style.theme().color(TextLayoutBorder),
-            );
+            // ctx.draw.rect_outline(
+            //     buffer.pixels_mut(),
+            //     &self.dim.to_buffer_utuple(),
+            //     stride,
+            //     style.theme().color(TextLayoutBorder),
+            // );
         }
 
         let stride = self.list_buffer.stride();
@@ -368,6 +367,16 @@ impl TheLayout for TheTextLayout {
                 self.dim.buffer_y,
                 &self.list_buffer,
                 range,
+            );
+        }
+
+        if self.background.is_some() {
+            let stride: usize = buffer.stride();
+            ctx.draw.rect_outline(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_utuple(),
+                stride,
+                style.theme().color(TextLayoutBorder),
             );
         }
     }
