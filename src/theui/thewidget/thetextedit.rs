@@ -86,6 +86,9 @@ pub struct TheTextEditState {
     // Use cursor index
     pub selection: TheSelection,
 
+    // Options
+    pub auto_bracket_completion: bool,
+    pub auto_indent: bool,
     pub tab_spaces: usize,
 }
 
@@ -95,6 +98,9 @@ impl Default for TheTextEditState {
             cursor: TheCursor::default(),
             rows: vec![String::default()],
             selection: TheSelection::default(),
+
+            auto_bracket_completion: false,
+            auto_indent: false,
             tab_spaces: 4,
         }
     }
@@ -225,6 +231,13 @@ impl TheTextEditState {
     }
 
     pub fn insert_char(&mut self, char: char) {
+        if self.auto_bracket_completion
+            && (char == '(' || char == '{' || char == '[' || char == '<')
+        {
+            self.insert_brackets(char);
+            return;
+        }
+
         if !self.selection.is_none() {
             self.delete_text_by_selection();
         }
@@ -271,20 +284,32 @@ impl TheTextEditState {
             self.delete_text_by_selection();
         }
 
+        let beginning_spaces = if self.auto_indent {
+            // We only need to make sure the spaces count match the current row's
+            self.rows[self.cursor.row]
+                .char_indices()
+                .find(|&(_, c)| c != ' ')
+                .map_or(self.row_len(self.cursor.row), |(i, _)| i)
+        } else {
+            0
+        };
+        let new_row_start = " ".repeat(beginning_spaces);
+
         // Insert at current row
         if self.cursor.column == 0 {
-            self.rows.insert(self.cursor.row, String::default());
-        // Insert at next row
+            self.rows.insert(self.cursor.row, new_row_start);
+            // Insert at next row
         } else if self.cursor.column >= self.glyphs_in_row(self.cursor.row) {
-            self.rows.insert(self.cursor.row + 1, String::default());
-        // Insert inside current row
+            self.rows.insert(self.cursor.row + 1, new_row_start);
+            // Insert inside current row
         } else {
             let insert_index = self.byte_offset_of_index(self.cursor.row, self.cursor.column);
-            let new_text = self.rows[self.cursor.row].split_off(insert_index);
+            let remaining = self.rows[self.cursor.row].split_off(insert_index);
+            let new_text = format!("{new_row_start}{remaining}");
             self.rows.insert(self.cursor.row + 1, new_text);
         }
 
-        self.cursor.column = 0;
+        self.cursor.column = beginning_spaces;
         self.move_cursor_down();
     }
 
@@ -539,17 +564,20 @@ impl TheTextEditState {
             .chars()
             .nth(self.cursor.column - 1)
             .unwrap();
-        // Delete spaces, go back to last indent level or the last non-space char
+        // Delete spaces
+        // go back to last indent level if no non-space char is ahead of it,
+        // or delete until the last non-space char
         if char_to_be_deleted == ' ' {
-            let last_indent_column = ((self.cursor.column - 1) / self.tab_spaces) * self.tab_spaces;
             let current_row_text = &self.rows[self.cursor.row];
 
-            let text_to_last_indent = &current_row_text[last_indent_column..self.cursor.column];
-            let deletion_start = text_to_last_indent
+            let last_non_space_char_column = current_row_text[..self.cursor.column]
                 .char_indices()
                 .rev()
                 .find(|&(_, c)| c != ' ')
-                .map_or(last_indent_column, |(i, _)| i + last_indent_column + 1);
+                .map(|(i, _)| i + 1);
+
+            let deletion_start = last_non_space_char_column
+                .unwrap_or(((self.cursor.column - 1) / self.tab_spaces) * self.tab_spaces);
 
             if self.delete_range_of_row(self.cursor.row, deletion_start, self.cursor.column) {
                 self.cursor.column = deletion_start;
@@ -663,6 +691,52 @@ impl TheTextEditState {
 
     fn glyphs_in_row(&self, row_number: usize) -> usize {
         self.rows[row_number].graphemes(true).count()
+    }
+
+    fn insert_brackets(&mut self, left: char) {
+        let right = match left {
+            '(' => ')',
+            '{' => '}',
+            '[' => ']',
+            '<' => '>',
+            _ => unreachable!(),
+        };
+
+        if self.selection.is_none() {
+            let insert_index = self.byte_offset_of_index(self.cursor.row, self.cursor.column);
+            self.rows[self.cursor.row].insert_str(insert_index, &format!("{left}{right}"));
+            self.cursor.column += 1;
+        } else {
+            let insert_stuff = [self.selection.start, self.selection.end]
+                .map(|global_index| self.find_row_number_of_index(global_index))
+                .into_iter()
+                .enumerate()
+                .map(|(i, row)| {
+                    let (row_start, row_end) = self.find_range_of_row(row);
+                    let (start, end) = self
+                        .find_selected_range_of_row(row)
+                        .unwrap_or((row_end, row_end + 1));
+
+                    if i == 0 {
+                        (row, start - row_start, left)
+                    } else {
+                        (row, end - row_start + 1, right)
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            if insert_stuff[0].0 == self.cursor.row {
+                self.cursor.column += 1;
+            }
+
+            for (row, column, char) in insert_stuff {
+                let insert_index = self.byte_offset_of_index(row, column);
+                self.rows[row].insert(insert_index, char);
+            }
+
+            self.selection.start += 1;
+            self.selection.end += 1;
+        }
     }
 
     // Inclusive on both end

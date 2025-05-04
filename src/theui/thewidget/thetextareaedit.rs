@@ -16,6 +16,20 @@ enum StatusbarType {
     Global,
 }
 
+pub struct TheCodeEditorSettings {
+    pub auto_indent: bool,
+    pub auto_bracket_completion: bool,
+}
+
+impl Default for TheCodeEditorSettings {
+    fn default() -> Self {
+        Self {
+            auto_indent: true,
+            auto_bracket_completion: true,
+        }
+    }
+}
+
 pub struct TheTextAreaEdit {
     // Widget Basic
     id: TheId,
@@ -1186,6 +1200,7 @@ pub trait TheTextAreaEditTrait: TheWidget {
     fn set_font_size(&mut self, font_size: f32);
     fn set_embedded(&mut self, embedded: bool);
     fn set_continuous(&mut self, continuous: bool);
+    fn as_code_editor(&mut self, code_type: &str, settings: TheCodeEditorSettings);
     fn set_code_type(&mut self, code_type: &str);
     fn add_syntax_from_string(&mut self, syntax: &str);
     fn set_code_theme(&mut self, code_theme: &str);
@@ -1215,6 +1230,11 @@ impl TheTextAreaEditTrait for TheTextAreaEdit {
     }
     fn set_continuous(&mut self, continuous: bool) {
         self.continuous = continuous;
+    }
+    fn as_code_editor(&mut self, code_type: &str, settings: TheCodeEditorSettings) {
+        self.set_code_type(code_type);
+        self.state.auto_bracket_completion = settings.auto_bracket_completion;
+        self.state.auto_indent = settings.auto_indent;
     }
     fn set_code_type(&mut self, code_type: &str) {
         self.renderer.set_code_type(code_type);
