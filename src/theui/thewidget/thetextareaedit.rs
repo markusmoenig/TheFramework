@@ -38,7 +38,6 @@ pub struct TheTextAreaEdit {
     ln_area_dim: Option<TheDim>,
     scrollbar_size: usize,
     statusbar_type: StatusbarType,
-    tab_spaces: usize,
 
     // Interaction
     drag_start_index: usize,
@@ -102,7 +101,6 @@ impl TheWidget for TheTextAreaEdit {
             ln_area_dim: None,
             scrollbar_size: 13,
             statusbar_type: StatusbarType::None,
-            tab_spaces: 4,
 
             drag_start_index: 0,
             hover_coord: Vec2::zero(),
@@ -761,7 +759,7 @@ impl TheWidget for TheTextAreaEdit {
                                 }
                             }
                             TheKeyCode::Tab => {
-                                self.state.insert_text(" ".repeat(self.tab_spaces));
+                                self.state.insert_tab();
                                 self.modified_since_last_tick = true;
                                 self.is_dirty = true;
                                 redraw = true;
@@ -1191,6 +1189,7 @@ pub trait TheTextAreaEditTrait: TheWidget {
     fn set_code_type(&mut self, code_type: &str);
     fn add_syntax_from_string(&mut self, syntax: &str);
     fn set_code_theme(&mut self, code_theme: &str);
+    fn set_tab_spaces(&mut self, tab_spaces: usize);
     fn display_line_number(&mut self, display_line_number: bool);
     fn readonly(&mut self, readonly: bool);
     fn use_statusbar(&mut self, use_statusbar: bool);
@@ -1229,6 +1228,11 @@ impl TheTextAreaEditTrait for TheTextAreaEdit {
     }
     fn set_code_theme(&mut self, code_theme: &str) {
         self.renderer.set_code_theme(code_theme);
+        self.modified_since_last_tick = true;
+        self.is_dirty = true;
+    }
+    fn set_tab_spaces(&mut self, tab_spaces: usize) {
+        self.state.tab_spaces = tab_spaces;
         self.modified_since_last_tick = true;
         self.is_dirty = true;
     }

@@ -85,6 +85,8 @@ pub struct TheTextEditState {
     pub rows: Vec<String>,
     // Use cursor index
     pub selection: TheSelection,
+
+    pub tab_spaces: usize,
 }
 
 impl Default for TheTextEditState {
@@ -93,6 +95,7 @@ impl Default for TheTextEditState {
             cursor: TheCursor::default(),
             rows: vec![String::default()],
             selection: TheSelection::default(),
+            tab_spaces: 4,
         }
     }
 }
@@ -283,6 +286,10 @@ impl TheTextEditState {
 
         self.cursor.column = 0;
         self.move_cursor_down();
+    }
+
+    pub fn insert_tab(&mut self) -> (usize, usize) {
+        self.insert_text(" ".repeat(self.tab_spaces))
     }
 
     pub fn is_empty(&self) -> bool {
@@ -526,6 +533,28 @@ impl TheTextEditState {
             self.rows[self.cursor.row - 1].push_str(&text);
             self.move_cursor_up();
             return true;
+        }
+
+        let char_to_be_deleted = self.rows[self.cursor.row]
+            .chars()
+            .nth(self.cursor.column - 1)
+            .unwrap();
+        // Delete spaces, go back to last indent level or the last non-space char
+        if char_to_be_deleted == ' ' {
+            let last_indent_column = ((self.cursor.column - 1) / self.tab_spaces) * self.tab_spaces;
+            let current_row_text = &self.rows[self.cursor.row];
+
+            let text_to_last_indent = &current_row_text[last_indent_column..self.cursor.column];
+            let deletion_start = text_to_last_indent
+                .char_indices()
+                .rev()
+                .find(|&(_, c)| c != ' ')
+                .map_or(last_indent_column, |(i, _)| i + last_indent_column + 1);
+
+            if self.delete_range_of_row(self.cursor.row, deletion_start, self.cursor.column) {
+                self.cursor.column = deletion_start;
+                return true;
+            }
         }
 
         // Delete normal char
