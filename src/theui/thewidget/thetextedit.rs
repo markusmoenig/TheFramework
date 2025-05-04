@@ -231,6 +231,13 @@ impl TheTextEditState {
     }
 
     pub fn insert_char(&mut self, char: char) {
+        if self.auto_bracket_completion
+            && (char == '(' || char == '{' || char == '[' || char == '<')
+        {
+            self.insert_brackets(char);
+            return;
+        }
+
         if !self.selection.is_none() {
             self.delete_text_by_selection();
         }
@@ -682,6 +689,52 @@ impl TheTextEditState {
 
     fn glyphs_in_row(&self, row_number: usize) -> usize {
         self.rows[row_number].graphemes(true).count()
+    }
+
+    fn insert_brackets(&mut self, left: char) {
+        let right = match left {
+            '(' => ')',
+            '{' => '}',
+            '[' => ']',
+            '<' => '>',
+            _ => unreachable!(),
+        };
+
+        if self.selection.is_none() {
+            let insert_index = self.byte_offset_of_index(self.cursor.row, self.cursor.column);
+            self.rows[self.cursor.row].insert_str(insert_index, &format!("{left}{right}"));
+            self.cursor.column += 1;
+        } else {
+            let insert_stuff = [self.selection.start, self.selection.end]
+                .map(|global_index| self.find_row_number_of_index(global_index))
+                .into_iter()
+                .enumerate()
+                .map(|(i, row)| {
+                    let (row_start, row_end) = self.find_range_of_row(row);
+                    let (start, end) = self
+                        .find_selected_range_of_row(row)
+                        .unwrap_or((row_end, row_end + 1));
+
+                    if i == 0 {
+                        (row, start - row_start, left)
+                    } else {
+                        (row, end - row_start + 1, right)
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            if insert_stuff[0].0 == self.cursor.row {
+                self.cursor.column += 1;
+            }
+
+            for (row, column, char) in insert_stuff {
+                let insert_index = self.byte_offset_of_index(row, column);
+                self.rows[row].insert(insert_index, char);
+            }
+
+            self.selection.start += 1;
+            self.selection.end += 1;
+        }
     }
 
     // Inclusive on both end
