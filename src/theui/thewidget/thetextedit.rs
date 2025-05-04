@@ -564,18 +564,20 @@ impl TheTextEditState {
             .chars()
             .nth(self.cursor.column - 1)
             .unwrap();
-        // Delete spaces, go back to last indent level or the last non-space char
+        // Delete spaces
+        // go back to last indent level if no non-space char is ahead of it,
+        // or delete until the last non-space char
         if char_to_be_deleted == ' ' {
-            let last_indent_column = ((self.cursor.column - 1) / self.tab_spaces) * self.tab_spaces;
-
             let current_row_text = &self.rows[self.cursor.row];
-            let text_to_last_indent = &current_row_text[last_indent_column..self.cursor.column];
 
-            let deletion_start = text_to_last_indent
+            let last_non_space_char_column = current_row_text[..self.cursor.column]
                 .char_indices()
                 .rev()
                 .find(|&(_, c)| c != ' ')
-                .map_or(last_indent_column, |(i, _)| i + last_indent_column + 1);
+                .map(|(i, _)| i + 1);
+
+            let deletion_start = last_non_space_char_column
+                .unwrap_or(((self.cursor.column - 1) / self.tab_spaces) * self.tab_spaces);
 
             if self.delete_range_of_row(self.cursor.row, deletion_start, self.cursor.column) {
                 self.cursor.column = deletion_start;
