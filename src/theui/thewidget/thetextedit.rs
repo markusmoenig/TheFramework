@@ -86,6 +86,9 @@ pub struct TheTextEditState {
     // Use cursor index
     pub selection: TheSelection,
 
+    // Options
+    pub auto_bracket_completion: bool,
+    pub auto_indent: bool,
     pub tab_spaces: usize,
 }
 
@@ -95,6 +98,9 @@ impl Default for TheTextEditState {
             cursor: TheCursor::default(),
             rows: vec![String::default()],
             selection: TheSelection::default(),
+
+            auto_bracket_completion: false,
+            auto_indent: false,
             tab_spaces: 4,
         }
     }
@@ -271,20 +277,32 @@ impl TheTextEditState {
             self.delete_text_by_selection();
         }
 
+        let beginning_spaces = if self.auto_indent {
+            // We only need to make sure the spaces count match the current row's
+            self.rows[self.cursor.row]
+                .char_indices()
+                .find(|&(_, c)| c != ' ')
+                .map_or(self.row_len(self.cursor.row), |(i, _)| i)
+        } else {
+            0
+        };
+        let new_row_start = " ".repeat(beginning_spaces);
+
         // Insert at current row
         if self.cursor.column == 0 {
-            self.rows.insert(self.cursor.row, String::default());
-        // Insert at next row
+            self.rows.insert(self.cursor.row, new_row_start);
+            // Insert at next row
         } else if self.cursor.column >= self.glyphs_in_row(self.cursor.row) {
-            self.rows.insert(self.cursor.row + 1, String::default());
-        // Insert inside current row
+            self.rows.insert(self.cursor.row + 1, new_row_start);
+            // Insert inside current row
         } else {
             let insert_index = self.byte_offset_of_index(self.cursor.row, self.cursor.column);
-            let new_text = self.rows[self.cursor.row].split_off(insert_index);
+            let remaining = self.rows[self.cursor.row].split_off(insert_index);
+            let new_text = format!("{new_row_start}{remaining}");
             self.rows.insert(self.cursor.row + 1, new_text);
         }
 
-        self.cursor.column = 0;
+        self.cursor.column = beginning_spaces;
         self.move_cursor_down();
     }
 
@@ -542,9 +560,10 @@ impl TheTextEditState {
         // Delete spaces, go back to last indent level or the last non-space char
         if char_to_be_deleted == ' ' {
             let last_indent_column = ((self.cursor.column - 1) / self.tab_spaces) * self.tab_spaces;
-            let current_row_text = &self.rows[self.cursor.row];
 
+            let current_row_text = &self.rows[self.cursor.row];
             let text_to_last_indent = &current_row_text[last_indent_column..self.cursor.column];
+
             let deletion_start = text_to_last_indent
                 .char_indices()
                 .rev()
