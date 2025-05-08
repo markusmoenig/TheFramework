@@ -799,6 +799,7 @@ pub struct TheTextRenderer {
     cursor_width: usize,
     cursor_vertical_shrink: usize,
     pub font_size: f32,
+    pub indicate_space: bool,
     pub padding: (usize, usize, usize, usize), // left top right bottom
     selection_extend: usize,
 
@@ -821,6 +822,7 @@ impl Default for TheTextRenderer {
             cursor_width: 2,
             cursor_vertical_shrink: 1,
             font_size: 14.0,
+            indicate_space: false,
             padding: (5, 0, 5, 0),
             selection_extend: 2,
 
@@ -1404,19 +1406,117 @@ impl TheTextRenderer {
                     }
                 }
 
-                let left = left + self.get_text_left(token_bg_start).to_i32().unwrap();
-                draw.text_rect_blend_clip(
-                    buffer.pixels_mut(),
-                    &Vec2::new(left, top - 1),
-                    &(self.left, self.top, self.width, self.height),
-                    stride,
-                    font,
-                    self.font_size,
-                    &text[token_start_in_row..token_end_in_row],
-                    &fg_color.to_u8_array(),
-                    TheHorizontalAlign::Center,
-                    TheVerticalAlign::Center,
-                );
+                if self.indicate_space {
+                    let mut chars_to_rendered: Vec<char> = vec![];
+                    for (char_index, char) in
+                        text[token_start_in_row..token_end_in_row].char_indices()
+                    {
+                        if let Some(ch) = chars_to_rendered.first() {
+                            if ch.is_whitespace() == char.is_whitespace() {
+                                chars_to_rendered.push(char);
+                            } else {
+                                let left = left
+                                    + self
+                                        .get_text_left(
+                                            glyph_start + token_start_in_row + char_index
+                                                - chars_to_rendered.len(),
+                                        )
+                                        .to_i32()
+                                        .unwrap();
+                                let (text_to_rendered, fg_color) = if ch.is_whitespace() {
+                                    (
+                                        "·".repeat(chars_to_rendered.len()),
+                                        self.highlighter
+                                            .as_ref()
+                                            .and_then(|hl| hl.guide())
+                                            .map(|color| color.to_u8_array())
+                                            .unwrap_or_else(|| {
+                                                let mut color =
+                                                    *style.theme().color(TextEditTextColor);
+                                                color[3] = 50;
+                                                color
+                                            }),
+                                    )
+                                } else {
+                                    (
+                                        String::from_iter(&chars_to_rendered),
+                                        fg_color.to_u8_array(),
+                                    )
+                                };
+
+                                draw.text_rect_blend_clip(
+                                    buffer.pixels_mut(),
+                                    &Vec2::new(left, top - 1),
+                                    &(self.left, self.top, self.width, self.height),
+                                    stride,
+                                    font,
+                                    self.font_size,
+                                    &text_to_rendered,
+                                    &fg_color,
+                                    TheHorizontalAlign::Center,
+                                    TheVerticalAlign::Center,
+                                );
+
+                                chars_to_rendered.clear();
+                                chars_to_rendered.push(char);
+                            }
+                        } else {
+                            chars_to_rendered.push(char);
+                        }
+                    }
+
+                    if !chars_to_rendered.is_empty() {
+                        let left = left
+                            + self
+                                .get_text_left(
+                                    glyph_start + token_end_in_row - chars_to_rendered.len(),
+                                )
+                                .to_i32()
+                                .unwrap();
+                        let (text_to_rendered, fg_color) = if chars_to_rendered[0].is_whitespace() {
+                            (
+                                "·".repeat(chars_to_rendered.len()),
+                                self.highlighter
+                                    .as_ref()
+                                    .and_then(|hl| hl.guide())
+                                    .map(|color| color.to_u8_array())
+                                    .unwrap_or_else(|| {
+                                        let mut color = *style.theme().color(TextEditTextColor);
+                                        color[3] = 50;
+                                        color
+                                    }),
+                            )
+                        } else {
+                            (String::from_iter(chars_to_rendered), fg_color.to_u8_array())
+                        };
+
+                        draw.text_rect_blend_clip(
+                            buffer.pixels_mut(),
+                            &Vec2::new(left, top - 1),
+                            &(self.left, self.top, self.width, self.height),
+                            stride,
+                            font,
+                            self.font_size,
+                            &text_to_rendered,
+                            &fg_color,
+                            TheHorizontalAlign::Center,
+                            TheVerticalAlign::Center,
+                        );
+                    }
+                } else {
+                    draw.text_rect_blend_clip(
+                        buffer.pixels_mut(),
+                        &Vec2::new(left, top - 1),
+                        &(self.left, self.top, self.width, self.height),
+                        stride,
+                        font,
+                        self.font_size,
+                        &text[token_start_in_row..token_end_in_row],
+                        &fg_color.to_u8_array(),
+                        TheHorizontalAlign::Center,
+                        TheVerticalAlign::Center,
+                    );
+                }
             }
 
             // Render linebreak selection if needed
