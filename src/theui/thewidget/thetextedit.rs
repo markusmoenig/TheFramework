@@ -289,7 +289,7 @@ impl TheTextEditState {
             self.rows[self.cursor.row]
                 .char_indices()
                 .find(|&(_, c)| c != ' ')
-                .map_or(self.row_len(self.cursor.row), |(i, _)| i)
+                .map_or(self.cursor.column, |(i, _)| i)
         } else {
             0
         };
