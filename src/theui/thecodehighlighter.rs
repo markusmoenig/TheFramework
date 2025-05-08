@@ -41,6 +41,8 @@ pub trait TheCodeHighlighterTrait: Send {
 
     fn background(&self) -> Option<TheColor>;
     fn caret(&self) -> Option<TheColor>;
+    fn guide(&self) -> Option<TheColor>;
+    fn active_guide(&self) -> Option<TheColor>;
     fn selection_background(&self) -> Option<TheColor>;
 
     fn highlight_line(
@@ -100,6 +102,20 @@ impl TheCodeHighlighterTrait for TheCodeHighlighter {
         self.theme
             .settings
             .caret
+            .map(|color| TheColor::from_u8(color.r, color.g, color.b, color.a))
+    }
+
+    fn guide(&self) -> Option<TheColor> {
+        self.theme
+            .settings
+            .guide
+            .map(|color| TheColor::from_u8(color.r, color.g, color.b, color.a))
+    }
+
+    fn active_guide(&self) -> Option<TheColor> {
+        self.theme
+            .settings
+            .active_guide
             .map(|color| TheColor::from_u8(color.r, color.g, color.b, color.a))
     }
 

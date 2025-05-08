@@ -17,15 +17,17 @@ enum StatusbarType {
 }
 
 pub struct TheCodeEditorSettings {
-    pub auto_indent: bool,
     pub auto_bracket_completion: bool,
+    pub auto_indent: bool,
+    pub indicate_space: bool,
 }
 
 impl Default for TheCodeEditorSettings {
     fn default() -> Self {
         Self {
-            auto_indent: true,
             auto_bracket_completion: true,
+            auto_indent: true,
+            indicate_space: true,
         }
     }
 }
@@ -1235,6 +1237,7 @@ impl TheTextAreaEditTrait for TheTextAreaEdit {
         self.set_code_type(code_type);
         self.state.auto_bracket_completion = settings.auto_bracket_completion;
         self.state.auto_indent = settings.auto_indent;
+        self.renderer.indicate_space = settings.indicate_space;
     }
     fn set_code_type(&mut self, code_type: &str) {
         self.renderer.set_code_type(code_type);
