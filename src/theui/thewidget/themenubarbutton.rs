@@ -196,6 +196,8 @@ impl TheWidget for TheMenubarButton {
 
         if let Some(icon) = ctx.ui.icon(&self.icon_name) {
             let utuple = self.dim.to_buffer_shrunk_utuple(&shrinker);
+
+            #[allow(clippy::implicit_saturating_sub)]
             if let Some(fixed_size) = self.fixed_size {
                 let r = (
                     ((utuple.0
