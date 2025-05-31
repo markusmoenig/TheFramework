@@ -1504,6 +1504,8 @@ impl TheTextRenderer {
                         );
                     }
                 } else {
+                    let left = left + self.get_text_left(token_bg_start).to_i32().unwrap();
+
                     draw.text_rect_blend_clip(
                         buffer.pixels_mut(),
                         &Vec2::new(left, top - 1),
