@@ -877,6 +877,104 @@ impl TheRGBABuffer {
         }
         Ok(png_data)
     }
+
+    /// Draw an hsl hue waveform used by color pickers.
+    pub fn render_hsl_hue_waveform(&mut self) {
+        let width = self.dim.width;
+        let height = self.dim.height;
+
+        for x in 0..width {
+            let fx = x as f32 / width as f32;
+
+            let hue = fx; // smooth rainbow cycle
+            let saturation = 1.0; // vivid color
+            let lightness = 0.5; // neutral brightness
+
+            let (r, g, b) = hsl_to_rgb(hue % 1.0, lightness, saturation);
+
+            for y in 0..height {
+                let fy = y as f32 / height as f32;
+
+                let final_rgb = if fy < 0.5 {
+                    // Blend to white at top
+                    let t = 1.0 - fy * 2.0;
+                    [lerp(r, 1.0, t), lerp(g, 1.0, t), lerp(b, 1.0, t)]
+                } else {
+                    // Blend to black at bottom
+                    let t = (fy - 0.5) * 2.0;
+                    [lerp(r, 0.0, t), lerp(g, 0.0, t), lerp(b, 0.0, t)]
+                };
+
+                self.set_pixel(
+                    x,
+                    y,
+                    &[
+                        (final_rgb[0] * 255.0) as u8,
+                        (final_rgb[1] * 255.0) as u8,
+                        (final_rgb[2] * 255.0) as u8,
+                        255,
+                    ],
+                );
+            }
+        }
+
+        fn lerp(a: f32, b: f32, t: f32) -> f32 {
+            a * (1.0 - t) + b * t
+        }
+
+        fn hsl_to_rgb(h: f32, l: f32, s: f32) -> (f32, f32, f32) {
+            let c = (1.0 - (2.0 * l - 1.0).abs()) * s;
+            let h_ = h * 6.0;
+            let x = c * (1.0 - (h_ % 2.0 - 1.0).abs());
+            let (r1, g1, b1) = match h_ as u32 {
+                0 => (c, x, 0.0),
+                1 => (x, c, 0.0),
+                2 => (0.0, c, x),
+                3 => (0.0, x, c),
+                4 => (x, 0.0, c),
+                _ => (c, 0.0, x),
+            };
+            let m = l - c / 2.0;
+            (r1 + m, g1 + m, b1 + m)
+        }
+    }
+
+    /// Finds the X position in the buffer that best matches the given RGB color.
+    /// Optionally specify a Y row (defaults to center row).
+    /// Finds the (x, y) position in the buffer that best matches the given RGB color.
+    pub fn find_closest_color_position(&self, target_rgb: [u8; 3]) -> Option<Vec2<i32>> {
+        fn color_distance_sq(a: [u8; 3], b: [u8; 3]) -> f32 {
+            let dr = a[0] as f32 - b[0] as f32;
+            let dg = a[1] as f32 - b[1] as f32;
+            let db = a[2] as f32 - b[2] as f32;
+            dr * dr + dg * dg + db * db
+        }
+
+        if self.is_empty() {
+            return None;
+        }
+
+        let mut best_pos = Vec2::zero();
+        let mut best_dist = f32::MAX;
+
+        for y in 0..self.dim().height {
+            for x in 0..self.dim().width {
+                if let Some([r, g, b, _]) = self.get_pixel(x, y) {
+                    let dist = color_distance_sq([r, g, b], target_rgb);
+                    if dist < best_dist {
+                        best_dist = dist;
+                        best_pos = Vec2::new(x, y);
+                    }
+                }
+            }
+        }
+
+        if best_dist < f32::MAX {
+            Some(best_pos)
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]

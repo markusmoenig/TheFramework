@@ -249,6 +249,15 @@ impl TheColor {
         [self.r, self.g, self.b]
     }
 
+    /// Creates an [u8;3] array
+    pub fn to_u8_array_3(&self) -> [u8; 3] {
+        [
+            (self.r * 255.0) as u8,
+            (self.g * 255.0) as u8,
+            (self.b * 255.0) as u8,
+        ]
+    }
+
     /// Creates an [u8;4] array
     pub fn to_u8_array(&self) -> [u8; 4] {
         [
