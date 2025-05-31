@@ -1,6 +1,14 @@
 use crate::prelude::*;
 use std::time::{Duration, Instant};
 
+#[cfg(feature = "cpu_render")]
+pub fn translate_coord_to_local(x: u32, y: u32, scale_factor: f32) -> (u32, u32) {
+    (
+        (x as f32 / scale_factor) as u32,
+        (y as f32 / scale_factor) as u32,
+    )
+}
+
 /// TheApp class handles running an application on the current backend.
 pub struct TheApp {
     #[cfg(feature = "ui")]
@@ -232,7 +240,7 @@ impl TheApp {
                                     }
                                 } else {
                                     let dest_width = width * scale_factor;
-                                    let dest_height = height * scale_factor;
+                                    // let dest_height = height * scale_factor;
                                     for y in 0..height {
                                         for x in 0..width {
                                             let src_index = (y * width + x) * 4;
@@ -456,6 +464,9 @@ impl TheApp {
                             #[cfg(feature = "gpu")]
                             let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
 
+                            #[cfg(feature = "cpu_render")]
+                            let (x, y) = translate_coord_to_local(x, y, ctx.scale_factor);
+
                             #[cfg(feature = "ui")]
                             if ui.touch_down(x as f32, y as f32, &mut ctx) {
                                 window.request_redraw();
@@ -473,6 +484,9 @@ impl TheApp {
                             #[cfg(feature = "gpu")]
                             let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
 
+                            #[cfg(feature = "cpu_render")]
+                            let (x, y) = translate_coord_to_local(x, y, ctx.scale_factor);
+
                             #[cfg(feature = "ui")]
                             if ui.context(x as f32, y as f32, &mut ctx) {
                                 window.request_redraw();
@@ -489,6 +503,9 @@ impl TheApp {
                             let (x, y) = (coords.0 as u32, coords.1 as u32);
                             #[cfg(feature = "gpu")]
                             let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
+
+                            #[cfg(feature = "cpu_render")]
+                            let (x, y) = translate_coord_to_local(x, y, ctx.scale_factor);
 
                             #[cfg(feature = "ui")]
                             if ui.touch_up(x as f32, y as f32, &mut ctx) {
@@ -509,6 +526,9 @@ impl TheApp {
                                 #[cfg(feature = "gpu")]
                                 let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
 
+                                #[cfg(feature = "cpu_render")]
+                                let (x, y) = translate_coord_to_local(x, y, ctx.scale_factor);
+
                                 #[cfg(feature = "ui")]
                                 if ui.touch_dragged(x as f32, y as f32, &mut ctx) {
                                     window.request_redraw();
@@ -526,6 +546,9 @@ impl TheApp {
                                 let (x, y) = (coords.0 as u32, coords.1 as u32);
                                 #[cfg(feature = "gpu")]
                                 let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
+
+                                #[cfg(feature = "cpu_render")]
+                                let (x, y) = translate_coord_to_local(x, y, ctx.scale_factor);
 
                                 #[cfg(feature = "ui")]
                                 if ui.hover(x as f32, y as f32, &mut ctx) {
