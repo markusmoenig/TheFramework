@@ -437,41 +437,7 @@ impl TheApp {
                         // DeviceEvent::Text { codepoint } => {
                         //     println!("text: ({})", codepoint);
                         // }
-                        DeviceEvent::MouseWheel { delta } => match delta {
-                            MouseScrollDelta::LineDelta(x, y) => {
-                                //println!("mouse wheel Line Delta: ({},{})", x, y);
-
-                                #[cfg(feature = "ui")]
-                                if ui.mouse_wheel((*x as i32, *y as i32), &mut ctx) {
-                                    window.request_redraw();
-                                }
-
-                                if app.mouse_wheel((*x as isize, *y as isize), &mut ctx) {
-                                    window.request_redraw();
-                                    //mouse_wheel_ongoing = true;
-                                }
-
-                                if *x == 0.0 && *y == 0.0 {
-                                    // mouse_wheel_ongoing = false;
-                                }
-                            }
-                            MouseScrollDelta::PixelDelta(p) => {
-                                //println!("mouse wheel Pixel Delta: ({},{})", p.x, p.y);
-                                #[cfg(feature = "ui")]
-                                if ui.mouse_wheel((p.x as i32, p.y as i32), &mut ctx) {
-                                    window.request_redraw();
-                                }
-
-                                if app.mouse_wheel((p.x as isize, p.y as isize), &mut ctx) {
-                                    window.request_redraw();
-                                    //mouse_wheel_ongoing = true;
-                                }
-
-                                if p.x == 0.0 && p.y == 0.0 {
-                                    // mouse_wheel_ongoing = false;
-                                }
-                            }
-                        },
+                        DeviceEvent::MouseWheel { delta: _ } => {}
                         DeviceEvent::Added => {}
                         DeviceEvent::Removed => {}
                         DeviceEvent::MouseMotion { delta: _ } => {}
