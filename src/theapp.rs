@@ -55,9 +55,9 @@ impl TheApp {
         use std::sync::Arc;
 
         use log::error;
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
         use winit::dpi::LogicalSize;
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(target_os = "windows")]
         use winit::dpi::PhysicalSize;
         use winit::{
             event::{DeviceEvent, ElementState, Event, MouseButton, MouseScrollDelta, WindowEvent},
@@ -78,9 +78,9 @@ impl TheApp {
         let event_loop = EventLoop::new().unwrap();
         let mut input = WinitInputHelper::new();
 
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
         let size = LogicalSize::new(width as f64, height as f64);
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(target_os = "windows")]
         let size = PhysicalSize::new(width as f64, height as f64);
 
         let builder = WindowBuilder::new()
