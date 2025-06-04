@@ -10,6 +10,8 @@ pub struct TheText {
     text_size: f32,
     text_color: RGBA,
 
+    fixed_size_text: String,
+
     is_dirty: bool,
 }
 
@@ -29,6 +31,8 @@ impl TheWidget for TheText {
             text: "".to_string(),
             text_size: 13.0,
             text_color: WHITE,
+
+            fixed_size_text: String::default(),
 
             is_dirty: false,
         }
@@ -73,12 +77,20 @@ impl TheWidget for TheText {
 
     fn calculate_size(&mut self, ctx: &mut TheContext) {
         if let Some(font) = &ctx.ui.font {
-            if !self.text.is_empty() {
-                let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
+            if self.fixed_size_text.is_empty() {
+                if !self.text.is_empty() {
+                    let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
+                    self.limiter_mut()
+                        .set_max_size(Vec2::new(size.0 as i32 + 1, size.1 as i32 + 1));
+                } else {
+                    self.limiter_mut().set_max_size(Vec2::new(20, 20));
+                }
+            } else {
+                let size = ctx
+                    .draw
+                    .get_text_size(font, self.text_size, &self.fixed_size_text);
                 self.limiter_mut()
                     .set_max_size(Vec2::new(size.0 as i32 + 1, size.1 as i32 + 1));
-            } else {
-                self.limiter_mut().set_max_size(Vec2::new(20, 20));
             }
         }
     }
@@ -132,6 +144,8 @@ pub trait TheTextTrait {
     fn set_text_size(&mut self, text_size: f32);
     /// Sets the text color.
     fn set_text_color(&mut self, color: RGBA);
+    /// Set fixed size text.
+    fn set_fixed_size_text(&mut self, fixed_size_text: String);
 }
 
 impl TheTextTrait for TheText {
@@ -145,6 +159,10 @@ impl TheTextTrait for TheText {
     }
     fn set_text_color(&mut self, color: RGBA) {
         self.text_color = color;
+        self.is_dirty = true;
+    }
+    fn set_fixed_size_text(&mut self, fixed_size_text: String) {
+        self.fixed_size_text = fixed_size_text;
         self.is_dirty = true;
     }
 }
