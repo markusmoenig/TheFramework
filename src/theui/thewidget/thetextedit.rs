@@ -135,6 +135,13 @@ impl TheTextEditState {
         deleted
     }
 
+    pub fn find_beginning_spaces_of_row(&self, row_number: usize) -> Option<usize> {
+        self.rows[row_number]
+            .char_indices()
+            .find(|&(_, c)| c != ' ')
+            .map(|(i, _)| i)
+    }
+
     // Position of cursor in cursor index
     pub fn find_cursor_index(&self) -> usize {
         self.find_start_index_of_row(self.cursor.row) + self.cursor.column
@@ -286,10 +293,8 @@ impl TheTextEditState {
 
         let beginning_spaces = if self.auto_indent {
             // We only need to make sure the spaces count match the current row's
-            self.rows[self.cursor.row]
-                .char_indices()
-                .find(|&(_, c)| c != ' ')
-                .map_or(self.cursor.column, |(i, _)| i)
+            self.find_beginning_spaces_of_row(self.cursor.row)
+                .unwrap_or(self.cursor.column)
         } else {
             0
         };

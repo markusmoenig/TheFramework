@@ -583,6 +583,122 @@ impl TheWidget for TheTextAreaEdit {
                                 self.modified_since_last_tick = true;
                                 redraw = true;
                             }
+                        } else if (self.modifier_ctrl || self.modifier_logo) && c == '/' {
+                            // TODO: Toggle comments
+                            // Only works for Python/TOML right now
+                            let syntax_name = self
+                                .renderer
+                                .highlighter
+                                .as_ref()
+                                .map(|highlighter| highlighter.syntax().to_owned());
+
+                            if syntax_name
+                                .map(|syntax| &syntax == "Python" || &syntax == "TOML")
+                                .unwrap_or_default()
+                            {
+                                let (start_row, end_row) = if self.state.selection.is_none() {
+                                    (self.state.cursor.row, self.state.cursor.row)
+                                } else {
+                                    let start_row = self
+                                        .state
+                                        .find_row_number_of_index(self.state.selection.start);
+                                    let end_row = self
+                                        .state
+                                        .find_row_number_of_index(self.state.selection.end);
+                                    (start_row, end_row)
+                                };
+
+                                // Should we consider these rows as already commented
+                                // If there are multiple lines to be considered, we skip those empty lines
+                                let is_all_commented = if start_row != end_row {
+                                    self.state.rows[start_row..=end_row]
+                                        .iter()
+                                        .filter(|row| !row.trim().is_empty())
+                                        .all(|row| row.trim_start().starts_with("# "))
+                                } else {
+                                    self.state.rows[start_row].trim_start().starts_with("# ")
+                                };
+
+                                let start_of_start_row =
+                                    self.state.find_start_index_of_row(start_row);
+                                let should_move_cursor =
+                                    self.state.find_cursor_index() > start_of_start_row;
+
+                                let mut modified_line_count = 0;
+
+                                for row_number in start_row..=end_row {
+                                    // Remove comments
+                                    if is_all_commented {
+                                        if let Some((left, right)) =
+                                            self.state.rows[row_number].split_once("# ")
+                                        {
+                                            self.state.rows[row_number] =
+                                                format!("{}{}", left, right);
+
+                                            modified_line_count += 1;
+
+                                            if should_move_cursor
+                                                && row_number == self.state.cursor.row
+                                            {
+                                                let beginning_spaces = self
+                                                    .state
+                                                    .find_beginning_spaces_of_row(row_number)
+                                                    .unwrap_or(0);
+                                                if beginning_spaces <= self.state.cursor.column {
+                                                    self.state.cursor.column -= 2;
+                                                }
+                                            }
+                                        }
+                                    // Add comments
+                                    } else if start_row == end_row
+                                        || !self.state.rows[row_number].trim().is_empty()
+                                    {
+                                        let beginning_spaces = self
+                                            .state
+                                            .find_beginning_spaces_of_row(row_number)
+                                            .unwrap_or(0);
+                                        self.state.rows[row_number]
+                                            .insert_str(beginning_spaces, "# ");
+
+                                        modified_line_count += 1;
+
+                                        if should_move_cursor
+                                            && row_number == self.state.cursor.row
+                                            && beginning_spaces <= self.state.cursor.column
+                                        {
+                                            self.state.cursor.column += 2;
+                                        }
+                                    }
+                                }
+
+                                if modified_line_count > 0 {
+                                    self.state.cursor.column = self.state.cursor.column.max(0);
+                                }
+
+                                if !self.state.selection.is_none() {
+                                    if is_all_commented {
+                                        self.state.selection.start =
+                                            self.state.selection.start.saturating_sub(2);
+                                        self.state.selection.end = self
+                                            .state
+                                            .selection
+                                            .end
+                                            .saturating_sub(2 * modified_line_count);
+
+                                        self.state.selection.start =
+                                            self.state.selection.start.max(start_of_start_row);
+                                    } else {
+                                        if self.state.selection.start > start_of_start_row {
+                                            self.state.selection.start += 2;
+                                        }
+                                        self.state.selection.end += 2 * modified_line_count;
+                                    }
+                                }
+
+                                self.is_dirty = true;
+                                self.modified_since_last_tick = true;
+                                redraw = true;
+                            }
                         } else {
                             self.state.insert_char(c);
                             self.modified_since_last_tick = true;
