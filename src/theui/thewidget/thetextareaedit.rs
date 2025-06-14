@@ -541,21 +541,20 @@ impl TheWidget for TheTextAreaEdit {
                     self.hover_coord + Vec2::new(self.dim.buffer_x, self.dim.buffer_y);
                 let scrolled = if self.hscrollbar.dim().contains(global_coord) {
                     let delta = if delta.x.abs() > delta.y.abs() {
-                        delta.x / 4
+                        delta.x
                     } else {
-                        delta.y / 4
+                        delta.y
                     };
                     self.renderer.scroll(&Vec2::new(delta, 0), false)
                 } else if self.vscrollbar.dim().contains(global_coord) {
                     let delta = if delta.x.abs() > delta.y.abs() {
-                        delta.x / 4
+                        delta.x
                     } else {
-                        delta.y / 4
+                        delta.y
                     };
                     self.renderer.scroll(&Vec2::new(0, -delta), false)
                 } else {
-                    self.renderer
-                        .scroll(&Vec2::new(delta.x / 4, -delta.y / 4), false)
+                    self.renderer.scroll(&Vec2::new(delta.x, -delta.y), false)
                 };
                 if scrolled {
                     self.is_dirty = true;
