@@ -184,11 +184,13 @@ impl TheApp {
                                     // println!("mouse wheel Line Delta: ({},{})", x, y);
 
                                     #[cfg(feature = "ui")]
-                                    if ui.mouse_wheel((*x as i32, *y as i32), &mut ctx) {
+                                    if ui.mouse_wheel((*x as i32 * 10, *y as i32 * 10), &mut ctx) {
                                         window.request_redraw();
                                     }
 
-                                    if app.mouse_wheel((*x as isize, *y as isize), &mut ctx) {
+                                    if app
+                                        .mouse_wheel((*x as isize * 10, *y as isize * 10), &mut ctx)
+                                    {
                                         window.request_redraw();
                                         //mouse_wheel_ongoing = true;
                                     }
