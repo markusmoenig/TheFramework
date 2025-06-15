@@ -56,6 +56,7 @@ pub struct TheTextAreaEdit {
     statusbar_type: StatusbarType,
 
     // Interaction
+    auto_scroll_to_cursor: bool,
     drag_start_index: usize,
     hover_coord: Vec2<i32>,
     is_clicking_on_selection: bool,
@@ -118,6 +119,7 @@ impl TheWidget for TheTextAreaEdit {
             scrollbar_size: 13,
             statusbar_type: StatusbarType::None,
 
+            auto_scroll_to_cursor: true,
             drag_start_index: 0,
             hover_coord: Vec2::zero(),
             is_clicking_on_selection: false,
@@ -1089,8 +1091,11 @@ impl TheWidget for TheTextAreaEdit {
                 visible_area.2,
                 visible_area.3,
             );
-            self.renderer
-                .scroll_to_cursor(self.state.find_cursor_index(), self.state.cursor.row);
+
+            if self.auto_scroll_to_cursor {
+                self.renderer
+                    .scroll_to_cursor(self.state.find_cursor_index(), self.state.cursor.row);
+            }
 
             if is_hoverflow {
                 let mut dim = TheDim::new(
@@ -1322,6 +1327,7 @@ pub trait TheTextAreaEditTrait: TheWidget {
     fn add_syntax_from_string(&mut self, syntax: &str);
     fn set_code_theme(&mut self, code_theme: &str);
     fn set_tab_spaces(&mut self, tab_spaces: usize);
+    fn auto_scroll_to_cursor(&mut self, auto_scroll_to_cursor: bool);
     fn display_line_number(&mut self, display_line_number: bool);
     fn readonly(&mut self, readonly: bool);
     fn use_statusbar(&mut self, use_statusbar: bool);
@@ -1371,6 +1377,11 @@ impl TheTextAreaEditTrait for TheTextAreaEdit {
     }
     fn set_tab_spaces(&mut self, tab_spaces: usize) {
         self.state.tab_spaces = tab_spaces;
+        self.modified_since_last_tick = true;
+        self.is_dirty = true;
+    }
+    fn auto_scroll_to_cursor(&mut self, auto_scroll_to_cursor: bool) {
+        self.auto_scroll_to_cursor = auto_scroll_to_cursor;
         self.modified_since_last_tick = true;
         self.is_dirty = true;
     }
