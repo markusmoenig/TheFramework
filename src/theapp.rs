@@ -57,7 +57,7 @@ impl TheApp {
         use log::error;
         use winit::dpi::LogicalSize;
         use winit::{
-            event::{DeviceEvent, ElementState, Event, MouseButton, MouseScrollDelta, WindowEvent},
+            event::{ElementState, Event, MouseButton, MouseScrollDelta, WindowEvent},
             event_loop::{ControlFlow, EventLoop},
             keyboard::{Key, NamedKey},
             window::{Icon, WindowBuilder},
@@ -429,6 +429,7 @@ impl TheApp {
                         _ => (),
                     },
 
+                    /*
                     Event::DeviceEvent { event, .. } => match event {
                         // DeviceEvent::Text { codepoint } => {
                         //     println!("text: ({})", codepoint);
@@ -443,7 +444,7 @@ impl TheApp {
                             state: _,
                         } => {}
                         DeviceEvent::Key(_) => {}
-                    },
+                    },*/
                     _ => (),
                 }
 

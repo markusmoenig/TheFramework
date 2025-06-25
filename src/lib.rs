@@ -12,8 +12,8 @@ pub mod thetrait;
 #[cfg(feature = "ui")]
 pub mod theui;
 
-#[cfg(feature = "code")]
-pub mod thecode;
+// #[cfg(feature = "code")]
+// pub mod thecode;
 
 #[cfg(feature = "gpu")]
 pub mod thegpu;
