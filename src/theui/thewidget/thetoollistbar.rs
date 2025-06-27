@@ -4,6 +4,8 @@ pub struct TheToolListBar {
     id: TheId,
     limiter: TheSizeLimiter,
 
+    text: String,
+
     dim: TheDim,
     is_dirty: bool,
 }
@@ -19,6 +21,8 @@ impl TheWidget for TheToolListBar {
         Self {
             id,
             limiter,
+
+            text: "TOOLS".into(),
 
             dim: TheDim::zero(),
             is_dirty: false,
@@ -102,7 +106,7 @@ impl TheWidget for TheToolListBar {
                 stride,
                 font,
                 11.5,
-                "TOOLS",
+                &self.text,
                 &WHITE,
                 TheHorizontalAlign::Center,
                 TheVerticalAlign::Center,
@@ -110,6 +114,12 @@ impl TheWidget for TheToolListBar {
         }
 
         self.is_dirty = false;
+    }
+
+    fn set_value(&mut self, value: TheValue) {
+        if let TheValue::Text(value) = value {
+            self.text = value;
+        }
     }
 
     fn as_any(&mut self) -> &mut dyn std::any::Any {
