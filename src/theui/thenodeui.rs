@@ -188,7 +188,7 @@ impl TheNodeUI {
                     picker.set_value(TheValue::ColorObject(value.clone()));
                     picker.set_status_text(status);
                     picker.set_continuous(*continuous);
-                    picker.limiter_mut().set_max_size(Vec2::new(130, 130));
+                    picker.limiter_mut().set_max_size(Vec2::new(200, 200));
                     layout.add_pair(name.clone(), Box::new(picker));
                 }
                 Separator(name) => {
