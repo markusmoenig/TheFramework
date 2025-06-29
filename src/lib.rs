@@ -18,6 +18,9 @@ pub mod theui;
 #[cfg(feature = "gpu")]
 pub mod thegpu;
 
+#[cfg(feature = "log")]
+pub mod thelogger;
+
 #[cfg(feature = "gpu")]
 pub use wgpu;
 
@@ -115,4 +118,7 @@ pub mod prelude {
 
     #[cfg(feature = "gpu")]
     pub use crate::thegpu::prelude::*;
+
+    #[cfg(feature = "log")]
+    pub use crate::thelogger::setup_logger;
 }

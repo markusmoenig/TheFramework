@@ -38,11 +38,8 @@ impl TheApp {
 
     /// Runs the app
     pub fn run(&mut self, app: Box<dyn crate::TheTrait>) {
-        #[cfg(target_arch = "wasm32")]
-        {
-            std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-            console_log::init_with_level(log::Level::Trace).expect("error initializing logger");
-        }
+        #[cfg(feature = "log")]
+        setup_logger();
 
         #[cfg(feature = "winit_app")]
         self.run_app(app);

@@ -9,7 +9,6 @@ repository = "https://github.com/markusmoenig/theframework.git"
 exclude = ["Xcode"]
 
 [dependencies]
-env_logger = "0.11"
 log = "0.4"
 fontdue = "0.9.3"
 maths-rs = { version = "0.2.6", features = [
@@ -59,7 +58,12 @@ features = [
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 arboard = "3.4.1"
-syntect = "5.2.0"
+log4rs = { version = "1.3.0", features = [
+    "compound_policy",
+    "fixed_window_roller",
+    "rolling_file_appender",
+    "size_trigger",
+], default-features = false, optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1"
@@ -76,11 +80,13 @@ ui = ["futures", "rfd", "rayon", "zeno"]
 code = []
 winit_app = ["winit", "winit_input_helper"]
 gpu = ["aict", "bytemuck", "futures", "itertools", "wgpu"]
+log = ["log4rs"]
 
-cpu_render = ["softbuffer", "winit_app"]
+cpu_render = ["softbuffer"]
 gpu_render = ["gpu"]
 
-gpu_winit = ["winit_app", "gpu"]
+cpu_winit = ["winit_app", "cpu_render"]
+gpu_winit = ["winit_app", "gpu_render"]
 
 default = ["gpu_winit"]
 
