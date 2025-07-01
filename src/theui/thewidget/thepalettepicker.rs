@@ -8,6 +8,7 @@ pub struct ThePalettePicker {
 
     palette: ThePalette,
     index: usize,
+    dynamic_layout: bool,
 
     rectangles: Vec<TheDim>,
 
@@ -33,6 +34,7 @@ impl TheWidget for ThePalettePicker {
 
             palette: ThePalette::default(),
             index: 0,
+            dynamic_layout: false,
 
             rectangles: vec![],
 
@@ -117,6 +119,7 @@ impl TheWidget for ThePalettePicker {
     fn set_dim(&mut self, dim: TheDim, _ctx: &mut TheContext) {
         if self.dim != dim {
             self.dim = dim;
+            self.is_dirty = true;
         }
     }
 
@@ -152,8 +155,23 @@ impl TheWidget for ThePalettePicker {
             style.theme().color(ListLayoutBackground),
         );
 
-        let item_width = 18;
+        let width = buffer.dim().width;
+        let height = buffer.dim().height;
+
+        let mut item_width = 18;
         let item_spacing = 1;
+
+        if self.dynamic_layout {
+            let (columns, rows, iw) =
+                self.calc_layout(Vec2::new(width, height), self.palette.colors.len());
+            item_width = iw as usize;
+            self.rows = rows;
+            self.columns = columns;
+            // println!(
+            //     "width {} height {} : columns {} rows {} item_width {}",
+            //     width, height, columns, rows, item_width
+            // );
+        }
 
         self.rectangles.clear();
 
@@ -231,6 +249,8 @@ pub trait ThePalettePickerTrait {
     fn index(&self) -> usize;
     fn set_color(&mut self, color: TheColor);
     fn set_rows_columns(&mut self, rows: i32, columns: i32);
+    fn set_dynamic_layout(&mut self, dynamic_layout: bool);
+    fn calc_layout(&self, available: Vec2<i32>, colour_count: usize) -> (i32, i32, i32);
 }
 
 impl ThePalettePickerTrait for ThePalettePicker {
@@ -249,5 +269,47 @@ impl ThePalettePickerTrait for ThePalettePicker {
     fn set_rows_columns(&mut self, rows: i32, columns: i32) {
         self.rows = rows;
         self.columns = columns;
+    }
+
+    fn set_dynamic_layout(&mut self, dynamic_layout: bool) {
+        self.dynamic_layout = dynamic_layout;
+    }
+
+    /// Returns (columns, rows, item_width) that best fill the area.
+    fn calc_layout(&self, area: Vec2<i32>, count: usize) -> (i32, i32, i32) {
+        const PAD_X: i32 = 10;
+        const PAD_Y: i32 = 8;
+        const SPACING: i32 = 1;
+        const MIN_CELL: i32 = 8;
+
+        if count == 0 {
+            return (0, 0, 0);
+        }
+
+        let aw = (area.x - PAD_X * 2).max(MIN_CELL);
+        let ah = (area.y - PAD_Y * 2).max(MIN_CELL);
+        let max_cols = ((aw + SPACING) / (MIN_CELL + SPACING))
+            .max(1)
+            .min(count as i32);
+
+        let mut best = (1, count as i32, MIN_CELL);
+
+        for cols in 1..=max_cols {
+            let rows = (count as i32 + cols - 1) / cols; // ceil
+                                                         // width- and height-limited cell size for this grid
+            let cell_w = (aw - (cols - 1) * SPACING) / cols;
+            let cell_h = (ah - (rows - 1) * SPACING) / rows;
+            let cell = cell_w.min(cell_h);
+
+            if cell < MIN_CELL {
+                continue;
+            }
+
+            if cell > best.2 || (cell == best.2 && cols > best.0) {
+                best = (cols, rows, cell);
+            }
+        }
+
+        best
     }
 }

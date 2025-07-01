@@ -91,6 +91,11 @@ impl TheNodeUI {
         self.items.iter()
     }
 
+    /// Returns the item count.
+    pub fn len(&self) -> usize {
+        self.items.len()
+    }
+
     /// Get an i32 value.
     pub fn get_i32_value(&self, id: &str) -> Option<i32> {
         for (item_id, item) in &self.items {
