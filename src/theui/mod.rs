@@ -1043,6 +1043,14 @@ impl TheUI {
         None
     }
 
+    /// Gets a given text area edit by name
+    pub fn get_text_area_edit(&mut self, name: &str) -> Option<&mut dyn TheTextAreaEditTrait> {
+        if let Some(text_area_edit) = self.canvas.get_widget(Some(&name.to_string()), None) {
+            return text_area_edit.as_text_area_edit();
+        }
+        None
+    }
+
     /// Gets a given icon view by name
     pub fn get_icon_view(&mut self, name: &str) -> Option<&mut dyn TheIconViewTrait> {
         if let Some(text_line_edit) = self.canvas.get_widget(Some(&name.to_string()), None) {
