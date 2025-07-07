@@ -698,6 +698,9 @@ impl TheWidget for TheTextAreaEdit {
 
                                 self.is_dirty = true;
                                 self.modified_since_last_tick = true;
+                                if self.continuous {
+                                    self.emit_value_changed(ctx);
+                                }
                                 redraw = true;
                             }
                         } else {
