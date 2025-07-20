@@ -136,10 +136,7 @@ impl TheTextEditState {
     }
 
     pub fn find_beginning_spaces_of_row(&self, row_number: usize) -> Option<usize> {
-        self.rows[row_number]
-            .char_indices()
-            .find(|&(_, c)| c != ' ')
-            .map(|(i, _)| i)
+        self.rows[row_number].chars().position(|c| c != ' ')
     }
 
     // Position of cursor in cursor index
@@ -235,6 +232,58 @@ impl TheTextEditState {
             index += self.row_len(i)
         }
         index
+    }
+
+    pub fn indent(&mut self) -> bool {
+        if self.selection.is_none() {
+            self.rows[self.cursor.row].insert_str(0, &(" ".repeat(self.tab_spaces)));
+            self.cursor.column += self.tab_spaces;
+
+            return true;
+        }
+
+        let start_row = self.find_row_number_of_index(self.selection.start);
+        let end_row = self.find_row_number_of_index(self.selection.end);
+
+        // If all selected lines are empty, no need to indent them
+        if self.rows[start_row..=end_row]
+            .iter()
+            .all(|row| row.is_empty())
+        {
+            return false;
+        }
+
+        // Move selection start and cursor,
+        // only if we select from actual text, not beginning spaces
+        let select_beginning_spaces =
+            self.find_selected_range_of_row(start_row)
+                .is_some_and(|(start, _)| {
+                    self.rows[start_row][..start - self.find_range_of_row(start_row).0]
+                        .chars()
+                        .all(|c| c.is_whitespace())
+                });
+
+        if !select_beginning_spaces {
+            self.selection.start += self.tab_spaces;
+        }
+
+        for row in start_row..=end_row {
+            // Skip empty line
+            if self.rows[row].is_empty() {
+                continue;
+            }
+
+            self.rows[row].insert_str(0, &(" ".repeat(self.tab_spaces)));
+            self.selection.end += self.tab_spaces;
+        }
+
+        if !self.rows[self.cursor.row].is_empty()
+            && (!select_beginning_spaces || self.cursor.row != start_row)
+        {
+            self.cursor.column += self.tab_spaces;
+        }
+
+        true
     }
 
     pub fn insert_char(&mut self, char: char) {
@@ -429,6 +478,76 @@ impl TheTextEditState {
                 -1,
             )
         }
+    }
+
+    pub fn outdent(&mut self) -> bool {
+        let (start_row, end_row) = if self.selection.is_none() {
+            (self.cursor.row, self.cursor.row)
+        } else {
+            let start_row = self.find_row_number_of_index(self.selection.start);
+            let end_row = self.find_row_number_of_index(self.selection.end);
+
+            (start_row, end_row)
+        };
+
+        let mut updated = false;
+
+        for row in start_row..=end_row {
+            let indent_spaces = self
+                .find_beginning_spaces_of_row(row)
+                .unwrap_or(self.rows[row].len());
+
+            let mut indent_level = indent_spaces / self.tab_spaces;
+            if indent_spaces % self.tab_spaces == 0 {
+                indent_level = indent_level.saturating_sub(1);
+            }
+
+            let leftover = self.rows[row].split_off(indent_spaces);
+            let space_count = self.tab_spaces * indent_level;
+
+            self.rows[row] = " ".repeat(space_count);
+            self.rows[row].push_str(&leftover);
+
+            if self.cursor.row == row {
+                self.cursor.column = self
+                    .cursor
+                    .column
+                    .saturating_sub(indent_spaces - space_count);
+            }
+
+            if !self.selection.is_none() {
+                if start_row == row {
+                    self.selection.start = self
+                        .selection
+                        .start
+                        .saturating_sub(indent_spaces - space_count);
+
+                    let select_beginning_spaces = self
+                        .find_selected_range_of_row(start_row)
+                        .is_some_and(|(start, _)| {
+                            self.rows[start_row][..start - self.find_range_of_row(start_row).0]
+                                .chars()
+                                .all(|c| c.is_whitespace())
+                        });
+
+                    if select_beginning_spaces {
+                        self.selection.start = self
+                            .selection
+                            .start
+                            .max(self.find_range_of_row(start_row).0);
+                    }
+                }
+
+                self.selection.end = self
+                    .selection
+                    .end
+                    .saturating_sub(indent_spaces - space_count);
+            }
+
+            updated = true;
+        }
+
+        updated
     }
 
     pub fn quick_select(&mut self) {

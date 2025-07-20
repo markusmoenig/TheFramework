@@ -68,6 +68,7 @@ pub struct TheTextAreaEdit {
     modifier_alt: bool,
     modifier_ctrl: bool,
     modifier_logo: bool,
+    modifier_shift: bool,
 
     // Scrollbar
     hscrollbar: Box<dyn TheWidget>,
@@ -130,6 +131,7 @@ impl TheWidget for TheTextAreaEdit {
             modifier_alt: false,
             modifier_ctrl: false,
             modifier_logo: false,
+            modifier_shift: false,
 
             hscrollbar,
             vscrollbar,
@@ -345,10 +347,11 @@ impl TheWidget for TheTextAreaEdit {
                     }
                 }
             }
-            TheEvent::ModifierChanged(_shift, ctrl, alt, logo) => {
+            TheEvent::ModifierChanged(shift, ctrl, alt, logo) => {
                 self.modifier_alt = *alt;
                 self.modifier_ctrl = *ctrl;
                 self.modifier_logo = *logo;
+                self.modifier_shift = *shift
             }
             TheEvent::MouseDown(coord) => {
                 if !self.state.is_empty() {
@@ -895,14 +898,38 @@ impl TheWidget for TheTextAreaEdit {
                                 }
                             }
                             TheKeyCode::Tab => {
-                                self.state.insert_tab();
-                                self.modified_since_last_tick = true;
-                                self.is_dirty = true;
-                                redraw = true;
-                                update_status = true;
+                                let updated = {
+                                    if self.modifier_shift {
+                                        self.state.outdent()
+                                    } else if self.state.selection.is_none() {
+                                        self.state.insert_tab();
+                                        true
+                                    } else {
+                                        let start_row = self
+                                            .state
+                                            .find_row_number_of_index(self.state.selection.start);
+                                        let end_row = self
+                                            .state
+                                            .find_row_number_of_index(self.state.selection.end);
 
-                                if self.continuous {
-                                    self.emit_value_changed(ctx);
+                                        if start_row == end_row {
+                                            self.state.insert_tab();
+                                            true
+                                        } else {
+                                            self.state.indent()
+                                        }
+                                    }
+                                };
+
+                                if updated {
+                                    self.modified_since_last_tick = true;
+                                    self.is_dirty = true;
+                                    redraw = true;
+                                    update_status = true;
+
+                                    if self.continuous {
+                                        self.emit_value_changed(ctx);
+                                    }
                                 }
                             }
                             _ => {}
