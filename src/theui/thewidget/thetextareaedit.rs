@@ -833,9 +833,15 @@ impl TheWidget for TheTextAreaEdit {
                             }
                             TheKeyCode::Right => {
                                 if self.modifier_ctrl || self.modifier_logo {
-                                    if self.state.move_cursor_to_line_end()
+                                    if self.state.quick_move_cursor_right()
                                         || self.state.move_cursor_right()
                                     {
+                                        if self.auto_scroll_to_cursor {
+                                            self.renderer.scroll_to_cursor(
+                                                self.state.find_cursor_index(),
+                                                self.state.cursor.row,
+                                            );
+                                        }
                                         self.is_dirty = true;
                                         redraw = true;
                                     }
@@ -974,9 +980,15 @@ impl TheWidget for TheTextAreaEdit {
                             }
                             TheKeyCode::Left => {
                                 if self.modifier_ctrl || self.modifier_logo {
-                                    if self.state.move_cursor_to_line_start()
+                                    if self.state.quick_move_cursor_left()
                                         || self.state.move_cursor_left()
                                     {
+                                        if self.auto_scroll_to_cursor {
+                                            self.renderer.scroll_to_cursor(
+                                                self.state.find_cursor_index(),
+                                                self.state.cursor.row,
+                                            );
+                                        }
                                         self.is_dirty = true;
                                         redraw = true;
                                     }

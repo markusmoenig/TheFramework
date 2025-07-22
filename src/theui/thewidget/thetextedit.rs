@@ -429,11 +429,12 @@ impl TheTextEditState {
     }
 
     pub fn move_cursor_to_line_end(&mut self) -> bool {
-        if self.cursor.column == self.glyphs_in_row(self.cursor.row) {
+        let glyphs_count = self.glyphs_in_row(self.cursor.row);
+        if self.cursor.column == glyphs_count {
             return false;
         }
 
-        self.cursor.column = self.glyphs_in_row(self.cursor.row);
+        self.cursor.column = glyphs_count;
         true
     }
 
@@ -548,6 +549,43 @@ impl TheTextEditState {
         }
 
         updated
+    }
+
+    pub fn quick_move_cursor_left(&mut self) -> bool {
+        if self.cursor.column == 0 {
+            return false;
+        }
+
+        let spaces = self
+            .find_beginning_spaces_of_row(self.cursor.row)
+            .unwrap_or(0);
+
+        if spaces < self.cursor.column {
+            self.cursor.column = spaces;
+            return true;
+        }
+
+        self.cursor.column = 0;
+        true
+    }
+
+    pub fn quick_move_cursor_right(&mut self) -> bool {
+        let glyphs_count = self.glyphs_in_row(self.cursor.row);
+        if self.cursor.column == glyphs_count {
+            return false;
+        };
+
+        let spaces = self
+            .find_beginning_spaces_of_row(self.cursor.row)
+            .unwrap_or(0);
+
+        if spaces > self.cursor.column {
+            self.cursor.column = spaces;
+            return true;
+        }
+
+        self.cursor.column = glyphs_count;
+        true
     }
 
     pub fn quick_select(&mut self) {

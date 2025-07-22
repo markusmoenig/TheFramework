@@ -386,9 +386,13 @@ impl TheWidget for TheTextLineEdit {
                         }
                         TheKeyCode::Right => {
                             if self.modifier_ctrl || self.modifier_logo {
-                                if self.state.move_cursor_to_line_end()
+                                if self.state.quick_move_cursor_right()
                                     || self.state.move_cursor_right()
                                 {
+                                    self.renderer.scroll_to_cursor(
+                                        self.state.find_cursor_index(),
+                                        self.state.cursor.row,
+                                    );
                                     self.is_dirty = true;
                                     redraw = true;
                                 }
@@ -444,9 +448,13 @@ impl TheWidget for TheTextLineEdit {
                         }
                         TheKeyCode::Left => {
                             if self.modifier_ctrl | self.modifier_logo {
-                                if self.state.move_cursor_to_line_start()
+                                if self.state.quick_move_cursor_left()
                                     || self.state.move_cursor_left()
                                 {
+                                    self.renderer.scroll_to_cursor(
+                                        self.state.find_cursor_index(),
+                                        self.state.cursor.row,
+                                    );
                                     self.is_dirty = true;
                                     redraw = true;
                                 }
