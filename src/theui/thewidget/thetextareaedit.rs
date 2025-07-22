@@ -646,8 +646,7 @@ impl TheWidget for TheTextAreaEdit {
                                             {
                                                 let beginning_spaces = self
                                                     .state
-                                                    .find_beginning_spaces_of_row(row_number)
-                                                    .unwrap_or(0);
+                                                    .find_beginning_spaces_of_row(row_number);
                                                 if beginning_spaces <= self.state.cursor.column {
                                                     self.state.cursor.column -= 2;
                                                 }
@@ -657,10 +656,8 @@ impl TheWidget for TheTextAreaEdit {
                                     } else if start_row == end_row
                                         || !self.state.rows[row_number].trim().is_empty()
                                     {
-                                        let beginning_spaces = self
-                                            .state
-                                            .find_beginning_spaces_of_row(row_number)
-                                            .unwrap_or(0);
+                                        let beginning_spaces =
+                                            self.state.find_beginning_spaces_of_row(row_number);
                                         self.state.rows[row_number]
                                             .insert_str(beginning_spaces, "# ");
 
