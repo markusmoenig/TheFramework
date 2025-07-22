@@ -41,6 +41,7 @@ pub struct TheTextLineEdit {
     // Modifiers
     modifier_ctrl: bool,
     modifier_logo: bool,
+    modifier_shift: bool,
 
     // Range
     range: Option<TheValue>,
@@ -88,6 +89,7 @@ impl TheWidget for TheTextLineEdit {
 
             modifier_ctrl: false,
             modifier_logo: false,
+            modifier_shift: false,
 
             range: None,
             original: "".to_string(),
@@ -175,9 +177,10 @@ impl TheWidget for TheTextLineEdit {
 
         let mut redraw = false;
         match event {
-            TheEvent::ModifierChanged(_shift, ctrl, _alt, logo) => {
+            TheEvent::ModifierChanged(shift, ctrl, _alt, logo) => {
                 self.modifier_ctrl = *ctrl;
                 self.modifier_logo = *logo;
+                self.modifier_shift = *shift;
             }
             TheEvent::MouseDown(coord) => {
                 if !self.state.is_empty() {
@@ -389,6 +392,32 @@ impl TheWidget for TheTextLineEdit {
                                     self.is_dirty = true;
                                     redraw = true;
                                 }
+                            } else if self.modifier_shift {
+                                let cursor_index = self.state.find_cursor_index();
+                                let is_cursor_at_selection_start =
+                                    cursor_index == self.state.selection.start;
+                                let is_cursor_at_selection_end =
+                                    cursor_index == self.state.selection.end;
+
+                                if self.state.move_cursor_right() {
+                                    if self.state.selection.is_none() {
+                                        self.state.select(cursor_index, cursor_index + 1);
+                                    } else {
+                                        if is_cursor_at_selection_start {
+                                            self.state.selection.start = cursor_index + 1;
+                                        }
+                                        if is_cursor_at_selection_end {
+                                            self.state.selection.end = cursor_index + 1;
+                                        }
+                                    }
+
+                                    self.renderer.scroll_to_cursor(
+                                        self.state.find_cursor_index(),
+                                        self.state.cursor.row,
+                                    );
+                                    self.is_dirty = true;
+                                    redraw = true;
+                                }
                             } else {
                                 let updated = {
                                     if self.state.selection.is_none() {
@@ -418,6 +447,32 @@ impl TheWidget for TheTextLineEdit {
                                 if self.state.move_cursor_to_line_start()
                                     || self.state.move_cursor_left()
                                 {
+                                    self.is_dirty = true;
+                                    redraw = true;
+                                }
+                            } else if self.modifier_shift {
+                                let cursor_index = self.state.find_cursor_index();
+                                let is_cursor_at_selection_start =
+                                    cursor_index == self.state.selection.start;
+                                let is_cursor_at_selection_end =
+                                    cursor_index == self.state.selection.end;
+
+                                if self.state.move_cursor_left() {
+                                    if self.state.selection.is_none() {
+                                        self.state.select(cursor_index - 1, cursor_index);
+                                    } else {
+                                        if is_cursor_at_selection_start {
+                                            self.state.selection.start = cursor_index - 1;
+                                        }
+                                        if is_cursor_at_selection_end {
+                                            self.state.selection.end = cursor_index - 1;
+                                        }
+                                    }
+
+                                    self.renderer.scroll_to_cursor(
+                                        self.state.find_cursor_index(),
+                                        self.state.cursor.row,
+                                    );
                                     self.is_dirty = true;
                                     redraw = true;
                                 }

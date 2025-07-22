@@ -761,6 +761,48 @@ impl TheWidget for TheTextAreaEdit {
                                         self.is_dirty = true;
                                         redraw = true;
                                     }
+                                } else if self.modifier_shift {
+                                    let cursor_index = self.state.find_cursor_index();
+                                    let is_cursor_at_selection_start =
+                                        cursor_index <= self.state.selection.start;
+                                    let is_cursor_at_selection_end =
+                                        cursor_index >= self.state.selection.end;
+
+                                    if self.state.move_cursor_up() {
+                                        let new_cursor_index = self.state.find_cursor_index();
+
+                                        if self.state.selection.is_none() {
+                                            self.state.select(new_cursor_index, cursor_index);
+                                        } else {
+                                            if is_cursor_at_selection_start {
+                                                self.state.selection.start = new_cursor_index;
+                                            }
+                                            if is_cursor_at_selection_end {
+                                                if new_cursor_index < self.state.selection.start {
+                                                    self.state.select(
+                                                        new_cursor_index,
+                                                        self.state.selection.end,
+                                                    );
+                                                }
+                                                if new_cursor_index > self.state.selection.start {
+                                                    self.state.select(
+                                                        self.state.selection.start,
+                                                        new_cursor_index,
+                                                    );
+                                                }
+                                            }
+                                        }
+
+                                        if self.auto_scroll_to_cursor {
+                                            self.renderer.scroll_to_cursor(
+                                                self.state.find_cursor_index(),
+                                                self.state.cursor.row,
+                                            );
+                                        }
+                                        self.is_dirty = true;
+                                        redraw = true;
+                                        update_status = true;
+                                    }
                                 } else {
                                     let updated = {
                                         if self.state.selection.is_none() {
@@ -777,10 +819,12 @@ impl TheWidget for TheTextAreaEdit {
                                     };
 
                                     if updated {
-                                        self.renderer.scroll_to_cursor(
-                                            self.state.find_cursor_index(),
-                                            self.state.cursor.row,
-                                        );
+                                        if self.auto_scroll_to_cursor {
+                                            self.renderer.scroll_to_cursor(
+                                                self.state.find_cursor_index(),
+                                                self.state.cursor.row,
+                                            );
+                                        }
                                         self.is_dirty = true;
                                         redraw = true;
                                         update_status = true;
@@ -794,6 +838,35 @@ impl TheWidget for TheTextAreaEdit {
                                     {
                                         self.is_dirty = true;
                                         redraw = true;
+                                    }
+                                } else if self.modifier_shift {
+                                    let cursor_index = self.state.find_cursor_index();
+                                    let is_cursor_at_selection_start =
+                                        cursor_index == self.state.selection.start;
+                                    let is_cursor_at_selection_end =
+                                        cursor_index == self.state.selection.end;
+
+                                    if self.state.move_cursor_right() {
+                                        if self.state.selection.is_none() {
+                                            self.state.select(cursor_index, cursor_index + 1);
+                                        } else {
+                                            if is_cursor_at_selection_start {
+                                                self.state.selection.start = cursor_index + 1;
+                                            }
+                                            if is_cursor_at_selection_end {
+                                                self.state.selection.end = cursor_index + 1;
+                                            }
+                                        }
+
+                                        if self.auto_scroll_to_cursor {
+                                            self.renderer.scroll_to_cursor(
+                                                self.state.find_cursor_index(),
+                                                self.state.cursor.row,
+                                            );
+                                        }
+                                        self.is_dirty = true;
+                                        redraw = true;
+                                        update_status = true;
                                     }
                                 } else {
                                     let updated = {
@@ -810,10 +883,12 @@ impl TheWidget for TheTextAreaEdit {
                                     };
 
                                     if updated {
-                                        self.renderer.scroll_to_cursor(
-                                            self.state.find_cursor_index(),
-                                            self.state.cursor.row,
-                                        );
+                                        if self.auto_scroll_to_cursor {
+                                            self.renderer.scroll_to_cursor(
+                                                self.state.find_cursor_index(),
+                                                self.state.cursor.row,
+                                            );
+                                        }
                                         self.is_dirty = true;
                                         redraw = true;
                                         update_status = true;
@@ -826,6 +901,48 @@ impl TheWidget for TheTextAreaEdit {
                                         self.modified_since_last_tick = true;
                                         self.is_dirty = true;
                                         redraw = true;
+                                    }
+                                } else if self.modifier_shift {
+                                    let cursor_index = self.state.find_cursor_index();
+                                    let is_cursor_at_selection_start =
+                                        cursor_index <= self.state.selection.start;
+                                    let is_cursor_at_selection_end =
+                                        cursor_index >= self.state.selection.end;
+
+                                    if self.state.move_cursor_down() {
+                                        let new_cursor_index = self.state.find_cursor_index();
+
+                                        if self.state.selection.is_none() {
+                                            self.state.select(cursor_index, new_cursor_index);
+                                        } else {
+                                            if is_cursor_at_selection_start {
+                                                if new_cursor_index > self.state.selection.end {
+                                                    self.state.select(
+                                                        self.state.selection.start,
+                                                        new_cursor_index,
+                                                    );
+                                                }
+                                                if new_cursor_index < self.state.selection.end {
+                                                    self.state.select(
+                                                        new_cursor_index,
+                                                        self.state.selection.end,
+                                                    );
+                                                }
+                                            }
+                                            if is_cursor_at_selection_end {
+                                                self.state.selection.end = new_cursor_index;
+                                            }
+                                        }
+
+                                        if self.auto_scroll_to_cursor {
+                                            self.renderer.scroll_to_cursor(
+                                                self.state.find_cursor_index(),
+                                                self.state.cursor.row,
+                                            );
+                                        }
+                                        self.is_dirty = true;
+                                        redraw = true;
+                                        update_status = true;
                                     }
                                 } else {
                                     let updated = {
@@ -843,10 +960,12 @@ impl TheWidget for TheTextAreaEdit {
                                     };
 
                                     if updated {
-                                        self.renderer.scroll_to_cursor(
-                                            self.state.find_cursor_index(),
-                                            self.state.cursor.row,
-                                        );
+                                        if self.auto_scroll_to_cursor {
+                                            self.renderer.scroll_to_cursor(
+                                                self.state.find_cursor_index(),
+                                                self.state.cursor.row,
+                                            );
+                                        }
                                         self.is_dirty = true;
                                         redraw = true;
                                         update_status = true;
@@ -860,6 +979,35 @@ impl TheWidget for TheTextAreaEdit {
                                     {
                                         self.is_dirty = true;
                                         redraw = true;
+                                    }
+                                } else if self.modifier_shift {
+                                    let cursor_index = self.state.find_cursor_index();
+                                    let is_cursor_at_selection_start =
+                                        cursor_index == self.state.selection.start;
+                                    let is_cursor_at_selection_end =
+                                        cursor_index == self.state.selection.end;
+
+                                    if self.state.move_cursor_left() {
+                                        if self.state.selection.is_none() {
+                                            self.state.select(cursor_index - 1, cursor_index);
+                                        } else {
+                                            if is_cursor_at_selection_start {
+                                                self.state.selection.start = cursor_index - 1;
+                                            }
+                                            if is_cursor_at_selection_end {
+                                                self.state.selection.end = cursor_index - 1;
+                                            }
+                                        }
+
+                                        if self.auto_scroll_to_cursor {
+                                            self.renderer.scroll_to_cursor(
+                                                self.state.find_cursor_index(),
+                                                self.state.cursor.row,
+                                            );
+                                        }
+                                        self.is_dirty = true;
+                                        redraw = true;
+                                        update_status = true;
                                     }
                                 } else {
                                     let updated = {
@@ -876,10 +1024,12 @@ impl TheWidget for TheTextAreaEdit {
                                     };
 
                                     if updated {
-                                        self.renderer.scroll_to_cursor(
-                                            self.state.find_cursor_index(),
-                                            self.state.cursor.row,
-                                        );
+                                        if self.auto_scroll_to_cursor {
+                                            self.renderer.scroll_to_cursor(
+                                                self.state.find_cursor_index(),
+                                                self.state.cursor.row,
+                                            );
+                                        }
                                         self.is_dirty = true;
                                         redraw = true;
                                         update_status = true;
