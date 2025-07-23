@@ -135,8 +135,11 @@ impl TheTextEditState {
         deleted
     }
 
-    pub fn find_beginning_spaces_of_row(&self, row_number: usize) -> Option<usize> {
-        self.rows[row_number].chars().position(|c| c != ' ')
+    pub fn find_beginning_spaces_of_row(&self, row_number: usize) -> usize {
+        self.rows[row_number]
+            .chars()
+            .position(|c| c != ' ')
+            .unwrap_or(self.glyphs_in_row(row_number))
     }
 
     // Position of cursor in cursor index
@@ -343,7 +346,7 @@ impl TheTextEditState {
         let beginning_spaces = if self.auto_indent {
             // We only need to make sure the spaces count match the current row's
             self.find_beginning_spaces_of_row(self.cursor.row)
-                .unwrap_or(self.cursor.column)
+                .min(self.cursor.column)
         } else {
             0
         };
@@ -429,11 +432,12 @@ impl TheTextEditState {
     }
 
     pub fn move_cursor_to_line_end(&mut self) -> bool {
-        if self.cursor.column == self.glyphs_in_row(self.cursor.row) {
+        let glyphs_count = self.glyphs_in_row(self.cursor.row);
+        if self.cursor.column == glyphs_count {
             return false;
         }
 
-        self.cursor.column = self.glyphs_in_row(self.cursor.row);
+        self.cursor.column = glyphs_count;
         true
     }
 
@@ -493,9 +497,7 @@ impl TheTextEditState {
         let mut updated = false;
 
         for row in start_row..=end_row {
-            let indent_spaces = self
-                .find_beginning_spaces_of_row(row)
-                .unwrap_or(self.rows[row].len());
+            let indent_spaces = self.find_beginning_spaces_of_row(row);
 
             let mut indent_level = indent_spaces / self.tab_spaces;
             if indent_spaces % self.tab_spaces == 0 {
@@ -548,6 +550,39 @@ impl TheTextEditState {
         }
 
         updated
+    }
+
+    pub fn quick_move_cursor_left(&mut self) -> bool {
+        if self.cursor.column == 0 {
+            return false;
+        }
+
+        let spaces = self.find_beginning_spaces_of_row(self.cursor.row);
+
+        if spaces < self.cursor.column {
+            self.cursor.column = spaces;
+            return true;
+        }
+
+        self.cursor.column = 0;
+        true
+    }
+
+    pub fn quick_move_cursor_right(&mut self) -> bool {
+        let glyphs_count = self.glyphs_in_row(self.cursor.row);
+        if self.cursor.column == glyphs_count {
+            return false;
+        };
+
+        let spaces = self.find_beginning_spaces_of_row(self.cursor.row);
+
+        if spaces > self.cursor.column {
+            self.cursor.column = spaces;
+            return true;
+        }
+
+        self.cursor.column = glyphs_count;
+        true
     }
 
     pub fn quick_select(&mut self) {
