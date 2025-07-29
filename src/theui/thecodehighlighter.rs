@@ -44,6 +44,8 @@ pub trait TheCodeHighlighterTrait: Send {
     fn guide(&self) -> Option<TheColor>;
     fn active_guide(&self) -> Option<TheColor>;
     fn selection_background(&self) -> Option<TheColor>;
+    fn match_background(&self) -> Option<TheColor>;
+    fn active_match_background(&self) -> Option<TheColor>;
 
     fn highlight_line(
         &self,
@@ -123,6 +125,20 @@ impl TheCodeHighlighterTrait for TheCodeHighlighter {
         self.theme
             .settings
             .selection
+            .map(|color| TheColor::from_u8(color.r, color.g, color.b, color.a))
+    }
+
+    fn match_background(&self) -> Option<TheColor> {
+        self.theme
+            .settings
+            .inactive_selection
+            .map(|color| TheColor::from_u8(color.r, color.g, color.b, color.a))
+    }
+
+    fn active_match_background(&self) -> Option<TheColor> {
+        self.theme
+            .settings
+            .find_highlight
             .map(|color| TheColor::from_u8(color.r, color.g, color.b, color.a))
     }
 

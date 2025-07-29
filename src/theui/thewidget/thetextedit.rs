@@ -968,6 +968,10 @@ pub struct TheTextRenderer {
     pub highlighter: Option<Box<dyn TheCodeHighlighterTrait>>,
     row_info: Vec<TheRowInfo>,
     pub scroll_offset: Vec2<usize>,
+
+    // Matches
+    matches: Vec<(usize, usize)>,
+    highlighted_match: usize,
 }
 
 impl Default for TheTextRenderer {
@@ -990,11 +994,18 @@ impl Default for TheTextRenderer {
             highlighter: None,
             row_info: vec![],
             scroll_offset: Vec2::zero(),
+
+            matches: vec![],
+            highlighted_match: 0,
         }
     }
 }
 
 impl TheTextRenderer {
+    pub fn clear_matches(&mut self) {
+        self.matches.clear();
+    }
+
     pub fn dim(&self) -> TheDim {
         TheDim::new(
             (self.left - self.padding.0) as i32,
@@ -1046,6 +1057,10 @@ impl TheTextRenderer {
             cursor.column += 1;
         }
         cursor
+    }
+
+    pub fn highlight_match(&mut self, highlight_index: usize) {
+        self.highlighted_match = highlight_index;
     }
 
     pub fn is_horizontal_overflow(&self) -> bool {
@@ -1328,6 +1343,10 @@ impl TheTextRenderer {
         self.font_size = font_size;
     }
 
+    pub fn set_matches(&mut self, matches: Vec<(usize, usize)>) {
+        self.matches = matches;
+    }
+
     // Inclusive on both end
     pub fn visible_rows(&self) -> Option<(usize, usize)> {
         if self.row_count() == 0 {
@@ -1467,6 +1486,44 @@ impl TheTextRenderer {
         );
     }
 
+    fn render_matches(
+        &self,
+        row_number: usize,
+        visible_range: (usize, usize),
+        buffer: &mut TheRGBABuffer,
+        style: &mut Box<dyn TheStyle>,
+        draw: &TheDraw2D,
+    ) {
+        for (index, (start, end)) in self.matches.iter().enumerate() {
+            if *end < visible_range.0 {
+                continue;
+            }
+            if *start > visible_range.1 {
+                break;
+            }
+
+            let start = (*start).max(visible_range.0);
+            let end = (*end).min(visible_range.1);
+
+            let color = if index == self.highlighted_match {
+                self.highlighter
+                    .as_ref()
+                    .and_then(|hl| hl.active_match_background())
+                    .map(|color| color.to_u8_array())
+                    // This is temporary
+                    .unwrap_or(*style.theme().color(NodeBorderSelected))
+            } else {
+                self.highlighter
+                    .as_ref()
+                    .and_then(|hl| hl.match_background())
+                    .map(|color| color.to_u8_array())
+                    .unwrap_or(*style.theme().color(DefaultSelection))
+            };
+
+            self.render_text_background(row_number, start, end, buffer, &color, draw);
+        }
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn render_row(
         &self,
@@ -1525,6 +1582,21 @@ impl TheTextRenderer {
                 .map(|c| c.to_u8_array())
                 .unwrap_or(*style.theme().color(TextEditBackground));
 
+            if let Some((start, end)) = selected_range {
+                self.render_selection(row_number, start, end, buffer, style, draw);
+            }
+
+            self.render_matches(
+                row_number,
+                (
+                    glyph_start + visible_text_start_index,
+                    glyph_start + visible_text_end_index,
+                ),
+                buffer,
+                style,
+                draw,
+            );
+
             let mut token_end_in_row = 0;
             for (fg_color, bg_color, token_len) in highlights {
                 let token_start_in_row = token_end_in_row;
@@ -1543,12 +1615,7 @@ impl TheTextRenderer {
                         .then_some((start.max(token_bg_start), end.min(token_bg_end)))
                 });
                 let bg_color = bg_color.to_u8_array();
-                if widget_bg == bg_color {
-                    // Only render selection background
-                    if let Some((start, end)) = selected_range_in_token {
-                        self.render_selection(row_number, start, end, buffer, style, draw);
-                    }
-                } else {
+                if widget_bg != bg_color {
                     // Render original text background,
                     // and blend selection background if needed
                     self.render_text_background(
@@ -1696,6 +1763,17 @@ impl TheTextRenderer {
             if let Some((start, end)) = selected_range {
                 self.render_selection(row_number, start, end, buffer, style, draw);
             }
+
+            self.render_matches(
+                row_number,
+                (
+                    glyph_start + visible_text_start_index,
+                    glyph_start + visible_text_end_index,
+                ),
+                buffer,
+                style,
+                draw,
+            );
 
             let left = left
                 + self

@@ -1521,6 +1521,9 @@ pub trait TheTextAreaEditTrait: TheWidget {
     fn readonly(&mut self, readonly: bool);
     fn use_statusbar(&mut self, use_statusbar: bool);
     fn use_global_statusbar(&mut self, use_global_statusbar: bool);
+    fn set_matches(&mut self, matches: &[(usize, usize)]);
+    fn clear_matches(&mut self);
+    fn highlight_match(&mut self, highlight_index: usize);
 }
 
 impl TheTextAreaEditTrait for TheTextAreaEdit {
@@ -1596,6 +1599,15 @@ impl TheTextAreaEditTrait for TheTextAreaEdit {
             .unwrap_or_default();
         self.modified_since_last_tick = true;
         self.is_dirty = true;
+    }
+    fn set_matches(&mut self, matches: &[(usize, usize)]) {
+        self.renderer.set_matches(matches.to_owned());
+    }
+    fn clear_matches(&mut self) {
+        self.renderer.clear_matches();
+    }
+    fn highlight_match(&mut self, highlight_index: usize) {
+        self.renderer.highlight_match(highlight_index);
     }
 }
 
