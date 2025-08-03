@@ -1841,6 +1841,10 @@ impl TheTextRenderer {
         color: &[u8; 4],
         draw: &TheDraw2D,
     ) {
+        if start == end {
+            return;
+        }
+
         let row = &self.row_info[row_number];
 
         let height = self.row_height() + 2 * self.selection_extend;
