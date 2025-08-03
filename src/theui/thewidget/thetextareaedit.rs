@@ -1524,6 +1524,8 @@ pub trait TheTextAreaEditTrait: TheWidget {
     fn set_matches(&mut self, matches: &[(usize, usize)]);
     fn clear_matches(&mut self);
     fn highlight_match(&mut self, highlight_index: usize);
+    fn set_errors(&mut self, errors: &[(usize, usize)]);
+    fn clear_errors(&mut self);
     fn goto_char_by_index(&mut self, char_index: usize);
     fn goto_line(&mut self, line_number: usize);
 }
@@ -1610,6 +1612,12 @@ impl TheTextAreaEditTrait for TheTextAreaEdit {
     }
     fn highlight_match(&mut self, highlight_index: usize) {
         self.renderer.highlight_match(highlight_index);
+    }
+    fn set_errors(&mut self, errors: &[(usize, usize)]) {
+        self.renderer.set_errors(errors.to_owned());
+    }
+    fn clear_errors(&mut self) {
+        self.renderer.clear_errors();
     }
     fn goto_char_by_index(&mut self, char_index: usize) {
         if self.state.goto_char_by_index(char_index) {

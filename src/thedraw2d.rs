@@ -530,6 +530,31 @@ impl TheDraw2D {
     }
 
     #[allow(clippy::too_many_arguments)]
+    pub fn wavy_line(
+        &self,
+        frame: &mut [u8],
+        left: i32,
+        base: i32,
+        length: usize,
+        amplitude: f32,
+        _period: f32,
+        stride: usize,
+        color: &[u8; 4],
+    ) {
+        for x in left..left + length as i32 {
+            let y = ((x as f32).sin() * amplitude) as i32 + base;
+
+            let i = x * 4 + y * stride as i32 * 4;
+            if i < 0 {
+                continue;
+            }
+
+            let i = i as usize;
+            frame[i..i + 4].copy_from_slice(color);
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
     /// Draws a text aligned inside a rect
     pub fn text_rect(
         &self,

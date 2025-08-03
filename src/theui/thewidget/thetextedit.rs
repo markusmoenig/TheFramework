@@ -996,6 +996,9 @@ pub struct TheTextRenderer {
     // Matches
     matches: Vec<(usize, usize)>,
     highlighted_match: usize,
+
+    // Errors
+    errors: Vec<(usize, usize)>,
 }
 
 impl Default for TheTextRenderer {
@@ -1021,11 +1024,17 @@ impl Default for TheTextRenderer {
 
             matches: vec![],
             highlighted_match: 0,
+
+            errors: vec![],
         }
     }
 }
 
 impl TheTextRenderer {
+    pub fn clear_errors(&mut self) {
+        self.errors.clear();
+    }
+
     pub fn clear_matches(&mut self) {
         self.matches.clear();
     }
@@ -1363,6 +1372,10 @@ impl TheTextRenderer {
         }
     }
 
+    pub fn set_errors(&mut self, errors: Vec<(usize, usize)>) {
+        self.errors = errors;
+    }
+
     pub fn set_font_size(&mut self, font_size: f32) {
         self.font_size = font_size;
     }
@@ -1428,7 +1441,7 @@ impl TheTextRenderer {
     // Inclusive on both end
     // Make sure start and end are on the same row
     fn get_text_width(&self, start: usize, end: usize) -> usize {
-        if self.glyphs.is_empty() {
+        if self.glyphs.is_empty() || start == end {
             return 0;
         }
 
@@ -1508,6 +1521,64 @@ impl TheTextRenderer {
             stride,
             color,
         );
+    }
+
+    fn render_errors(
+        &self,
+        row_number: usize,
+        visible_range: (usize, usize),
+        buffer: &mut TheRGBABuffer,
+        style: &mut Box<dyn TheStyle>,
+        draw: &TheDraw2D,
+    ) {
+        for (start, end) in &self.errors {
+            if *end < visible_range.0 {
+                continue;
+            }
+            if *start > visible_range.1 {
+                break;
+            }
+
+            let row = &self.row_info[row_number];
+
+            let start = (*start).max(visible_range.0);
+            let end = (*end).min(visible_range.1);
+
+            if start == end {
+                return;
+            }
+
+            let width = self.get_text_width(start, end - 1);
+
+            let left = (self.left + self.get_text_left(start)) as i32 - self.scroll_offset.x as i32;
+            let base = (self.top + row.baseline) as i32 - self.scroll_offset.y as i32;
+
+            let right = (left + width.to_i32().unwrap())
+                .max(0)
+                .to_usize()
+                .unwrap()
+                .min(self.left + self.width);
+            let length = right - left.max(0).to_usize().unwrap().max(self.left);
+
+            let color = self
+                .highlighter
+                .as_ref()
+                .and_then(|hl| hl.misspelling())
+                .map(|color| color.to_u8_array())
+                .unwrap_or(*style.theme().color(Red));
+
+            let stride = buffer.stride();
+            draw.wavy_line(
+                buffer.pixels_mut(),
+                left,
+                base,
+                length,
+                2.0,
+                1.0,
+                stride,
+                &color,
+            );
+        }
     }
 
     fn render_matches(
@@ -1595,11 +1666,13 @@ impl TheTextRenderer {
         let top = self.top.to_i32().unwrap() - self.scroll_offset.y.to_i32().unwrap()
             + row.top.to_i32().unwrap();
 
+        // Selections
         let selected_range = state.find_selected_range_of_row(row_number);
         if let Some((start, end)) = selected_range {
             self.render_selection(row_number, start, end, buffer, style, draw);
         }
 
+        // Matches
         self.render_matches(
             row_number,
             (
@@ -1611,6 +1684,19 @@ impl TheTextRenderer {
             draw,
         );
 
+        // Errors
+        self.render_errors(
+            row_number,
+            (
+                glyph_start + visible_text_start_index,
+                glyph_start + visible_text_end_index,
+            ),
+            buffer,
+            style,
+            draw,
+        );
+
+        // Tokens
         let text = &state.rows[row_number];
         let stride = buffer.stride();
         if let Some(highlights) = &row.highlights {
