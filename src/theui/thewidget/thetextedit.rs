@@ -237,6 +237,30 @@ impl TheTextEditState {
         index
     }
 
+    pub fn goto_char_by_index(&mut self, char_index: usize) -> bool {
+        let char_index =
+            char_index.min(self.find_range_of_row(self.row_count().saturating_sub(1)).1);
+        let (row, column) = self.find_row_col_of_index(char_index);
+
+        let new_cursor = TheCursor::new(row, column);
+        if self.cursor == new_cursor {
+            return false;
+        }
+
+        self.cursor = new_cursor;
+        true
+    }
+
+    pub fn goto_row(&mut self, row_number: usize) -> bool {
+        let row_number = row_number.min(self.row_count().saturating_sub(1));
+        if row_number == self.cursor.row {
+            return false;
+        }
+
+        let char_index = self.find_start_index_of_row(row_number);
+        self.goto_char_by_index(char_index)
+    }
+
     pub fn indent(&mut self) -> bool {
         if self.selection.is_none() {
             self.rows[self.cursor.row].insert_str(0, &(" ".repeat(self.tab_spaces)));
