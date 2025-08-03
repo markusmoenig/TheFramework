@@ -46,6 +46,7 @@ pub trait TheCodeHighlighterTrait: Send {
     fn selection_background(&self) -> Option<TheColor>;
     fn match_background(&self) -> Option<TheColor>;
     fn active_match_background(&self) -> Option<TheColor>;
+    fn misspelling(&self) -> Option<TheColor>;
 
     fn highlight_line(
         &self,
@@ -139,6 +140,13 @@ impl TheCodeHighlighterTrait for TheCodeHighlighter {
         self.theme
             .settings
             .find_highlight
+            .map(|color| TheColor::from_u8(color.r, color.g, color.b, color.a))
+    }
+
+    fn misspelling(&self) -> Option<TheColor> {
+        self.theme
+            .settings
+            .misspelling
             .map(|color| TheColor::from_u8(color.r, color.g, color.b, color.a))
     }
 
