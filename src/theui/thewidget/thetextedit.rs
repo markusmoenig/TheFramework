@@ -1596,6 +1596,21 @@ impl TheTextRenderer {
             + row.top.to_i32().unwrap();
 
         let selected_range = state.find_selected_range_of_row(row_number);
+        if let Some((start, end)) = selected_range {
+            self.render_selection(row_number, start, end, buffer, style, draw);
+        }
+
+        self.render_matches(
+            row_number,
+            (
+                glyph_start + visible_text_start_index,
+                glyph_start + visible_text_end_index,
+            ),
+            buffer,
+            style,
+            draw,
+        );
+
         let text = &state.rows[row_number];
         let stride = buffer.stride();
         if let Some(highlights) = &row.highlights {
@@ -1605,21 +1620,6 @@ impl TheTextRenderer {
                 .and_then(|h| h.background())
                 .map(|c| c.to_u8_array())
                 .unwrap_or(*style.theme().color(TextEditBackground));
-
-            if let Some((start, end)) = selected_range {
-                self.render_selection(row_number, start, end, buffer, style, draw);
-            }
-
-            self.render_matches(
-                row_number,
-                (
-                    glyph_start + visible_text_start_index,
-                    glyph_start + visible_text_end_index,
-                ),
-                buffer,
-                style,
-                draw,
-            );
 
             let mut token_end_in_row = 0;
             for (fg_color, bg_color, token_len) in highlights {
@@ -1784,21 +1784,6 @@ impl TheTextRenderer {
                 }
             }
         } else {
-            if let Some((start, end)) = selected_range {
-                self.render_selection(row_number, start, end, buffer, style, draw);
-            }
-
-            self.render_matches(
-                row_number,
-                (
-                    glyph_start + visible_text_start_index,
-                    glyph_start + visible_text_end_index,
-                ),
-                buffer,
-                style,
-                draw,
-            );
-
             let left = left
                 + self
                     .get_text_left(glyph_start + visible_text_start_index)
