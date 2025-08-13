@@ -561,36 +561,38 @@ impl TheApp {
 
                     // Resize the window
                     if let Some(size) = input.window_resized() {
-                        let scale = window.scale_factor() as f32;
+                        if size.width != 0 && size.height != 0 {
+                            let scale = window.scale_factor() as f32;
 
-                        #[cfg(feature = "gpu")]
-                        ctx.gpu.resize(size.width, size.height);
-                        #[cfg(feature = "gpu")]
-                        ctx.gpu.set_scale_factor(scale);
+                            #[cfg(feature = "gpu")]
+                            ctx.gpu.resize(size.width, size.height);
+                            #[cfg(feature = "gpu")]
+                            ctx.gpu.set_scale_factor(scale);
 
-                        #[cfg(feature = "cpu_render")]
-                        ctx.surface
-                            .resize(
-                                NonZeroU32::new(size.width).unwrap(),
-                                NonZeroU32::new(size.height).unwrap(),
-                            )
-                            .unwrap();
+                            #[cfg(feature = "cpu_render")]
+                            ctx.surface
+                                .resize(
+                                    NonZeroU32::new(size.width).unwrap(),
+                                    NonZeroU32::new(size.height).unwrap(),
+                                )
+                                .unwrap();
 
-                        width = (size.width as f32 / scale) as usize;
-                        height = (size.height as f32 / scale) as usize;
-                        ctx.width = width;
-                        ctx.height = height;
-                        ctx.scale_factor = scale;
+                            width = (size.width as f32 / scale) as usize;
+                            height = (size.height as f32 / scale) as usize;
+                            ctx.width = width;
+                            ctx.height = height;
+                            ctx.scale_factor = scale;
 
-                        ui_frame.resize(width * height * 4, 0);
+                            ui_frame.resize(width * height * 4, 0);
 
-                        #[cfg(feature = "ui")]
-                        ui.canvas
-                            .set_dim(TheDim::new(0, 0, width as i32, height as i32), &mut ctx);
-                        #[cfg(feature = "ui")]
-                        ctx.ui.send(TheEvent::Resize);
+                            #[cfg(feature = "ui")]
+                            ui.canvas
+                                .set_dim(TheDim::new(0, 0, width as i32, height as i32), &mut ctx);
+                            #[cfg(feature = "ui")]
+                            ctx.ui.send(TheEvent::Resize);
 
-                        window.request_redraw();
+                            window.request_redraw();
+                        }
                     }
 
                     #[cfg(feature = "ui")]
