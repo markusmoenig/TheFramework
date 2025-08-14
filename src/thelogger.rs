@@ -1,4 +1,5 @@
 use log::LevelFilter;
+#[cfg(not(target_arch = "wasm32"))]
 use log4rs::{
     append::rolling_file::{
         policy::compound::{
@@ -10,6 +11,7 @@ use log4rs::{
     Config,
 };
 
+#[cfg(not(target_arch = "wasm32"))]
 fn setup_logfile() {
     let roller = FixedWindowRoller::builder()
         .build("panic.{}.log", 3)
