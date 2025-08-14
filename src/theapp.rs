@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use std::time::{Duration, Instant};
+use web_time::{Duration, Instant};
 
 #[cfg(feature = "cpu_render")]
 pub fn translate_coord_to_local(x: u32, y: u32, scale_factor: f32) -> (u32, u32) {
@@ -157,7 +157,10 @@ impl TheApp {
                             last_frame_time = now;
                             window.request_redraw();
                         } else {
-                            std::thread::sleep(target_frame_time - elapsed);
+                            #[cfg(not(target_arch = "wasm32"))]
+                            {
+                                std::thread::sleep(target_frame_time - elapsed);
+                            }
                         }
 
                         elwt.set_control_flow(ControlFlow::Poll);
