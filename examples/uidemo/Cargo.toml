@@ -4,10 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-theframework = { path = "../..", default-features = true, features = [
-    "ui",
-    "winit_app",
-] }
+theframework = { path = "../..", default-features = true, features = ["ui"] }
 lazy_static = "1.4.0"
 rust-pathtracer = "0.2.4"
 # rust-pathtracer = { path = "../../../rust-pathtracer/rust-pathtracer" }
