@@ -5,4 +5,7 @@ edition = "2021"
 
 [dependencies]
 image = "0.25"
-theframework = { path = "../..", features = ["ui"] }
+theframework = { path = "../..", default-features = false, features = [
+    "gpu_winit",
+    "ui",
+] }

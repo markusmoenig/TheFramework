@@ -45,6 +45,7 @@ bytemuck = { version = "1.18.0", features = ["derive"], optional = true }
 itertools = { version = "0.13.0", optional = true }
 softbuffer = { version = "0.4.6", optional = true }
 web-time = "1.1.0"
+pixels = { version = "0.15", optional = true }
 
 [dependencies.uuid]
 version = "1.1.2"
@@ -90,11 +91,13 @@ log = ["log4rs"]
 
 cpu_render = ["softbuffer"]
 gpu_render = ["gpu"]
+pixels_render = ["pixels"]
 
 cpu_winit = ["winit_app", "cpu_render"]
 gpu_winit = ["winit_app", "gpu_render"]
+pixels_winit = ["winit_app", "pixels_render"]
 
-default = ["gpu_winit"]
+default = ["pixels_winit"]
 
 [workspace]
 members = ["examples/*", "run-wasm"]
