@@ -49,6 +49,8 @@ impl TheApp {
     }
 }
 
+#[allow(unused_assignments)]
+#[allow(unused_variables)]
 #[cfg(feature = "winit_app")]
 async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
     #[cfg(feature = "cpu_render")]

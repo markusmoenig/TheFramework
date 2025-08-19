@@ -8,6 +8,7 @@ pub struct TheRenderView {
     render_buffer: TheRGBABuffer,
     wheel_scale: f32,
     accumulated_wheel_delta: Vec2<f32>,
+    context_menu: Option<TheContextMenu>,
 
     dim: TheDim,
 
@@ -29,6 +30,7 @@ impl TheWidget for TheRenderView {
             render_buffer: TheRGBABuffer::new(TheDim::new(0, 0, 20, 20)),
             wheel_scale: -0.4,
             accumulated_wheel_delta: Vec2::zero(),
+            context_menu: None,
 
             dim: TheDim::zero(),
 
@@ -45,6 +47,18 @@ impl TheWidget for TheRenderView {
         let mut redraw = false;
         // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
+            TheEvent::Context(coord) => {
+                if let Some(context_menu) = &self.context_menu {
+                    ctx.ui.send(TheEvent::ShowContextMenu(
+                        self.id().clone(),
+                        *coord,
+                        context_menu.clone(),
+                    ));
+                } else {
+                    ctx.ui
+                        .send(TheEvent::RenderViewContext(self.id().clone(), *coord));
+                }
+            }
             TheEvent::MouseDown(coord) => {
                 if self.state == TheWidgetState::Selected {
                     self.state = TheWidgetState::None;
@@ -152,6 +166,10 @@ impl TheWidget for TheRenderView {
     fn set_state(&mut self, state: TheWidgetState) {
         self.state = state;
         self.is_dirty = true;
+    }
+
+    fn set_context_menu(&mut self, menu: Option<TheContextMenu>) {
+        self.context_menu = menu;
     }
 
     fn limiter(&self) -> &TheSizeLimiter {
