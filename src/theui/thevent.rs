@@ -127,6 +127,10 @@ pub enum TheEvent {
     // Undo / Redo, mostly only for TheTextAreaEdit.
     Undo,
     Redo,
+
     // Custom event for applications.
     Custom(TheId, TheValue),
+
+    // Custom Undo Event
+    CustomUndo(TheId, String, String),
 }
