@@ -27,7 +27,7 @@ rust-embed = { version = "8", default-features = true, features = [
 png = "0.17"
 rustc-hash = "1.1.0"
 rfd = { version = "0.13", optional = true }
-futures = { version = "0.3", optional = true }
+futures = { version = "0.3" }
 serde = { version = "1.0", features = ["derive"], optional = false }
 serde_json = { version = "1.0", optional = false }
 flate2 = { version = "1.0" }
@@ -83,10 +83,10 @@ web-sys = { version = "0.3", features = ["GpuTextureFormat", "Performance"] }
 wgpu = { version = "22.1", features = ["webgl"] }
 
 [features]
-ui = ["futures", "rfd", "rayon", "zeno"]
+ui = ["rfd", "rayon", "zeno"]
 code = []
 winit_app = ["winit", "winit_input_helper"]
-gpu = ["aict", "bytemuck", "futures", "itertools", "wgpu"]
+gpu = ["aict", "bytemuck", "itertools", "wgpu"]
 log = ["log4rs"]
 
 cpu_render = ["softbuffer"]
