@@ -311,9 +311,9 @@ impl TheWidget for TheTextAreaEdit {
                     redraw = true;
                     update_status = true;
 
-                    if self.continuous {
-                        self.emit_value_changed(ctx);
-                    }
+                    // if self.continuous {
+                    //     self.emit_value_changed(ctx);
+                    // }
 
                     let mut undo = TheUndo::new(TheId::named("Cut"));
                     undo.set_undo_data(prev_state);

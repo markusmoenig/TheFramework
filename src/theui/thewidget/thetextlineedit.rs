@@ -1,3 +1,6 @@
+#[cfg(not(target_arch = "wasm32"))]
+use arboard::Clipboard;
+
 use num_traits::ToPrimitive;
 use web_time::Instant;
 
@@ -57,6 +60,8 @@ pub struct TheTextLineEdit {
     info_text: Option<String>,
 
     palette: Option<ThePalette>,
+
+    undo_stack: TheUndoStack,
 }
 
 impl TheWidget for TheTextLineEdit {
@@ -104,6 +109,7 @@ impl TheWidget for TheTextLineEdit {
             info_text: None,
 
             palette: None,
+            undo_stack: TheUndoStack::default(),
         }
     }
 
@@ -167,6 +173,14 @@ impl TheWidget for TheTextLineEdit {
     }
 
     fn supports_text_input(&mut self) -> bool {
+        true
+    }
+
+    fn supports_clipboard(&mut self) -> bool {
+        true
+    }
+
+    fn supports_undo_redo(&mut self) -> bool {
         true
     }
 
@@ -329,6 +343,8 @@ impl TheWidget for TheTextLineEdit {
                 }
             }
             TheEvent::KeyDown(key) => {
+                let prev_state = self.state.save();
+
                 if let Some(c) = key.to_char() {
                     if self.modifier_ctrl && c == 'a' {
                         self.state.select_all();
@@ -353,8 +369,16 @@ impl TheWidget for TheTextLineEdit {
                         }
                     }
                 }
+
+                if self.is_dirty {
+                    let mut undo = TheUndo::new(TheId::named("Input"));
+                    undo.set_undo_data(prev_state);
+                    undo.set_redo_data(self.state.save());
+                    self.undo_stack.add(undo);
+                }
             }
             TheEvent::KeyCodeDown(key_code) => {
+                let prev_state = self.state.save();
                 if let Some(key) = key_code.to_key_code() {
                     match key {
                         TheKeyCode::Return => {
@@ -579,6 +603,12 @@ impl TheWidget for TheTextLineEdit {
                         }
                     }
                 }
+                if self.is_dirty {
+                    let mut undo = TheUndo::new(TheId::named("Input"));
+                    undo.set_undo_data(prev_state);
+                    undo.set_redo_data(self.state.save());
+                    self.undo_stack.add(undo);
+                }
             }
             TheEvent::LostFocus(_id) => {
                 if self.modified_since_last_return {
@@ -598,9 +628,116 @@ impl TheWidget for TheTextLineEdit {
                     ctx.ui.set_hover(self.id());
                 }
             }
-            // TheEvent::ModifierChanged(a, b, c, d) => {
-            //     println!("{}{}{}{}", a, b, c, d);
-            // }
+            TheEvent::Undo => {
+                if self.undo_stack.has_undo() {
+                    let (_id, state) = self.undo_stack.undo();
+                    self.state = TheTextEditState::load(&state);
+                    self.modified_since_last_tick = true;
+                    self.is_dirty = true;
+                    redraw = true;
+                }
+            }
+            TheEvent::Redo => {
+                if self.undo_stack.has_redo() {
+                    let (_id, state) = self.undo_stack.redo();
+                    self.state = TheTextEditState::load(&state);
+                    self.modified_since_last_tick = true;
+                    self.is_dirty = true;
+                    redraw = true;
+                }
+            }
+            TheEvent::Copy => {
+                let text = self.state.cut_text();
+                if !text.is_empty() {
+                    let (start, end) = self.state.insert_text(text.clone());
+                    self.state.select(start, end);
+                    self.modified_since_last_tick = true;
+                    self.is_dirty = true;
+                    redraw = true;
+                    // update_status = true;
+
+                    #[cfg(not(target_arch = "wasm32"))]
+                    {
+                        let mut clipboard = Clipboard::new().unwrap();
+                        clipboard.set_text(text.clone()).unwrap();
+                    }
+
+                    ctx.ui
+                        .send(TheEvent::SetClipboard(TheValue::Text(text), None));
+                }
+            }
+            TheEvent::Cut => {
+                let prev_state = self.state.save();
+                let text = self.state.cut_text();
+                if !text.is_empty() {
+                    self.modified_since_last_tick = true;
+                    self.is_dirty = true;
+                    redraw = true;
+
+                    #[cfg(not(target_arch = "wasm32"))]
+                    {
+                        let mut clipboard = Clipboard::new().unwrap();
+                        clipboard.set_text(text.clone()).unwrap();
+                    }
+
+                    ctx.ui
+                        .send(TheEvent::SetClipboard(TheValue::Text(text), None));
+
+                    let mut undo = TheUndo::new(TheId::named("Cut"));
+                    undo.set_undo_data(prev_state);
+                    undo.set_redo_data(self.state.save());
+                    self.undo_stack.add(undo);
+
+                    if self.continuous {
+                        ctx.ui.send_widget_value_changed(self.id(), self.value());
+                    }
+                }
+            }
+            TheEvent::Paste(_value, _) => {
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    let mut clipboard = Clipboard::new().unwrap();
+                    let text = clipboard.get_text().unwrap();
+
+                    let prev_state = self.state.save();
+
+                    self.state.insert_text(text);
+                    self.modified_since_last_tick = true;
+                    self.is_dirty = true;
+                    redraw = true;
+
+                    let mut undo = TheUndo::new(TheId::named("Cut"));
+                    undo.set_undo_data(prev_state);
+                    undo.set_redo_data(self.state.save());
+                    self.undo_stack.add(undo);
+
+                    if self.continuous {
+                        ctx.ui.send_widget_value_changed(self.id(), self.value());
+                    }
+                }
+
+                #[cfg(target_arch = "wasm32")]
+                {
+                    let prev_state = self.state.save();
+
+                    if let Some(text) = _value.to_string() {
+                        self.state.insert_text(text);
+                        self.modified_since_last_tick = true;
+                        self.is_dirty = true;
+                        redraw = true;
+                        update_status = true;
+
+                        if self.continuous {
+                            self.emit_value_changed(ctx);
+                        }
+
+                        let mut undo = TheUndo::new(TheId::named("Cut"));
+                        undo.set_undo_data(prev_state);
+                        undo.set_redo_data(self.state.save());
+                        self.undo_stack.add(undo);
+                    }
+                }
+            }
             _ => {}
         }
         redraw
@@ -668,6 +805,7 @@ impl TheWidget for TheTextLineEdit {
             }
             _ => {}
         }
+        self.undo_stack.clear();
     }
 
     fn draw(
