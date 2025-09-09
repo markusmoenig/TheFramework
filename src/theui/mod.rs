@@ -2,7 +2,6 @@ pub mod thecanvas;
 pub mod thecodehighlighter;
 pub mod thecollection;
 pub mod thecontextmenu;
-pub mod thecurrency;
 pub mod thedrop;
 pub mod theflattenedmap;
 pub mod theid;
@@ -72,9 +71,6 @@ pub mod prelude {
 
     pub use crate::theui::theid::TheId;
 
-    #[cfg(feature = "code")]
-    pub use crate::thecode::prelude::*;
-
     pub use crate::theui::thecanvas::*;
     pub use crate::theui::thecodehighlighter::{TheCodeHighlighter, TheCodeHighlighterTrait};
 
@@ -108,7 +104,6 @@ pub mod prelude {
 
     pub use crate::str;
     pub use crate::theui::thecollection::TheCollection;
-    pub use crate::theui::thecurrency::TheCurrency;
     pub use crate::theui::theflattenedmap::{TheFlattenedMap, TheFlattenedMap3D};
     pub use crate::theui::thetilemask::TheTileMask;
     pub use crate::theui::thetimeline::{TheInterpolation, TheTimeline};
@@ -1254,15 +1249,6 @@ impl TheUI {
     pub fn get_node_canvas_view(&mut self, name: &str) -> Option<&mut dyn TheNodeCanvasViewTrait> {
         if let Some(view) = self.canvas.get_widget(Some(&name.to_string()), None) {
             return view.as_node_canvas_view();
-        }
-        None
-    }
-
-    /// Gets a given TheRGBALayout by name
-    #[cfg(feature = "code")]
-    pub fn get_code_layout(&mut self, name: &str) -> Option<&mut dyn TheCodeLayoutTrait> {
-        if let Some(layout) = self.canvas.get_layout(Some(&name.to_string()), None) {
-            return layout.as_code_layout();
         }
         None
     }

@@ -102,8 +102,6 @@ pub enum TheValue {
     TimeDuration(TheTime, TheTime),
     TileMask(TheTileMask),
     Image(TheRGBABuffer),
-    #[cfg(feature = "code")]
-    CodeObject(TheCodeObject),
 }
 
 use TheValue::*;
@@ -266,8 +264,6 @@ impl TheValue {
             Position(v) => format!("Position: {:?}", v),
             Tile(_v, _id) => "Tile".to_string(),
             Char(c) => c.to_string(),
-            #[cfg(feature = "code")]
-            CodeObject(_) => "Object".to_string(),
             List(_) => "List".to_string(),
             KeyCode(k) => format!("KeyCode: {:?}", k),
             RangeI32(r) => format!("RangeI32: {:?}", r),
@@ -315,8 +311,6 @@ impl TheValue {
             Position(v) => format!("({}, {})", v.x, v.z),
             Tile(name, _id) => name.clone(),
             Char(c) => c.to_string(),
-            #[cfg(feature = "code")]
-            CodeObject(_) => "Object".to_string(),
             List(list) => format!("List ({})", list.len()),
             KeyCode(k) => format!("KeyCode: {:?}", k),
             RangeI32(r) => format!("RangeI32: {:?}", r),

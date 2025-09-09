@@ -1591,16 +1591,20 @@ impl TheTextAreaEditTrait for TheTextAreaEdit {
         self.is_dirty = true;
     }
     fn use_statusbar(&mut self, use_statusbar: bool) {
-        self.statusbar_type = use_statusbar
-            .then_some(StatusbarType::Widget(TheDim::zero()))
-            .unwrap_or_default();
+        if use_statusbar {
+            self.statusbar_type = StatusbarType::Widget(TheDim::zero());
+        } else {
+            self.statusbar_type = StatusbarType::None;
+        }
         self.modified_since_last_tick = true;
         self.is_dirty = true;
     }
     fn use_global_statusbar(&mut self, use_global_statusbar: bool) {
-        self.statusbar_type = use_global_statusbar
-            .then_some(StatusbarType::Global)
-            .unwrap_or_default();
+        if use_global_statusbar {
+            self.statusbar_type = StatusbarType::Global;
+        } else {
+            self.statusbar_type = StatusbarType::None;
+        }
         self.modified_since_last_tick = true;
         self.is_dirty = true;
     }

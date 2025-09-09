@@ -384,7 +384,7 @@ impl TheListLayoutTrait for TheListLayout {
     }
     fn scroll_by(&mut self, delta: Vec2<i32>) {
         if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
-            scroll_bar.scroll_by(((delta.y as f32) * -1.0) as i32);
+            scroll_bar.scroll_by(-delta.y);
         }
     }
 }

@@ -1,7 +1,5 @@
 use crate::prelude::*;
 
-#[cfg(feature = "code")]
-pub mod thecodelayout;
 pub mod thehlayout;
 pub mod thelistlayout;
 pub mod thergbalayout;
@@ -15,8 +13,6 @@ pub mod thetextlayout;
 pub mod thevlayout;
 
 pub mod prelude {
-    #[cfg(feature = "code")]
-    pub use crate::theui::thelayout::thecodelayout::{TheCodeLayout, TheCodeLayoutTrait};
     pub use crate::theui::thelayout::thehlayout::{TheHLayout, TheHLayoutMode, TheHLayoutTrait};
     pub use crate::theui::thelayout::thelistlayout::{TheListLayout, TheListLayoutTrait};
     pub use crate::theui::thelayout::thergbalayout::{TheRGBALayout, TheRGBALayoutTrait};
@@ -160,12 +156,6 @@ pub trait TheLayout: Send {
 
     /// Attempts to cast to TheTextLayout. Only valid for TheTextLayout.
     fn as_text_layout(&mut self) -> Option<&mut dyn TheTextLayoutTrait> {
-        None
-    }
-
-    /// Attempts to cast to TheCodeLayoutTrait. Only valid for TheCodeLayout.
-    #[cfg(feature = "code")]
-    fn as_code_layout(&mut self) -> Option<&mut dyn TheCodeLayoutTrait> {
         None
     }
 }

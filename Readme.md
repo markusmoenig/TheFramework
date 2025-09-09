@@ -24,13 +24,6 @@ I use TheFramework with the UI option for my own apps and games, notably [Eldiro
 
 A dedicated demo and documentation website will come soon.
 
-### Option: code
-
-The **code** option adds a unique and powerful visual scripting system to TheFramework.
-
-* Easy-to-use via drag and drop.
-* Very fast as it compiles to native closures.
-
 ### Current Backends
 
 * *Desktops* via [pixels](https://github.com/parasyte/pixels) and [winit](https://github.com/rust-windowing/winit). This is the default backend.

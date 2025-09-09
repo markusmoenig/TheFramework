@@ -96,6 +96,11 @@ impl TheNodeUI {
         self.items.len()
     }
 
+    /// Returns true if there are no items.
+    pub fn is_empty(&self) -> bool {
+        self.items.is_empty()
+    }
+
     /// Get an i32 value.
     pub fn get_i32_value(&self, id: &str) -> Option<i32> {
         for (item_id, item) in &self.items {

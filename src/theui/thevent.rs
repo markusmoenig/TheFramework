@@ -66,14 +66,6 @@ pub enum TheEvent {
     RenderViewDrop(TheId, Vec2<i32>, TheDrop),
     RenderViewContext(TheId, Vec2<i32>),
 
-    // CodeEditor
-    #[cfg(feature = "code")]
-    CodeEditorSelectionChanged(TheId, Option<(u16, u16)>),
-    #[cfg(feature = "code")]
-    CodeEditorChanged(TheId, TheCodeGrid),
-    #[cfg(feature = "code")]
-    CodeBundleChanged(TheCodeBundle, bool),
-
     // Timeline
     TimelineMarkerSelected(TheId, TheTime),
 
