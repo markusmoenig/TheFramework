@@ -24,6 +24,7 @@ pub trait TheTrait {
         None
     }
 
+    fn set_cmd_line_args_early(&mut self, args: Vec<String>) {}
     fn set_cmd_line_args(&mut self, args: Vec<String>, ctx: &mut TheContext) {}
 
     #[cfg(feature = "ui")]
