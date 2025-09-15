@@ -656,8 +656,10 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                         #[cfg(feature = "pixels_render")]
                         {
                             let _rc = pixels.resize_surface(size.width, size.height);
-                            let scale = window.scale_factor() as u32;
-                            let _rc = pixels.resize_buffer(size.width / scale, size.height / scale);
+                            let _rc = pixels.resize_buffer(
+                                (size.width as f32 / scale) as u32,
+                                (size.height as f32 / scale) as u32,
+                            );
                         }
 
                         width = (size.width as f32 / scale) as usize;
