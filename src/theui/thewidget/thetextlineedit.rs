@@ -725,7 +725,7 @@ impl TheWidget for TheTextLineEdit {
                         self.modified_since_last_tick = true;
                         self.is_dirty = true;
                         redraw = true;
-                        update_status = true;
+                        // update_status = true;
 
                         if self.continuous {
                             self.emit_value_changed(ctx);
