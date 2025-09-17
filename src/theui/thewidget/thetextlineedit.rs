@@ -725,10 +725,9 @@ impl TheWidget for TheTextLineEdit {
                         self.modified_since_last_tick = true;
                         self.is_dirty = true;
                         redraw = true;
-                        // update_status = true;
 
                         if self.continuous {
-                            self.emit_value_changed(ctx);
+                            ctx.ui.send_widget_value_changed(self.id(), self.value());
                         }
 
                         let mut undo = TheUndo::new(TheId::named("Cut"));
