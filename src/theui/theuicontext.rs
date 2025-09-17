@@ -3,7 +3,10 @@ use crate::Embedded;
 use fontdue::Font;
 
 use std::path::PathBuf;
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{Receiver, Sender};
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::sync::mpsc::{self};
 
 /// TheFileExtension is used to specify supported file extensions in the load and save file requesters.
 pub struct TheFileExtension {
