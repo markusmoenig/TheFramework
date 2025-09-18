@@ -260,7 +260,8 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                         #[cfg(feature = "ui")]
                         ui.draw(&mut ui_frame, &mut ctx);
 
-                        #[cfg(not(feature = "ui"))]
+                        // We always call this for apps who use the "ui" feature
+                        // but do not use the UI API
                         app.draw(&mut ui_frame, &mut ctx);
 
                         #[cfg(feature = "gpu_winit")]
