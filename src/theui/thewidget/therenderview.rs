@@ -12,6 +12,7 @@ pub struct TheRenderView {
 
     dim: TheDim,
 
+    mouse_is_down: bool,
     is_dirty: bool,
 }
 
@@ -34,6 +35,7 @@ impl TheWidget for TheRenderView {
 
             dim: TheDim::zero(),
 
+            mouse_is_down: false,
             is_dirty: false,
         }
     }
@@ -73,15 +75,21 @@ impl TheWidget for TheRenderView {
                     .send(TheEvent::RenderViewClicked(self.id().clone(), *coord));
 
                 self.is_dirty = true;
+                self.mouse_is_down = true;
                 redraw = true;
             }
             TheEvent::MouseDragged(coord) => {
-                ctx.ui
-                    .send(TheEvent::RenderViewDragged(self.id().clone(), *coord));
+                if self.mouse_is_down {
+                    ctx.ui
+                        .send(TheEvent::RenderViewDragged(self.id().clone(), *coord));
+                }
             }
             TheEvent::MouseUp(coord) => {
-                ctx.ui
-                    .send(TheEvent::RenderViewUp(self.id().clone(), *coord));
+                if self.mouse_is_down {
+                    ctx.ui
+                        .send(TheEvent::RenderViewUp(self.id().clone(), *coord));
+                }
+                self.mouse_is_down = false;
             }
             TheEvent::Hover(coord) => {
                 if !self.id().equals(&ctx.ui.hover) {
