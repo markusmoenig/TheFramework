@@ -34,6 +34,16 @@ impl ThePalette {
         }
     }
 
+    /// Test if the palette is empty
+    pub fn is_empty(&self) -> bool {
+        for v in self.colors.iter() {
+            if v.is_some() {
+                return false;
+            }
+        }
+        true
+    }
+
     /// Get the color at the current index
     pub fn get_current_color(&self) -> Option<TheColor> {
         self.colors[self.current_index as usize].clone()
