@@ -6,6 +6,9 @@ use fontdue::layout::{
 use png::{BitDepth, ColorType, Encoder};
 use std::ops::{Index, IndexMut, Range};
 
+use rayon::prelude::*;
+use rayon::slice::ParallelSliceMut;
+
 #[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Debug)]
 pub struct TheRGBABuffer {
     dim: TheDim,
@@ -187,7 +190,107 @@ impl TheRGBABuffer {
         }
     }
 
-    /// Blend the other buffer into this buffer at the given coordinates.
+    /// Parallel version of `copy_into` using Rayon. Has identical clipping/safety behavior.
+    /// Enabled when the `rayon` feature is on. When the feature is off, it falls back to the serial version.
+    pub fn copy_into_par(&mut self, mut x: i32, mut y: i32, other: &TheRGBABuffer) {
+        // Early return if the whole other buffer is outside this buffer
+        if x + other.dim.width <= 0
+            || y + other.dim.height <= 0
+            || x >= self.dim.width
+            || y >= self.dim.height
+        {
+            return;
+        }
+
+        // Adjust source and destination coordinates and dimensions (same as serial)
+        let mut source_offset_x: usize = 0;
+        let mut source_y_start: i32 = 0;
+        let mut copy_width: i32 = other.dim.width;
+        let mut copy_height: i32 = other.dim.height;
+
+        if x < 0 {
+            source_offset_x = (-x * 4) as usize;
+            copy_width += x;
+            x = 0;
+        }
+        if y < 0 {
+            source_y_start = -y;
+            copy_height += y;
+            y = 0;
+        }
+        if x + copy_width > self.dim.width {
+            copy_width = self.dim.width - x;
+        }
+        if y + copy_height > self.dim.height {
+            copy_height = self.dim.height - y;
+        }
+
+        if copy_width <= 0 || copy_height <= 0 {
+            return;
+        }
+
+        let byte_width: usize = (copy_width * 4) as usize;
+        let dst_row_stride: usize = (self.dim.width * 4) as usize;
+        let src_row_stride: usize = (other.dim.width * 4) as usize;
+
+        // FAST PATH: if we copy whole rows at x==0 and the copy width equals the destination stride,
+        // do a single contiguous memcpy instead of per-row copies.
+        if x == 0 && byte_width == dst_row_stride {
+            let rows = copy_height as usize;
+            let src_first = (source_y_start as usize) * src_row_stride + 0;
+            let dst_first = (y as usize) * dst_row_stride + 0;
+            let total = rows * dst_row_stride;
+            // Bounds are guaranteed by previous clipping logic
+            self.buffer[dst_first..dst_first + total]
+                .copy_from_slice(&other.buffer[src_first..src_first + total]);
+            return;
+        }
+
+        // Heuristic: only parallelize *very* large blits; otherwise single-threaded is faster and cooler.
+        let total_bytes = byte_width.saturating_mul(copy_height as usize);
+        const PAR_THRESHOLD: usize = 2 * 1024 * 1024; // 2 MiB
+        if total_bytes < PAR_THRESHOLD {
+            return self.copy_into(x, y, other);
+        }
+
+        // Parallel over destination rows using disjoint mutable chunks.
+        // Batch multiple rows per job to reduce scheduling overhead & improve cache locality.
+        let row_off = y.max(0) as usize;
+        let row_cnt = copy_height as usize;
+        let dst_start_bytes = row_off * dst_row_stride;
+        let dst_end_bytes = dst_start_bytes + row_cnt * dst_row_stride;
+        let batches = 64; // rows per batch (bigger batches -> fewer tasks -> lower overhead)
+
+        self.buffer[dst_start_bytes..dst_end_bytes]
+            .par_chunks_mut(dst_row_stride * batches)
+            .enumerate()
+            .for_each(|(batch_idx, dst_block)| {
+                // number of rows in this batch
+                let rows_in_batch = dst_block.len() / dst_row_stride;
+                let base_row = batch_idx * batches;
+
+                for r in 0..rows_in_batch {
+                    let i = base_row + r; // row index within the full region [0..row_cnt)
+                                          // Bounds guard (last batch may be partial)
+                    if i >= row_cnt {
+                        break;
+                    }
+
+                    let src_y = (source_y_start as usize) + i;
+                    let src_row =
+                        &other.buffer[src_y * src_row_stride..(src_y + 1) * src_row_stride];
+
+                    let src_slice = &src_row[source_offset_x..source_offset_x + byte_width];
+                    let dst_x_off = (x as usize) * 4;
+                    let dst_row = &mut dst_block[r * dst_row_stride..(r + 1) * dst_row_stride];
+                    let dst_slice = &mut dst_row[dst_x_off..dst_x_off + byte_width];
+
+                    dst_slice.copy_from_slice(src_slice);
+                }
+            });
+    }
+
+    /// Blend the other buffer into this buffer at the given coordinates (single-threaded reference path).
     pub fn blend_into(&mut self, mut x: i32, mut y: i32, other: &TheRGBABuffer) {
         // Early return if the whole other buffer is outside this buffer
         if x + other.dim.width <= 0
@@ -253,6 +356,111 @@ impl TheRGBABuffer {
                     (src_pixel[3] as f32 * src_alpha + dst_pixel[3] as f32 * inv_alpha) as u8;
             }
         }
+    }
+
+    /// Blend the other buffer into this buffer at the given coordinates (adaptive parallel version).
+    /// Falls back to the single-threaded path for small regions to avoid overhead.
+    pub fn blend_into_par(&mut self, mut x: i32, mut y: i32, other: &TheRGBABuffer) {
+        // Early out if completely outside
+        if x + other.dim.width <= 0
+            || y + other.dim.height <= 0
+            || x >= self.dim.width
+            || y >= self.dim.height
+        {
+            return;
+        }
+
+        // Clipping (same as single-threaded)
+        let mut source_offset_x: usize = 0;
+        let mut source_y_start: i32 = 0;
+        let mut copy_width: i32 = other.dim.width;
+        let mut copy_height: i32 = other.dim.height;
+
+        if x < 0 {
+            source_offset_x = (-x * 4) as usize;
+            copy_width += x;
+            x = 0;
+        }
+        if y < 0 {
+            source_y_start = -y;
+            copy_height += y;
+            y = 0;
+        }
+        if x + copy_width > self.dim.width {
+            copy_width = self.dim.width - x;
+        }
+        if y + copy_height > self.dim.height {
+            copy_height = self.dim.height - y;
+        }
+        if copy_width <= 0 || copy_height <= 0 {
+            return;
+        }
+
+        let byte_width: usize = (copy_width * 4) as usize;
+        let dst_row_stride: usize = (self.dim.width * 4) as usize;
+        let src_row_stride: usize = (other.dim.width * 4) as usize;
+
+        // Threshold: only parallelize very large blends
+        let total_bytes = byte_width.saturating_mul(copy_height as usize);
+        const PAR_THRESHOLD: usize = 2 * 1024 * 1024; // 2 MiB
+        if total_bytes < PAR_THRESHOLD {
+            return self.blend_into(x, y, other);
+        }
+
+        // Parallel over destination rows using disjoint mutable chunks, batched for lower overhead
+        let row_off = y.max(0) as usize;
+        let row_cnt = copy_height as usize;
+        let dst_start_bytes = row_off * dst_row_stride;
+        let dst_end_bytes = dst_start_bytes + row_cnt * dst_row_stride;
+        let batches = 64; // rows per batch
+
+        self.buffer[dst_start_bytes..dst_end_bytes]
+            .par_chunks_mut(dst_row_stride * batches)
+            .enumerate()
+            .for_each(|(batch_idx, dst_block)| {
+                let rows_in_batch = dst_block.len() / dst_row_stride;
+                let base_row = batch_idx * batches;
+
+                for r in 0..rows_in_batch {
+                    let i = base_row + r;
+                    if i >= row_cnt {
+                        break;
+                    }
+
+                    let src_y = (source_y_start as usize) + i;
+                    let src_row =
+                        &other.buffer[src_y * src_row_stride..(src_y + 1) * src_row_stride];
+
+                    let dst_x_off = (x as usize) * 4;
+                    let dst_row = &mut dst_block[r * dst_row_stride..(r + 1) * dst_row_stride];
+
+                    // Blend horizontally
+                    let mut sx = source_offset_x;
+                    let mut dx = dst_x_off;
+                    for _ in 0..copy_width as usize {
+                        let sr = src_row[sx] as f32;
+                        let sg = src_row[sx + 1] as f32;
+                        let sb = src_row[sx + 2] as f32;
+                        let sa = src_row[sx + 3] as f32; // 0..255
+
+                        let src_a = sa / 255.0;
+                        let inv_a = 1.0 - src_a;
+
+                        let dr = dst_row[dx] as f32;
+                        let dg = dst_row[dx + 1] as f32;
+                        let db = dst_row[dx + 2] as f32;
+                        let da = dst_row[dx + 3] as f32;
+
+                        dst_row[dx] = (sr * src_a + dr * inv_a) as u8;
+                        dst_row[dx + 1] = (sg * src_a + dg * inv_a) as u8;
+                        dst_row[dx + 2] = (sb * src_a + db * inv_a) as u8;
+                        dst_row[dx + 3] = (sa * src_a + da * inv_a) as u8; // keep same alpha formula as single-threaded
+
+                        sx += 4;
+                        dx += 4;
+                    }
+                }
+            });
     }
 
     /// Copy the horizontal range of the other buffer into this buffer at the given coordinates.
