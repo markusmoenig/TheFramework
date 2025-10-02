@@ -259,8 +259,8 @@ impl TheTextEditState {
                 continue;
             }
 
-            let mut left = end;
-            let mut right = start;
+            let left;
+            let right;
 
             // Select the linebreak only
             if self.allow_select_blank && self.selection.start == end - 1 {
