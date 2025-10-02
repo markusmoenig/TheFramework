@@ -250,12 +250,8 @@ impl TheWidget for TheTextAreaEdit {
                 }
             }
             TheEvent::Copy => {
-                let text = self.state.cut_text();
+                let text = self.state.copy_text();
                 if !text.is_empty() {
-                    let (start, end) = self.state.insert_text(text.clone());
-                    self.state.select(start, end);
-                    self.modified_since_last_tick = true;
-                    self.is_dirty = true;
                     redraw = true;
                     update_status = true;
 
@@ -378,11 +374,14 @@ impl TheWidget for TheTextAreaEdit {
                             if let Some(dim) = &self.ln_area_dim {
                                 coord.x -= dim.width;
                             }
-                            self.state.set_cursor(self.renderer.find_cursor(&coord));
+                            self.drag_start_index = self.renderer.find_cursor_index(&coord);
+                            let (cursor_row, cursor_column) =
+                                self.state.find_row_col_of_index(self.drag_start_index);
+                            self.state
+                                .set_cursor(TheCursor::new(cursor_row, cursor_column));
                             update_status = true;
                         }
 
-                        self.drag_start_index = self.state.find_cursor_index();
                         let is_double_click = self.last_mouse_down_time.elapsed().as_millis() < 500
                             && self.last_mouse_down_coord == *coord;
                         if is_double_click {
@@ -482,11 +481,14 @@ impl TheWidget for TheTextAreaEdit {
                                 .scroll(&Vec2::new(delta_x / ratio, delta_y / ratio), true);
                         }
 
-                        self.state.set_cursor(self.renderer.find_cursor(&coord));
+                        let cursor_index = self.renderer.find_cursor_index(&coord);
+                        let (cursor_row, cursor_column) =
+                            self.state.find_row_col_of_index(cursor_index);
+                        self.state
+                            .set_cursor(TheCursor::new(cursor_row, cursor_column));
                         update_status = true;
 
                         if !self.is_clicking_on_selection {
-                            let cursor_index = self.state.find_cursor_index();
                             if self.drag_start_index != cursor_index {
                                 let start = self.drag_start_index.min(cursor_index);
                                 let end = self.drag_start_index.max(cursor_index);
@@ -1187,6 +1189,8 @@ impl TheWidget for TheTextAreaEdit {
             &mut shrinker,
             self.is_disabled,
             self.embedded,
+            true,
+            true,
             self,
             buffer,
             style,

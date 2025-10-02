@@ -33,6 +33,7 @@ pub mod thetext;
 pub mod thetextareaedit;
 pub mod thetextedit;
 pub mod thetextlineedit;
+pub mod thetextview;
 pub mod thetimeslider;
 pub mod thetoolbar;
 pub mod thetoolbarbutton;
@@ -90,6 +91,7 @@ pub mod prelude {
         TheCodeEditorSettings, TheTextAreaEdit, TheTextAreaEditTrait,
     };
     pub use crate::theui::thewidget::thetextlineedit::{TheTextLineEdit, TheTextLineEditTrait};
+    pub use crate::theui::thewidget::thetextview::{TheTextView, TheTextViewTrait};
     pub use crate::theui::thewidget::thetraybar::TheTraybar;
     pub use crate::theui::thewidget::thetraybarbutton::{TheTraybarButton, TheTraybarButtonTrait};
 
@@ -296,6 +298,11 @@ pub trait TheWidget: Send {
 
     /// Attempts to cast to TheTextLineEditTrait. Only valid for TheTextLineEdit.
     fn as_text_line_edit(&mut self) -> Option<&mut dyn TheTextLineEditTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheTextViewTrait. Only valid for TheTextView.
+    fn as_text_view(&mut self) -> Option<&mut dyn TheTextViewTrait> {
         None
     }
 
