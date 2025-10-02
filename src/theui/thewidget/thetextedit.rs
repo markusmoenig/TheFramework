@@ -87,6 +87,7 @@ pub struct TheTextEditState {
     pub selection: TheSelection,
 
     // Options
+    pub allow_select_blank: bool,
     pub auto_bracket_completion: bool,
     pub auto_indent: bool,
     pub tab_spaces: usize,
@@ -99,6 +100,7 @@ impl Default for TheTextEditState {
             rows: vec![String::default()],
             selection: TheSelection::default(),
 
+            allow_select_blank: true,
             auto_bracket_completion: false,
             auto_indent: false,
             tab_spaces: 4,
@@ -113,6 +115,10 @@ impl TheTextEditState {
 
     pub fn save(&self) -> String {
         serde_json::to_string(&self).unwrap_or_default()
+    }
+
+    pub fn copy_text(&mut self) -> String {
+        self.get_text(self.selection.start, self.selection.end)
     }
 
     pub fn cut_text(&mut self) -> String {
@@ -205,7 +211,7 @@ impl TheTextEditState {
         }
 
         // Select the linebreak only
-        if self.selection.start == end - 1 {
+        if self.allow_select_blank && self.selection.start == end - 1 {
             return Some((end - 1, end));
         }
 
@@ -213,7 +219,7 @@ impl TheTextEditState {
         let right = self.selection.end.min(
             // If it's an empty row, we select the linebreak
             // Or if it's the last row
-            if start + 1 == end || self.is_last_row(row_number) {
+            if self.allow_select_blank && start + 1 == end || self.is_last_row(row_number) {
                 end
             } else {
                 // Eliminate the linebreak if the row is not empty,
@@ -222,6 +228,68 @@ impl TheTextEditState {
             },
         );
         if left == right {
+            None
+        } else {
+            Some((left, right))
+        }
+    }
+
+    // Range of selected glyphs within a range
+    pub fn find_selected_range_within_range(
+        &self,
+        start: usize,
+        end: usize,
+    ) -> Option<(usize, usize)> {
+        if self.selection.is_none() {
+            return None;
+        }
+
+        if !self.selection.intersects(start, end) {
+            return None;
+        }
+
+        let start_row = self.find_row_number_of_index(start);
+        let end_row = self.find_row_number_of_index(end);
+
+        let mut selection_start = end;
+        let mut selection_end = start;
+        for row_number in start_row..=end_row {
+            let (start, end) = self.find_range_of_row(row_number);
+            if !self.selection.intersects(start, end) {
+                continue;
+            }
+
+            let mut left = end;
+            let mut right = start;
+
+            // Select the linebreak only
+            if self.allow_select_blank && self.selection.start == end - 1 {
+                left = end - 1;
+                right = end;
+            } else {
+                left = self.selection.start.max(start);
+                right = self.selection.end.min(
+                    // If it's an empty row, we select the linebreak
+                    // Or if it's the last row
+                    if self.allow_select_blank && start + 1 == end || self.is_last_row(row_number) {
+                        end
+                    } else {
+                        // Eliminate the linebreak if the row is not empty,
+                        // and it's not the last row
+                        end - 1
+                    },
+                );
+                if left >= right {
+                    continue;
+                }
+            }
+            selection_start = selection_start.min(left);
+            selection_end = selection_end.max(right);
+        }
+
+        let left = selection_start.max(start);
+        let right = selection_end.min(end);
+        if left >= right {
             None
         } else {
             Some((left, right))
@@ -632,7 +700,7 @@ impl TheTextEditState {
         }
 
         // Select the empty space
-        let col = self.cursor.column.min(text.len() - 1);
+        let col = self.cursor.column.min(text.len().saturating_sub(1));
         let current_char = text.chars().nth(col).unwrap();
         let (start, end) = if current_char.is_whitespace() {
             find_range(text, col, |char| !char.is_whitespace())
@@ -857,6 +925,7 @@ impl TheTextEditState {
     fn get_text(&self, start: usize, end: usize) -> String {
         let (start_row, start_col) = self.find_row_col_of_index(start);
         let (end_row, end_col) = self.find_row_col_of_index(end);
+        let end_col = end_col.min(self.rows[end_row].len());
 
         if start_row == end_row {
             self.rows[start_row][start_col..end_col].to_owned()
@@ -983,6 +1052,7 @@ pub struct TheTextRenderer {
     cursor_vertical_shrink: usize,
     pub font_size: f32,
     pub indicate_space: bool,
+    pub max_width: Option<f32>,
     pub padding: (usize, usize, usize, usize), // left top right bottom
     selection_extend: usize,
 
@@ -1013,6 +1083,7 @@ impl Default for TheTextRenderer {
             cursor_vertical_shrink: 1,
             font_size: 14.0,
             indicate_space: false,
+            max_width: None,
             padding: (5, 0, 5, 0),
             selection_extend: 2,
 
@@ -1048,48 +1119,46 @@ impl TheTextRenderer {
         )
     }
 
-    pub fn find_cursor(&self, coord: &Vec2<i32>) -> TheCursor {
+    pub fn find_cursor_index(&self, coord: &Vec2<i32>) -> usize {
         let coord = Vec2::new(
             coord.x + self.scroll_offset.x as i32 - self.padding.0 as i32,
             coord.y + self.scroll_offset.y as i32 - self.padding.1 as i32,
         );
-        let mut cursor = TheCursor::zero();
 
         if (coord.x < 0 && coord.y < 0) || self.glyphs.is_empty() {
             // Cursor is at the start of all the text
-            return cursor;
+            return 0;
         }
 
         for (row_number, row) in self.row_info.iter().enumerate() {
             if coord.y <= row.bottom as i32 {
-                cursor.row = row_number;
-
                 let start_index = self.row_info[row_number].glyph_start;
                 let end_index = self.row_info[row_number].glyph_end;
-                cursor.column = end_index - start_index;
+                let mut cursor_column = end_index - start_index;
                 if self.glyphs[end_index].parent != '\n' {
-                    cursor.column += 1;
+                    cursor_column += 1;
                 }
 
                 for i in start_index..=end_index {
                     let glyph = &self.glyphs[i];
                     if (glyph.x + glyph.width.to_f32().unwrap()).to_i32().unwrap() > coord.x {
-                        cursor.column = i - start_index;
+                        cursor_column = i - start_index;
                         break;
                     }
                 }
 
-                return cursor;
+                return self.find_glyph_index(row_number, cursor_column);
             }
         }
 
         // Cursor is at the end of all the text
-        cursor.row = self.row_count() - 1;
-        cursor.column = self.row_info[cursor.row].glyph_end - self.row_info[cursor.row].glyph_start;
+        let cursor_row = self.row_count() - 1;
+        let mut cursor_column =
+            self.row_info[cursor_row].glyph_end - self.row_info[cursor_row].glyph_start;
         if self.glyphs.last().unwrap().parent != '\n' {
-            cursor.column += 1;
+            cursor_column += 1;
         }
-        cursor
+        self.find_glyph_index(cursor_row, cursor_column)
     }
 
     pub fn highlight_match(&mut self, highlight_index: usize) {
@@ -1115,7 +1184,15 @@ impl TheTextRenderer {
             text.push('\n');
         }
 
-        let layout = draw.get_text_layout(font, self.font_size, &text, LayoutSettings::default());
+        let layout = draw.get_text_layout(
+            font,
+            self.font_size,
+            &text,
+            LayoutSettings {
+                max_width: self.max_width,
+                ..Default::default()
+            },
+        );
         let glyph_positions = layout.glyphs();
         self.glyphs = glyph_positions
             .iter()
@@ -1179,10 +1256,64 @@ impl TheTextRenderer {
                 highlighter.syntect_theme(),
             );
 
-            for (idx, line) in text.split('\n').enumerate() {
-                if let Some(row) = self.row_info.get_mut(idx) {
-                    row.highlights = Some(highlighter.highlight_line(line, &mut h));
+            let mut highlighted_lines = text
+                .split('\n')
+                .map(|line| highlighter.highlight_line(line, &mut h))
+                .flatten()
+                .into_iter();
+
+            let mut leftover: Option<(TheColor, TheColor, usize)> = None;
+
+            for row_info in &mut self.row_info {
+                // Skip empty line
+                if text[row_info.glyph_start..=row_info.glyph_end]
+                    .trim()
+                    .is_empty()
+                {
+                    continue;
                 }
+
+                let mut cursor = row_info.glyph_start;
+                let mut highlights = vec![];
+
+                if let Some(leftover) = leftover.take() {
+                    cursor += leftover.2;
+                    highlights.push(leftover);
+                }
+
+                loop {
+                    let Some((fg_color, bg_color, token_len)) = highlighted_lines.next() else {
+                        break;
+                    };
+
+                    cursor += token_len;
+                    if cursor > row_info.glyph_end + 1 {
+                        highlights.push((
+                            fg_color.clone(),
+                            bg_color.clone(),
+                            token_len + row_info.glyph_end - cursor,
+                        ));
+                        leftover = Some((fg_color, bg_color, cursor - row_info.glyph_end));
+
+                        break;
+                    } else {
+                        highlights.push((fg_color, bg_color, token_len));
+
+                        if cursor == row_info.glyph_end {
+                            break;
+                        }
+                    }
+                }
+
+                row_info.highlights = Some(highlights);
+            }
+
+            if let Some(highlight) = highlighted_lines.next() {
+                let last_row = self.row_info.last_mut().unwrap();
+                if last_row.highlights.is_none() {
+                    last_row.highlights = Some(vec![]);
+                }
+                last_row.highlights.as_mut().unwrap().push(highlight);
             }
         }
 
@@ -1224,6 +1355,8 @@ impl TheTextRenderer {
         shrinker: &mut TheDimShrinker,
         disabled: bool,
         embedded: bool,
+        background: bool,
+        border: bool,
         widget: &dyn TheWidget,
         buffer: &mut TheRGBABuffer,
         style: &mut Box<dyn TheStyle>,
@@ -1231,36 +1364,41 @@ impl TheTextRenderer {
         is_text_area: bool,
     ) {
         let stride = buffer.stride();
-        if is_text_area {
-            style.draw_text_area_border(buffer, widget, shrinker, ctx, embedded, disabled);
-        } else {
-            style.draw_text_edit_border(buffer, widget, shrinker, ctx, embedded, disabled);
+
+        if border {
+            if is_text_area {
+                style.draw_text_area_border(buffer, widget, shrinker, ctx, embedded, disabled);
+            } else {
+                style.draw_text_edit_border(buffer, widget, shrinker, ctx, embedded, disabled);
+            }
         }
 
-        if !disabled {
-            ctx.draw.rect(
-                buffer.pixels_mut(),
-                &widget.dim().to_buffer_shrunk_utuple(shrinker),
-                stride,
-                &self
-                    .highlighter
-                    .as_ref()
-                    .and_then(|h| h.background())
-                    .map(|c| c.to_u8_array())
-                    .unwrap_or(*style.theme().color(TextEditBackground)),
-            );
-        } else {
-            ctx.draw.blend_rect(
-                buffer.pixels_mut(),
-                &widget.dim().to_buffer_shrunk_utuple(shrinker),
-                stride,
-                &self
-                    .highlighter
-                    .as_ref()
-                    .and_then(|h| h.background())
-                    .map(|c| c.to_u8_array())
-                    .unwrap_or(*style.theme().color_disabled_t(TextEditBackground)),
-            );
+        if background {
+            if !disabled {
+                ctx.draw.rect(
+                    buffer.pixels_mut(),
+                    &widget.dim().to_buffer_shrunk_utuple(shrinker),
+                    stride,
+                    &self
+                        .highlighter
+                        .as_ref()
+                        .and_then(|h| h.background())
+                        .map(|c| c.to_u8_array())
+                        .unwrap_or(*style.theme().color(TextEditBackground)),
+                );
+            } else {
+                ctx.draw.blend_rect(
+                    buffer.pixels_mut(),
+                    &widget.dim().to_buffer_shrunk_utuple(shrinker),
+                    stride,
+                    &self
+                        .highlighter
+                        .as_ref()
+                        .and_then(|h| h.background())
+                        .map(|c| c.to_u8_array())
+                        .unwrap_or(*style.theme().color_disabled_t(TextEditBackground)),
+                );
+            }
         }
 
         shrinker.shrink_by(
@@ -1409,6 +1547,10 @@ impl TheTextRenderer {
         };
 
         Some((start_row, end_row))
+    }
+
+    fn find_glyph_index(&self, row: usize, column: usize) -> usize {
+        self.row_info[row].glyph_start + column
     }
 
     fn get_glyph_text_range(&self, index: usize) -> (usize, usize) {
@@ -1667,7 +1809,7 @@ impl TheTextRenderer {
             + row.top.to_i32().unwrap();
 
         // Selections
-        let selected_range = state.find_selected_range_of_row(row_number);
+        let selected_range = state.find_selected_range_within_range(glyph_start, row.glyph_end + 1);
         if let Some((start, end)) = selected_range {
             self.render_selection(row_number, start, end, buffer, style, draw);
         }
@@ -1697,7 +1839,7 @@ impl TheTextRenderer {
         );
 
         // Tokens
-        let text = &state.rows[row_number];
+        let text = &state.get_text(glyph_start, row.glyph_end + 1); // Convert glyph index to cursor index
         let stride = buffer.stride();
         if let Some(highlights) = &row.highlights {
             let widget_bg = self
@@ -1713,7 +1855,7 @@ impl TheTextRenderer {
                 if token_start_in_row > visible_text_end_index {
                     break;
                 }
-                token_end_in_row = token_start_in_row + token_len;
+                token_end_in_row = (token_start_in_row + token_len).min(text.len());
                 if token_end_in_row < visible_text_start_index {
                     continue;
                 }

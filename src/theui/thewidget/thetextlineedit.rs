@@ -198,7 +198,11 @@ impl TheWidget for TheTextLineEdit {
             }
             TheEvent::MouseDown(coord) => {
                 if !self.state.is_empty() {
-                    self.state.set_cursor(self.renderer.find_cursor(coord));
+                    let (cursor_row, cursor_column) = self
+                        .state
+                        .find_row_col_of_index(self.renderer.find_cursor_index(coord));
+                    self.state
+                        .set_cursor(TheCursor::new(cursor_row, cursor_column));
                     self.drag_start_index = self.state.find_cursor_index();
 
                     if self.is_range() && self.state.selection.is_none() {
@@ -299,7 +303,11 @@ impl TheWidget for TheTextLineEdit {
                             .scroll(&Vec2::new(delta_x / ratio, delta_y / ratio), true);
                     }
 
-                    self.state.set_cursor(self.renderer.find_cursor(coord));
+                    let (cursor_row, cursor_column) = self
+                        .state
+                        .find_row_col_of_index(self.renderer.find_cursor_index(coord));
+                    self.state
+                        .set_cursor(TheCursor::new(cursor_row, cursor_column));
 
                     let cursor_index = self.state.find_cursor_index();
                     if self.drag_start_index != cursor_index {
@@ -647,12 +655,8 @@ impl TheWidget for TheTextLineEdit {
                 }
             }
             TheEvent::Copy => {
-                let text = self.state.cut_text();
+                let text = self.state.copy_text();
                 if !text.is_empty() {
-                    let (start, end) = self.state.insert_text(text.clone());
-                    self.state.select(start, end);
-                    self.modified_since_last_tick = true;
-                    self.is_dirty = true;
                     redraw = true;
                     // update_status = true;
 
@@ -822,6 +826,8 @@ impl TheWidget for TheTextLineEdit {
             &mut shrinker,
             self.is_disabled,
             self.embedded,
+            true,
+            true,
             self,
             buffer,
             style,
