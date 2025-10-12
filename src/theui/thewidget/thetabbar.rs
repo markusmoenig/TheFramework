@@ -242,6 +242,7 @@ pub trait TheTabbarTrait {
     fn selection_index(&self) -> Option<i32>;
     fn selection(&self) -> Option<String>;
     fn set_selection(&mut self, name: String);
+    fn set_selection_index(&mut self, index: usize);
 }
 
 impl TheTabbarTrait for TheTabbar {
@@ -272,5 +273,9 @@ impl TheTabbarTrait for TheTabbar {
             }
         }
         self.selected_index = None;
+    }
+    fn set_selection_index(&mut self, index: usize) {
+        self.is_dirty = true;
+        self.selected_index = Some(index as i32);
     }
 }

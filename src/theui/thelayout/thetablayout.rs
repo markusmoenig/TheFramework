@@ -226,5 +226,8 @@ impl TheTabLayoutTrait for TheTabLayout {
 
     fn set_index(&mut self, index: usize) {
         self.index = index;
+        if let Some(tabbar) = self.tabbar.as_tabbar() {
+            tabbar.set_selection_index(index);
+        }
     }
 }
