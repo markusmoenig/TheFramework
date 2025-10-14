@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use fontdue::{layout::LayoutSettings, Font};
 use num_traits::ToPrimitive;
 use unicode_segmentation::UnicodeSegmentation;
@@ -1266,10 +1268,7 @@ impl TheTextRenderer {
 
             for row_info in &mut self.row_info {
                 // Skip empty line
-                if text[row_info.glyph_start..=row_info.glyph_end]
-                    .trim()
-                    .is_empty()
-                {
+                if row_info.glyph_start == row_info.glyph_end {
                     continue;
                 }
 
@@ -1281,11 +1280,7 @@ impl TheTextRenderer {
                     highlights.push(leftover);
                 }
 
-                loop {
-                    let Some((fg_color, bg_color, token_len)) = highlighted_lines.next() else {
-                        break;
-                    };
-
+                while let Some((fg_color, bg_color, token_len)) = highlighted_lines.next() {
                     cursor += token_len;
                     if cursor > row_info.glyph_end + 1 {
                         highlights.push((
@@ -1305,7 +1300,9 @@ impl TheTextRenderer {
                     }
                 }
 
-                row_info.highlights = Some(highlights);
+                if !highlights.is_empty() {
+                    row_info.highlights = Some(highlights);
+                }
             }
 
             if let Some(highlight) = highlighted_lines.next() {
@@ -1332,9 +1329,24 @@ impl TheTextRenderer {
         font: &Font,
         draw: &TheDraw2D,
     ) {
+        self.render_text_with_styles(state, focused, readonly, buffer, style, font, &[], draw);
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn render_text_with_styles(
+        &self,
+        state: &TheTextEditState,
+        focused: bool,
+        readonly: bool,
+        buffer: &mut TheRGBABuffer,
+        style: &mut Box<dyn TheStyle>,
+        font: &Font,
+        styles: &[(Range<usize>, TheTextStyle)],
+        draw: &TheDraw2D,
+    ) {
         if let Some((start_row, end_row)) = self.visible_rows() {
             for i in start_row..=end_row {
-                self.render_row(state, i, buffer, style, font, draw);
+                self.render_row(state, i, buffer, style, font, styles, draw);
             }
 
             if focused && !readonly {
@@ -1769,6 +1781,7 @@ impl TheTextRenderer {
         buffer: &mut TheRGBABuffer,
         style: &mut Box<dyn TheStyle>,
         font: &Font,
+        styles: &[(Range<usize>, TheTextStyle)],
         draw: &TheDraw2D,
     ) {
         let row = &self.row_info[row_number];
@@ -1783,7 +1796,8 @@ impl TheTextRenderer {
 
         // Find the visible text
         let glyph_start = row.glyph_start;
-        let glyphs_count = row.glyph_end - glyph_start;
+        let glyph_end = row.glyph_end + 1; // Convert glyph index to cursor index
+        let glyphs_count = glyph_end - glyph_start;
         let mut visible_text_start_index = 0;
         let mut visible_text_end_index = glyphs_count;
         let mut is_start_index_found = false;
@@ -1809,7 +1823,7 @@ impl TheTextRenderer {
             + row.top.to_i32().unwrap();
 
         // Selections
-        let selected_range = state.find_selected_range_within_range(glyph_start, row.glyph_end + 1);
+        let selected_range = state.find_selected_range_within_range(glyph_start, glyph_end);
         if let Some((start, end)) = selected_range {
             self.render_selection(row_number, start, end, buffer, style, draw);
         }
@@ -1839,7 +1853,7 @@ impl TheTextRenderer {
         );
 
         // Tokens
-        let text = &state.get_text(glyph_start, row.glyph_end + 1); // Convert glyph index to cursor index
+        let text = &state.get_text(glyph_start, glyph_end);
         let stride = buffer.stride();
         if let Some(highlights) = &row.highlights {
             let widget_bg = self
@@ -2040,6 +2054,78 @@ impl TheTextRenderer {
                 TheVerticalAlign::Center,
             );
         }
+
+        for (range, text_style) in styles {
+            if range.start >= glyph_start + visible_text_end_index
+                || range.end <= glyph_start + visible_text_start_index
+            {
+                continue;
+            }
+
+            let token_start = (glyph_start + visible_text_start_index).max(range.start);
+            let token_end = (glyph_start + visible_text_end_index).min(range.end);
+
+            if let Some(color) = &text_style.background {
+                self.render_text_background(
+                    row_number,
+                    token_start,
+                    token_end,
+                    buffer,
+                    &color.to_u8_array(),
+                    draw,
+                );
+
+                let selected_range_in_token = selected_range.and_then(|(start, end)| {
+                    (token_start < end && token_end > start)
+                        .then_some((start.max(token_start), end.min(token_end)))
+                });
+                if let Some((start, end)) = selected_range_in_token {
+                    let mut color = self
+                        .highlighter
+                        .as_ref()
+                        .and_then(|hl| hl.selection_background())
+                        .map(|color| color.to_u8_array())
+                        .unwrap_or(*style.theme().color(DefaultSelection));
+                    color[3] = 180;
+                    self.render_text_background(row_number, start, end, buffer, &color, draw);
+                }
+            }
+            if let Some(color) = &text_style.foreground {
+                let left = left + self.get_text_left(token_start).to_i32().unwrap();
+                let row_start_index = self.get_glyph_text_range(glyph_start).0;
+                let start = self.get_glyph_text_range(token_start).0 - row_start_index;
+                let end = self.get_glyph_text_range(token_end).1 - row_start_index;
+                let end = text.len().min(end);
+                draw.text_rect_blend_clip(
+                    buffer.pixels_mut(),
+                    &Vec2::new(left, top - 1),
+                    &(self.left, self.top, self.width, self.height),
+                    stride,
+                    font,
+                    self.font_size,
+                    &text[start..end],
+                    &color.to_u8_array(),
+                    TheHorizontalAlign::Center,
+                    TheVerticalAlign::Center,
+                );
+            }
+            if let Some(color) = &text_style.underline {
+                let left = left + self.get_text_left(token_start).to_i32().unwrap();
+                let left = left.max(0).to_usize().unwrap().max(self.left);
+
+                let top = top + self.row_height() as i32;
+                let top = top.max(0).to_usize().unwrap().max(self.top);
+
+                let width = self.get_text_width(token_start, token_end - 1);
+                let right = (left + width).min(self.left + self.width);
+                draw.blend_rect(
+                    buffer.pixels_mut(),
+                    &(left, top as usize, right - left, 1),
+                    stride,
+                    &color.to_u8_array(),
+                );
+            }
+        }
     }
 
     fn render_selection(
@@ -2132,4 +2218,11 @@ impl TheTextRenderer {
     fn row_height(&self) -> usize {
         self.font_size.ceil().to_usize().unwrap()
     }
+}
+
+#[derive(Default)]
+pub struct TheTextStyle {
+    pub foreground: Option<TheColor>,
+    pub background: Option<TheColor>,
+    pub underline: Option<TheColor>,
 }

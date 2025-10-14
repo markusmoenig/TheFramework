@@ -57,6 +57,9 @@ pub enum TheThemeColors {
     TextEditLineNumberColor,
     TextEditLineNumberHighlightColor,
 
+    TextLinkColor,
+    TextLinkHoveredColor,
+
     MenubarPopupBackground,
     MenubarPopupBorder,
 
