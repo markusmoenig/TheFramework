@@ -1268,10 +1268,7 @@ impl TheTextRenderer {
 
             for row_info in &mut self.row_info {
                 // Skip empty line
-                if text[row_info.glyph_start..=row_info.glyph_end]
-                    .trim()
-                    .is_empty()
-                {
+                if row_info.glyph_start == row_info.glyph_end {
                     continue;
                 }
 
@@ -1283,11 +1280,7 @@ impl TheTextRenderer {
                     highlights.push(leftover);
                 }
 
-                loop {
-                    let Some((fg_color, bg_color, token_len)) = highlighted_lines.next() else {
-                        break;
-                    };
-
+                while let Some((fg_color, bg_color, token_len)) = highlighted_lines.next() {
                     cursor += token_len;
                     if cursor > row_info.glyph_end + 1 {
                         highlights.push((
@@ -1307,7 +1300,9 @@ impl TheTextRenderer {
                     }
                 }
 
-                row_info.highlights = Some(highlights);
+                if !highlights.is_empty() {
+                    row_info.highlights = Some(highlights);
+                }
             }
 
             if let Some(highlight) = highlighted_lines.next() {
