@@ -97,6 +97,7 @@ pub enum TheEvent {
     // Utility
     FileRequesterResult(TheId, Vec<std::path::PathBuf>),
     ImageDecodeResult(TheId, String, TheRGBABuffer),
+    ExternalUrlRequested(String),
 
     // The top canvas has been resized.
     Resize,

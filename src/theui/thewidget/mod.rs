@@ -10,6 +10,7 @@ pub mod thehdivider;
 pub mod thehorizontalscrollbar;
 pub mod theiconview;
 pub mod thelistitem;
+pub mod themarkdownview;
 pub mod themenu;
 pub mod themenubar;
 pub mod themenubarbutton;
@@ -80,6 +81,7 @@ pub mod prelude {
     pub use crate::theui::thewidget::thecheckbutton::TheCheckButton;
     pub use crate::theui::thewidget::thehdivider::TheHDivider;
     pub use crate::theui::thewidget::theiconview::{TheIconView, TheIconViewTrait};
+    pub use crate::theui::thewidget::themarkdownview::{TheMarkdownView, TheMarkdownViewTrait};
     pub use crate::theui::thewidget::thergbaview::{
         TheRGBAView, TheRGBAViewMode, TheRGBAViewTrait,
     };
@@ -303,6 +305,11 @@ pub trait TheWidget: Send {
 
     /// Attempts to cast to TheTextViewTrait. Only valid for TheTextView.
     fn as_text_view(&mut self) -> Option<&mut dyn TheTextViewTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheMarkdownViewTrait. Only valid for TheMarkdownView.
+    fn as_markdown_view(&mut self) -> Option<&mut dyn TheMarkdownViewTrait> {
         None
     }
 
