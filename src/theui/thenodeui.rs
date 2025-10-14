@@ -122,6 +122,24 @@ impl TheNodeUI {
         None
     }
 
+    /// Get an f32 value.
+    pub fn get_f32_value(&self, id: &str) -> Option<f32> {
+        for (item_id, item) in &self.items {
+            if id == item_id {
+                match item {
+                    FloatEditSlider(_, _, _, value, _, _) => {
+                        return Some(*value);
+                    }
+                    FloatSlider(_, _, _, value, _, _, _) => {
+                        return Some(*value);
+                    }
+                    _ => {}
+                }
+            }
+        }
+        None
+    }
+
     /// Add the items to the given text layout.
     pub fn apply_to_text_layout(&self, layout: &mut dyn TheTextLayoutTrait) {
         layout.clear();
@@ -210,49 +228,48 @@ impl TheNodeUI {
     }
 
     /// Handle an event and update the item values if necessary
-    pub fn handle_event(&mut self, event: TheEvent) -> bool {
+    pub fn handle_event(&mut self, event: &TheEvent) -> bool {
         let mut updated = false;
-        #[allow(clippy::single_match)]
         match event {
             TheEvent::ValueChanged(id, event_value) => {
                 if let Some(item) = self.get_item_mut(&id.name) {
                     match item {
                         Text(_, _, _, value, _, _) => {
                             if let TheValue::Text(v) = event_value {
-                                *value = v;
+                                *value = v.clone();
                                 updated = true;
                             }
                         }
                         Selector(_, _, _, _, value) => {
                             if let TheValue::Int(v) = event_value {
-                                *value = v;
+                                *value = *v;
                                 updated = true;
                             }
                         }
                         FloatEditSlider(_, _, _, value, _, _) => {
-                            if let TheValue::Float(v) = event_value {
+                            if let Some(v) = event_value.to_f32() {
                                 *value = v;
                                 updated = true;
                             }
                         }
                         FloatSlider(_, _, _, value, _, _, _) => {
                             if let TheValue::Float(v) = event_value {
-                                *value = v;
+                                *value = *v;
                                 updated = true;
                             }
                         }
                         IntEditSlider(_, _, _, value, _, _) => {
                             if let TheValue::Int(v) = event_value {
-                                *value = v;
+                                *value = *v;
                                 updated = true;
                             } else if let TheValue::IntRange(v, _) = event_value {
-                                *value = v;
+                                *value = *v;
                                 updated = true;
                             }
                         }
                         IntSlider(_, _, _, value, _, _, _) => {
                             if let TheValue::Int(v) = event_value {
-                                *value = v;
+                                *value = *v;
                                 updated = true;
                             }
                         }
