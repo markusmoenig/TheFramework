@@ -1,3 +1,81 @@
+// Platform-aware accelerator modifiers (AltGr-safe)
+#[cfg(feature = "winit_app")]
+#[inline]
+fn is_accel_mods(m: &winit::keyboard::ModifiersState) -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        // macOS commonly uses ⌘ and ⌥ for accelerators
+        m.super_key() || m.alt_key() || m.control_key()
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        // On Windows/Linux, avoid treating Alt as an accelerator by default (AltGr = Ctrl+Alt)
+        m.super_key() || m.control_key()
+    }
+}
+
+// US-ANSI physical keycode to ascii (letters, digits, punctuation, space)
+#[cfg(feature = "winit_app")]
+fn accel_physical_to_ascii(code: winit::keyboard::KeyCode, shift: bool) -> Option<char> {
+    use winit::keyboard::KeyCode;
+    let (base, shifted) = match code {
+        // Letters
+        KeyCode::KeyA => ('a', 'A'),
+        KeyCode::KeyB => ('b', 'B'),
+        KeyCode::KeyC => ('c', 'C'),
+        KeyCode::KeyD => ('d', 'D'),
+        KeyCode::KeyE => ('e', 'E'),
+        KeyCode::KeyF => ('f', 'F'),
+        KeyCode::KeyG => ('g', 'G'),
+        KeyCode::KeyH => ('h', 'H'),
+        KeyCode::KeyI => ('i', 'I'),
+        KeyCode::KeyJ => ('j', 'J'),
+        KeyCode::KeyK => ('k', 'K'),
+        KeyCode::KeyL => ('l', 'L'),
+        KeyCode::KeyM => ('m', 'M'),
+        KeyCode::KeyN => ('n', 'N'),
+        KeyCode::KeyO => ('o', 'O'),
+        KeyCode::KeyP => ('p', 'P'),
+        KeyCode::KeyQ => ('q', 'Q'),
+        KeyCode::KeyR => ('r', 'R'),
+        KeyCode::KeyS => ('s', 'S'),
+        KeyCode::KeyT => ('t', 'T'),
+        KeyCode::KeyU => ('u', 'U'),
+        KeyCode::KeyV => ('v', 'V'),
+        KeyCode::KeyW => ('w', 'W'),
+        KeyCode::KeyX => ('x', 'X'),
+        KeyCode::KeyY => ('y', 'Y'),
+        KeyCode::KeyZ => ('z', 'Z'),
+        // Digits (US)
+        KeyCode::Digit0 => ('0', ')'),
+        KeyCode::Digit1 => ('1', '!'),
+        KeyCode::Digit2 => ('2', '@'),
+        KeyCode::Digit3 => ('3', '#'),
+        KeyCode::Digit4 => ('4', '$'),
+        KeyCode::Digit5 => ('5', '%'),
+        KeyCode::Digit6 => ('6', '^'),
+        KeyCode::Digit7 => ('7', '&'),
+        KeyCode::Digit8 => ('8', '*'),
+        KeyCode::Digit9 => ('9', '('),
+        // Punctuation (US ANSI)
+        KeyCode::Minus => ('-', '_'),
+        KeyCode::Equal => ('=', '+'),
+        KeyCode::BracketLeft => ('[', '{'),
+        KeyCode::BracketRight => (']', '}'),
+        KeyCode::Semicolon => (';', ':'),
+        KeyCode::Quote => ('\'', '"'),
+        KeyCode::Comma => (',', '<'),
+        KeyCode::Period => ('.', '>'),
+        KeyCode::Slash => ('/', '?'),
+        KeyCode::Backquote => ('`', '~'),
+        KeyCode::Backslash => ('\\', '|'),
+        KeyCode::IntlBackslash => ('\\', '|'),
+        // Space
+        KeyCode::Space => (' ', ' '),
+        _ => return None,
+    };
+    Some(if shift { shifted } else { base })
+}
 use crate::prelude::*;
 use web_time::{Duration, Instant};
 
@@ -79,6 +157,8 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
 
     let event_loop = EventLoop::new().unwrap();
     let mut input = WinitInputHelper::new();
+    // Track modifiers for accelerator handling (for winit versions without event.modifiers)
+    let mut mods: winit::keyboard::ModifiersState = winit::keyboard::ModifiersState::empty();
 
     let size = LogicalSize::new(width as f64, height as f64);
 
@@ -374,6 +454,8 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                     }
                     WindowEvent::ModifiersChanged(modifiers) => {
                         let state = modifiers.state();
+                        // keep a copy of current modifiers for accelerator checks
+                        mods = state;
 
                         #[cfg(feature = "ui")]
                         if ui.modifier_changed(
@@ -409,6 +491,25 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                                 Key::Named(NamedKey::Enter) => Some(TheKeyCode::Return),
                                 Key::Named(NamedKey::Escape) => Some(TheKeyCode::Escape),
                                 Key::Character(str) => {
+                                    // Accelerator: use physical key with modifiers (ignore composed text like "å")
+                                    if is_accel_mods(&mods) {
+                                        if let winit::keyboard::PhysicalKey::Code(code) =
+                                            event.physical_key
+                                        {
+                                            if let Some(ch) =
+                                                accel_physical_to_ascii(code, mods.shift_key())
+                                            {
+                                                #[cfg(feature = "ui")]
+                                                if ui.key_down(Some(ch), None, &mut ctx) {
+                                                    window.request_redraw();
+                                                }
+                                                if app.key_down(Some(ch), None, &mut ctx) {
+                                                    window.request_redraw();
+                                                }
+                                                return; // handled as accelerator
+                                            }
+                                        }
+                                    }
                                     if str.is_ascii() {
                                         for ch in str.chars() {
                                             #[cfg(feature = "ui")]
@@ -448,6 +549,25 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                                 Key::Named(NamedKey::Enter) => Some(TheKeyCode::Return),
                                 Key::Named(NamedKey::Escape) => Some(TheKeyCode::Escape),
                                 Key::Character(str) => {
+                                    // Accelerator release: use physical key with modifiers (ignore composed text)
+                                    if is_accel_mods(&mods) {
+                                        if let winit::keyboard::PhysicalKey::Code(code) =
+                                            event.physical_key
+                                        {
+                                            if let Some(ch) =
+                                                accel_physical_to_ascii(code, mods.shift_key())
+                                            {
+                                                #[cfg(feature = "ui")]
+                                                if ui.key_up(Some(ch), None, &mut ctx) {
+                                                    window.request_redraw();
+                                                }
+                                                if app.key_up(Some(ch), None, &mut ctx) {
+                                                    window.request_redraw();
+                                                }
+                                                return;
+                                            }
+                                        }
+                                    }
                                     if str.is_ascii() {
                                         for ch in str.chars() {
                                             #[cfg(feature = "ui")]

@@ -164,8 +164,19 @@ impl TheAccelerator {
             }
         }
 
+        if self.accel.contains(TheAcceleratorKey::ALT) {
+            if cfg!(target_os = "macos") {
+                str = "Option + ".to_string();
+            } else {
+                str = "Alt + ".to_string();
+            }
+        }
+
         if self.accel.contains(TheAcceleratorKey::SHIFT) {
-            str = "Shift + ".to_string() + &str;
+            if !str.is_empty() {
+                str += " ";
+            }
+            str += ("Shift + ".to_string() + &str).as_str();
         }
 
         let mut s = str.to_string();
@@ -896,7 +907,6 @@ impl TheUI {
         ctx: &mut TheContext,
     ) -> bool {
         let mut redraw = false;
-
         let mut consumed = false;
 
         if let Some(c) = char {

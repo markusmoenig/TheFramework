@@ -7,6 +7,8 @@ use std::ops::RangeInclusive;
 pub enum TheNodeUIItem {
     /// Text: Id, Name, Status, Value, DefaultValue, Continuous
     Text(String, String, String, String, Option<String>, bool),
+    /// Text: Id, Value
+    Markdown(String, String),
     /// Selector: Id, Name, Status, Values, Value
     Selector(String, String, String, Vec<String>, i32),
     /// Float Edit Slider: Id, Name, Status, Value, Range, Continuous
@@ -32,6 +34,7 @@ impl TheNodeUIItem {
     pub fn id(&self) -> &str {
         match self {
             TheNodeUIItem::Text(id, _, _, _, _, _) => id,
+            TheNodeUIItem::Markdown(id, _) => id,
             TheNodeUIItem::Selector(id, _, _, _, _) => id,
             TheNodeUIItem::FloatEditSlider(id, _, _, _, _, _) => id,
             TheNodeUIItem::FloatSlider(id, _, _, _, _, _, _) => id,
@@ -152,6 +155,11 @@ impl TheNodeUI {
                     edit.set_status_text(status);
                     edit.set_info_text(default_value.clone());
                     layout.add_pair(name.clone(), Box::new(edit));
+                }
+                Markdown(id, text) => {
+                    let mut view = TheMarkdownView::new(TheId::named(id));
+                    view.set_text(text.clone());
+                    layout.add_pair("".into(), Box::new(view));
                 }
                 Selector(id, name, status, values, value) => {
                     let mut dropdown = TheDropdownMenu::new(TheId::named(id));

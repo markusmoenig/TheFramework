@@ -68,8 +68,8 @@ impl TheWidget for TheMarkdownView {
         state.allow_select_blank = false;
 
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_width(200);
-        limiter.set_max_height(300);
+        limiter.set_max_width(300);
+        limiter.set_max_height(150);
 
         let hscrollbar = Box::new(TheHorizontalScrollbar::new(TheId::named(
             (id.name.clone() + " Horizontal Scrollbar").as_str(),
@@ -487,7 +487,7 @@ impl TheWidget for TheMarkdownView {
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
-        if !self.dim.is_valid() || ctx.ui.code_font.is_none() {
+        if !self.dim.is_valid() || ctx.ui.font.is_none() {
             return;
         }
 
@@ -515,7 +515,7 @@ impl TheWidget for TheMarkdownView {
 
             self.renderer.prepare(
                 &self.state.to_text(),
-                ctx.ui.code_font.as_ref().unwrap(),
+                ctx.ui.font.as_ref().unwrap(),
                 &ctx.draw,
             );
 
@@ -636,7 +636,7 @@ impl TheWidget for TheMarkdownView {
             true,
             buffer,
             style,
-            ctx.ui.code_font.as_ref().unwrap(),
+            ctx.ui.font.as_ref().unwrap(),
             &styles,
             &ctx.draw,
         );
