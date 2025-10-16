@@ -623,7 +623,7 @@ impl TheWidget for TheMarkdownView {
                     TheTextStyle {
                         foreground: color.clone(),
                         underline: color,
-                        background: Some(TheColor::from_u8(255, 0, 230, 100)),
+                        background: None,
                         ..Default::default()
                     },
                 )
