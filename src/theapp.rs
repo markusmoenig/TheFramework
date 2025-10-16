@@ -584,10 +584,10 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                                 _ => None,
                             };
                             if key.is_some() {
-                                // #[cfg(feature = "ui")]
-                                // if ui.key_down(None, key.clone(), &mut ctx) {
-                                //     window.request_redraw();
-                                // }
+                                #[cfg(feature = "ui")]
+                                if ui.key_up(None, key.clone(), &mut ctx) {
+                                    window.request_redraw();
+                                }
                                 if app.key_up(None, key, &mut ctx) {
                                     window.request_redraw();
                                 }
