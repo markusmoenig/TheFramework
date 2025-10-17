@@ -104,6 +104,21 @@ impl TheNodeUI {
         self.items.is_empty()
     }
 
+    /// Get a text value.
+    pub fn get_text_value(&self, id: &str) -> Option<String> {
+        for (item_id, item) in &self.items {
+            if id == item_id {
+                match item {
+                    Text(_, _, _, value, _, _) => {
+                        return Some(value.clone());
+                    }
+                    _ => {}
+                }
+            }
+        }
+        None
+    }
+
     /// Get an i32 value.
     pub fn get_i32_value(&self, id: &str) -> Option<i32> {
         for (item_id, item) in &self.items {
@@ -153,6 +168,20 @@ impl TheNodeUI {
                     }
                     FloatSlider(_, _, _, value, _, _, _) => {
                         *value = val;
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    /// Set a text value.
+    pub fn set_text_value(&mut self, id: &str, val: String) {
+        for (item_id, item) in &mut self.items {
+            if id == item_id {
+                match item {
+                    Text(_, _, _, value, _, _) => {
+                        *value = val.clone();
                     }
                     _ => {}
                 }
