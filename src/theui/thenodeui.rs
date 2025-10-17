@@ -143,6 +143,23 @@ impl TheNodeUI {
         None
     }
 
+    /// Set an f32 value.
+    pub fn set_f32_value(&mut self, id: &str, val: f32) {
+        for (item_id, item) in &mut self.items {
+            if id == item_id {
+                match item {
+                    FloatEditSlider(_, _, _, value, _, _) => {
+                        *value = val;
+                    }
+                    FloatSlider(_, _, _, value, _, _, _) => {
+                        *value = val;
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
     /// Add the items to the given text layout.
     pub fn apply_to_text_layout(&self, layout: &mut dyn TheTextLayoutTrait) {
         layout.clear();
