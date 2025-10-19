@@ -3,6 +3,8 @@ use crate::prelude::*;
 pub struct TheCheckButton {
     id: TheId,
     limiter: TheSizeLimiter,
+    status: Option<String>,
+
     state: TheWidgetState,
 
     dim: TheDim,
@@ -20,6 +22,8 @@ impl TheWidget for TheCheckButton {
         Self {
             id,
             limiter,
+            status: None,
+
             state: TheWidgetState::None,
 
             dim: TheDim::zero(),
@@ -29,6 +33,14 @@ impl TheWidget for TheCheckButton {
 
     fn id(&self) -> &TheId {
         &self.id
+    }
+
+    fn status_text(&self) -> Option<String> {
+        self.status.clone()
+    }
+
+    fn set_status_text(&mut self, text: &str) {
+        self.status = Some(text.to_string());
     }
 
     #[allow(clippy::single_match)]
@@ -45,6 +57,10 @@ impl TheWidget for TheCheckButton {
 
                 ctx.ui.set_focus(self.id());
                 ctx.ui.send_widget_state_changed(self.id(), self.state);
+                ctx.ui.send_widget_value_changed(
+                    self.id(),
+                    TheValue::Bool(self.state == TheWidgetState::Selected),
+                );
                 self.is_dirty = true;
                 redraw = true;
             }
@@ -106,6 +122,28 @@ impl TheWidget for TheCheckButton {
 
     fn supports_hover(&mut self) -> bool {
         true
+    }
+
+    fn value(&self) -> TheValue {
+        if self.state == TheWidgetState::Selected {
+            TheValue::Bool(true)
+        } else {
+            TheValue::Bool(false)
+        }
+    }
+
+    fn set_value(&mut self, value: TheValue) {
+        match value {
+            TheValue::Bool(b) => {
+                if b {
+                    self.state = TheWidgetState::Selected;
+                } else {
+                    self.state = TheWidgetState::None;
+                }
+                self.is_dirty = true;
+            }
+            _ => {}
+        }
     }
 
     fn draw(

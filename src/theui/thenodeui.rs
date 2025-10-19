@@ -25,6 +25,8 @@ pub enum TheNodeUIItem {
     Button(String, String, String, String),
     /// Text: Id, Name, Status, Value, DefaultValue, Continuous
     ColorPicker(String, String, String, TheColor, bool),
+    /// Checkbox: Id, Name, Status, Value,
+    Checkbox(String, String, String, bool),
     /// Separator: Name
     Separator(String),
 }
@@ -43,6 +45,7 @@ impl TheNodeUIItem {
             TheNodeUIItem::IntSlider(id, _, _, _, _, _, _) => id,
             TheNodeUIItem::Button(id, _, _, _) => id,
             TheNodeUIItem::ColorPicker(id, _, _, _, _) => id,
+            TheNodeUIItem::Checkbox(id, _, _, _) => id,
             TheNodeUIItem::Separator(name) => name,
         }
     }
@@ -111,6 +114,21 @@ impl TheNodeUI {
                 match item {
                     Text(_, _, _, value, _, _) => {
                         return Some(value.clone());
+                    }
+                    _ => {}
+                }
+            }
+        }
+        None
+    }
+
+    /// Get a bool value.
+    pub fn get_bool_value(&self, id: &str) -> Option<bool> {
+        for (item_id, item) in &self.items {
+            if id == item_id {
+                match item {
+                    &Checkbox(_, _, _, value) => {
+                        return Some(value);
                     }
                     _ => {}
                 }
@@ -205,6 +223,7 @@ impl TheNodeUI {
                 Markdown(id, text) => {
                     let mut view = TheMarkdownView::new(TheId::named(id));
                     view.set_text(text.clone());
+                    view.set_font_size(12.5);
                     layout.add_pair("".into(), Box::new(view));
                 }
                 Selector(id, name, status, values, value) => {
@@ -273,6 +292,12 @@ impl TheNodeUI {
                     picker.limiter_mut().set_max_size(Vec2::new(200, 200));
                     layout.add_pair(name.clone(), Box::new(picker));
                 }
+                Checkbox(id, name, status, value) => {
+                    let mut cb = TheCheckButton::new(TheId::named(id));
+                    cb.set_value(TheValue::Bool(*value));
+                    cb.set_status_text(status);
+                    layout.add_pair(name.clone(), Box::new(cb));
+                }
                 Separator(name) => {
                     let sep = TheSeparator::new(TheId::named_with_id("Separator", Uuid::new_v4()));
                     layout.add_pair(name.clone(), Box::new(sep));
@@ -323,6 +348,12 @@ impl TheNodeUI {
                         }
                         IntSlider(_, _, _, value, _, _, _) => {
                             if let TheValue::Int(v) = event_value {
+                                *value = *v;
+                                updated = true;
+                            }
+                        }
+                        Checkbox(_, _, _, value) => {
+                            if let TheValue::Bool(v) = event_value {
                                 *value = *v;
                                 updated = true;
                             }
