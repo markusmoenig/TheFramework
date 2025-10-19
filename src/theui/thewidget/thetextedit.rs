@@ -1828,34 +1828,35 @@ impl TheTextRenderer {
             self.render_selection(row_number, start, end, buffer, style, draw);
         }
 
-        // Matches
-        self.render_matches(
-            row_number,
-            (
-                glyph_start + visible_text_start_index,
-                glyph_start + visible_text_end_index,
-            ),
-            buffer,
-            style,
-            draw,
-        );
-
-        // Errors
-        self.render_errors(
-            row_number,
-            (
-                glyph_start + visible_text_start_index,
-                glyph_start + visible_text_end_index,
-            ),
-            buffer,
-            style,
-            draw,
-        );
-
         // Tokens
         let text = &state.get_text(glyph_start, glyph_end);
+        let row_start_index = self.get_glyph_text_range(glyph_start).0;
         let stride = buffer.stride();
         if let Some(highlights) = &row.highlights {
+            // Matches
+            self.render_matches(
+                row_number,
+                (
+                    glyph_start + visible_text_start_index,
+                    glyph_start + visible_text_end_index,
+                ),
+                buffer,
+                style,
+                draw,
+            );
+
+            // Errors
+            self.render_errors(
+                row_number,
+                (
+                    glyph_start + visible_text_start_index,
+                    glyph_start + visible_text_end_index,
+                ),
+                buffer,
+                style,
+                draw,
+            );
+
             let widget_bg = self
                 .highlighter
                 .as_ref()
@@ -2026,75 +2027,95 @@ impl TheTextRenderer {
                 }
             }
         } else {
-            let left = left
-                + self
-                    .get_text_left(glyph_start + visible_text_start_index)
-                    .to_i32()
-                    .unwrap();
-            let row_start_index = self.get_glyph_text_range(glyph_start).0;
-            let start = self
-                .get_glyph_text_range(glyph_start + visible_text_start_index)
-                .0
-                - row_start_index;
-            let end = self
-                .get_glyph_text_range(glyph_start + visible_text_end_index)
-                .1
-                - row_start_index;
-            let end = text.len().min(end);
-            draw.text_rect_blend_clip(
-                buffer.pixels_mut(),
-                &Vec2::new(left, top - 1),
-                &(self.left, self.top, self.width, self.height),
-                stride,
-                font,
-                self.font_size,
-                &text[start..end],
-                style.theme().color(TextEditTextColor),
-                TheHorizontalAlign::Center,
-                TheVerticalAlign::Center,
-            );
-        }
+            let mut rendered_text_ranges = vec![];
+            for (range, text_style) in styles {
+                if range.start >= glyph_start + visible_text_end_index
+                    || range.end <= glyph_start + visible_text_start_index
+                {
+                    continue;
+                }
 
-        for (range, text_style) in styles {
-            if range.start >= glyph_start + visible_text_end_index
-                || range.end <= glyph_start + visible_text_start_index
-            {
-                continue;
-            }
+                let token_start = (glyph_start + visible_text_start_index).max(range.start);
+                let token_end = (glyph_start + visible_text_end_index).min(range.end);
 
-            let token_start = (glyph_start + visible_text_start_index).max(range.start);
-            let token_end = (glyph_start + visible_text_end_index).min(range.end);
+                if let Some(color) = &text_style.background {
+                    self.render_text_background(
+                        row_number,
+                        token_start,
+                        token_end,
+                        buffer,
+                        &color.to_u8_array(),
+                        draw,
+                    );
 
-            if let Some(color) = &text_style.background {
-                self.render_text_background(
-                    row_number,
-                    token_start,
-                    token_end,
-                    buffer,
-                    &color.to_u8_array(),
-                    draw,
-                );
+                    let selected_range_in_token = selected_range.and_then(|(start, end)| {
+                        (token_start < end && token_end > start)
+                            .then_some((start.max(token_start), end.min(token_end)))
+                    });
+                    if let Some((start, end)) = selected_range_in_token {
+                        let mut color = self
+                            .highlighter
+                            .as_ref()
+                            .and_then(|hl| hl.selection_background())
+                            .map(|color| color.to_u8_array())
+                            .unwrap_or(*style.theme().color(DefaultSelection));
+                        color[3] = 180;
+                        self.render_text_background(row_number, start, end, buffer, &color, draw);
+                    }
+                }
+                if let Some(color) = &text_style.foreground {
+                    let left = left + self.get_text_left(token_start).to_i32().unwrap() + 0;
+                    let start = self.get_glyph_text_range(token_start).0 - row_start_index;
+                    let end = self.get_glyph_text_range(token_end).1 - row_start_index;
+                    let end = text.len().min(end);
+                    draw.text_rect_blend_clip(
+                        buffer.pixels_mut(),
+                        &Vec2::new(left, top - 1),
+                        &(self.left, self.top, self.width, self.height),
+                        stride,
+                        font,
+                        self.font_size,
+                        &text[start..end],
+                        &color.to_u8_array(),
+                        TheHorizontalAlign::Center,
+                        TheVerticalAlign::Center,
+                    );
+                    rendered_text_ranges.push(token_start..token_end);
+                }
+                if let Some(color) = &text_style.underline {
+                    let left = left + self.get_text_left(token_start).to_i32().unwrap();
+                    let left = left.max(0).to_usize().unwrap().max(self.left);
 
-                let selected_range_in_token = selected_range.and_then(|(start, end)| {
-                    (token_start < end && token_end > start)
-                        .then_some((start.max(token_start), end.min(token_end)))
-                });
-                if let Some((start, end)) = selected_range_in_token {
-                    let mut color = self
-                        .highlighter
-                        .as_ref()
-                        .and_then(|hl| hl.selection_background())
-                        .map(|color| color.to_u8_array())
-                        .unwrap_or(*style.theme().color(DefaultSelection));
-                    color[3] = 180;
-                    self.render_text_background(row_number, start, end, buffer, &color, draw);
+                    let top = top + self.row_height() as i32;
+                    let top = top.max(0).to_usize().unwrap().max(self.top);
+
+                    let width = self.get_text_width(token_start, token_end - 1);
+                    let right = (left + width).min(self.left + self.width);
+                    draw.blend_rect(
+                        buffer.pixels_mut(),
+                        &(left, top as usize, right - left, 1),
+                        stride,
+                        &color.to_u8_array(),
+                    );
                 }
             }
-            if let Some(color) = &text_style.foreground {
-                let left = left + self.get_text_left(token_start).to_i32().unwrap();
-                let row_start_index = self.get_glyph_text_range(glyph_start).0;
-                let start = self.get_glyph_text_range(token_start).0 - row_start_index;
-                let end = self.get_glyph_text_range(token_end).1 - row_start_index;
+
+            let mut text_ranges_to_render = vec![];
+            let mut start = glyph_start + visible_text_start_index;
+            for range in rendered_text_ranges {
+                if start < range.start {
+                    text_ranges_to_render.push((start, range.start - 1));
+                }
+                start = range.end + 1;
+            }
+            if start < glyph_start + visible_text_end_index {
+                text_ranges_to_render.push((start, glyph_start + visible_text_end_index));
+            }
+
+            for (start, end) in text_ranges_to_render {
+                let left = left + self.get_text_left(start).to_i32().unwrap();
+                let start = self.get_glyph_text_range(start).0 - row_start_index;
+                let end = self.get_glyph_text_range(end).1 - row_start_index;
                 let end = text.len().min(end);
                 draw.text_rect_blend_clip(
                     buffer.pixels_mut(),
@@ -2104,25 +2125,9 @@ impl TheTextRenderer {
                     font,
                     self.font_size,
                     &text[start..end],
-                    &color.to_u8_array(),
+                    style.theme().color(TextEditTextColor),
                     TheHorizontalAlign::Center,
                     TheVerticalAlign::Center,
-                );
-            }
-            if let Some(color) = &text_style.underline {
-                let left = left + self.get_text_left(token_start).to_i32().unwrap();
-                let left = left.max(0).to_usize().unwrap().max(self.left);
-
-                let top = top + self.row_height() as i32;
-                let top = top.max(0).to_usize().unwrap().max(self.top);
-
-                let width = self.get_text_width(token_start, token_end - 1);
-                let right = (left + width).min(self.left + self.width);
-                draw.blend_rect(
-                    buffer.pixels_mut(),
-                    &(left, top as usize, right - left, 1),
-                    stride,
-                    &color.to_u8_array(),
                 );
             }
         }
@@ -2225,4 +2230,10 @@ pub struct TheTextStyle {
     pub foreground: Option<TheColor>,
     pub background: Option<TheColor>,
     pub underline: Option<TheColor>,
+}
+
+impl TheTextStyle {
+    pub fn is_empty(&self) -> bool {
+        self.foreground.is_none() && self.background.is_none() && self.underline.is_none()
+    }
 }
