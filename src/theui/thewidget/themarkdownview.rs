@@ -13,6 +13,46 @@ use crate::{
 
 use super::thetextedit::{TheTextEditState, TheTextRenderer};
 
+enum TheMarkdownNode {
+    Emphasis,
+    Heading,
+    Link(String),
+    Strong,
+    Text,
+}
+
+impl TheMarkdownNode {
+    fn from_node(value: &Node) -> Option<Self> {
+        match value {
+            Node::Emphasis(_) => Some(TheMarkdownNode::Emphasis),
+            Node::Heading(_) => Some(TheMarkdownNode::Heading),
+            Node::Link(link) => Some(TheMarkdownNode::Link(link.url.clone())),
+            Node::Strong(_) => Some(TheMarkdownNode::Strong),
+            Node::Text(_) => Some(TheMarkdownNode::Text),
+            _ => None,
+        }
+    }
+}
+
+impl TheMarkdownNode {
+    fn is_link(&self) -> bool {
+        match self {
+            TheMarkdownNode::Link(_) => true,
+            _ => false,
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct TheMarkdownStyles {
+    pub emphasis: Option<TheColor>,
+    pub heading: Option<TheColor>,
+    pub link: Option<TheColor>,
+    pub link_hovered: Option<TheColor>,
+    pub strong: Option<TheColor>,
+    pub text: Option<TheColor>,
+}
+
 pub struct TheMarkdownView {
     // Widget Basic
     id: TheId,
@@ -41,8 +81,9 @@ pub struct TheMarkdownView {
     selectable: bool,
 
     // Markdown features
-    links: Vec<(Range<usize>, String)>,
     link_hovered: Option<usize>,
+    md_nodes: Vec<(Range<usize>, TheMarkdownNode)>,
+    styles: TheMarkdownStyles,
 
     // Modifiers
     modifier_ctrl: bool,
@@ -100,8 +141,9 @@ impl TheWidget for TheMarkdownView {
             last_mouse_down_time: Instant::now(),
             selectable: true,
 
-            links: vec![],
             link_hovered: None,
+            md_nodes: vec![],
+            styles: TheMarkdownStyles::default(),
 
             modifier_ctrl: false,
 
@@ -223,9 +265,14 @@ impl TheWidget for TheMarkdownView {
                         );
                     } else if self.renderer.dim().contains(global_coord) {
                         if let Some(hovered_link_index) = self.link_hovered {
-                            ctx.ui.send(TheEvent::ExternalUrlRequested(
-                                self.links[hovered_link_index].1.clone(),
-                            ));
+                            if let Some((_, node)) = self.md_nodes.get(hovered_link_index) {
+                                match node {
+                                    TheMarkdownNode::Link(url) => {
+                                        ctx.ui.send(TheEvent::ExternalUrlRequested(url.clone()));
+                                    }
+                                    _ => {}
+                                }
+                            }
                         } else {
                             self.drag_start_index = self.renderer.find_cursor_index(&coord);
                             let (cursor_row, cursor_column) =
@@ -434,29 +481,33 @@ impl TheWidget for TheMarkdownView {
                     redraw = true;
                 }
 
-                if !self.links.is_empty() {
+                if !self.md_nodes.is_empty() {
                     let hovered_index = self.renderer.find_cursor_index(&coord);
-                    for (index, (range, _)) in self.links.iter().enumerate() {
+                    if self.link_hovered != None {
+                        self.link_hovered = None;
+                        self.is_dirty = true;
+                        redraw = true;
+                    }
+                    for (index, (range, node)) in self.md_nodes.iter().enumerate() {
                         if range.contains(&hovered_index) {
-                            if self.link_hovered != Some(index) {
+                            if node.is_link() && self.link_hovered != Some(index) {
                                 self.link_hovered = Some(index);
                                 self.is_dirty = true;
                                 redraw = true;
                             }
                             break;
                         }
-
-                        if index == self.links.len() - 1 {
-                            if self.link_hovered != None {
-                                self.link_hovered = None;
-                                self.is_dirty = true;
-                                redraw = true;
-                            }
-                        }
                     }
                 }
 
                 self.hover_coord = *coord;
+            }
+            TheEvent::LostHover(_) => {
+                if self.link_hovered != None {
+                    self.link_hovered = None;
+                    self.is_dirty = true;
+                    redraw = true;
+                }
             }
             _ => {}
         }
@@ -607,27 +658,45 @@ impl TheWidget for TheMarkdownView {
 
         let link_hovered = self.link_hovered;
         let styles = self
-            .links
+            .md_nodes
             .iter()
             .enumerate()
-            .map(|(index, (range, _))| {
-                let color = Some(TheColor::from_u8_array(*style.theme().color(
-                    if link_hovered == Some(index) {
-                        TextLinkHoveredColor
-                    } else {
-                        TextLinkColor
-                    },
-                )));
+            .map(|(index, (range, node))| {
+                let fg_color = match node {
+                    TheMarkdownNode::Emphasis => self.styles.emphasis.clone(),
+                    TheMarkdownNode::Heading => self.styles.heading.clone(),
+                    TheMarkdownNode::Link(_) => {
+                        let is_link_hovered = link_hovered == Some(index);
+                        if is_link_hovered {
+                            self.styles
+                                .link_hovered
+                                .clone()
+                                .or(Some(TheColor::from_u8_array(
+                                    *style.theme().color(TextLinkHoveredColor),
+                                )))
+                        } else {
+                            self.styles.link.clone().or(Some(TheColor::from_u8_array(
+                                *style.theme().color(TextLinkColor),
+                            )))
+                        }
+                    }
+                    TheMarkdownNode::Strong => self.styles.strong.clone(),
+                    TheMarkdownNode::Text => self.styles.text.clone(),
+                };
                 (
                     range.clone(),
                     TheTextStyle {
-                        foreground: color.clone(),
-                        underline: color,
-                        background: None,
+                        underline: if node.is_link() {
+                            fg_color.clone()
+                        } else {
+                            None
+                        },
+                        foreground: fg_color,
                         ..Default::default()
                     },
                 )
             })
+            .filter(|(_, style)| !style.is_empty())
             .collect::<Vec<(Range<usize>, TheTextStyle)>>();
 
         self.renderer.render_text_with_styles(
@@ -688,6 +757,7 @@ pub trait TheMarkdownViewTrait: TheWidget {
     fn set_selectable(&mut self, selectable: bool);
     fn set_word_wrap(&mut self, word_wrap: bool);
     fn set_padding(&mut self, padding: (usize, usize, usize, usize));
+    fn set_markdown_styles(&mut self, styles: TheMarkdownStyles);
     fn draw_background(&mut self, draw_background: bool);
     fn draw_border(&mut self, draw_border: bool);
 }
@@ -721,6 +791,9 @@ impl TheMarkdownViewTrait for TheMarkdownView {
         self.renderer.padding = padding;
         self.is_dirty = true;
     }
+    fn set_markdown_styles(&mut self, styles: TheMarkdownStyles) {
+        self.styles = styles;
+    }
     fn draw_background(&mut self, draw_background: bool) {
         self.draw_background = draw_background;
         self.is_dirty = true;
@@ -733,12 +806,12 @@ impl TheMarkdownViewTrait for TheMarkdownView {
 
 impl TheMarkdownView {
     fn set_md_text(&mut self, text: String) {
-        self.links = vec![];
+        self.md_nodes = vec![];
 
         let text = match markdown::to_mdast(&text, &ParseOptions::default()) {
             Ok(tree) => {
                 let mut text = String::new();
-                traverse_node(&tree, &mut text, &mut self.links);
+                self.traverse_node(&tree, &mut text, false, true);
                 text
             }
             Err(err) => {
@@ -751,49 +824,65 @@ impl TheMarkdownView {
         self.state.set_text(text);
         self.link_hovered = None;
         self.is_dirty = true;
+    }
 
-        fn traverse_node(
-            node: &Node,
-            md_text: &mut String,
-            links: &mut Vec<(Range<usize>, String)>,
-        ) {
-            match node {
-                Node::Link(link) => {
-                    let mut handled = false;
+    fn traverse_node(
+        &mut self,
+        node: &Node,
+        md_text: &mut String,
+        direct_parent: bool,
+        new_paragraph: bool,
+    ) -> usize {
+        if !new_paragraph {
+            if let Some((range, _)) = self.md_nodes.last_mut() {
+                range.end -= 1;
+            }
+        }
 
-                    let link_start = md_text.len();
-                    if let Some(children) = node.children() {
-                        for child in children {
-                            match child {
-                                Node::Text(text) => {
-                                    links.push((
-                                        link_start..link_start + text.value.len(),
-                                        link.url.clone(),
-                                    ));
-                                    md_text.push_str(&text.value);
-                                    handled = true;
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
+        let node_start = md_text.len();
+        let mut text_len = 0;
+        let mut new_paragraph = false;
 
-                    if !handled {
-                        links.push((link_start..link_start + link.url.len(), link.url.clone()));
-                        md_text.push_str(&link.url);
+        match node {
+            Node::Heading(_) | Node::Paragraph(_) => {
+                if !md_text.is_empty() {
+                    md_text.push('\n');
+                    new_paragraph = true;
+                    if let Some((range, _)) = self.md_nodes.last_mut() {
+                        range.end += 1;
                     }
                 }
-                Node::Text(text) => {
-                    md_text.push_str(&text.value);
-                }
-                _ => {
-                    if let Some(children) = node.children() {
-                        for child in children {
-                            traverse_node(child, md_text, links);
-                        }
+            }
+            _ => {}
+        }
+
+        match node {
+            Node::Text(text) => {
+                md_text.push_str(&text.value);
+                text_len += text.value.len();
+            }
+            _ => {
+                if let Some(children) = node.children() {
+                    for child in children {
+                        text_len += self.traverse_node(
+                            child,
+                            md_text,
+                            TheMarkdownNode::from_node(node).is_some(),
+                            new_paragraph,
+                        );
                     }
                 }
             }
         }
+
+        if text_len > 0 && !direct_parent {
+            if let Some(node) = TheMarkdownNode::from_node(node) {
+                self.md_nodes
+                    .push((node_start..node_start + text_len, node));
+                if !new_paragraph {}
+            }
+        }
+
+        text_len
     }
 }

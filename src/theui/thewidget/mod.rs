@@ -81,7 +81,9 @@ pub mod prelude {
     pub use crate::theui::thewidget::thecheckbutton::TheCheckButton;
     pub use crate::theui::thewidget::thehdivider::TheHDivider;
     pub use crate::theui::thewidget::theiconview::{TheIconView, TheIconViewTrait};
-    pub use crate::theui::thewidget::themarkdownview::{TheMarkdownView, TheMarkdownViewTrait};
+    pub use crate::theui::thewidget::themarkdownview::{
+        TheMarkdownStyles, TheMarkdownView, TheMarkdownViewTrait,
+    };
     pub use crate::theui::thewidget::thergbaview::{
         TheRGBAView, TheRGBAViewMode, TheRGBAViewTrait,
     };
