@@ -502,6 +502,13 @@ impl TheWidget for TheMarkdownView {
 
                 self.hover_coord = *coord;
             }
+            TheEvent::LostHover(_) => {
+                if self.link_hovered != None {
+                    self.link_hovered = None;
+                    self.is_dirty = true;
+                    redraw = true;
+                }
+            }
             _ => {}
         }
 
