@@ -97,7 +97,7 @@ cpu_winit = ["winit_app", "cpu_render"]
 gpu_winit = ["winit_app", "gpu_render"]
 pixels_winit = ["winit_app", "pixels_render"]
 
-default = ["pixels_winit"]
+default = ["cpu_winit"]
 
 [workspace]
 members = ["examples/*", "run-wasm"]

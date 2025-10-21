@@ -385,43 +385,14 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
 
                         #[cfg(feature = "cpu_render")]
                         {
+                            let buffer_data = convert_rgba_to_softbuffer(
+                                &ui_frame,
+                                width,
+                                height,
+                                ctx.scale_factor as usize,
+                            );
                             let mut buffer = ctx.surface.buffer_mut().unwrap();
-                            let scale_factor = ctx.scale_factor as usize;
-
-                            if scale_factor == 1 {
-                                for i in 0..(width * height) {
-                                    let index = i * 4;
-                                    let red = ui_frame[index] as u32;
-                                    let green = ui_frame[index + 1] as u32;
-                                    let blue = ui_frame[index + 2] as u32;
-
-                                    buffer[i] = blue | (green << 8) | (red << 16);
-                                }
-                            } else {
-                                let dest_width = width * scale_factor;
-                                // let dest_height = height * scale_factor;
-                                for y in 0..height {
-                                    for x in 0..width {
-                                        let src_index = (y * width + x) * 4;
-                                        let red = ui_frame[src_index] as u32;
-                                        let green = ui_frame[src_index + 1] as u32;
-                                        let blue = ui_frame[src_index + 2] as u32;
-
-                                        // Write the pixel into the scaled region
-                                        for y2 in 0..scale_factor as usize {
-                                            for x2 in 0..scale_factor as usize {
-                                                let dest_x = x * scale_factor as usize + x2;
-                                                let dest_y = y * scale_factor as usize + y2;
-
-                                                let dest_index = dest_y * dest_width + dest_x;
-                                                buffer[dest_index] =
-                                                    blue | (green << 8) | (red << 16);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
+                            buffer.copy_from_slice(&buffer_data);
                             if buffer
                                 .present()
                                 .map_err(|e| error!("render failed: {}", e))
@@ -820,4 +791,56 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
             }
         })
         .unwrap();
+}
+
+#[cfg(feature = "cpu_render")]
+fn convert_rgba_to_softbuffer(
+    ui_frame: &[u8],
+    width: usize,
+    height: usize,
+    scale_factor: usize,
+) -> Vec<u32> {
+    use rayon::prelude::*;
+
+    let dest_width = width * scale_factor;
+    let dest_height = height * scale_factor;
+
+    if scale_factor == 1 {
+        let mut buffer = vec![0u32; dest_width * dest_height];
+        buffer.par_iter_mut().enumerate().for_each(|(i, px)| {
+            let index = i * 4;
+            let red = ui_frame[index] as u32;
+            let green = ui_frame[index + 1] as u32;
+            let blue = ui_frame[index + 2] as u32;
+            *px = blue | (green << 8) | (red << 16);
+        });
+        buffer
+    } else {
+        let mut buffer = vec![0u32; dest_width * dest_height];
+
+        // Each source row y maps to a contiguous chunk of `scale_factor` destination rows.
+        let sf = scale_factor;
+        buffer
+            .par_chunks_mut(dest_width * sf)
+            .enumerate()
+            .for_each(|(y, chunk)| {
+                for x in 0..width {
+                    let src_index = (y * width + x) * 4;
+                    let r = ui_frame[src_index] as u32;
+                    let g = ui_frame[src_index + 1] as u32;
+                    let b = ui_frame[src_index + 2] as u32;
+                    let color = b | (g << 8) | (r << 16);
+
+                    // Write a sf×sf block at (x*sf, 0..sf) across the `sf` destination rows for this source row.
+                    for y2 in 0..sf {
+                        let row = &mut chunk[y2 * dest_width..(y2 + 1) * dest_width];
+                        let start = x * sf;
+                        let end = start + sf;
+                        row[start..end].fill(color);
+                    }
+                }
+            });
+
+        buffer
+    }
 }
