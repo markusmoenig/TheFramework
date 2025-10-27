@@ -140,7 +140,9 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
     use pixels::{Pixels, SurfaceTexture};
     use winit::dpi::LogicalSize;
     use winit::{
-        event::{ElementState, Event, MouseButton, MouseScrollDelta, WindowEvent},
+        event::{
+            ElementState, Event, MouseButton, MouseScrollDelta, Touch, TouchPhase, WindowEvent,
+        },
         event_loop::{ControlFlow, EventLoop},
         keyboard::{Key, NamedKey},
         window::{Icon, WindowBuilder},
@@ -319,6 +321,77 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
 
                                 if p.x == 0.0 && p.y == 0.0 {
                                     // mouse_wheel_ongoing = false;
+                                }
+                            }
+                        }
+                    }
+                    WindowEvent::Touch(Touch {
+                        phase, location, ..
+                    }) => {
+                        let (x, y) = (location.x as u32, location.y as u32);
+
+                        #[cfg(feature = "gpu")]
+                        let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
+
+                        #[cfg(feature = "cpu_render")]
+                        let (x, y) = translate_coord_to_local(x, y, ctx.scale_factor);
+
+                        #[cfg(feature = "pixels_winit")]
+                        let (x, y) = {
+                            // Convert logical window coords to pixel coords similarly to mouse path
+                            let logical = (location.x as f32, location.y as f32);
+                            let pos = pixels
+                                .window_pos_to_pixel(logical)
+                                .unwrap_or_else(|p| pixels.clamp_pixel_pos(p));
+                            (pos.0, pos.1)
+                        };
+
+                        match phase {
+                            TouchPhase::Started => {
+                                let mut redraw = false;
+                                #[cfg(feature = "ui")]
+                                {
+                                    if ui.touch_down(x as f32, y as f32, &mut ctx) {
+                                        redraw = true;
+                                    }
+                                }
+                                if app.touch_down(x as f32, y as f32, &mut ctx) {
+                                    redraw = true;
+                                }
+
+                                if redraw {
+                                    window.request_redraw();
+                                }
+                            }
+                            TouchPhase::Moved => {
+                                let mut redraw = false;
+                                #[cfg(feature = "ui")]
+                                {
+                                    if ui.touch_dragged(x as f32, y as f32, &mut ctx) {
+                                        redraw = true;
+                                    }
+                                }
+                                if app.touch_dragged(x as f32, y as f32, &mut ctx) {
+                                    redraw = true;
+                                }
+                                if redraw {
+                                    window.request_redraw();
+                                }
+                            }
+                            TouchPhase::Ended | TouchPhase::Cancelled => {
+                                let mut redraw = false;
+                                #[cfg(feature = "ui")]
+                                {
+                                    if ui.touch_up(x as f32, y as f32, &mut ctx) {
+                                        redraw = true;
+                                    }
+                                }
+                                if app.touch_up(x as f32, y as f32, &mut ctx) {
+                                    redraw = true;
+                                }
+
+                                if redraw {
+                                    window.request_redraw();
                                 }
                             }
                         }
