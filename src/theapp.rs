@@ -802,7 +802,10 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                 // Resize the window
                 if let Some(size) = input.window_resized() {
                     if size.width != 0 && size.height != 0 {
+                        #[cfg(target_os = "macos")]
                         let scale = window.scale_factor() as f32;
+                        #[cfg(not(target_os = "macos"))]
+                        let scale: f32 = 1.0;
 
                         #[cfg(feature = "gpu")]
                         {
