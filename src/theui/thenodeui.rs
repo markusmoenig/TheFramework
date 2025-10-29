@@ -193,6 +193,26 @@ impl TheNodeUI {
         }
     }
 
+    /// Set an f32 value.
+    pub fn set_i32_value(&mut self, id: &str, val: i32) {
+        for (item_id, item) in &mut self.items {
+            if id == item_id {
+                match item {
+                    IntEditSlider(_, _, _, value, _, _) => {
+                        *value = val;
+                    }
+                    IntSlider(_, _, _, value, _, _, _) => {
+                        *value = val;
+                    }
+                    Selector(_, _, _, _, value) => {
+                        *value = val;
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
     /// Set a text value.
     pub fn set_text_value(&mut self, id: &str, val: String) {
         for (item_id, item) in &mut self.items {
