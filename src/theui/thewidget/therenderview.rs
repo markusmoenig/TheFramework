@@ -12,6 +12,8 @@ pub struct TheRenderView {
 
     dim: TheDim,
 
+    auto_focus: bool,
+
     mouse_is_down: bool,
     is_dirty: bool,
 }
@@ -35,6 +37,7 @@ impl TheWidget for TheRenderView {
 
             dim: TheDim::zero(),
 
+            auto_focus: false,
             mouse_is_down: false,
             is_dirty: false,
         }
@@ -100,6 +103,18 @@ impl TheWidget for TheRenderView {
 
                 ctx.ui
                     .send(TheEvent::RenderViewHoverChanged(self.id().clone(), *coord));
+
+                if self.auto_focus {
+                    if self.state != TheWidgetState::Selected {
+                        self.state = TheWidgetState::Selected;
+                        ctx.ui.send_widget_state_changed(self.id(), self.state);
+                    }
+                    ctx.ui.set_focus(self.id());
+
+                    self.is_dirty = true;
+                    self.mouse_is_down = true;
+                    redraw = true;
+                }
             }
             TheEvent::LostHover(_) => {
                 ctx.ui
@@ -236,11 +251,15 @@ impl TheWidget for TheRenderView {
 
 pub trait TheRenderViewTrait: TheWidget {
     fn render_buffer_mut(&mut self) -> &mut TheRGBABuffer;
+    fn set_auto_focus(&mut self, auto_focus: bool);
 }
 
 impl TheRenderViewTrait for TheRenderView {
     fn render_buffer_mut(&mut self) -> &mut TheRGBABuffer {
         self.is_dirty = true;
         &mut self.render_buffer
+    }
+    fn set_auto_focus(&mut self, auto_focus: bool) {
+        self.auto_focus = auto_focus;
     }
 }
