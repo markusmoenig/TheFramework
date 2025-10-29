@@ -223,13 +223,20 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
         .unwrap()
     };
 
+    let mut scale_factor = 1.0;
+    // Make sure to set the initial scale factor on macOS
+    #[cfg(target_os = "macos")]
+    {
+        scale_factor = window.scale_factor() as f32;
+    }
+
     #[cfg(any(feature = "gpu", feature = "cpu_render"))]
     let mut ui_frame = vec![0; width * height * 4];
 
     #[cfg(feature = "gpu")]
     let mut ctx = TheContext::new(width, height, gpu, texture_renderer);
     #[cfg(feature = "cpu_render")]
-    let mut ctx = TheContext::new(width, height, window.clone());
+    let mut ctx = TheContext::new(width, height, scale_factor, window.clone());
     #[cfg(not(any(feature = "gpu", feature = "cpu_render")))]
     let mut ctx = TheContext::new(width, height);
 
@@ -802,15 +809,10 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                 // Resize the window
                 if let Some(size) = input.window_resized() {
                     if size.width != 0 && size.height != 0 {
-                        #[cfg(target_os = "macos")]
-                        let scale = window.scale_factor() as f32;
-                        #[cfg(not(target_os = "macos"))]
-                        let scale: f32 = 1.0;
-
                         #[cfg(feature = "gpu")]
                         {
                             ctx.gpu.resize(size.width, size.height);
-                            ctx.gpu.set_scale_factor(scale);
+                            ctx.gpu.set_scale_factor(scale_factor);
                         }
 
                         #[cfg(feature = "cpu_render")]
@@ -830,11 +832,11 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                             );
                         }
 
-                        width = (size.width as f32 / scale) as usize;
-                        height = (size.height as f32 / scale) as usize;
+                        width = (size.width as f32 / scale_factor) as usize;
+                        height = (size.height as f32 / scale_factor) as usize;
                         ctx.width = width;
                         ctx.height = height;
-                        ctx.scale_factor = scale;
+                        ctx.scale_factor = scale_factor;
 
                         #[cfg(any(feature = "gpu", feature = "cpu_render"))]
                         ui_frame.resize(width * height * 4, 0);

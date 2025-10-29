@@ -97,20 +97,20 @@ impl<'w> TheContext<'w> {
 
 #[cfg(feature = "cpu_render")]
 impl TheContext {
-    pub fn new(width: usize, height: usize, window: Arc<Window>) -> Self {
+    pub fn new(width: usize, height: usize, scale_factor: f32, window: Arc<Window>) -> Self {
         let context = softbuffer::Context::new(window.clone()).unwrap();
         let mut surface = softbuffer::Surface::new(&context, window.clone()).unwrap();
         surface
             .resize(
-                NonZeroU32::new(width as u32).unwrap(),
-                NonZeroU32::new(height as u32).unwrap(),
+                NonZeroU32::new(width as u32 * scale_factor as u32).unwrap(),
+                NonZeroU32::new(height as u32 * scale_factor as u32).unwrap(),
             )
             .unwrap();
 
         Self {
             width,
             height,
-            scale_factor: 1.0,
+            scale_factor,
             draw: TheDraw2D::new(),
             #[cfg(feature = "ui")]
             ui: TheUIContext::new(),
