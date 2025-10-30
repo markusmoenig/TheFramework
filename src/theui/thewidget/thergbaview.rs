@@ -53,6 +53,9 @@ pub struct TheRGBAView {
     context_menu: Option<TheContextMenu>,
 
     icon_mode: bool,
+
+    supports_external_zoom: bool,
+    zoom_modifier_down: bool,
 }
 
 impl TheWidget for TheRGBAView {
@@ -107,6 +110,9 @@ impl TheWidget for TheRGBAView {
             context_menu: None,
 
             icon_mode: false,
+
+            supports_external_zoom: false,
+            zoom_modifier_down: false,
         }
     }
 
@@ -120,9 +126,11 @@ impl TheWidget for TheRGBAView {
 
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
-        //println!("event ({}): {:?}", self.id.name, event);
 
         match event {
+            TheEvent::ModifierChanged(_shift, ctrl, _alt, logo) => {
+                self.zoom_modifier_down = *ctrl || *logo;
+            }
             TheEvent::Context(coord) => {
                 if let Some(context_menu) = &self.context_menu {
                     ctx.ui.send(TheEvent::ShowContextMenu(
@@ -386,6 +394,14 @@ impl TheWidget for TheRGBAView {
                 } else {
                     1.0
                 };
+
+                if self.supports_external_zoom {
+                    if self.zoom_modifier_down {
+                        let delta = delta.y as f32 * scale_factor * scale_y;
+                        ctx.ui.send(TheEvent::TileZoomBy(self.id.clone(), delta));
+                        return false;
+                    }
+                }
 
                 // Update accumulated deltas
                 self.accumulated_wheel_delta.x += delta.x as f32 * scale_factor * scale_x;
@@ -778,6 +794,8 @@ pub trait TheRGBAViewTrait: TheWidget {
     fn set_used(&mut self, selection: FxHashSet<(i32, i32)>);
     fn set_mode(&mut self, mode: TheRGBAViewMode);
     fn set_rectangular_selection(&mut self, rectangular_selection: bool);
+
+    fn set_supports_external_zoom(&mut self, zoom: bool);
 }
 
 impl TheRGBAViewTrait for TheRGBAView {
@@ -1001,5 +1019,9 @@ impl TheRGBAViewTrait for TheRGBAView {
     }
     fn set_mode(&mut self, mode: TheRGBAViewMode) {
         self.mode = mode;
+    }
+
+    fn set_supports_external_zoom(&mut self, zoom: bool) {
+        self.supports_external_zoom = zoom;
     }
 }

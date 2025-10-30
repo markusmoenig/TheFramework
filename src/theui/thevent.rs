@@ -56,6 +56,7 @@ pub enum TheEvent {
     TileEditorDrop(TheId, Vec2<i32>, TheDrop),
     TileEditorDelete(TheId, FxHashSet<(i32, i32)>),
     TileEditorUp(TheId),
+    TileZoomBy(TheId, f32),
 
     RenderViewClicked(TheId, Vec2<i32>),
     RenderViewDragged(TheId, Vec2<i32>),
