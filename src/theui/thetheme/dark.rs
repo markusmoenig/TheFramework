@@ -160,6 +160,19 @@ impl TheTheme for TheDarkTheme {
 
         colors.insert(LayoutSeparator, [160, 160, 160, 255]);
 
+        // colors.insert(TreeViewNodeBorder, [229, 229, 229, 255]);
+        // colors.insert(TreeViewNode, [237, 237, 237, 255]);
+
+        colors.insert(TreeViewNodeBorder, [174, 174, 174, 255]);
+        colors.insert(TreeViewNode, [174, 174, 174, 255]);
+
+        colors.insert(TreeViewNodeSelectedBorder, [202, 113, 230, 255]);
+        colors.insert(TreeViewNodeSelected, [187, 122, 208, 255]);
+
+        colors.insert(TreeViewNodeText, [52, 52, 52, 255]);
+
+        colors.insert(TreeViewNodePlusMinus, [227, 227, 227, 255]);
+
         Self {
             temp_color: BLACK,
             colors,

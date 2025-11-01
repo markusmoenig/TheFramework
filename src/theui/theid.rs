@@ -2,7 +2,7 @@ pub use crate::prelude::*;
 use std::hash::{Hash, Hasher};
 
 /// Defines the identifier for a widget, its name and Uuid.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct TheId {
     pub name: String,
     pub uuid: Uuid,

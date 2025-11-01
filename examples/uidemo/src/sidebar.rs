@@ -23,23 +23,24 @@ impl Sidebar {
 
         // Section Buttons
 
-        let mut sectionbar_canvas = TheCanvas::new();
+        // let mut sectionbar_canvas = TheCanvas::new();
 
-        let mut section_bar_canvas = TheCanvas::new();
-        section_bar_canvas.set_widget(TheSectionbar::new(TheId::named("Sectionbar")));
-        sectionbar_canvas.set_top(section_bar_canvas);
+        // let mut section_bar_canvas = TheCanvas::new();
+        // section_bar_canvas.set_widget(TheSectionbar::new(TheId::named("Sectionbar")));
+        // sectionbar_canvas.set_top(section_bar_canvas);
 
-        let mut sphere_sectionbar_button = TheSectionbarButton::new(TheId::named("Sphere Section"));
-        sphere_sectionbar_button.set_text("Sphere".to_string());
-        sphere_sectionbar_button.set_state(TheWidgetState::Selected);
+        // let mut sphere_sectionbar_button = TheSectionbarButton::new(TheId::named("Sphere Section"));
+        // sphere_sectionbar_button.set_text("Sphere".to_string());
+        // sphere_sectionbar_button.set_state(TheWidgetState::Selected);
 
-        let mut cube_sectionbar_button = TheSectionbarButton::new(TheId::named("Cube Section"));
-        cube_sectionbar_button.set_text("Cube".to_string());
+        // let mut cube_sectionbar_button = TheSectionbarButton::new(TheId::named("Cube Section"));
+        // cube_sectionbar_button.set_text("Cube".to_string());
 
-        let mut pyramid_sectionbar_button =
-            TheSectionbarButton::new(TheId::named("Pyramid Section"));
-        pyramid_sectionbar_button.set_text("Pyramid".to_string());
+        // let mut pyramid_sectionbar_button =
+        //     TheSectionbarButton::new(TheId::named("Pyramid Section"));
+        // pyramid_sectionbar_button.set_text("Pyramid".to_string());
 
+        /*
         let mut vlayout = TheVLayout::new(TheId::named("Section Buttons"));
         vlayout.add_widget(Box::new(sphere_sectionbar_button));
         vlayout.add_widget(Box::new(cube_sectionbar_button));
@@ -49,12 +50,13 @@ impl Sidebar {
         vlayout.set_background_color(Some(SectionbarBackground));
         vlayout.limiter_mut().set_max_width(90);
         sectionbar_canvas.set_layout(vlayout);
+        */
 
         // Header
 
         let mut header: TheCanvas = TheCanvas::new();
         let mut switchbar = TheSwitchbar::new(TheId::empty());
-        header.limiter_mut().set_max_width(310);
+        header.limiter_mut().set_max_width(400);
         switchbar.set_text("Material".to_string());
         header.set_widget(switchbar);
 
@@ -140,16 +142,22 @@ impl Sidebar {
         material_canvas.set_layout(text_layout);
         material_canvas.top_is_expanding = false;
 
-        stack_layout.add_canvas(material_canvas);
+        // stack_layout.add_canvas(material_canvas);
+
+        // Setup the TreeLayout
+
+        let mut tree_layout = TheTreeLayout::new(TheId::named("Tree Layout"));
+        tree_layout.limiter_mut().set_max_width(width);
+        tree_layout.set_background_color(Some(TheThemeColors::DefaultWidgetDarkBackground));
 
         // Put it all into the canvas
 
         let mut canvas = TheCanvas::new();
         canvas.set_top(header);
-        stack_layout.set_index(0);
+        // stack_layout.set_index(0);
         canvas.top_is_expanding = false;
-        canvas.set_layout(stack_layout);
-        canvas.set_right(sectionbar_canvas);
+        canvas.set_layout(tree_layout);
+        //canvas.set_right(sectionbar_canvas);
 
         ui.canvas.set_right(canvas);
     }

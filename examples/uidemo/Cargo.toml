@@ -8,7 +8,7 @@ theframework = { path = "../..", default-features = true, features = ["ui"] }
 lazy_static = "1.4.0"
 rust-pathtracer = "0.2.4"
 # rust-pathtracer = { path = "../../../rust-pathtracer/rust-pathtracer" }
-nalgebra = "0.32.1"
+nalgebra = "0.34.1"
 
 # theframework = { path = "../..", features = ["ui"] }
 # [lib]

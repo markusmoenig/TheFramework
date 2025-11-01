@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-#[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Copy, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, PartialOrd, Clone, Copy, Debug, Default)]
 pub struct TheDim {
     /// The x offset in screen coordinates
     pub x: i32,

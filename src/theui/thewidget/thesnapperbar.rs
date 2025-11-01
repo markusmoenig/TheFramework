@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+#[derive(Default)]
 pub struct TheSnapperbar {
     id: TheId,
     limiter: TheSizeLimiter,
@@ -235,6 +236,7 @@ pub trait TheSnapperbarTrait {
 impl TheSnapperbarTrait for TheSnapperbar {
     fn set_text(&mut self, text: String) {
         self.text = text;
+        self.is_dirty = true;
     }
     fn set_canvas_collapse_uuid(&mut self, collapse: Uuid) {
         self.collapse_uuid = Some(collapse);

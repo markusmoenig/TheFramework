@@ -10,6 +10,7 @@ pub mod thesnapperlayout;
 pub mod thestacklayout;
 pub mod thetablayout;
 pub mod thetextlayout;
+pub mod thetreelayout;
 pub mod thevlayout;
 
 pub mod prelude {
@@ -23,6 +24,7 @@ pub mod prelude {
     pub use crate::theui::thelayout::thestacklayout::{TheStackLayout, TheStackLayoutTrait};
     pub use crate::theui::thelayout::thetablayout::{TheTabLayout, TheTabLayoutTrait};
     pub use crate::theui::thelayout::thetextlayout::{TheTextLayout, TheTextLayoutTrait};
+    pub use crate::theui::thelayout::thetreelayout::{TheTreeLayout, TheTreeLayoutTrait};
     pub use crate::theui::thelayout::thevlayout::{TheVLayout, TheVLayoutMode, TheVLayoutTrait};
 
     pub use crate::theui::thelayout::TheLayout;
@@ -156,6 +158,11 @@ pub trait TheLayout: Send {
 
     /// Attempts to cast to TheTextLayout. Only valid for TheTextLayout.
     fn as_text_layout(&mut self) -> Option<&mut dyn TheTextLayoutTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheTreeLayout. Only valid for TheTreeLayout.
+    fn as_tree_layout(&mut self) -> Option<&mut dyn TheTreeLayoutTrait> {
         None
     }
 }

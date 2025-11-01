@@ -175,4 +175,11 @@ pub enum TheThemeColors {
     ToolListButtonSelectedBackground,
 
     LayoutSeparator,
+
+    TreeViewNodeBorder,
+    TreeViewNode,
+    TreeViewNodeSelectedBorder,
+    TreeViewNodeSelected,
+    TreeViewNodeText,
+    TreeViewNodePlusMinus,
 }

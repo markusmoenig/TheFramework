@@ -42,11 +42,14 @@ pub mod thetoollistbar;
 pub mod thetoollistbutton;
 pub mod thetraybar;
 pub mod thetraybarbutton;
+pub mod thetreenode;
 pub mod theverticalscrollbar;
 
 use std::any::Any;
 
 pub mod prelude {
+    pub use crate::theui::thewidget::thetreenode::{TheTreeNode, TheTreeNodeTrait};
+
     pub use crate::theui::thewidget::thecolorbutton::TheColorButton;
 
     pub use crate::theui::thewidget::thedropdownmenu::TheDropdownMenu;
@@ -116,8 +119,9 @@ pub mod prelude {
     pub use crate::theui::thewidget::therenderview::{TheRenderView, TheRenderViewTrait};
 }
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
 pub enum TheWidgetState {
+    #[default]
     None,
     Clicked,
     Selected,
