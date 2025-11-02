@@ -1,5 +1,8 @@
 use crate::prelude::*;
 
+const LIST_RIGHT_MARGIN: i32 = 1;
+const LIST_BOTTOM_MARGIN: i32 = 2;
+
 pub struct TheListLayout {
     id: TheId,
     limiter: TheSizeLimiter,
@@ -132,6 +135,7 @@ impl TheLayout for TheListLayout {
             if items > 0 {
                 total_height += (items - 1) * 3;
             }
+            total_height += LIST_BOTTOM_MARGIN;
 
             if total_height < dim.height {
                 total_height = dim.height;
@@ -152,14 +156,17 @@ impl TheLayout for TheListLayout {
                 width -= 13;
             }
 
+            let content_width = (width - LIST_RIGHT_MARGIN).max(0);
+
             self.list_buffer
                 .set_dim(TheDim::new(0, 0, width, total_height));
 
             for index in 0..items {
                 let i = index as usize;
 
+                let widget_width = (content_width - 2).max(0);
                 self.widgets[i].set_dim(
-                    TheDim::new(dim.x + x, dim.y + y, width - 2, self.item_size),
+                    TheDim::new(dim.x + x, dim.y + y, widget_width, self.item_size),
                     ctx,
                 );
                 self.widgets[i].dim_mut().set_buffer_offset(x, y);

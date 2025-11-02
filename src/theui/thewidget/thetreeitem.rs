@@ -1,7 +1,6 @@
 use crate::prelude::*;
 
-#[derive(Default)]
-pub struct TheTreeNode {
+pub struct TheTreeItem {
     id: TheId,
     limiter: TheSizeLimiter,
 
@@ -28,7 +27,7 @@ pub struct TheTreeNode {
     background: Option<TheColor>,
 }
 
-impl TheWidget for TheTreeNode {
+impl TheWidget for TheTreeItem {
     fn new(id: TheId) -> Self
     where
         Self: Sized,
@@ -208,55 +207,14 @@ impl TheWidget for TheTreeNode {
 
     fn draw(
         &mut self,
-        _buffer: &mut TheRGBABuffer,
-        _style: &mut Box<dyn TheStyle>,
-        _ctx: &mut TheContext,
+        buffer: &mut TheRGBABuffer,
+        style: &mut Box<dyn TheStyle>,
+        ctx: &mut TheContext,
     ) {
         if !self.dim().is_valid() {
             return;
         }
 
-        // let stride = buffer.stride();
-        // let rect = self.dim.to_buffer_utuple();
-
-        /*
-        ctx.draw.rect_plus(
-            buffer.pixels_mut(),
-            &(rect.0 + 4, rect.1 + 4, 13, 13),
-            stride,
-            style.theme().color(TreeViewNodePlusMinus),
-        );
-
-        ctx.draw.rect_outline_border_right_open(
-            buffer.pixels_mut(),
-            &(rect.0 + 22, rect.1, rect.2 - 20 - 6, 20),
-            stride,
-            style.theme().color(TreeViewNodeBorder),
-            1,
-        );
-
-        ctx.draw.rect(
-            buffer.pixels_mut(),
-            &(rect.0 + 23, rect.1 + 1, rect.2 - 20 - 8, 18),
-            stride,
-            style.theme().color(TreeViewNode),
-        );
-
-        if let Some(font) = &ctx.ui.font {
-            ctx.draw.text_rect_blend(
-                buffer.pixels_mut(),
-                &(rect.0 + 30, rect.1 + 1, rect.2 - 30, 20),
-                stride,
-                font,
-                14.0,
-                "Rooty",
-                style.theme().color(TreeViewNodeText),
-                TheHorizontalAlign::Left,
-                TheVerticalAlign::Center,
-            );
-        }*/
-
-        /*
         let mut color = if self.state == TheWidgetState::Selected {
             if !self.id().equals(&ctx.ui.focus) {
                 *style.theme().color(ListItemSelectedNoFocus)
@@ -409,12 +367,12 @@ impl TheWidget for TheTreeNode {
                     }
                 }
             }
-        }*/
+        }
 
         self.is_dirty = false;
     }
 
-    // fn as_treee_view_item(&mut self) -> Option<&mut dyn TheListItemTrait> {
+    // fn as_list_item(&mut self) -> Option<&mut dyn TheListItemTrait> {
     //     Some(self)
     // }
 
@@ -423,7 +381,7 @@ impl TheWidget for TheTreeNode {
     }
 }
 
-pub trait TheTreeNodeTrait {
+pub trait TheTreeItemTrait {
     fn set_background_color(&mut self, color: TheColor);
     fn set_text(&mut self, text: String);
     fn set_sub_text(&mut self, sub_text: String);
@@ -434,7 +392,7 @@ pub trait TheTreeNodeTrait {
     fn add_value_column(&mut self, width: i32, value: TheValue);
 }
 
-impl TheTreeNodeTrait for TheTreeNode {
+impl TheTreeItemTrait for TheTreeItem {
     fn set_background_color(&mut self, color: TheColor) {
         self.background = Some(color);
         self.is_dirty = true;

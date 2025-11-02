@@ -24,7 +24,9 @@ pub mod prelude {
     pub use crate::theui::thelayout::thestacklayout::{TheStackLayout, TheStackLayoutTrait};
     pub use crate::theui::thelayout::thetablayout::{TheTabLayout, TheTabLayoutTrait};
     pub use crate::theui::thelayout::thetextlayout::{TheTextLayout, TheTextLayoutTrait};
-    pub use crate::theui::thelayout::thetreelayout::{TheTreeLayout, TheTreeLayoutTrait};
+    pub use crate::theui::thelayout::thetreelayout::{
+        TheTreeLayout, TheTreeLayoutTrait, TheTreeNode,
+    };
     pub use crate::theui::thelayout::thevlayout::{TheVLayout, TheVLayoutMode, TheVLayoutTrait};
 
     pub use crate::theui::thelayout::TheLayout;

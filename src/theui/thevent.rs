@@ -94,6 +94,7 @@ pub enum TheEvent {
     SetStackIndex(TheId, usize),
     NewListItemSelected(TheId, TheId),
     ScrollLayout(TheId, Vec2<i32>),
+    SnapperStateChanged(TheId, TheId, bool),
 
     // Utility
     FileRequesterResult(TheId, Vec<std::path::PathBuf>),

@@ -12,6 +12,8 @@ pub struct TheSnapperbar {
     dim: TheDim,
     text: String,
     is_dirty: bool,
+
+    layout_id: TheId,
 }
 
 impl TheWidget for TheSnapperbar {
@@ -27,22 +29,20 @@ impl TheWidget for TheSnapperbar {
             limiter,
 
             state: TheWidgetState::None,
-            open: true,
+            open: false,
             collapse_uuid: None,
 
             dim: TheDim::zero(),
             text: "".to_string(),
             is_dirty: false,
+
+            layout_id: TheId::empty(),
         }
     }
 
     fn id(&self) -> &TheId {
         &self.id
     }
-
-    // fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
-    //     false
-    // }
 
     fn dim(&self) -> &TheDim {
         &self.dim
@@ -74,6 +74,13 @@ impl TheWidget for TheSnapperbar {
     fn set_state(&mut self, state: TheWidgetState) {
         self.state = state;
         self.is_dirty = true;
+    }
+
+    fn set_value(&mut self, value: TheValue) {
+        if let Some(text) = value.to_string() {
+            self.text = text;
+            self.is_dirty = true;
+        }
     }
 
     fn supports_hover(&mut self) -> bool {
@@ -113,6 +120,12 @@ impl TheWidget for TheSnapperbar {
                     self.open = !self.open;
                     ctx.ui.redraw_all = true;
                     ctx.ui.relayout = true;
+
+                    ctx.ui.send(TheEvent::SnapperStateChanged(
+                        self.id().clone(),
+                        self.layout_id.clone(),
+                        self.open,
+                    ));
                 }
                 redraw = true;
             }
@@ -122,6 +135,10 @@ impl TheWidget for TheSnapperbar {
                     ctx.ui.set_hover(self.id());
                     redraw = true;
                 }
+            }
+            TheEvent::MouseWheel(delta) => {
+                ctx.ui
+                    .send(TheEvent::ScrollLayout(self.layout_id.clone(), *delta));
             }
             _ => {}
         }
@@ -211,8 +228,8 @@ impl TheWidget for TheSnapperbar {
                 &self.dim.to_buffer_shrunk_utuple(&shrinker),
                 stride,
                 font,
-                15.0,
-                &self.id().name,
+                13.5,
+                &self.text,
                 &WHITE,
                 TheHorizontalAlign::Left,
                 TheVerticalAlign::Center,
@@ -228,12 +245,17 @@ impl TheWidget for TheSnapperbar {
 }
 
 pub trait TheSnapperbarTrait {
+    fn set_associated_layout(&mut self, id: TheId);
     fn set_text(&mut self, text: String);
     fn set_canvas_collapse_uuid(&mut self, collapse: Uuid);
     fn is_open(&self) -> bool;
+    fn set_open(&mut self, open: bool);
 }
 
 impl TheSnapperbarTrait for TheSnapperbar {
+    fn set_associated_layout(&mut self, layout_id: TheId) {
+        self.layout_id = layout_id;
+    }
     fn set_text(&mut self, text: String) {
         self.text = text;
         self.is_dirty = true;
@@ -243,5 +265,8 @@ impl TheSnapperbarTrait for TheSnapperbar {
     }
     fn is_open(&self) -> bool {
         self.open
+    }
+    fn set_open(&mut self, open: bool) {
+        self.open = open;
     }
 }

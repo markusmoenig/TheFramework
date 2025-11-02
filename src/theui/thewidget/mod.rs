@@ -42,13 +42,13 @@ pub mod thetoollistbar;
 pub mod thetoollistbutton;
 pub mod thetraybar;
 pub mod thetraybarbutton;
-pub mod thetreenode;
+pub mod thetreeitem;
 pub mod theverticalscrollbar;
 
 use std::any::Any;
 
 pub mod prelude {
-    pub use crate::theui::thewidget::thetreenode::{TheTreeNode, TheTreeNodeTrait};
+    pub use crate::theui::thewidget::thetreeitem::{TheTreeItem, TheTreeItemTrait};
 
     pub use crate::theui::thewidget::thecolorbutton::TheColorButton;
 

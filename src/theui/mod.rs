@@ -521,12 +521,25 @@ impl TheUI {
                             }
                         }
                     }
+                    TheEvent::SnapperStateChanged(id, layout_id, open) => {
+                        if let Some(layout) = self.canvas.get_layout(None, Some(&layout_id.uuid)) {
+                            if let Some(tree) = layout.as_tree_layout() {
+                                tree.tree_node_state_changed(id.clone(), open);
+                                ctx.ui.relayout = true;
+                                tree.set_dim(tree.dim().clone(), ctx);
+                                ctx.ui.relayout = false;
+                            }
+                        }
+                    }
                     TheEvent::ScrollLayout(layout_id, delta) => {
                         if let Some(layout) = self.canvas.get_layout(None, Some(&layout_id.uuid)) {
                             if let Some(list) = layout.as_list_layout() {
                                 list.scroll_by(delta);
                                 self.is_dirty = true;
                             } else if let Some(list) = layout.as_rowlist_layout() {
+                                list.scroll_by(delta);
+                                self.is_dirty = true;
+                            } else if let Some(list) = layout.as_tree_layout() {
                                 list.scroll_by(delta);
                                 self.is_dirty = true;
                             }
@@ -1147,6 +1160,14 @@ impl TheUI {
     pub fn get_list_layout(&mut self, name: &str) -> Option<&mut dyn TheListLayoutTrait> {
         if let Some(text_line_edit) = self.canvas.get_layout(Some(&name.to_string()), None) {
             return text_line_edit.as_list_layout();
+        }
+        None
+    }
+
+    /// Gets a given TheTreeLayout by name
+    pub fn get_tree_layout(&mut self, name: &str) -> Option<&mut dyn TheTreeLayoutTrait> {
+        if let Some(layout) = self.canvas.get_layout(Some(&name.to_string()), None) {
+            return layout.as_tree_layout();
         }
         None
     }

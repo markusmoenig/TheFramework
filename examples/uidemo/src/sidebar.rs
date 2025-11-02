@@ -147,6 +147,22 @@ impl Sidebar {
         // Setup the TreeLayout
 
         let mut tree_layout = TheTreeLayout::new(TheId::named("Tree Layout"));
+
+        let mut item = TheTreeItem::new(TheId::named("Item #1"));
+        item.set_text("testimg".into());
+
+        let root = tree_layout.get_root();
+        root.add_widget(Box::new(item));
+
+        let mut sub = TheTreeNode::new(TheId::named("Child #1"));
+        for i in 0..100 {
+            let mut item = TheTreeItem::new(TheId::named(&format!("Item #{}", i)));
+            item.set_text(format!("Item {}", i));
+            sub.add_widget(Box::new(item));
+        }
+
+        root.add_child(sub);
+
         tree_layout.limiter_mut().set_max_width(width);
         tree_layout.set_background_color(Some(TheThemeColors::DefaultWidgetDarkBackground));
 
