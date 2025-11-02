@@ -125,6 +125,10 @@ impl TheWidget for TheTextLineEdit {
         self.status = Some(text.to_string());
     }
 
+    fn set_embedded(&mut self, embedded: bool) {
+        self.embedded = embedded;
+    }
+
     fn disabled(&self) -> bool {
         self.is_disabled
     }
@@ -228,7 +232,9 @@ impl TheWidget for TheTextLineEdit {
                     }
                 }
 
-                ctx.ui.set_focus(self.id());
+                if !self.embedded {
+                    ctx.ui.set_focus(self.id());
+                }
                 self.is_dirty = true;
                 redraw = true;
                 if self.is_range() {
@@ -400,7 +406,9 @@ impl TheWidget for TheTextLineEdit {
                                 } else {
                                     ctx.ui.send_widget_value_changed(self.id(), self.value());
                                 }
-                                ctx.ui.clear_focus();
+                                if !self.embedded {
+                                    ctx.ui.clear_focus();
+                                }
                                 redraw = true;
                                 self.is_dirty = true;
                                 self.modified_since_last_return = false;
@@ -891,7 +899,11 @@ impl TheWidget for TheTextLineEdit {
 
         self.renderer.render_text(
             &self.state,
-            ctx.ui.has_focus(self.id()),
+            if !self.embedded {
+                ctx.ui.has_focus(self.id())
+            } else {
+                false
+            },
             false,
             buffer,
             style,
@@ -953,7 +965,6 @@ pub trait TheTextLineEditTrait: TheWidget {
     fn set_text(&mut self, text: String);
     fn set_info_text(&mut self, text: Option<String>);
     fn set_font_size(&mut self, font_size: f32);
-    fn set_embedded(&mut self, embedded: bool);
     fn set_range(&mut self, range: TheValue);
     fn set_associated_layout(&mut self, id: TheId);
     fn set_continuous(&mut self, continuous: bool);
@@ -988,9 +999,6 @@ impl TheTextLineEditTrait for TheTextLineEdit {
         self.renderer.set_font_size(font_size);
         self.modified_since_last_tick = true;
         self.is_dirty = true;
-    }
-    fn set_embedded(&mut self, embedded: bool) {
-        self.embedded = embedded;
     }
     fn set_range(&mut self, range: TheValue) {
         if Some(range.clone()) != self.range {

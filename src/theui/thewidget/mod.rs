@@ -167,6 +167,9 @@ pub trait TheWidget: Send {
     /// Set the widget state.
     fn set_state(&mut self, state: TheWidgetState) {}
 
+    /// Set the embedded state.
+    fn set_embedded(&mut self, embedded: bool) {}
+
     /// Get the widget value.
     fn value(&self) -> TheValue {
         TheValue::Empty

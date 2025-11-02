@@ -157,32 +157,39 @@ impl TheTreeNode {
         available_width: i32,
         max_height: i32,
         indent: i32,
+        include_self: bool,
         y_cursor: &mut i32,
         ctx: &mut TheContext,
     ) {
-        self.widget.calculate_size(ctx);
+        if include_self {
+            self.widget.calculate_size(ctx);
 
-        let node_width = (available_width - indent - TREE_RIGHT_MARGIN).max(0);
-        let node_height = self.widget.limiter().get_height(max_height);
+            let node_width = (available_width - indent - TREE_RIGHT_MARGIN).max(0);
+            let node_height = self.widget.limiter().get_height(max_height);
 
-        self.widget.set_dim(
-            TheDim::new(
-                origin.x + indent,
-                origin.y + *y_cursor,
-                node_width,
-                node_height,
-            ),
-            ctx,
-        );
-        self.widget.dim_mut().set_buffer_offset(indent, *y_cursor);
+            self.widget.set_dim(
+                TheDim::new(
+                    origin.x + indent,
+                    origin.y + *y_cursor,
+                    node_width,
+                    node_height,
+                ),
+                ctx,
+            );
+            self.widget.dim_mut().set_buffer_offset(indent, *y_cursor);
 
-        *y_cursor += node_height + TREE_VERTICAL_SPACING;
+            *y_cursor += node_height + TREE_VERTICAL_SPACING;
+        }
 
         if !self.open {
             return;
         }
 
-        let child_indent = indent + TREE_INDENT;
+        let child_indent = if include_self {
+            indent + TREE_INDENT
+        } else {
+            indent
+        };
 
         for widget in &mut self.widgets {
             widget.calculate_size(ctx);
@@ -211,6 +218,7 @@ impl TheTreeNode {
                 available_width,
                 max_height,
                 child_indent,
+                true,
                 y_cursor,
                 ctx,
             );
@@ -222,8 +230,11 @@ impl TheTreeNode {
         buffer: &mut TheRGBABuffer,
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
+        include_self: bool,
     ) {
-        self.widget.draw(buffer, style, ctx);
+        if include_self {
+            self.widget.draw(buffer, style, ctx);
+        }
 
         if !self.open {
             return;
@@ -234,12 +245,16 @@ impl TheTreeNode {
         }
 
         for child in &mut self.childs {
-            child.draw_recursive(buffer, style, ctx);
+            child.draw_recursive(buffer, style, ctx, true);
         }
     }
 
-    fn find_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
-        if self.widget.dim().contains(coord) {
+    fn find_widget_at_coord(
+        &mut self,
+        coord: Vec2<i32>,
+        include_self: bool,
+    ) -> Option<&mut Box<dyn TheWidget>> {
+        if include_self && self.widget.dim().contains(coord) {
             return Some(&mut self.widget);
         }
 
@@ -251,7 +266,7 @@ impl TheTreeNode {
             }
 
             for child in &mut self.childs {
-                if let Some(found) = child.find_widget_at_coord(coord) {
+                if let Some(found) = child.find_widget_at_coord(coord, true) {
                     return Some(found);
                 }
             }
@@ -264,8 +279,9 @@ impl TheTreeNode {
         &mut self,
         name: Option<&String>,
         uuid: Option<&Uuid>,
+        include_self: bool,
     ) -> Option<&mut Box<dyn TheWidget>> {
-        if self.widget.id().matches(name, uuid) {
+        if include_self && self.widget.id().matches(name, uuid) {
             return Some(&mut self.widget);
         }
 
@@ -276,7 +292,7 @@ impl TheTreeNode {
         }
 
         for child in &mut self.childs {
-            if let Some(found) = child.find_widget(name, uuid) {
+            if let Some(found) = child.find_widget(name, uuid, true) {
                 return Some(found);
             }
         }
@@ -284,8 +300,8 @@ impl TheTreeNode {
         None
     }
 
-    fn needs_redraw_recursive(&mut self) -> bool {
-        if self.widget.needs_redraw() {
+    fn needs_redraw_recursive(&mut self, include_self: bool) -> bool {
+        if include_self && self.widget.needs_redraw() {
             return true;
         }
 
@@ -296,7 +312,7 @@ impl TheTreeNode {
         }
 
         for child in &mut self.childs {
-            if child.needs_redraw_recursive() {
+            if child.needs_redraw_recursive(true) {
                 return true;
             }
         }
@@ -321,6 +337,7 @@ pub struct TheTreeLayout {
     vertical_scrollbar_visible: bool,
 
     background: Option<TheThemeColors>,
+    headerless: bool,
 }
 
 impl TheLayout for TheTreeLayout {
@@ -330,6 +347,7 @@ impl TheLayout for TheTreeLayout {
     {
         let mut root = TheTreeNode::new(id.clone());
         root.set_layout_id(id.clone());
+        root.open = true;
         Self {
             id: id.clone(),
             limiter: TheSizeLimiter::new(),
@@ -347,6 +365,7 @@ impl TheLayout for TheTreeLayout {
             vertical_scrollbar_visible: false,
 
             background: Some(TextLayoutBackground),
+            headerless: true,
         }
     }
 
@@ -377,7 +396,10 @@ impl TheLayout for TheTreeLayout {
 
         let adjusted_coord = coord + scroll_offset;
 
-        if let Some(widget) = self.root.find_widget_at_coord(adjusted_coord) {
+        if let Some(widget) = self
+            .root
+            .find_widget_at_coord(adjusted_coord, !self.headerless)
+        {
             return Some(widget);
         }
 
@@ -395,7 +417,7 @@ impl TheLayout for TheTreeLayout {
             return Some(&mut self.vertical_scrollbar);
         }
 
-        if let Some(widget) = self.root.find_widget(name, uuid) {
+        if let Some(widget) = self.root.find_widget(name, uuid, !self.headerless) {
             return Some(widget);
         }
 
@@ -407,7 +429,7 @@ impl TheLayout for TheTreeLayout {
             return true;
         }
 
-        if self.root.needs_redraw_recursive() {
+        if self.root.needs_redraw_recursive(!self.headerless) {
             return true;
         }
 
@@ -438,8 +460,15 @@ impl TheLayout for TheTreeLayout {
 
             loop {
                 let mut y_cursor = 0;
-                self.root
-                    .layout(origin, available_width, dim.height, 0, &mut y_cursor, ctx);
+                self.root.layout(
+                    origin,
+                    available_width,
+                    dim.height,
+                    0,
+                    !self.headerless,
+                    &mut y_cursor,
+                    ctx,
+                );
 
                 let mut content_height = y_cursor;
                 if content_height > 0 {
@@ -540,9 +569,8 @@ impl TheLayout for TheTreeLayout {
             self.vertical_scrollbar.draw(buffer, style, ctx);
         }
 
-        self.root.widget.set_value(TheValue::Text("Root".into()));
         self.root
-            .draw_recursive(&mut self.content_buffer, style, ctx);
+            .draw_recursive(&mut self.content_buffer, style, ctx, !self.headerless);
 
         if self.vertical_scrollbar_visible {
             if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
@@ -583,6 +611,10 @@ impl TheLayout for TheTreeLayout {
 
 /// TheTreeLayout specific functions.
 pub trait TheTreeLayoutTrait: TheLayout {
+    /// Set whether the root snapper should be hidden.
+    fn set_headerless(&mut self, headerless: bool);
+    /// Returns true if the layout is headerless.
+    fn is_headerless(&self) -> bool;
     /// Returns a reference to the node with the given uuid (if any).
     fn get_node_by_id(&self, uuid: &Uuid) -> Option<&TheTreeNode>;
     /// Returns a mutable reference to the node with the given uuid (if any).
@@ -596,6 +628,15 @@ pub trait TheTreeLayoutTrait: TheLayout {
 }
 
 impl TheTreeLayoutTrait for TheTreeLayout {
+    fn set_headerless(&mut self, headerless: bool) {
+        self.headerless = headerless;
+        if self.headerless {
+            self.root.open = true;
+        }
+    }
+    fn is_headerless(&self) -> bool {
+        self.headerless
+    }
     fn get_node_by_id(&self, uuid: &Uuid) -> Option<&TheTreeNode> {
         self.root.find_node(uuid)
     }

@@ -69,8 +69,9 @@ impl Sidebar {
 
         // Material Canvas
 
-        let mut material_canvas = TheCanvas::default();
+        // let mut material_canvas = TheCanvas::default();
 
+        /*
         let mut text_layout = TheTextLayout::new(TheId::named("Material Layout"));
         text_layout.limiter_mut().set_max_width(width);
 
@@ -141,27 +142,59 @@ impl Sidebar {
 
         material_canvas.set_layout(text_layout);
         material_canvas.top_is_expanding = false;
-
+        */
         // stack_layout.add_canvas(material_canvas);
 
         // Setup the TreeLayout
 
         let mut tree_layout = TheTreeLayout::new(TheId::named("Tree Layout"));
 
-        let mut item = TheTreeItem::new(TheId::named("Item #1"));
-        item.set_text("testimg".into());
+        let mut color_node: TheTreeNode = TheTreeNode::new(TheId::named("Color"));
+        color_node.open = true;
+        let mut color_picker = TheColorPicker::new(TheId::named("Color Picker"));
+        color_picker.set_color(Vec3::new(
+            project.material.rgb.x,
+            project.material.rgb.y,
+            project.material.rgb.z,
+        ));
+        color_node.add_widget(Box::new(color_picker));
+
+        let mut parameters_node: TheTreeNode = TheTreeNode::new(TheId::named("Parameters"));
+        parameters_node.open = true;
+
+        let mut item = TheTreeItem::new(TheId::named("Anisotropic Item"));
+        item.set_text("Anisotropic".into());
+        item.set_status_text("The anisotropic attribute of the material.");
+
+        let mut anisotropic = TheSlider::new(TheId::named("Anisotropic"));
+        anisotropic.set_status_text("The anisotropic attribute of the material.");
+        anisotropic.set_value(TheValue::Float(project.material.anisotropic));
+        item.add_widget_column(250, Box::new(anisotropic));
+        parameters_node.add_widget(Box::new(item));
+
+        let mut item = TheTreeItem::new(TheId::named("Metallic Item"));
+        item.set_text("Metallic".into());
+        item.set_status_text("The metallic attribute of the material.");
+
+        let mut metallic = TheTextLineEdit::new(TheId::named("Metallic"));
+        metallic.set_range(TheValue::RangeF32(0.0..=1.0));
+        // metallic.set_value(TheValue::Float(project.material.metallic));
+        // metallic.set_value(TheValue::Text("0.0".into()));
+
+        item.add_widget_column(250, Box::new(metallic));
+        parameters_node.add_widget(Box::new(item));
+
+        // for i in 0..100 {
+        //     let mut item = TheTreeItem::new(TheId::named(&format!("Item #{}", i)));
+        //     item.set_text(format!("Item {}", i));
+        //     sub.add_widget(Box::new(item));
+        // }
 
         let root = tree_layout.get_root();
-        root.add_widget(Box::new(item));
+        // root.add_widget(Box::new(item));
 
-        let mut sub = TheTreeNode::new(TheId::named("Child #1"));
-        for i in 0..100 {
-            let mut item = TheTreeItem::new(TheId::named(&format!("Item #{}", i)));
-            item.set_text(format!("Item {}", i));
-            sub.add_widget(Box::new(item));
-        }
-
-        root.add_child(sub);
+        root.add_child(color_node);
+        root.add_child(parameters_node);
 
         tree_layout.limiter_mut().set_max_width(width);
         tree_layout.set_background_color(Some(TheThemeColors::DefaultWidgetDarkBackground));
@@ -188,6 +221,7 @@ impl Sidebar {
     ) -> bool {
         let mut redraw = false;
 
+        // println!("{:?}", event);
         match event {
             TheEvent::StateChanged(id, _state) => {
                 //println!("app Widget State changed {:?}: {:?}", id, state);
@@ -223,14 +257,14 @@ impl Sidebar {
                         project.material.rgb = rust_pathtracer::prelude::F3::new(c.x, c.y, c.z);
                         self.send_material(project.material.clone());
                     }
-                } else if id.name == "Anistotropic" {
+                } else if id.name == "Anisotropic" {
                     if let TheValue::Float(anisotropic) = value {
                         project.material.anisotropic = *anisotropic;
                         self.send_material(project.material.clone());
                     }
                 } else if id.name == "Metallic" {
-                    if let TheValue::Float(metallic) = value {
-                        project.material.metallic = *metallic;
+                    if let Some(value) = value.to_f32() {
+                        project.material.metallic = value;
                         self.send_material(project.material.clone());
                     }
                 } else if id.name == "Roughness" {

@@ -12,8 +12,6 @@ pub struct TheTreeItem {
     dim: TheDim,
     is_dirty: bool,
 
-    mouse_down_pos: Vec2<i32>,
-
     icon: Option<TheRGBABuffer>,
     status: Option<String>,
 
@@ -21,6 +19,7 @@ pub struct TheTreeItem {
     scroll_offset: i32,
 
     values: Vec<(i32, TheValue)>,
+    widgets: Vec<(i32, Box<dyn TheWidget>)>,
 
     context_menu: Option<TheContextMenu>,
 
@@ -33,7 +32,7 @@ impl TheWidget for TheTreeItem {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_height(17);
+        limiter.set_max_height(25);
 
         Self {
             id,
@@ -47,8 +46,6 @@ impl TheWidget for TheTreeItem {
             dim: TheDim::zero(),
             is_dirty: true,
 
-            mouse_down_pos: Vec2::zero(),
-
             icon: None,
             status: None,
 
@@ -56,6 +53,7 @@ impl TheWidget for TheTreeItem {
             scroll_offset: 0,
 
             values: Vec::new(),
+            widgets: Vec::new(),
 
             context_menu: None,
 
@@ -98,21 +96,39 @@ impl TheWidget for TheTreeItem {
                     ));
                     redraw = true;
                 }
-                self.mouse_down_pos = Vec2::new(coord.x, coord.y + self.scroll_offset);
+
                 ctx.ui.set_focus(self.id());
+
+                for (_, w) in &mut self.widgets {
+                    let dim = w.dim();
+                    let c = Vec2::new(coord.x - dim.x + 15, coord.y - dim.y);
+                    if c.x > 0 {
+                        redraw = w.on_event(
+                            &TheEvent::MouseDown(Vec2::new(coord.x - dim.x + 15, coord.y - dim.y)),
+                            ctx,
+                        );
+                    }
+                }
+            }
+            TheEvent::MouseUp(coord) => {
+                for (_, w) in &mut self.widgets {
+                    let dim = w.dim();
+                    redraw = w.on_event(
+                        &TheEvent::MouseUp(Vec2::new(coord.x - dim.x + 15, coord.y)),
+                        ctx,
+                    );
+                    self.is_dirty = true;
+                }
             }
             TheEvent::MouseDragged(coord) => {
-                let coord = Vec2::new(coord.x, coord.y + self.scroll_offset);
-                if ctx.ui.drop.is_none()
-                    && Vec2::new(self.mouse_down_pos.x as f32, self.mouse_down_pos.y as f32)
-                        .distance(Vec2::new(coord.x as f32, coord.y as f32))
-                        >= 5.0
-                {
-                    ctx.ui.send(TheEvent::DragStarted(
-                        self.id().clone(),
-                        self.text.clone(),
-                        coord,
-                    ));
+                for (_, w) in &mut self.widgets {
+                    let dim = w.dim();
+                    w.on_event(
+                        &TheEvent::MouseDragged(Vec2::new(coord.x - dim.x + 15, coord.y)),
+                        ctx,
+                    );
+                    self.is_dirty = true;
+                    redraw = true;
                 }
             }
             TheEvent::Hover(_coord) => {
@@ -126,7 +142,11 @@ impl TheWidget for TheTreeItem {
                 ctx.ui
                     .send(TheEvent::ScrollLayout(self.layout_id.clone(), *delta));
             }
-            _ => {}
+            _ => {
+                for (_, w) in &mut self.widgets {
+                    redraw = w.on_event(event, ctx)
+                }
+            }
         }
         redraw
     }
@@ -234,7 +254,7 @@ impl TheWidget for TheTreeItem {
         let stride = buffer.stride();
         let mut shrinker = TheDimShrinker::zero();
 
-        ctx.draw.rect_outline_border(
+        ctx.draw.rect_outline_border_open(
             buffer.pixels_mut(),
             &self.dim.to_buffer_shrunk_utuple(&shrinker),
             stride,
@@ -308,6 +328,9 @@ impl TheWidget for TheTreeItem {
             for v in self.values.iter() {
                 right_width += v.0;
             }
+            for v in self.widgets.iter() {
+                right_width += v.0;
+            }
 
             shrinker.shrink_by(9, 0, 0, 0);
             let mut rect: (usize, usize, usize, usize) =
@@ -325,9 +348,34 @@ impl TheWidget for TheTreeItem {
                     TheHorizontalAlign::Left,
                     TheVerticalAlign::Center,
                 );
+            }
 
-                rect.0 += rect.2 - right_width as usize;
+            rect.0 += rect.2 - right_width as usize;
 
+            for (width, widget) in self.widgets.iter_mut() {
+                ctx.draw.rect(
+                    buffer.pixels_mut(),
+                    &(rect.0, rect.1 - 1, 1, rect.3 + 2),
+                    stride,
+                    style.theme().color(ListLayoutBackground),
+                );
+
+                widget.calculate_size(ctx);
+                let mut y = rect.1 as i32;
+                let height = widget.limiter().get_max_height();
+                if height < 25 {
+                    y += (25 - height) / 2;
+                }
+
+                widget.set_dim(
+                    TheDim::new(rect.0 as i32 + 9, y, *width as i32 - 10, height),
+                    ctx,
+                );
+                widget.dim_mut().set_buffer_offset(rect.0 as i32 + 9, y);
+                widget.draw(buffer, style, ctx);
+            }
+
+            if let Some(font) = &ctx.ui.font {
                 for (width, value) in self.values.iter() {
                     ctx.draw.rect(
                         buffer.pixels_mut(),
@@ -390,6 +438,7 @@ pub trait TheTreeItemTrait {
     fn set_icon(&mut self, icon: TheRGBABuffer);
     fn set_scroll_offset(&mut self, offset: i32);
     fn add_value_column(&mut self, width: i32, value: TheValue);
+    fn add_widget_column(&mut self, width: i32, value: Box<dyn TheWidget>);
 }
 
 impl TheTreeItemTrait for TheTreeItem {
@@ -420,5 +469,9 @@ impl TheTreeItemTrait for TheTreeItem {
     }
     fn add_value_column(&mut self, width: i32, value: TheValue) {
         self.values.push((width, value));
+    }
+    fn add_widget_column(&mut self, width: i32, mut widget: Box<dyn TheWidget>) {
+        widget.set_embedded(true);
+        self.widgets.push((width, widget));
     }
 }

@@ -19,6 +19,8 @@ pub struct TheSlider {
 
     range: TheValue,
     continuous: bool,
+
+    embedded: bool,
 }
 
 impl TheWidget for TheSlider {
@@ -49,6 +51,8 @@ impl TheWidget for TheSlider {
 
             range: TheValue::RangeF32(0.0..=1.0),
             continuous: false,
+
+            embedded: false,
         }
     }
 
@@ -104,6 +108,10 @@ impl TheWidget for TheSlider {
         self.is_dirty = true;
     }
 
+    fn set_embedded(&mut self, embedded: bool) {
+        self.embedded = embedded;
+    }
+
     fn supports_hover(&mut self) -> bool {
         true
     }
@@ -131,7 +139,9 @@ impl TheWidget for TheSlider {
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
                 }
 
-                ctx.ui.set_focus(self.id());
+                if !self.embedded {
+                    ctx.ui.set_focus(self.id());
+                }
 
                 if coord.x > self.dim.width - self.text_width + 5 {
                     self.value = self.default_value.clone();
@@ -274,17 +284,19 @@ impl TheWidget for TheSlider {
             style.theme().color(SliderSmallColor2),
         );
 
-        let mut icon_name = if self.state == TheWidgetState::Selected {
+        let mut icon_name = if self.state == TheWidgetState::Selected && !self.embedded {
             "dark_slider_small_selected".to_string()
         } else {
             "dark_slider_small_normal".to_string()
         };
 
-        if self.state != TheWidgetState::Selected && self.id().equals(&ctx.ui.hover) {
-            icon_name = "dark_slider_small_selected".to_string()
-        }
-        if self.state != TheWidgetState::Selected && self.id().equals(&ctx.ui.focus) {
-            icon_name = "dark_slider_small_selected".to_string()
+        if !self.embedded {
+            if self.state != TheWidgetState::Selected && self.id().equals(&ctx.ui.hover) {
+                icon_name = "dark_slider_small_selected".to_string()
+            }
+            if self.state != TheWidgetState::Selected && self.id().equals(&ctx.ui.focus) {
+                icon_name = "dark_slider_small_selected".to_string()
+            }
         }
 
         let mut pos = 0;
