@@ -39,13 +39,8 @@ lazy_static = "1.5.0"
 unicode-segmentation = "1.11.0"
 half = { version = "2.4", features = ["serde"] }
 flags = "0.1.5"
-wgpu = { version = "22.1", optional = true }
-aict = { version = "0.2.0", optional = true }
-bytemuck = { version = "1.18.0", features = ["derive"], optional = true }
-itertools = { version = "0.13.0", optional = true }
 softbuffer = { version = "0.4.6", optional = true }
 web-time = "1.1.0"
-pixels = { version = "0.15", optional = true }
 markdown = "1.0.0"
 
 [dependencies.uuid]
@@ -81,23 +76,13 @@ syntect = { version = "5.2.0", default-features = false, features = [
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 web-sys = { version = "0.3", features = ["GpuTextureFormat", "Performance"] }
-wgpu = { version = "22.1", features = ["webgl"] }
 
 [features]
 ui = ["rfd", "rayon", "zeno"]
-winit_app = ["winit", "winit_input_helper"]
-gpu = ["aict", "bytemuck", "itertools", "wgpu"]
+winit_app = ["winit", "winit_input_helper", "softbuffer"]
 log = ["log4rs"]
 
-cpu_render = ["softbuffer"]
-gpu_render = ["gpu"]
-pixels_render = ["pixels"]
-
-cpu_winit = ["winit_app", "cpu_render"]
-gpu_winit = ["winit_app", "gpu_render"]
-pixels_winit = ["winit_app", "pixels_render"]
-
-default = ["cpu_winit"]
+default = ["winit_app"]
 
 [workspace]
 members = ["examples/*", "run-wasm"]
