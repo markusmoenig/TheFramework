@@ -79,7 +79,6 @@ fn accel_physical_to_ascii(code: winit::keyboard::KeyCode, shift: bool) -> Optio
 use crate::prelude::*;
 use web_time::{Duration, Instant};
 
-#[cfg(feature = "cpu_render")]
 pub fn translate_coord_to_local(x: u32, y: u32, scale_factor: f32) -> (u32, u32) {
     (
         (x as f32 / scale_factor) as u32,
@@ -131,13 +130,10 @@ impl TheApp {
 #[allow(unused_variables)]
 #[cfg(feature = "winit_app")]
 async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
-    #[cfg(feature = "cpu_render")]
     use std::num::NonZeroU32;
     use std::sync::Arc;
 
     use log::error;
-    #[cfg(feature = "pixels_render")]
-    use pixels::{Pixels, SurfaceTexture};
     use winit::dpi::LogicalSize;
     use winit::{
         event::{
@@ -178,51 +174,6 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
     let window = builder.build(&event_loop).unwrap();
     let window = Arc::new(window);
 
-    #[cfg(feature = "gpu_winit")]
-    let (gpu, texture_renderer, ui_layer) = {
-        let mut gpu = TheGpuContext::new().await.unwrap();
-        let surface = gpu.create_surface(window.clone()).unwrap();
-        gpu.set_surface(
-            width as u32,
-            height as u32,
-            window.scale_factor() as f32,
-            surface,
-        );
-
-        let mut texture_renderer = TheTextureRenderPass::new(gpu.device());
-        let ui_layer = texture_renderer.add_layer();
-
-        (gpu, texture_renderer, ui_layer)
-    };
-
-    #[cfg(all(feature = "gpu", not(feature = "gpu_winit")))]
-    panic!("No suitable gpu backend was set.");
-
-    #[cfg(all(feature = "pixels_winit", not(target_arch = "wasm32")))]
-    let mut pixels = {
-        let window_size = window.inner_size();
-        let surface_texture =
-            SurfaceTexture::new(window_size.width, window_size.height, window.clone());
-        Pixels::new(width as u32, height as u32, surface_texture).unwrap()
-    };
-
-    #[cfg(all(feature = "pixels_winit", target_arch = "wasm32"))]
-    let mut pixels = {
-        let window_size = window.inner_size();
-        let surface_texture = SurfaceTexture::new(
-            window_size.width.max(1),
-            window_size.height.max(1),
-            window.clone(),
-        );
-        Pixels::new_async(
-            (width as u32).max(1),
-            (height as u32).max(1),
-            surface_texture,
-        )
-        .await
-        .unwrap()
-    };
-
     let mut scale_factor = 1.0;
     // Make sure to set the initial scale factor on macOS
     #[cfg(target_os = "macos")]
@@ -230,15 +181,9 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
         scale_factor = window.scale_factor() as f32;
     }
 
-    #[cfg(any(feature = "gpu", feature = "cpu_render"))]
     let mut ui_frame = vec![0; width * height * 4];
 
-    #[cfg(feature = "gpu")]
-    let mut ctx = TheContext::new(width, height, gpu, texture_renderer);
-    #[cfg(feature = "cpu_render")]
     let mut ctx = TheContext::new(width, height, scale_factor, window.clone());
-    #[cfg(not(any(feature = "gpu", feature = "cpu_render")))]
-    let mut ctx = TheContext::new(width, height);
 
     #[cfg(feature = "ui")]
     let mut ui = TheUI::new();
@@ -335,23 +280,11 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                     WindowEvent::Touch(Touch {
                         phase, location, ..
                     }) => {
-                        let (x, y) = (location.x as u32, location.y as u32);
-
-                        #[cfg(feature = "gpu")]
-                        let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
-
-                        #[cfg(feature = "cpu_render")]
-                        let (x, y) = translate_coord_to_local(x, y, ctx.scale_factor);
-
-                        #[cfg(feature = "pixels_winit")]
-                        let (x, y) = {
-                            // Convert logical window coords to pixel coords similarly to mouse path
-                            let logical = (location.x as f32, location.y as f32);
-                            let pos = pixels
-                                .window_pos_to_pixel(logical)
-                                .unwrap_or_else(|p| pixels.clamp_pixel_pos(p));
-                            (pos.0, pos.1)
-                        };
+                        let (x, y) = translate_coord_to_local(
+                            location.x as u32,
+                            location.y as u32,
+                            ctx.scale_factor,
+                        );
 
                         match phase {
                             TouchPhase::Started => {
@@ -404,16 +337,6 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                         }
                     }
                     WindowEvent::RedrawRequested => {
-                        #[cfg(feature = "gpu_winit")]
-                        if let Err(err) = ctx.gpu.begin_frame() {
-                            error!("Failed to begin next frame: {} ", err);
-                            elwt.exit();
-                            return;
-                        }
-
-                        #[cfg(feature = "pixels_winit")]
-                        let mut ui_frame = pixels.frame_mut();
-
                         #[cfg(feature = "ui")]
                         app.pre_ui(&mut ctx);
 
@@ -424,28 +347,16 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                         // but do not use the UI API
                         app.draw(&mut ui_frame, &mut ctx);
 
-                        #[cfg(feature = "gpu_winit")]
-                        let ui_texture = {
-                            let ui_texture = ctx.texture_renderer.load_texture(
-                                ctx.gpu.device(),
-                                ctx.gpu.queue(),
-                                width as u32,
-                                height as u32,
-                                &ui_frame,
-                            );
-                            ctx.texture_renderer.place_texture(
-                                ui_layer,
-                                ui_texture,
-                                Vec2::new(0.0, 0.0),
-                            );
-
-                            ui_texture
-                        };
-
-                        #[cfg(feature = "gpu")]
-                        if ctx
-                            .gpu
-                            .draw(&ctx.texture_renderer)
+                        let buffer_data = convert_rgba_to_softbuffer(
+                            &ui_frame,
+                            width,
+                            height,
+                            ctx.scale_factor as usize,
+                        );
+                        let mut buffer = ctx.surface.buffer_mut().unwrap();
+                        buffer.copy_from_slice(&buffer_data);
+                        if buffer
+                            .present()
                             .map_err(|e| error!("render failed: {}", e))
                             .is_err()
                         {
@@ -453,51 +364,8 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                             return;
                         }
 
-                        #[cfg(feature = "pixels_winit")]
-                        if pixels
-                            .render()
-                            .map_err(|e| error!("pixels.render() failed: {}", e))
-                            .is_err()
-                        {
-                            elwt.exit();
-                            return;
-                        }
-
-                        #[cfg(feature = "cpu_render")]
-                        {
-                            let buffer_data = convert_rgba_to_softbuffer(
-                                &ui_frame,
-                                width,
-                                height,
-                                ctx.scale_factor as usize,
-                            );
-                            let mut buffer = ctx.surface.buffer_mut().unwrap();
-                            buffer.copy_from_slice(&buffer_data);
-                            if buffer
-                                .present()
-                                .map_err(|e| error!("render failed: {}", e))
-                                .is_err()
-                            {
-                                elwt.exit();
-                                return;
-                            }
-                        }
-
                         #[cfg(feature = "ui")]
                         app.post_ui(&mut ctx);
-
-                        #[cfg(feature = "gpu_winit")]
-                        {
-                            ctx.texture_renderer.unload_texture(ui_texture);
-                            if let Some(layer) = ctx.texture_renderer.layer_mut(ui_layer) {
-                                layer.clear();
-                            }
-                        }
-
-                        #[cfg(feature = "gpu_winit")]
-                        if let Err(err) = ctx.gpu.end_frame() {
-                            error!("Failed to end current frame: {} ", err);
-                        }
                     }
                     WindowEvent::DroppedFile(path) => {
                         app.dropped_file(path.to_str().unwrap().to_string());
@@ -679,17 +547,11 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
 
                 if input.mouse_pressed(MouseButton::Left) {
                     if let Some(coords) = input.cursor() {
-                        let (x, y) = (coords.0 as u32, coords.1 as u32);
-                        #[cfg(feature = "gpu")]
-                        let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
-
-                        #[cfg(feature = "cpu_render")]
-                        let (x, y) = translate_coord_to_local(x, y, ctx.scale_factor);
-
-                        #[cfg(feature = "pixels_winit")]
-                        let (x, y) = pixels
-                            .window_pos_to_pixel(coords)
-                            .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+                        let (x, y) = translate_coord_to_local(
+                            coords.0 as u32,
+                            coords.1 as u32,
+                            ctx.scale_factor,
+                        );
 
                         #[cfg(feature = "ui")]
                         if ui.touch_down(x as f32, y as f32, &mut ctx) {
@@ -704,17 +566,11 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
 
                 if input.mouse_pressed(MouseButton::Right) {
                     if let Some(coords) = input.cursor() {
-                        let (x, y) = (coords.0 as u32, coords.1 as u32);
-                        #[cfg(feature = "gpu")]
-                        let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
-
-                        #[cfg(feature = "cpu_render")]
-                        let (x, y) = translate_coord_to_local(x, y, ctx.scale_factor);
-
-                        #[cfg(feature = "pixels_winit")]
-                        let (x, y) = pixels
-                            .window_pos_to_pixel(coords)
-                            .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+                        let (x, y) = translate_coord_to_local(
+                            coords.0 as u32,
+                            coords.1 as u32,
+                            ctx.scale_factor,
+                        );
 
                         #[cfg(feature = "ui")]
                         if ui.context(x as f32, y as f32, &mut ctx) {
@@ -729,17 +585,11 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
 
                 if input.mouse_released(MouseButton::Left) {
                     if let Some(coords) = input.cursor() {
-                        let (x, y) = (coords.0 as u32, coords.1 as u32);
-                        #[cfg(feature = "gpu")]
-                        let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
-
-                        #[cfg(feature = "cpu_render")]
-                        let (x, y) = translate_coord_to_local(x, y, ctx.scale_factor);
-
-                        #[cfg(feature = "pixels_winit")]
-                        let (x, y) = pixels
-                            .window_pos_to_pixel(coords)
-                            .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+                        let (x, y) = translate_coord_to_local(
+                            coords.0 as u32,
+                            coords.1 as u32,
+                            ctx.scale_factor,
+                        );
 
                         #[cfg(feature = "ui")]
                         if ui.touch_up(x as f32, y as f32, &mut ctx) {
@@ -756,17 +606,11 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                     let diff = input.mouse_diff();
                     if diff.0 != 0.0 || diff.1 != 0.0 {
                         if let Some(coords) = input.cursor() {
-                            let (x, y) = (coords.0 as u32, coords.1 as u32);
-                            #[cfg(feature = "gpu")]
-                            let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
-
-                            #[cfg(feature = "cpu_render")]
-                            let (x, y) = translate_coord_to_local(x, y, ctx.scale_factor);
-
-                            #[cfg(feature = "pixels_winit")]
-                            let (x, y) = pixels
-                                .window_pos_to_pixel(coords)
-                                .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+                            let (x, y) = translate_coord_to_local(
+                                coords.0 as u32,
+                                coords.1 as u32,
+                                ctx.scale_factor,
+                            );
 
                             #[cfg(feature = "ui")]
                             if ui.touch_dragged(x as f32, y as f32, &mut ctx) {
@@ -782,17 +626,11 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                     let diff = input.mouse_diff();
                     if diff.0 != 0.0 || diff.1 != 0.0 {
                         if let Some(coords) = input.cursor() {
-                            let (x, y) = (coords.0 as u32, coords.1 as u32);
-                            #[cfg(feature = "gpu")]
-                            let (x, y) = ctx.gpu.translate_coord_to_local(x, y);
-
-                            #[cfg(feature = "cpu_render")]
-                            let (x, y) = translate_coord_to_local(x, y, ctx.scale_factor);
-
-                            #[cfg(feature = "pixels_winit")]
-                            let (x, y) = pixels
-                                .window_pos_to_pixel(coords)
-                                .unwrap_or_else(|pos| pixels.clamp_pixel_pos(pos));
+                            let (x, y) = translate_coord_to_local(
+                                coords.0 as u32,
+                                coords.1 as u32,
+                                ctx.scale_factor,
+                            );
 
                             #[cfg(feature = "ui")]
                             if ui.hover(x as f32, y as f32, &mut ctx) {
@@ -809,13 +647,6 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                 // Resize the window
                 if let Some(size) = input.window_resized() {
                     if size.width != 0 && size.height != 0 {
-                        #[cfg(feature = "gpu")]
-                        {
-                            ctx.gpu.resize(size.width, size.height);
-                            ctx.gpu.set_scale_factor(scale_factor);
-                        }
-
-                        #[cfg(feature = "cpu_render")]
                         ctx.surface
                             .resize(
                                 NonZeroU32::new(size.width).unwrap(),
@@ -823,22 +654,12 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                             )
                             .unwrap();
 
-                        #[cfg(feature = "pixels_render")]
-                        {
-                            let _rc = pixels.resize_surface(size.width, size.height);
-                            let _rc = pixels.resize_buffer(
-                                (size.width as f32 / scale) as u32,
-                                (size.height as f32 / scale) as u32,
-                            );
-                        }
-
                         width = (size.width as f32 / scale_factor) as usize;
                         height = (size.height as f32 / scale_factor) as usize;
                         ctx.width = width;
                         ctx.height = height;
                         ctx.scale_factor = scale_factor;
 
-                        #[cfg(any(feature = "gpu", feature = "cpu_render"))]
                         ui_frame.resize(width * height * 4, 0);
 
                         #[cfg(feature = "ui")]
@@ -871,7 +692,6 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
         .unwrap();
 }
 
-#[cfg(feature = "cpu_render")]
 fn convert_rgba_to_softbuffer(
     ui_frame: &[u8],
     width: usize,

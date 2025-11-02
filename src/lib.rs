@@ -12,14 +12,8 @@ pub mod thetrait;
 #[cfg(feature = "ui")]
 pub mod theui;
 
-#[cfg(feature = "gpu")]
-pub mod thegpu;
-
 #[cfg(feature = "log")]
 pub mod thelogger;
-
-#[cfg(feature = "gpu")]
-pub use wgpu;
 
 pub use crate::theapp::TheApp;
 pub use crate::thecontext::TheContext;
@@ -112,9 +106,6 @@ pub mod prelude {
 
     //#[cfg(feature = "code")]
     //pub use crate::thecode::prelude::*;
-
-    #[cfg(feature = "gpu")]
-    pub use crate::thegpu::prelude::*;
 
     #[cfg(feature = "log")]
     pub use crate::thelogger::setup_logger;
