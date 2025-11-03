@@ -53,11 +53,13 @@ impl TheLayout for TheStackLayout {
     }
 
     fn needs_redraw(&mut self) -> bool {
-        // if self.widgets.is_empty() {
-        //     return false;
-        // }
+        for canvas in &mut self.canvas {
+            if canvas.needs_redraw() {
+                return true;
+            }
+        }
 
-        true
+        false
     }
 
     fn widgets(&mut self) -> &mut Vec<Box<dyn TheWidget>> {

@@ -68,6 +68,16 @@ impl TheLayout for TheSharedVLayout {
         &mut self.widgets
     }
 
+    fn needs_redraw(&mut self) -> bool {
+        for canvas in &mut self.canvas {
+            if canvas.needs_redraw() {
+                return true;
+            }
+        }
+
+        false
+    }
+
     fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         if self.canvas.len() < 2 {
             return None;

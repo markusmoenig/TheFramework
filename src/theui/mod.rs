@@ -516,8 +516,14 @@ impl TheUI {
                         if let Some(layout) = self.canvas.get_layout(None, Some(&layout_id.uuid)) {
                             if let Some(list) = layout.as_list_layout() {
                                 list.new_item_selected(id);
+                                self.is_dirty = true;
                             } else if let Some(list) = layout.as_rowlist_layout() {
                                 list.new_item_selected(id);
+                                self.is_dirty = true;
+                            } else if let Some(tree) = layout.as_tree_layout() {
+                                tree.new_item_selected(id.clone());
+                                self.is_dirty = true;
+                                ctx.ui.redraw_all = true;
                             }
                         }
                     }
@@ -594,8 +600,13 @@ impl TheUI {
                         }
                     }
                     TheEvent::SetState(name, state) => {
-                        //println!("Set State {:?}: {:?}", name, state);
                         if let Some(widget) = self.canvas.get_widget(Some(&name), None) {
+                            widget.set_state(state);
+                        }
+                        self.is_dirty = true;
+                    }
+                    TheEvent::SetStateId(id, state) => {
+                        if let Some(widget) = self.canvas.get_widget(None, Some(&id)) {
                             widget.set_state(state);
                         }
                         self.is_dirty = true;

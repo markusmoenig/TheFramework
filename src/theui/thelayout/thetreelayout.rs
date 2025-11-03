@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 const TREE_INDENT: i32 = 20;
-const TREE_VERTICAL_SPACING: i32 = 4;
+const TREE_VERTICAL_SPACING: i32 = 2;
 const TREE_RIGHT_MARGIN: i32 = 2;
 const TREE_BOTTOM_MARGIN: i32 = 2;
 
@@ -15,6 +15,7 @@ pub struct TheTreeNode {
     pub widgets: Vec<Box<dyn TheWidget>>,
 
     layout_id: Option<TheId>,
+    selected_widget: Option<Uuid>,
 }
 
 impl Default for TheTreeNode {
@@ -28,6 +29,7 @@ impl TheTreeNode {
         let mut snapper = TheSnapperbar::new(id.clone());
         snapper.set_associated_layout(id.clone());
         snapper.set_text(id.name.clone());
+        snapper.set_open(false);
         Self {
             id: id,
             open: false,
@@ -35,6 +37,14 @@ impl TheTreeNode {
             childs: vec![],
             widgets: vec![],
             layout_id: None,
+            selected_widget: None,
+        }
+    }
+
+    pub fn set_open(&mut self, open: bool) {
+        self.open = open;
+        if let Some(snapper) = self.widget.as_any().downcast_mut::<TheSnapperbar>() {
+            snapper.set_open(open);
         }
     }
 
@@ -69,6 +79,57 @@ impl TheTreeNode {
         self.widgets.push(widget);
     }
 
+    pub fn clear_selection(&mut self) {
+        for widget in &mut self.widgets {
+            widget.set_state(TheWidgetState::None);
+        }
+        self.selected_widget = None;
+        for child in &mut self.childs {
+            child.clear_selection();
+        }
+    }
+
+    pub fn new_item_selected(&mut self, item: &TheId) -> bool {
+        let mut handled_here = false;
+
+        for widget in &mut self.widgets {
+            if widget.id().matches(Some(&item.name), Some(&item.uuid)) {
+                widget.set_state(TheWidgetState::Selected);
+                handled_here = true;
+                self.selected_widget = Some(item.uuid);
+            } else {
+                widget.set_state(TheWidgetState::None);
+            }
+        }
+
+        if handled_here {
+            // Clear selection of all descendants so only one item stays selected.
+            for child in &mut self.childs {
+                child.clear_selection();
+            }
+            return true;
+        }
+
+        let mut handled_in_child = false;
+        for child in &mut self.childs {
+            if child.new_item_selected(item) {
+                handled_in_child = true;
+            } else {
+                child.clear_selection();
+            }
+        }
+
+        if handled_in_child {
+            for widget in &mut self.widgets {
+                widget.set_state(TheWidgetState::None);
+            }
+            self.selected_widget = None;
+            return true;
+        }
+
+        false
+    }
+
     pub fn remove_child_by_uuid(&mut self, uuid: &Uuid) -> Option<TheTreeNode> {
         if let Some(index) = self.childs.iter().position(|child| child.id.uuid == *uuid) {
             return Some(self.childs.remove(index));
@@ -89,7 +150,11 @@ impl TheTreeNode {
             .iter()
             .position(|widget| widget.id().uuid == *uuid)
         {
-            return Some(self.widgets.remove(index));
+            let removed = self.widgets.remove(index);
+            if self.selected_widget == Some(*uuid) {
+                self.selected_widget = None;
+            }
+            return Some(removed);
         }
 
         for child in &mut self.childs {
@@ -403,9 +468,7 @@ impl TheLayout for TheTreeLayout {
             return Some(widget);
         }
 
-        self.widgets
-            .iter_mut()
-            .find(|w| w.dim().contains(adjusted_coord))
+        None
     }
 
     fn get_widget(
@@ -421,7 +484,7 @@ impl TheLayout for TheTreeLayout {
             return Some(widget);
         }
 
-        self.widgets.iter_mut().find(|w| w.id().matches(name, uuid))
+        None
     }
 
     fn needs_redraw(&mut self) -> bool {
@@ -433,13 +496,7 @@ impl TheLayout for TheTreeLayout {
             return true;
         }
 
-        for i in 0..self.widgets.len() {
-            if self.widgets[i].needs_redraw() {
-                return true;
-            }
-        }
-
-        false
+        true
     }
 
     fn dim(&self) -> &TheDim {
@@ -536,6 +593,8 @@ impl TheLayout for TheTreeLayout {
             return;
         }
 
+        // println!("treelayout true");
+
         // let stride: usize = buffer.stride();
         // if let Some(background) = self.background {
         //     ctx.draw.rect(
@@ -619,6 +678,8 @@ pub trait TheTreeLayoutTrait: TheLayout {
     fn get_node_by_id(&self, uuid: &Uuid) -> Option<&TheTreeNode>;
     /// Returns a mutable reference to the node with the given uuid (if any).
     fn get_node_by_id_mut(&mut self, uuid: &Uuid) -> Option<&mut TheTreeNode>;
+    /// Notifies the layout that a tree item was selected.
+    fn new_item_selected(&mut self, item: TheId);
     /// Get the root node
     fn get_root(&mut self) -> &mut TheTreeNode;
     /// Set the state of a node
@@ -642,6 +703,11 @@ impl TheTreeLayoutTrait for TheTreeLayout {
     }
     fn get_node_by_id_mut(&mut self, uuid: &Uuid) -> Option<&mut TheTreeNode> {
         self.root.find_node_mut(uuid)
+    }
+    fn new_item_selected(&mut self, item: TheId) {
+        if !self.root.new_item_selected(&item) {
+            self.root.clear_selection();
+        }
     }
     fn get_root(&mut self) -> &mut TheTreeNode {
         &mut self.root

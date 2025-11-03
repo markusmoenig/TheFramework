@@ -22,6 +22,7 @@ pub enum TheEvent {
     // These events define widget states.
     StateChanged(TheId, TheWidgetState),
     SetState(String, TheWidgetState),
+    SetStateId(Uuid, TheWidgetState),
 
     DragStarted(TheId, String, Vec2<i32>),
     DragStartedWithNoImage(TheDrop),
@@ -95,6 +96,7 @@ pub enum TheEvent {
     NewListItemSelected(TheId, TheId),
     ScrollLayout(TheId, Vec2<i32>),
     SnapperStateChanged(TheId, TheId, bool),
+    TreeOpenStateChanged(TheId, bool),
 
     // Utility
     FileRequesterResult(TheId, Vec<std::path::PathBuf>),

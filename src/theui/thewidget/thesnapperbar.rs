@@ -118,8 +118,6 @@ impl TheWidget for TheSnapperbar {
                     self.state = TheWidgetState::None;
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
                     self.open = !self.open;
-                    ctx.ui.redraw_all = true;
-                    ctx.ui.relayout = true;
 
                     ctx.ui.send(TheEvent::SnapperStateChanged(
                         self.id().clone(),

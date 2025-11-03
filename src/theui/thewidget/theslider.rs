@@ -144,9 +144,13 @@ impl TheWidget for TheSlider {
                 }
 
                 if coord.x > self.dim.width - self.text_width + 5 {
-                    self.value = self.default_value.clone();
-                    ctx.ui
-                        .send_widget_value_changed(self.id(), self.value.clone());
+                    let value = self.default_value.clone();
+                    if value != self.value {
+                        self.value = value;
+                        self.original = self.value.clone();
+                        ctx.ui
+                            .send_widget_value_changed(self.id(), self.value.clone());
+                    }
                 } else if let Some(range_f32) = self.range.to_range_f32() {
                     let d = (range_f32.end() - range_f32.start()).abs()
                         * (coord.x as f32 / (self.dim.width - self.text_width) as f32)
@@ -193,6 +197,7 @@ impl TheWidget for TheSlider {
                 if self.value != self.original {
                     ctx.ui
                         .send_widget_value_changed(self.id(), self.value.clone());
+                    self.original = self.value.clone();
                 }
                 redraw = true;
             }

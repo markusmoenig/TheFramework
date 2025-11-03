@@ -137,10 +137,8 @@ impl TheLayout for TheRGBALayout {
             return true;
         }
 
-        for i in 0..self.widgets.len() {
-            if self.widgets[i].needs_redraw() {
-                return true;
-            }
+        if self.rgba_view.needs_redraw() {
+            return true;
         }
         false
     }

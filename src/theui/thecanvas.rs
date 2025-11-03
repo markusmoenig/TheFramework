@@ -493,15 +493,23 @@ impl TheCanvas {
             }
 
             if let Some(widget) = &mut self.widget {
-                // println!("drawing widget {}, {:?}", widget.id().name, widget.dim());
-                if ctx.ui.redraw_all || widget.needs_redraw() || force_widget_redraw {
+                let needs_redraw = widget.needs_redraw();
+                if ctx.ui.redraw_all || needs_redraw || force_widget_redraw {
+                    // println!(
+                    //     "drawing widget id: {}, widget.needs_redraw: {:?}, ui.redraw_all {}, force_widget_redraw {}",
+                    //     widget.id().name,
+                    //     needs_redraw,
+                    //     ctx.ui.redraw_all,
+                    //     force_widget_redraw
+                    // );
                     widget.draw(&mut self.buffer, style, ctx);
                 }
             }
 
             if let Some(layout) = &mut self.layout {
                 // println!("drawing layout {}, {:?}", layout.id().name, layout.dim());
-                if ctx.ui.redraw_all || layout.needs_redraw() || layout.widgets().is_empty() {
+                if ctx.ui.redraw_all || layout.needs_redraw() {
+                    //|| layout.widgets().is_empty() {
                     layout.draw(&mut self.buffer, style, ctx);
                 }
             }
@@ -518,5 +526,52 @@ impl TheCanvas {
                 }
             }
         }
+    }
+
+    /// Returns true if any widget or layout attached to this canvas (or its children) needs a redraw.
+    pub fn needs_redraw(&mut self) -> bool {
+        if let Some(widget) = &mut self.widget {
+            if widget.needs_redraw() {
+                return true;
+            }
+        }
+
+        if let Some(layout) = &mut self.layout {
+            if layout.needs_redraw() {
+                return true;
+            }
+        }
+
+        if let Some(left) = &mut self.left {
+            if left.needs_redraw() {
+                return true;
+            }
+        }
+
+        if let Some(top) = &mut self.top {
+            if top.needs_redraw() {
+                return true;
+            }
+        }
+
+        if let Some(right) = &mut self.right {
+            if right.needs_redraw() {
+                return true;
+            }
+        }
+
+        if let Some(bottom) = &mut self.bottom {
+            if bottom.needs_redraw() {
+                return true;
+            }
+        }
+
+        if let Some(center) = &mut self.center {
+            if center.needs_redraw() {
+                return true;
+            }
+        }
+
+        false
     }
 }

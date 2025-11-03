@@ -150,7 +150,7 @@ impl Sidebar {
         let mut tree_layout = TheTreeLayout::new(TheId::named("Tree Layout"));
 
         let mut color_node: TheTreeNode = TheTreeNode::new(TheId::named("Color"));
-        color_node.open = true;
+        color_node.set_open(true);
         let mut color_picker = TheColorPicker::new(TheId::named("Color Picker"));
         color_picker.set_color(Vec3::new(
             project.material.rgb.x,
@@ -160,7 +160,7 @@ impl Sidebar {
         color_node.add_widget(Box::new(color_picker));
 
         let mut parameters_node: TheTreeNode = TheTreeNode::new(TheId::named("Parameters"));
-        parameters_node.open = true;
+        parameters_node.set_open(true);
 
         let mut item = TheTreeItem::new(TheId::named("Anisotropic Item"));
         item.set_text("Anisotropic".into());
@@ -221,7 +221,6 @@ impl Sidebar {
     ) -> bool {
         let mut redraw = false;
 
-        // println!("{:?}", event);
         match event {
             TheEvent::StateChanged(id, _state) => {
                 //println!("app Widget State changed {:?}: {:?}", id, state);

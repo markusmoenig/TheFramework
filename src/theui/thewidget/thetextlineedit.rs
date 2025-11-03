@@ -127,6 +127,7 @@ impl TheWidget for TheTextLineEdit {
 
     fn set_embedded(&mut self, embedded: bool) {
         self.embedded = embedded;
+        self.limiter_mut().set_max_height(16);
     }
 
     fn disabled(&self) -> bool {
@@ -835,7 +836,7 @@ impl TheWidget for TheTextLineEdit {
             self.is_disabled,
             self.embedded,
             true,
-            true,
+            !self.embedded,
             self,
             buffer,
             style,

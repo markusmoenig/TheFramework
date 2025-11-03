@@ -204,8 +204,6 @@ pub trait TheWidget: Send {
         TheRGBABuffer::empty()
     }
 
-    fn update(&mut self, ctx: &mut TheContext) {}
-
     /// Widgets who support hover return true
     fn supports_hover(&mut self) -> bool {
         false

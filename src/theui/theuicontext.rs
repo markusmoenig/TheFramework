@@ -251,6 +251,10 @@ impl TheUIContext {
         self.send(TheEvent::SetState(name, state));
     }
 
+    pub fn set_widget_state_id(&mut self, id: Uuid, state: TheWidgetState) {
+        self.send(TheEvent::SetStateId(id, state));
+    }
+
     /// Sends the given state event
     pub fn send(&mut self, event: TheEvent) {
         if let Some(sender) = &mut self.state_events_sender {

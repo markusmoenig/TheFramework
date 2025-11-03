@@ -32,7 +32,7 @@ impl TheWidget for TheTreeItem {
         Self: Sized,
     {
         let mut limiter = TheSizeLimiter::new();
-        limiter.set_max_height(25);
+        limiter.set_max_height(22);
 
         Self {
             id,
@@ -363,8 +363,8 @@ impl TheWidget for TheTreeItem {
                 widget.calculate_size(ctx);
                 let mut y = rect.1 as i32;
                 let height = widget.limiter().get_max_height();
-                if height < 25 {
-                    y += (25 - height) / 2;
+                if height < 22 {
+                    y += (22 - height) / 2 - 1;
                 }
 
                 widget.set_dim(
