@@ -19,7 +19,7 @@ pub struct TheTreeItem {
     scroll_offset: i32,
 
     values: Vec<(i32, TheValue)>,
-    widgets: Vec<(i32, Box<dyn TheWidget>)>,
+    widget_column: Option<(i32, Box<dyn TheWidget>)>,
 
     context_menu: Option<TheContextMenu>,
 
@@ -53,7 +53,7 @@ impl TheWidget for TheTreeItem {
             scroll_offset: 0,
 
             values: Vec::new(),
-            widgets: Vec::new(),
+            widget_column: None,
 
             context_menu: None,
 
@@ -99,7 +99,7 @@ impl TheWidget for TheTreeItem {
 
                 ctx.ui.set_focus(self.id());
 
-                for (_, w) in &mut self.widgets {
+                if let Some((_, w)) = &mut self.widget_column {
                     let dim = w.dim();
                     let c = Vec2::new(coord.x - dim.x + 15, coord.y - dim.y);
                     if c.x > 0 {
@@ -111,7 +111,7 @@ impl TheWidget for TheTreeItem {
                 }
             }
             TheEvent::MouseUp(coord) => {
-                for (_, w) in &mut self.widgets {
+                if let Some((_, w)) = &mut self.widget_column {
                     let dim = w.dim();
                     redraw = w.on_event(
                         &TheEvent::MouseUp(Vec2::new(coord.x - dim.x + 15, coord.y)),
@@ -121,7 +121,7 @@ impl TheWidget for TheTreeItem {
                 }
             }
             TheEvent::MouseDragged(coord) => {
-                for (_, w) in &mut self.widgets {
+                if let Some((_, w)) = &mut self.widget_column {
                     let dim = w.dim();
                     w.on_event(
                         &TheEvent::MouseDragged(Vec2::new(coord.x - dim.x + 15, coord.y)),
@@ -143,7 +143,7 @@ impl TheWidget for TheTreeItem {
                     .send(TheEvent::ScrollLayout(self.layout_id.clone(), *delta));
             }
             _ => {
-                for (_, w) in &mut self.widgets {
+                if let Some((_, w)) = &mut self.widget_column {
                     redraw = w.on_event(event, ctx)
                 }
             }
@@ -193,6 +193,13 @@ impl TheWidget for TheTreeItem {
 
     fn supports_hover(&mut self) -> bool {
         true
+    }
+
+    fn supports_text_input(&self) -> bool {
+        if let Some((_, widget)) = &self.widget_column {
+            return widget.supports_text_input();
+        }
+        false
     }
 
     fn value(&self) -> TheValue {
@@ -328,8 +335,8 @@ impl TheWidget for TheTreeItem {
             for v in self.values.iter() {
                 right_width += v.0;
             }
-            for v in self.widgets.iter() {
-                right_width += v.0;
+            if let Some((width, _)) = &self.widget_column {
+                right_width += *width;
             }
 
             shrinker.shrink_by(9, 0, 0, 0);
@@ -352,7 +359,7 @@ impl TheWidget for TheTreeItem {
 
             rect.0 += rect.2 - right_width as usize;
 
-            for (width, widget) in self.widgets.iter_mut() {
+            if let Some((width, widget)) = &mut self.widget_column {
                 ctx.draw.rect(
                     buffer.pixels_mut(),
                     &(rect.0, rect.1 - 1, 1, rect.3 + 2),
@@ -472,6 +479,6 @@ impl TheTreeItemTrait for TheTreeItem {
     }
     fn add_widget_column(&mut self, width: i32, mut widget: Box<dyn TheWidget>) {
         widget.set_embedded(true);
-        self.widgets.push((width, widget));
+        self.widget_column = Some((width, widget));
     }
 }

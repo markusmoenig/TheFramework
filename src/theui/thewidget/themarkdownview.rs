@@ -210,8 +210,8 @@ impl TheWidget for TheMarkdownView {
         true
     }
 
-    fn supports_text_input(&mut self) -> bool {
-        true
+    fn supports_text_input(&self) -> bool {
+        false
     }
 
     fn supports_clipboard(&mut self) -> bool {

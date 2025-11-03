@@ -208,7 +208,7 @@ impl TheWidget for TheTextAreaEdit {
         true
     }
 
-    fn supports_text_input(&mut self) -> bool {
+    fn supports_text_input(&self) -> bool {
         true
     }
 

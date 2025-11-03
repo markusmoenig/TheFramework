@@ -155,7 +155,7 @@ impl TheWidget for TheTextView {
         true
     }
 
-    fn supports_text_input(&mut self) -> bool {
+    fn supports_text_input(&self) -> bool {
         true
     }
 

@@ -210,7 +210,7 @@ pub trait TheWidget: Send {
     }
 
     /// Widgets who support text input return true
-    fn supports_text_input(&mut self) -> bool {
+    fn supports_text_input(&self) -> bool {
         false
     }
 
