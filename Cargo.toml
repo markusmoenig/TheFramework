@@ -19,8 +19,8 @@ maths-rs = { version = "0.2.6", features = [
     "hash",
 ] }
 vek = { version = "0.17.1", default-features = true }
-winit = { version = "0.29", optional = true }
-winit_input_helper = { version = "0.16", optional = true }
+winit = { version = "0.30", optional = true }
+winit_input_helper = { version = "0.17", optional = true }
 rust-embed = { version = "8", default-features = true, features = [
     "include-exclude",
 ] }
@@ -74,7 +74,6 @@ syntect = { version = "5.2.0", default-features = false, features = [
     "default-fancy",
 ] }
 wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"
 web-sys = { version = "0.3", features = ["GpuTextureFormat", "Performance"] }
 
 [features]

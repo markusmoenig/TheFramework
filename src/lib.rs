@@ -8,6 +8,8 @@ pub mod thepalette;
 pub mod thergbabuffer;
 pub mod thetime;
 pub mod thetrait;
+#[cfg(feature = "winit_app")]
+pub mod thewinitapp;
 
 #[cfg(feature = "ui")]
 pub mod theui;
@@ -109,4 +111,7 @@ pub mod prelude {
 
     #[cfg(feature = "log")]
     pub use crate::thelogger::setup_logger;
+
+    #[cfg(feature = "winit_app")]
+    pub use crate::thewinitapp::run_winit_app;
 }
