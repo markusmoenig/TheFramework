@@ -6,6 +6,7 @@ use std::hash::{Hash, Hasher};
 pub struct TheId {
     pub name: String,
     pub uuid: Uuid,
+    pub references: Uuid,
 }
 
 impl PartialEq for TheId {
@@ -28,6 +29,7 @@ impl TheId {
         Self {
             name: name.to_string(),
             uuid: Uuid::new_v4(),
+            references: Uuid::nil(),
         }
     }
 
@@ -36,6 +38,16 @@ impl TheId {
         Self {
             name: name.to_string(),
             uuid,
+            references: Uuid::nil(),
+        }
+    }
+
+    /// Creates an Id based on a given name and reference uuid.
+    pub fn named_with_reference(name: &str, references: Uuid) -> Self {
+        Self {
+            name: name.to_string(),
+            uuid: Uuid::new_v4(),
+            references,
         }
     }
 
@@ -44,6 +56,7 @@ impl TheId {
         Self {
             name: "".to_string(),
             uuid: Uuid::new_v4(),
+            references: Uuid::nil(),
         }
     }
 

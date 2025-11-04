@@ -507,6 +507,11 @@ impl TheLayout for TheTreeLayout {
         &mut self.dim
     }
 
+    /// Relayouts the layout.
+    fn relayout(&mut self, _ctx: &mut TheContext) {
+        self.dim = TheDim::zero();
+    }
+
     fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {
         if self.dim != dim || ctx.ui.relayout {
             self.dim = dim;

@@ -77,7 +77,10 @@ fn accel_physical_to_ascii(code: winit::keyboard::KeyCode, shift: bool) -> Optio
     Some(if shift { shifted } else { base })
 }
 use crate::prelude::*;
-use web_time::{Duration, Instant};
+#[cfg(target_arch = "wasm32")]
+use web_time::Duration;
+#[cfg(target_arch = "wasm32")]
+use web_time::Instant;
 
 pub fn translate_coord_to_local(x: u32, y: u32, scale_factor: f32) -> (u32, u32) {
     (
@@ -174,6 +177,7 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
     let window = builder.build(&event_loop).unwrap();
     let window = Arc::new(window);
 
+    #[allow(unused_mut)]
     let mut scale_factor = 1.0;
     // Make sure to set the initial scale factor on macOS
     #[cfg(target_os = "macos")]
@@ -208,30 +212,40 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
     }
 
     // Setup the target frame time
+    #[cfg(target_arch = "wasm32")]
     let target_frame_time = Duration::from_secs_f64(1.0 / app.target_fps());
-    let mut last_frame_time = Instant::now();
+    #[cfg(target_arch = "wasm32")]
+    let mut next_frame_time = Instant::now();
+    #[cfg(not(target_arch = "wasm32"))]
+    let target_frame_time_std = std::time::Duration::from_secs_f64(1.0 / app.target_fps());
+    #[cfg(not(target_arch = "wasm32"))]
+    let mut next_frame_time_std = std::time::Instant::now();
 
     // Loop
-    event_loop.set_control_flow(ControlFlow::Poll);
     event_loop
         .run(move |event, elwt| {
             match &event {
                 // Try to maintain the target frame time
                 Event::AboutToWait => {
-                    let now = Instant::now();
-                    let elapsed = now.duration_since(last_frame_time);
-
-                    if elapsed >= target_frame_time {
-                        last_frame_time = now;
-                        window.request_redraw();
-                    } else {
-                        #[cfg(not(target_arch = "wasm32"))]
-                        {
-                            std::thread::sleep(target_frame_time - elapsed);
+                    #[cfg(target_arch = "wasm32")]
+                    {
+                        let now = Instant::now();
+                        if now >= next_frame_time {
+                            window.request_redraw();
+                            next_frame_time = now + target_frame_time;
                         }
+                        elwt.set_control_flow(ControlFlow::Wait);
                     }
 
-                    elwt.set_control_flow(ControlFlow::Poll);
+                    #[cfg(not(target_arch = "wasm32"))]
+                    {
+                        let now_std = std::time::Instant::now();
+                        if now_std >= next_frame_time_std {
+                            window.request_redraw();
+                            next_frame_time_std = now_std + target_frame_time_std;
+                        }
+                        elwt.set_control_flow(ControlFlow::WaitUntil(next_frame_time_std));
+                    }
                 }
                 Event::WindowEvent { event, .. } => match event {
                     WindowEvent::CloseRequested => {
@@ -347,14 +361,14 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
                         // but do not use the UI API
                         app.draw(&mut ui_frame, &mut ctx);
 
-                        let buffer_data = convert_rgba_to_softbuffer(
+                        let mut buffer = ctx.surface.buffer_mut().unwrap();
+                        blit_rgba_into_softbuffer(
                             &ui_frame,
+                            ctx.scale_factor as usize,
                             width,
                             height,
-                            ctx.scale_factor as usize,
+                            &mut *buffer,
                         );
-                        let mut buffer = ctx.surface.buffer_mut().unwrap();
-                        buffer.copy_from_slice(&buffer_data);
                         if buffer
                             .present()
                             .map_err(|e| error!("render failed: {}", e))
@@ -692,53 +706,41 @@ async fn run_app(mut framework: TheApp, mut app: Box<dyn crate::TheTrait>) {
         .unwrap();
 }
 
-fn convert_rgba_to_softbuffer(
+fn blit_rgba_into_softbuffer(
     ui_frame: &[u8],
+    scale_factor: usize,
     width: usize,
     height: usize,
-    scale_factor: usize,
-) -> Vec<u32> {
-    use rayon::prelude::*;
-
+    dest: &mut [u32],
+) {
     let dest_width = width * scale_factor;
     let dest_height = height * scale_factor;
+    debug_assert_eq!(dest.len(), dest_width * dest_height);
 
     if scale_factor == 1 {
-        let mut buffer = vec![0u32; dest_width * dest_height];
-        buffer.par_iter_mut().enumerate().for_each(|(i, px)| {
-            let index = i * 4;
-            let red = ui_frame[index] as u32;
-            let green = ui_frame[index + 1] as u32;
-            let blue = ui_frame[index + 2] as u32;
-            *px = blue | (green << 8) | (red << 16);
-        });
-        buffer
+        // Direct copy without extra allocation.
+        for (dst, rgba) in dest.iter_mut().zip(ui_frame.chunks_exact(4)) {
+            *dst = (rgba[2] as u32) | ((rgba[1] as u32) << 8) | ((rgba[0] as u32) << 16);
+        }
     } else {
-        let mut buffer = vec![0u32; dest_width * dest_height];
+        for y in 0..height {
+            let src_row = &ui_frame[y * width * 4..(y + 1) * width * 4];
+            for x in 0..width {
+                let offset = x * 4;
+                let r = src_row[offset] as u32;
+                let g = src_row[offset + 1] as u32;
+                let b = src_row[offset + 2] as u32;
+                let color = b | (g << 8) | (r << 16);
 
-        // Each source row y maps to a contiguous chunk of `scale_factor` destination rows.
-        let sf = scale_factor;
-        buffer
-            .par_chunks_mut(dest_width * sf)
-            .enumerate()
-            .for_each(|(y, chunk)| {
-                for x in 0..width {
-                    let src_index = (y * width + x) * 4;
-                    let r = ui_frame[src_index] as u32;
-                    let g = ui_frame[src_index + 1] as u32;
-                    let b = ui_frame[src_index + 2] as u32;
-                    let color = b | (g << 8) | (r << 16);
+                let dest_x = x * scale_factor;
+                let dest_y = y * scale_factor;
 
-                    // Write a sf×sf block at (x*sf, 0..sf) across the `sf` destination rows for this source row.
-                    for y2 in 0..sf {
-                        let row = &mut chunk[y2 * dest_width..(y2 + 1) * dest_width];
-                        let start = x * sf;
-                        let end = start + sf;
-                        row[start..end].fill(color);
-                    }
+                for sy in 0..scale_factor {
+                    let row = dest_y + sy;
+                    let row_start = row * dest_width + dest_x;
+                    dest[row_start..row_start + scale_factor].fill(color);
                 }
-            });
-
-        buffer
+            }
+        }
     }
 }
