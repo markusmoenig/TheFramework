@@ -1,8 +1,3 @@
-use std::{num::NonZeroU32, sync::Arc};
-
-use softbuffer::Surface;
-use winit::window::Window;
-
 use crate::prelude::*;
 
 pub struct TheContext {
@@ -13,20 +8,10 @@ pub struct TheContext {
     pub draw: TheDraw2D,
     #[cfg(feature = "ui")]
     pub ui: TheUIContext,
-    pub surface: Surface<Arc<Window>, Arc<Window>>,
 }
 
 impl TheContext {
-    pub fn new(width: usize, height: usize, scale_factor: f32, window: Arc<Window>) -> Self {
-        let context = softbuffer::Context::new(window.clone()).unwrap();
-        let mut surface = softbuffer::Surface::new(&context, window.clone()).unwrap();
-        surface
-            .resize(
-                NonZeroU32::new(width as u32 * scale_factor as u32).unwrap(),
-                NonZeroU32::new(height as u32 * scale_factor as u32).unwrap(),
-            )
-            .unwrap();
-
+    pub fn new(width: usize, height: usize, scale_factor: f32) -> Self {
         Self {
             width,
             height,
@@ -34,7 +19,6 @@ impl TheContext {
             draw: TheDraw2D::new(),
             #[cfg(feature = "ui")]
             ui: TheUIContext::new(),
-            surface,
         }
     }
 
