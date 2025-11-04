@@ -1051,12 +1051,11 @@ pub struct TheTextRenderer {
 
     // Options
     cursor_width: usize,
-    cursor_vertical_shrink: usize,
     pub font_size: f32,
     pub indicate_space: bool,
     pub max_width: Option<f32>,
     pub padding: (usize, usize, usize, usize), // left top right bottom
-    selection_extend: usize,
+    row_extend: usize,
 
     // State
     pub actual_size: Vec2<usize>,
@@ -1082,12 +1081,11 @@ impl Default for TheTextRenderer {
             height: 0,
 
             cursor_width: 2,
-            cursor_vertical_shrink: 1,
             font_size: 14.0,
             indicate_space: false,
             max_width: None,
             padding: (5, 0, 5, 0),
-            selection_extend: 2,
+            row_extend: 1,
 
             actual_size: Vec2::zero(),
             glyphs: vec![],
@@ -1631,18 +1629,16 @@ impl TheTextRenderer {
         style: &mut Box<dyn TheStyle>,
         draw: &TheDraw2D,
     ) {
-        let height = self
-            .row_height()
-            .saturating_sub(self.cursor_vertical_shrink * 2);
+        let row_height = self.row_height(cursor.row);
 
         let left = self.get_text_left(cursor_index).to_i32().unwrap()
             - (self.cursor_width / 2).to_i32().unwrap();
-        let top = self.row_baseline(cursor.row).to_i32().unwrap() - height.to_i32().unwrap();
+        let top = self.row_info[cursor.row].bottom.to_i32().unwrap() - row_height.to_i32().unwrap();
         if self.is_rect_out_of_visible_area(
             left.max(0).to_usize().unwrap(),
             top.max(0).to_usize().unwrap(),
             self.cursor_width,
-            height,
+            row_height,
         ) {
             return;
         }
@@ -1654,7 +1650,7 @@ impl TheTextRenderer {
             .max(self.left);
         let top = self.top.to_i32().unwrap() + top - self.scroll_offset.y.to_i32().unwrap();
 
-        let bottom = (top + height.to_i32().unwrap())
+        let bottom = (top + row_height.to_i32().unwrap())
             .max(0)
             .to_usize()
             .unwrap()
@@ -1705,7 +1701,7 @@ impl TheTextRenderer {
             let width = self.get_text_width(start, end - 1);
 
             let left = (self.left + self.get_text_left(start)) as i32 - self.scroll_offset.x as i32;
-            let base = (self.top + row.baseline) as i32 - self.scroll_offset.y as i32;
+            let base = (self.top + row.bottom) as i32 - self.scroll_offset.y as i32;
 
             let right = (left + width.to_i32().unwrap())
                 .max(0)
@@ -2086,7 +2082,7 @@ impl TheTextRenderer {
                     let left = left + self.get_text_left(token_start).to_i32().unwrap();
                     let left = left.max(0).to_usize().unwrap().max(self.left);
 
-                    let top = top + self.row_height() as i32;
+                    let top = top + self.row_height(row_number) as i32;
                     let top = top.max(0).to_usize().unwrap().max(self.top);
 
                     let width = self.get_text_width(token_start, token_end - 1);
@@ -2165,10 +2161,9 @@ impl TheTextRenderer {
         }
 
         let row = &self.row_info[row_number];
-
-        let height = self.row_height() + 2 * self.selection_extend;
+        let row_height = self.row_height(row_number);
         let row_width = row.right - row.left;
-        if self.is_rect_out_of_visible_area(row.left, row.top, row_width, self.row_height()) {
+        if self.is_rect_out_of_visible_area(row.left, row.top, row_width, row_height) {
             return;
         }
 
@@ -2194,15 +2189,14 @@ impl TheTextRenderer {
         }
 
         let left = (self.left + left) as i32 - self.scroll_offset.x as i32;
-        let top = (self.top + row.baseline - height + self.selection_extend) as i32
-            - self.scroll_offset.y as i32;
+        let top = (self.top + row.bottom - row_height) as i32 - self.scroll_offset.y as i32;
 
         let right = (left + width.to_i32().unwrap())
             .max(0)
             .to_usize()
             .unwrap()
             .min(self.left + self.width);
-        let bottom = (top + height.to_i32().unwrap())
+        let bottom = (top + row_height.to_i32().unwrap())
             .max(0)
             .to_usize()
             .unwrap()
@@ -2220,8 +2214,9 @@ impl TheTextRenderer {
         );
     }
 
-    fn row_height(&self) -> usize {
-        self.font_size.ceil().to_usize().unwrap()
+    fn row_height(&self, row_number: usize) -> usize {
+        let row = &self.row_info[row_number];
+        row.bottom - row.top + self.row_extend
     }
 }
 
