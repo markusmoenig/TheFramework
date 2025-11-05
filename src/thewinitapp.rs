@@ -6,8 +6,8 @@ use winit::{
     application::ApplicationHandler,
     dpi::{LogicalSize, PhysicalSize},
     event::{
-        DeviceEvent, DeviceId, ElementState, MouseButton, StartCause, Touch, TouchPhase,
-        WindowEvent,
+        DeviceEvent, DeviceId, ElementState, MouseButton, MouseScrollDelta, StartCause, Touch,
+        TouchPhase, WindowEvent,
     },
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
     keyboard::{Key, KeyCode, ModifiersState, NamedKey},
@@ -184,6 +184,8 @@ struct TheWinitApp {
     mods: ModifiersState,
     target_frame_time: Duration,
     next_frame_time: Instant,
+    last_cursor_pos: Option<(f32, f32)>,
+    left_mouse_down: bool,
 
     #[cfg(feature = "ui")]
     ui: TheUI,
@@ -201,6 +203,8 @@ impl TheWinitApp {
             mods: ModifiersState::empty(),
             target_frame_time: Duration::from_secs_f64(1.0 / fps),
             next_frame_time: Instant::now(),
+            last_cursor_pos: None,
+            left_mouse_down: false,
             #[cfg(feature = "ui")]
             ui: TheUI::new(),
         }
@@ -491,6 +495,40 @@ impl ApplicationHandler for TheWinitApp {
                     ctx.window.request_redraw();
                 }
             }
+            WindowEvent::CursorMoved { position, .. } => {
+                let (x, y) = translate_coord_to_local(
+                    position.x as f32,
+                    position.y as f32,
+                    ctx.ctx.scale_factor,
+                );
+
+                self.last_cursor_pos = Some((x, y));
+
+                let mut redraw = false;
+                if self.left_mouse_down {
+                    #[cfg(feature = "ui")]
+                    if self.ui.touch_dragged(x, y, &mut ctx.ctx) {
+                        redraw = true;
+                    }
+
+                    if self.app.touch_dragged(x, y, &mut ctx.ctx) {
+                        redraw = true;
+                    }
+                } else {
+                    #[cfg(feature = "ui")]
+                    if self.ui.hover(x, y, &mut ctx.ctx) {
+                        redraw = true;
+                    }
+
+                    if self.app.hover(x, y, &mut ctx.ctx) {
+                        redraw = true;
+                    }
+                }
+
+                if redraw {
+                    ctx.window.request_redraw();
+                }
+            }
             WindowEvent::Touch(Touch {
                 phase, location, ..
             }) => {
@@ -548,6 +586,93 @@ impl ApplicationHandler for TheWinitApp {
                             ctx.window.request_redraw();
                         }
                     }
+                }
+            }
+            WindowEvent::MouseInput { state, button, .. } => {
+                let logical_pos = self
+                    .input
+                    .cursor()
+                    .map(|(cx, cy)| translate_coord_to_local(cx, cy, ctx.ctx.scale_factor))
+                    .or(self.last_cursor_pos);
+
+                if let Some((x, y)) = logical_pos {
+                    self.last_cursor_pos = Some((x, y));
+
+                    let mut redraw = false;
+                    match (button, state) {
+                        (MouseButton::Left, ElementState::Pressed) => {
+                            self.left_mouse_down = true;
+
+                            #[cfg(feature = "ui")]
+                            if self.ui.touch_down(x, y, &mut ctx.ctx) {
+                                redraw = true;
+                            }
+
+                            if self.app.touch_down(x, y, &mut ctx.ctx) {
+                                redraw = true;
+                            }
+                        }
+                        (MouseButton::Left, ElementState::Released) => {
+                            self.left_mouse_down = false;
+
+                            #[cfg(feature = "ui")]
+                            if self.ui.touch_up(x, y, &mut ctx.ctx) {
+                                redraw = true;
+                            }
+
+                            if self.app.touch_up(x, y, &mut ctx.ctx) {
+                                redraw = true;
+                            }
+                        }
+                        (MouseButton::Right, ElementState::Pressed) => {
+                            #[cfg(feature = "ui")]
+                            if self.ui.context(x, y, &mut ctx.ctx) {
+                                redraw = true;
+                            }
+
+                            if self.app.touch_down(x, y, &mut ctx.ctx) {
+                                redraw = true;
+                            }
+                        }
+                        (MouseButton::Right, ElementState::Released) => {
+                            #[cfg(feature = "ui")]
+                            if self.ui.touch_up(x, y, &mut ctx.ctx) {
+                                redraw = true;
+                            }
+
+                            if self.app.touch_up(x, y, &mut ctx.ctx) {
+                                redraw = true;
+                            }
+                        }
+                        _ => {}
+                    }
+
+                    if redraw {
+                        ctx.window.request_redraw();
+                    }
+                }
+            }
+            WindowEvent::MouseWheel { delta, .. } => {
+                let (x, y) = match delta {
+                    MouseScrollDelta::LineDelta(x, y) => {
+                        const LINE_HEIGHT_PX: f32 = 20.0;
+                        (x as f32 * LINE_HEIGHT_PX, y as f32 * LINE_HEIGHT_PX)
+                    }
+                    MouseScrollDelta::PixelDelta(delta) => (delta.x as f32, delta.y as f32),
+                };
+
+                let mut redraw = false;
+                #[cfg(feature = "ui")]
+                if self.ui.mouse_wheel((x as i32, y as i32), &mut ctx.ctx) {
+                    redraw = true;
+                }
+
+                if self.app.mouse_wheel((x as isize, y as isize), &mut ctx.ctx) {
+                    redraw = true;
+                }
+
+                if redraw {
+                    ctx.window.request_redraw();
                 }
             }
             _ => {}
@@ -671,7 +796,6 @@ impl ApplicationHandler for TheWinitApp {
                 ctx.window.request_redraw();
             }
         }
-
         if let Some(path) = self.input.dropped_file() {
             self.app.dropped_file(path.to_str().unwrap().to_string());
             ctx.window.request_redraw();
