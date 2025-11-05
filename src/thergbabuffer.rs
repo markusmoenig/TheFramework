@@ -743,6 +743,21 @@ impl TheRGBABuffer {
         }
     }
 
+    /// Multiplies every pixel in the buffer by the given RGBA pixel (component-wise, 0-255 space).
+    pub fn multiply_by_pixel(&mut self, add: [u8; 4], pixel: [u8; 4]) {
+        if self.buffer.is_empty() {
+            return;
+        }
+
+        let [mr, mg, mb, ma] = pixel;
+        for rgba in self.buffer.chunks_exact_mut(4) {
+            rgba[0] = (((rgba[0] as u16 + add[0] as u16) * mr as u16) / 255) as u8;
+            rgba[1] = (((rgba[1] as u16 + add[1] as u16) * mg as u16) / 255) as u8;
+            rgba[2] = (((rgba[2] as u16 + add[2] as u16) * mb as u16) / 255) as u8;
+            rgba[3] = ((rgba[3] as u16 * ma as u16) / 255) as u8;
+        }
+    }
+
     /// Draws a line from (x0, y0) to (x1, y1) with the given color.
     pub fn draw_line(&mut self, x0: i32, y0: i32, x1: i32, y1: i32, color: [u8; 4]) {
         let mut x = x0;

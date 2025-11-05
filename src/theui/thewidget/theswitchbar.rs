@@ -120,7 +120,7 @@ impl TheWidget for TheSwitchbar {
                 &r,
                 stride,
                 font,
-                14.0,
+                13.0,
                 &self.text,
                 &WHITE,
                 TheHorizontalAlign::Left,

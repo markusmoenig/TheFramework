@@ -9,6 +9,8 @@ pub struct TheSnapperbar {
     open: bool,
     collapse_uuid: Option<Uuid>,
 
+    selected: bool,
+
     dim: TheDim,
     text: String,
     is_dirty: bool,
@@ -31,6 +33,8 @@ impl TheWidget for TheSnapperbar {
             state: TheWidgetState::None,
             open: false,
             collapse_uuid: None,
+
+            selected: false,
 
             dim: TheDim::zero(),
             text: "".to_string(),
@@ -146,7 +150,7 @@ impl TheWidget for TheSnapperbar {
     fn draw(
         &mut self,
         buffer: &mut TheRGBABuffer,
-        _style: &mut Box<dyn TheStyle>,
+        style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
         if !self.dim().is_valid() {
@@ -166,10 +170,16 @@ impl TheWidget for TheSnapperbar {
             icon_state = "hover".to_string()
         }
 
-        if let Some(icon) = ctx
+        if let Some(mut icon) = ctx
             .ui
             .icon(format!("dark_snapperbar_{}_front", icon_state).as_str())
+            .cloned()
         {
+            if self.selected {
+                let col = *style.theme().color(DefaultSelection);
+                icon.multiply_by_pixel([100, 100, 100, 255], col);
+            }
+
             let r = (utuple.0, utuple.1 + 1, 1, icon.dim().height as usize);
             ctx.draw
                 .copy_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
@@ -184,10 +194,16 @@ impl TheWidget for TheSnapperbar {
                 .copy_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
         }
 
-        if let Some(icon) = ctx
+        if let Some(mut icon) = ctx
             .ui
             .icon(format!("dark_snapperbar_{}_middle", icon_state).as_str())
+            .cloned()
         {
+            if self.selected {
+                let col = *style.theme().color(DefaultSelection);
+                icon.multiply_by_pixel([100, 100, 100, 255], col);
+            }
+
             for x in 1..utuple.2 - 1 {
                 let r = (utuple.0 + x, utuple.1, 1, icon.dim().height as usize);
                 ctx.draw
@@ -248,6 +264,7 @@ pub trait TheSnapperbarTrait {
     fn set_canvas_collapse_uuid(&mut self, collapse: Uuid);
     fn is_open(&self) -> bool;
     fn set_open(&mut self, open: bool);
+    fn set_selected(&mut self, open: bool);
 }
 
 impl TheSnapperbarTrait for TheSnapperbar {
@@ -266,5 +283,9 @@ impl TheSnapperbarTrait for TheSnapperbar {
     }
     fn set_open(&mut self, open: bool) {
         self.open = open;
+    }
+    fn set_selected(&mut self, selected: bool) {
+        self.selected = selected;
+        self.is_dirty = true;
     }
 }

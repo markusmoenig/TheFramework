@@ -244,6 +244,7 @@ impl TheNodeUI {
                     let mut view = TheMarkdownView::new(TheId::named(id));
                     view.set_text(text.clone());
                     view.set_font_size(12.5);
+                    view.limiter_mut().set_max_width(360);
                     layout.add_pair("".into(), Box::new(view));
                 }
                 Selector(id, name, status, values, value) => {
