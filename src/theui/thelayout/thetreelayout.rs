@@ -70,6 +70,13 @@ impl TheTreeNode {
         self.childs.push(node);
     }
 
+    pub fn add_child_at(&mut self, index: usize, mut node: TheTreeNode) {
+        if let Some(layout_id) = &self.layout_id {
+            node.set_layout_id(layout_id.clone());
+        }
+        self.childs.insert(index, node);
+    }
+
     pub fn add_widget(&mut self, mut widget: Box<dyn TheWidget>) {
         if let Some(layout_id) = &self.layout_id {
             if let Some(tree_item) = widget.as_any().downcast_mut::<TheTreeItem>() {
