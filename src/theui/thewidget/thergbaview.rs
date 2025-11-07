@@ -347,6 +347,7 @@ impl TheWidget for TheRGBAView {
                                 && Some((grid_x, grid_y)) != self.hover
                             {
                                 self.hover = Some((grid_x, grid_y));
+                                self.is_dirty = true;
                                 ctx.ui.send(TheEvent::TileEditorHoverChanged(
                                     self.id.clone(),
                                     Vec2::new(grid_x, grid_y),
