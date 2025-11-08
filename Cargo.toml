@@ -20,7 +20,6 @@ maths-rs = { version = "0.2.6", features = [
 ] }
 vek = { version = "0.17.1", default-features = true }
 winit = { version = "0.30", optional = true }
-winit_input_helper = { version = "0.17", optional = true }
 rust-embed = { version = "8", default-features = true, features = [
     "include-exclude",
 ] }
@@ -78,7 +77,7 @@ web-sys = { version = "0.3", features = ["GpuTextureFormat", "Performance"] }
 
 [features]
 ui = ["rfd", "rayon", "zeno"]
-winit_app = ["winit", "winit_input_helper", "softbuffer"]
+winit_app = ["winit", "softbuffer"]
 log = ["log4rs"]
 
 default = ["winit_app"]

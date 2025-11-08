@@ -1,5 +1,6 @@
 use std::{num::NonZeroU32, sync::Arc};
 
+use crate::prelude::*;
 use softbuffer::Surface;
 use web_time::{Duration, Instant};
 use winit::{
@@ -13,9 +14,6 @@ use winit::{
     keyboard::{Key, KeyCode, ModifiersState, NamedKey},
     window::{Icon, Window, WindowAttributes, WindowId},
 };
-use winit_input_helper::WinitInputHelper;
-
-use crate::prelude::*;
 
 // Platform-aware accelerator modifiers (AltGr-safe)
 #[inline]
@@ -180,7 +178,6 @@ struct TheWinitApp {
     ctx: Option<TheWinitContext>,
     app: Box<dyn TheTrait>,
 
-    input: WinitInputHelper,
     mods: ModifiersState,
     target_frame_time: Duration,
     next_frame_time: Instant,
@@ -199,7 +196,6 @@ impl TheWinitApp {
             args,
             ctx: None,
             app,
-            input: WinitInputHelper::new(),
             mods: ModifiersState::empty(),
             target_frame_time: Duration::from_secs_f64(1.0 / fps),
             next_frame_time: Instant::now(),
@@ -313,8 +309,11 @@ impl TheWinitApp {
                 )
                 .unwrap();
 
-            let width = (size.width as f32 / ctx.ctx.scale_factor) as usize;
-            let height = (size.height as f32 / ctx.ctx.scale_factor) as usize;
+            let scale_factor = ctx.window.scale_factor() as f32;
+            ctx.ctx.scale_factor = scale_factor;
+
+            let width = (size.width as f32 / scale_factor) as usize;
+            let height = (size.height as f32 / scale_factor) as usize;
             ctx.ctx.width = width;
             ctx.ctx.height = height;
 
@@ -333,9 +332,7 @@ impl TheWinitApp {
 }
 
 impl ApplicationHandler for TheWinitApp {
-    fn new_events(&mut self, _: &ActiveEventLoop, _: StartCause) {
-        self.input.step();
-    }
+    fn new_events(&mut self, _: &ActiveEventLoop, _: StartCause) {}
 
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.ctx.is_none() {
@@ -345,347 +342,366 @@ impl ApplicationHandler for TheWinitApp {
         }
     }
 
-    fn window_event(&mut self, _: &ActiveEventLoop, _window_id: WindowId, event: WindowEvent) {
-        if self.input.process_window_event(&event) {
-            self.render();
-        }
-
-        let Some(ctx) = &mut self.ctx else {
-            return;
-        };
-
+    fn window_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        _window_id: WindowId,
+        event: WindowEvent,
+    ) {
         match event {
-            WindowEvent::KeyboardInput { event, .. } => {
-                if event.state == ElementState::Pressed {
-                    let key = match &event.logical_key {
-                        Key::Named(NamedKey::Delete) | Key::Named(NamedKey::Backspace) => {
-                            Some(TheKeyCode::Delete)
-                        }
-                        Key::Named(NamedKey::ArrowUp) => Some(TheKeyCode::Up),
-                        Key::Named(NamedKey::ArrowRight) => Some(TheKeyCode::Right),
-                        Key::Named(NamedKey::ArrowDown) => Some(TheKeyCode::Down),
-                        Key::Named(NamedKey::ArrowLeft) => Some(TheKeyCode::Left),
-                        Key::Named(NamedKey::Space) => Some(TheKeyCode::Space),
-                        Key::Named(NamedKey::Tab) => Some(TheKeyCode::Tab),
-                        Key::Named(NamedKey::Enter) => Some(TheKeyCode::Return),
-                        Key::Named(NamedKey::Escape) => Some(TheKeyCode::Escape),
-                        Key::Character(str) => {
-                            // Accelerator: use physical key with modifiers (ignore composed text like "å")
-                            if is_accel_mods(&self.mods) {
-                                if let winit::keyboard::PhysicalKey::Code(code) = event.physical_key
-                                {
-                                    if let Some(ch) =
-                                        accel_physical_to_ascii(code, self.mods.shift_key())
-                                    {
-                                        #[cfg(feature = "ui")]
-                                        if self.ui.key_down(Some(ch), None, &mut ctx.ctx) {
-                                            ctx.window.request_redraw();
-                                        }
-                                        if self.app.key_down(Some(ch), None, &mut ctx.ctx) {
-                                            ctx.window.request_redraw();
-                                        }
-                                        return; // handled as accelerator
-                                    }
-                                }
-                            }
-                            if str.is_ascii() {
-                                for ch in str.chars() {
-                                    #[cfg(feature = "ui")]
-                                    if self.ui.key_down(Some(ch), None, &mut ctx.ctx) {
-                                        ctx.window.request_redraw();
-                                    }
-                                    if self.app.key_down(Some(ch), None, &mut ctx.ctx) {
-                                        ctx.window.request_redraw();
-                                    }
-                                }
-                            }
-                            None
-                        }
-                        _ => None,
-                    };
-                    if key.is_some() {
-                        #[cfg(feature = "ui")]
-                        if self.ui.key_down(None, key.clone(), &mut ctx.ctx) {
-                            ctx.window.request_redraw();
-                        }
-                        if self.app.key_down(None, key, &mut ctx.ctx) {
-                            ctx.window.request_redraw();
-                        }
-                    }
-                }
-                if event.state == ElementState::Released {
-                    let key = match &event.logical_key {
-                        Key::Named(NamedKey::Delete) | Key::Named(NamedKey::Backspace) => {
-                            Some(TheKeyCode::Delete)
-                        }
-                        Key::Named(NamedKey::ArrowUp) => Some(TheKeyCode::Up),
-                        Key::Named(NamedKey::ArrowRight) => Some(TheKeyCode::Right),
-                        Key::Named(NamedKey::ArrowDown) => Some(TheKeyCode::Down),
-                        Key::Named(NamedKey::ArrowLeft) => Some(TheKeyCode::Left),
-                        Key::Named(NamedKey::Space) => Some(TheKeyCode::Space),
-                        Key::Named(NamedKey::Tab) => Some(TheKeyCode::Tab),
-                        Key::Named(NamedKey::Enter) => Some(TheKeyCode::Return),
-                        Key::Named(NamedKey::Escape) => Some(TheKeyCode::Escape),
-                        Key::Character(str) => {
-                            // Accelerator release: use physical key with modifiers (ignore composed text)
-                            if is_accel_mods(&self.mods) {
-                                if let winit::keyboard::PhysicalKey::Code(code) = event.physical_key
-                                {
-                                    if let Some(ch) =
-                                        accel_physical_to_ascii(code, self.mods.shift_key())
-                                    {
-                                        #[cfg(feature = "ui")]
-                                        if self.ui.key_up(Some(ch), None, &mut ctx.ctx) {
-                                            ctx.window.request_redraw();
-                                        }
-                                        if self.app.key_up(Some(ch), None, &mut ctx.ctx) {
-                                            ctx.window.request_redraw();
-                                        }
-                                        return;
-                                    }
-                                }
-                            }
-                            if str.is_ascii() {
-                                for ch in str.chars() {
-                                    #[cfg(feature = "ui")]
-                                    if self.ui.key_up(Some(ch), None, &mut ctx.ctx) {
-                                        ctx.window.request_redraw();
-                                    }
-                                    if self.app.key_up(Some(ch), None, &mut ctx.ctx) {
-                                        ctx.window.request_redraw();
-                                    }
-                                }
-                            }
-                            None
-                        }
-                        _ => None,
-                    };
-                    if key.is_some() {
-                        #[cfg(feature = "ui")]
-                        if self.ui.key_up(None, key.clone(), &mut ctx.ctx) {
-                            ctx.window.request_redraw();
-                        }
-                        if self.app.key_up(None, key, &mut ctx.ctx) {
-                            ctx.window.request_redraw();
-                        }
-                    }
+            WindowEvent::RedrawRequested => {
+                self.render();
+            }
+            WindowEvent::CloseRequested => {
+                if !self.app.closing() {
+                    event_loop.exit();
                 }
             }
-            WindowEvent::ModifiersChanged(modifiers) => {
-                let state = modifiers.state();
-                // keep a copy of current modifiers for accelerator checks
-                self.mods = state;
-
-                #[cfg(feature = "ui")]
-                if self.ui.modifier_changed(
-                    state.shift_key(),
-                    state.control_key(),
-                    state.alt_key(),
-                    state.super_key(),
-                    &mut ctx.ctx,
-                ) {
-                    ctx.window.request_redraw();
-                }
-                if self.app.modifier_changed(
-                    state.shift_key(),
-                    state.control_key(),
-                    state.alt_key(),
-                    state.super_key(),
-                ) {
-                    ctx.window.request_redraw();
+            WindowEvent::Resized(size) => {
+                self.resize(size);
+            }
+            WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
+                if let Some(ctx) = &mut self.ctx {
+                    ctx.ctx.scale_factor = scale_factor as f32;
+                    let size = ctx.window.inner_size();
+                    self.resize(size);
                 }
             }
-            WindowEvent::CursorMoved { position, .. } => {
-                let (x, y) = translate_coord_to_local(
-                    position.x as f32,
-                    position.y as f32,
-                    ctx.ctx.scale_factor,
-                );
-
-                self.last_cursor_pos = Some((x, y));
-
-                let mut redraw = false;
-                if self.left_mouse_down {
-                    #[cfg(feature = "ui")]
-                    if self.ui.touch_dragged(x, y, &mut ctx.ctx) {
-                        redraw = true;
-                    }
-
-                    if self.app.touch_dragged(x, y, &mut ctx.ctx) {
-                        redraw = true;
-                    }
-                } else {
-                    #[cfg(feature = "ui")]
-                    if self.ui.hover(x, y, &mut ctx.ctx) {
-                        redraw = true;
-                    }
-
-                    if self.app.hover(x, y, &mut ctx.ctx) {
-                        redraw = true;
-                    }
-                }
-
-                if redraw {
-                    ctx.window.request_redraw();
-                }
-            }
-            WindowEvent::Touch(Touch {
-                phase, location, ..
-            }) => {
-                let (x, y) = translate_coord_to_local(
-                    location.x as f32,
-                    location.y as f32,
-                    ctx.ctx.scale_factor,
-                );
-
-                match phase {
-                    TouchPhase::Started => {
-                        let mut redraw = false;
-                        #[cfg(feature = "ui")]
-                        {
-                            if self.ui.touch_down(x as f32, y as f32, &mut ctx.ctx) {
-                                redraw = true;
-                            }
-                        }
-                        if self.app.touch_down(x as f32, y as f32, &mut ctx.ctx) {
-                            redraw = true;
-                        }
-
-                        if redraw {
-                            ctx.window.request_redraw();
-                        }
-                    }
-                    TouchPhase::Moved => {
-                        let mut redraw = false;
-                        #[cfg(feature = "ui")]
-                        {
-                            if self.ui.touch_dragged(x as f32, y as f32, &mut ctx.ctx) {
-                                redraw = true;
-                            }
-                        }
-                        if self.app.touch_dragged(x as f32, y as f32, &mut ctx.ctx) {
-                            redraw = true;
-                        }
-                        if redraw {
-                            ctx.window.request_redraw();
-                        }
-                    }
-                    TouchPhase::Ended | TouchPhase::Cancelled => {
-                        let mut redraw = false;
-                        #[cfg(feature = "ui")]
-                        {
-                            if self.ui.touch_up(x as f32, y as f32, &mut ctx.ctx) {
-                                redraw = true;
-                            }
-                        }
-                        if self.app.touch_up(x as f32, y as f32, &mut ctx.ctx) {
-                            redraw = true;
-                        }
-
-                        if redraw {
-                            ctx.window.request_redraw();
-                        }
-                    }
-                }
-            }
-            WindowEvent::MouseInput { state, button, .. } => {
-                let logical_pos = self
-                    .input
-                    .cursor()
-                    .map(|(cx, cy)| translate_coord_to_local(cx, cy, ctx.ctx.scale_factor))
-                    .or(self.last_cursor_pos);
-
-                if let Some((x, y)) = logical_pos {
-                    self.last_cursor_pos = Some((x, y));
-
-                    let mut redraw = false;
-                    match (button, state) {
-                        (MouseButton::Left, ElementState::Pressed) => {
-                            self.left_mouse_down = true;
-
-                            #[cfg(feature = "ui")]
-                            if self.ui.touch_down(x, y, &mut ctx.ctx) {
-                                redraw = true;
-                            }
-
-                            if self.app.touch_down(x, y, &mut ctx.ctx) {
-                                redraw = true;
-                            }
-                        }
-                        (MouseButton::Left, ElementState::Released) => {
-                            self.left_mouse_down = false;
-
-                            #[cfg(feature = "ui")]
-                            if self.ui.touch_up(x, y, &mut ctx.ctx) {
-                                redraw = true;
-                            }
-
-                            if self.app.touch_up(x, y, &mut ctx.ctx) {
-                                redraw = true;
-                            }
-                        }
-                        (MouseButton::Right, ElementState::Pressed) => {
-                            #[cfg(feature = "ui")]
-                            if self.ui.context(x, y, &mut ctx.ctx) {
-                                redraw = true;
-                            }
-
-                            if self.app.touch_down(x, y, &mut ctx.ctx) {
-                                redraw = true;
-                            }
-                        }
-                        (MouseButton::Right, ElementState::Released) => {
-                            #[cfg(feature = "ui")]
-                            if self.ui.touch_up(x, y, &mut ctx.ctx) {
-                                redraw = true;
-                            }
-
-                            if self.app.touch_up(x, y, &mut ctx.ctx) {
-                                redraw = true;
-                            }
-                        }
-                        _ => {}
-                    }
-
-                    if redraw {
-                        ctx.window.request_redraw();
-                    }
-                }
-            }
-            WindowEvent::MouseWheel { delta, .. } => {
-                let (x, y) = match delta {
-                    MouseScrollDelta::LineDelta(x, y) => {
-                        const LINE_HEIGHT_PX: f32 = 20.0;
-                        (x as f32 * LINE_HEIGHT_PX, y as f32 * LINE_HEIGHT_PX)
-                    }
-                    MouseScrollDelta::PixelDelta(delta) => (delta.x as f32, delta.y as f32),
+            event => {
+                let Some(ctx) = &mut self.ctx else {
+                    return;
                 };
 
-                let mut redraw = false;
-                #[cfg(feature = "ui")]
-                if self.ui.mouse_wheel((x as i32, y as i32), &mut ctx.ctx) {
-                    redraw = true;
-                }
+                match event {
+                    WindowEvent::KeyboardInput {
+                        event: key_event, ..
+                    } => {
+                        if key_event.state == ElementState::Pressed {
+                            let key = match &key_event.logical_key {
+                                Key::Named(NamedKey::Delete) | Key::Named(NamedKey::Backspace) => {
+                                    Some(TheKeyCode::Delete)
+                                }
+                                Key::Named(NamedKey::ArrowUp) => Some(TheKeyCode::Up),
+                                Key::Named(NamedKey::ArrowRight) => Some(TheKeyCode::Right),
+                                Key::Named(NamedKey::ArrowDown) => Some(TheKeyCode::Down),
+                                Key::Named(NamedKey::ArrowLeft) => Some(TheKeyCode::Left),
+                                Key::Named(NamedKey::Space) => Some(TheKeyCode::Space),
+                                Key::Named(NamedKey::Tab) => Some(TheKeyCode::Tab),
+                                Key::Named(NamedKey::Enter) => Some(TheKeyCode::Return),
+                                Key::Named(NamedKey::Escape) => Some(TheKeyCode::Escape),
+                                Key::Character(str) => {
+                                    // Accelerator: use physical key with modifiers (ignore composed text like "å")
+                                    if is_accel_mods(&self.mods) {
+                                        if let winit::keyboard::PhysicalKey::Code(code) =
+                                            key_event.physical_key
+                                        {
+                                            if let Some(ch) =
+                                                accel_physical_to_ascii(code, self.mods.shift_key())
+                                            {
+                                                #[cfg(feature = "ui")]
+                                                if self.ui.key_down(Some(ch), None, &mut ctx.ctx) {
+                                                    ctx.window.request_redraw();
+                                                }
+                                                if self.app.key_down(Some(ch), None, &mut ctx.ctx) {
+                                                    ctx.window.request_redraw();
+                                                }
+                                                return;
+                                            }
+                                        }
+                                    }
+                                    if str.is_ascii() {
+                                        for ch in str.chars() {
+                                            #[cfg(feature = "ui")]
+                                            if self.ui.key_down(Some(ch), None, &mut ctx.ctx) {
+                                                ctx.window.request_redraw();
+                                            }
+                                            if self.app.key_down(Some(ch), None, &mut ctx.ctx) {
+                                                ctx.window.request_redraw();
+                                            }
+                                        }
+                                    }
+                                    None
+                                }
+                                _ => None,
+                            };
+                            if key.is_some() {
+                                #[cfg(feature = "ui")]
+                                if self.ui.key_down(None, key.clone(), &mut ctx.ctx) {
+                                    ctx.window.request_redraw();
+                                }
+                                if self.app.key_down(None, key, &mut ctx.ctx) {
+                                    ctx.window.request_redraw();
+                                }
+                            }
+                        }
+                        if key_event.state == ElementState::Released {
+                            let key = match &key_event.logical_key {
+                                Key::Named(NamedKey::Delete) | Key::Named(NamedKey::Backspace) => {
+                                    Some(TheKeyCode::Delete)
+                                }
+                                Key::Named(NamedKey::ArrowUp) => Some(TheKeyCode::Up),
+                                Key::Named(NamedKey::ArrowRight) => Some(TheKeyCode::Right),
+                                Key::Named(NamedKey::ArrowDown) => Some(TheKeyCode::Down),
+                                Key::Named(NamedKey::ArrowLeft) => Some(TheKeyCode::Left),
+                                Key::Named(NamedKey::Space) => Some(TheKeyCode::Space),
+                                Key::Named(NamedKey::Tab) => Some(TheKeyCode::Tab),
+                                Key::Named(NamedKey::Enter) => Some(TheKeyCode::Return),
+                                Key::Named(NamedKey::Escape) => Some(TheKeyCode::Escape),
+                                Key::Character(str) => {
+                                    // Accelerator release: use physical key with modifiers (ignore composed text)
+                                    if is_accel_mods(&self.mods) {
+                                        if let winit::keyboard::PhysicalKey::Code(code) =
+                                            key_event.physical_key
+                                        {
+                                            if let Some(ch) =
+                                                accel_physical_to_ascii(code, self.mods.shift_key())
+                                            {
+                                                #[cfg(feature = "ui")]
+                                                if self.ui.key_up(Some(ch), None, &mut ctx.ctx) {
+                                                    ctx.window.request_redraw();
+                                                }
+                                                if self.app.key_up(Some(ch), None, &mut ctx.ctx) {
+                                                    ctx.window.request_redraw();
+                                                }
+                                                return;
+                                            }
+                                        }
+                                    }
+                                    if str.is_ascii() {
+                                        for ch in str.chars() {
+                                            #[cfg(feature = "ui")]
+                                            if self.ui.key_up(Some(ch), None, &mut ctx.ctx) {
+                                                ctx.window.request_redraw();
+                                            }
+                                            if self.app.key_up(Some(ch), None, &mut ctx.ctx) {
+                                                ctx.window.request_redraw();
+                                            }
+                                        }
+                                    }
+                                    None
+                                }
+                                _ => None,
+                            };
+                            if key.is_some() {
+                                #[cfg(feature = "ui")]
+                                if self.ui.key_up(None, key.clone(), &mut ctx.ctx) {
+                                    ctx.window.request_redraw();
+                                }
+                                if self.app.key_up(None, key, &mut ctx.ctx) {
+                                    ctx.window.request_redraw();
+                                }
+                            }
+                        }
+                    }
+                    WindowEvent::ModifiersChanged(modifiers) => {
+                        let state = modifiers.state();
+                        // keep a copy of current modifiers for accelerator checks
+                        self.mods = state;
 
-                if self.app.mouse_wheel((x as isize, y as isize), &mut ctx.ctx) {
-                    redraw = true;
-                }
+                        #[cfg(feature = "ui")]
+                        if self.ui.modifier_changed(
+                            state.shift_key(),
+                            state.control_key(),
+                            state.alt_key(),
+                            state.super_key(),
+                            &mut ctx.ctx,
+                        ) {
+                            ctx.window.request_redraw();
+                        }
+                        if self.app.modifier_changed(
+                            state.shift_key(),
+                            state.control_key(),
+                            state.alt_key(),
+                            state.super_key(),
+                        ) {
+                            ctx.window.request_redraw();
+                        }
+                    }
+                    WindowEvent::CursorMoved { position, .. } => {
+                        let (x, y) = translate_coord_to_local(
+                            position.x as f32,
+                            position.y as f32,
+                            ctx.ctx.scale_factor,
+                        );
 
-                if redraw {
-                    ctx.window.request_redraw();
+                        self.last_cursor_pos = Some((x, y));
+
+                        let mut redraw = false;
+                        if self.left_mouse_down {
+                            #[cfg(feature = "ui")]
+                            if self.ui.touch_dragged(x, y, &mut ctx.ctx) {
+                                redraw = true;
+                            }
+
+                            if self.app.touch_dragged(x, y, &mut ctx.ctx) {
+                                redraw = true;
+                            }
+                        } else {
+                            #[cfg(feature = "ui")]
+                            if self.ui.hover(x, y, &mut ctx.ctx) {
+                                redraw = true;
+                            }
+
+                            if self.app.hover(x, y, &mut ctx.ctx) {
+                                redraw = true;
+                            }
+                        }
+
+                        if redraw {
+                            ctx.window.request_redraw();
+                        }
+                    }
+                    WindowEvent::Touch(Touch {
+                        phase, location, ..
+                    }) => {
+                        let (x, y) = translate_coord_to_local(
+                            location.x as f32,
+                            location.y as f32,
+                            ctx.ctx.scale_factor,
+                        );
+
+                        match phase {
+                            TouchPhase::Started => {
+                                let mut redraw = false;
+                                #[cfg(feature = "ui")]
+                                {
+                                    if self.ui.touch_down(x as f32, y as f32, &mut ctx.ctx) {
+                                        redraw = true;
+                                    }
+                                }
+                                if self.app.touch_down(x as f32, y as f32, &mut ctx.ctx) {
+                                    redraw = true;
+                                }
+
+                                if redraw {
+                                    ctx.window.request_redraw();
+                                }
+                            }
+                            TouchPhase::Moved => {
+                                let mut redraw = false;
+                                #[cfg(feature = "ui")]
+                                {
+                                    if self.ui.touch_dragged(x as f32, y as f32, &mut ctx.ctx) {
+                                        redraw = true;
+                                    }
+                                }
+                                if self.app.touch_dragged(x as f32, y as f32, &mut ctx.ctx) {
+                                    redraw = true;
+                                }
+                                if redraw {
+                                    ctx.window.request_redraw();
+                                }
+                            }
+                            TouchPhase::Ended | TouchPhase::Cancelled => {
+                                let mut redraw = false;
+                                #[cfg(feature = "ui")]
+                                {
+                                    if self.ui.touch_up(x as f32, y as f32, &mut ctx.ctx) {
+                                        redraw = true;
+                                    }
+                                }
+                                if self.app.touch_up(x as f32, y as f32, &mut ctx.ctx) {
+                                    redraw = true;
+                                }
+
+                                if redraw {
+                                    ctx.window.request_redraw();
+                                }
+                            }
+                        }
+                    }
+                    WindowEvent::MouseInput { state, button, .. } => {
+                        if let Some((x, y)) = self.last_cursor_pos {
+                            let mut redraw = false;
+                            match (button, state) {
+                                (MouseButton::Left, ElementState::Pressed) => {
+                                    self.left_mouse_down = true;
+
+                                    #[cfg(feature = "ui")]
+                                    if self.ui.touch_down(x, y, &mut ctx.ctx) {
+                                        redraw = true;
+                                    }
+
+                                    if self.app.touch_down(x, y, &mut ctx.ctx) {
+                                        redraw = true;
+                                    }
+                                }
+                                (MouseButton::Left, ElementState::Released) => {
+                                    self.left_mouse_down = false;
+
+                                    #[cfg(feature = "ui")]
+                                    if self.ui.touch_up(x, y, &mut ctx.ctx) {
+                                        redraw = true;
+                                    }
+
+                                    if self.app.touch_up(x, y, &mut ctx.ctx) {
+                                        redraw = true;
+                                    }
+                                }
+                                (MouseButton::Right, ElementState::Pressed) => {
+                                    #[cfg(feature = "ui")]
+                                    if self.ui.context(x, y, &mut ctx.ctx) {
+                                        redraw = true;
+                                    }
+
+                                    if self.app.touch_down(x, y, &mut ctx.ctx) {
+                                        redraw = true;
+                                    }
+                                }
+                                (MouseButton::Right, ElementState::Released) => {
+                                    #[cfg(feature = "ui")]
+                                    if self.ui.touch_up(x, y, &mut ctx.ctx) {
+                                        redraw = true;
+                                    }
+
+                                    if self.app.touch_up(x, y, &mut ctx.ctx) {
+                                        redraw = true;
+                                    }
+                                }
+                                _ => {}
+                            }
+
+                            if redraw {
+                                ctx.window.request_redraw();
+                            }
+                        }
+                    }
+                    WindowEvent::MouseWheel { delta, .. } => {
+                        let (x, y) = match delta {
+                            MouseScrollDelta::LineDelta(x, y) => {
+                                const LINE_HEIGHT_PX: f32 = 20.0;
+                                (x as f32 * LINE_HEIGHT_PX, y as f32 * LINE_HEIGHT_PX)
+                            }
+                            MouseScrollDelta::PixelDelta(delta) => (delta.x as f32, delta.y as f32),
+                        };
+
+                        let mut redraw = false;
+                        #[cfg(feature = "ui")]
+                        if self.ui.mouse_wheel((x as i32, y as i32), &mut ctx.ctx) {
+                            redraw = true;
+                        }
+
+                        if self.app.mouse_wheel((x as isize, y as isize), &mut ctx.ctx) {
+                            redraw = true;
+                        }
+
+                        if redraw {
+                            ctx.window.request_redraw();
+                        }
+                    }
+                    WindowEvent::DroppedFile(path) => {
+                        self.app.dropped_file(path.to_string_lossy().into_owned());
+                        ctx.window.request_redraw();
+                    }
+                    _ => {}
                 }
             }
-            _ => {}
         }
     }
 
-    fn device_event(&mut self, _: &ActiveEventLoop, _: DeviceId, event: DeviceEvent) {
-        self.input.process_device_event(&event);
-    }
+    fn device_event(&mut self, _: &ActiveEventLoop, _: DeviceId, _: DeviceEvent) {}
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        self.input.end_step();
-
         let now = Instant::now();
         if now >= self.next_frame_time {
             if let Some(ctx) = &self.ctx {
@@ -697,109 +713,9 @@ impl ApplicationHandler for TheWinitApp {
         #[cfg(not(target_arch = "wasm32"))]
         event_loop.set_control_flow(ControlFlow::WaitUntil(self.next_frame_time));
 
-        if self.input.close_requested() {
-            event_loop.exit();
-            return;
-        }
-
-        if let Some(size) = self.input.window_resized() {
-            self.resize(size);
-        }
-
         let Some(ctx) = &mut self.ctx else {
             return;
         };
-
-        if self.input.mouse_pressed(MouseButton::Left) {
-            if let Some(coord) = self.input.cursor() {
-                let (x, y) = translate_coord_to_local(coord.0, coord.1, ctx.ctx.scale_factor);
-
-                #[cfg(feature = "ui")]
-                if self.ui.touch_down(x as f32, y as f32, &mut ctx.ctx) {
-                    ctx.window.request_redraw();
-                }
-
-                if self.app.touch_down(x as f32, y as f32, &mut ctx.ctx) {
-                    ctx.window.request_redraw();
-                }
-            }
-        }
-        if self.input.mouse_pressed(MouseButton::Right) {
-            if let Some(coord) = self.input.cursor() {
-                let (x, y) = translate_coord_to_local(coord.0, coord.1, ctx.ctx.scale_factor);
-
-                #[cfg(feature = "ui")]
-                if self.ui.context(x as f32, y as f32, &mut ctx.ctx) {
-                    ctx.window.request_redraw();
-                }
-
-                if self.app.touch_down(x as f32, y as f32, &mut ctx.ctx) {
-                    ctx.window.request_redraw();
-                }
-            }
-        }
-        if self.input.mouse_released(MouseButton::Left) {
-            if let Some(coord) = self.input.cursor() {
-                let (x, y) = translate_coord_to_local(coord.0, coord.1, ctx.ctx.scale_factor);
-
-                #[cfg(feature = "ui")]
-                if self.ui.touch_up(x as f32, y as f32, &mut ctx.ctx) {
-                    ctx.window.request_redraw();
-                }
-
-                if self.app.touch_up(x as f32, y as f32, &mut ctx.ctx) {
-                    ctx.window.request_redraw();
-                }
-            }
-        }
-        if self.input.mouse_held(MouseButton::Left) {
-            let diff = self.input.mouse_diff();
-            if diff.0 != 0.0 || diff.1 != 0.0 {
-                if let Some(coord) = self.input.cursor() {
-                    let (x, y) = translate_coord_to_local(coord.0, coord.1, ctx.ctx.scale_factor);
-
-                    #[cfg(feature = "ui")]
-                    if self.ui.touch_dragged(x as f32, y as f32, &mut ctx.ctx) {
-                        ctx.window.request_redraw();
-                    }
-
-                    if self.app.touch_dragged(x as f32, y as f32, &mut ctx.ctx) {
-                        ctx.window.request_redraw();
-                    }
-                }
-            }
-        } else {
-            let diff = self.input.mouse_diff();
-            if diff.0 != 0.0 || diff.1 != 0.0 {
-                if let Some(coord) = self.input.cursor() {
-                    let (x, y) = translate_coord_to_local(coord.0, coord.1, ctx.ctx.scale_factor);
-
-                    #[cfg(feature = "ui")]
-                    if self.ui.hover(x as f32, y as f32, &mut ctx.ctx) {
-                        ctx.window.request_redraw();
-                    }
-
-                    if self.app.hover(x as f32, y as f32, &mut ctx.ctx) {
-                        ctx.window.request_redraw();
-                    }
-                }
-            }
-        }
-        let (x, y) = self.input.scroll_diff();
-        if x != 0.0 || y != 0.0 {
-            #[cfg(feature = "ui")]
-            if self.ui.mouse_wheel((x as i32, y as i32), &mut ctx.ctx) {
-                ctx.window.request_redraw();
-            }
-
-            if self.app.mouse_wheel((x as isize, y as isize), &mut ctx.ctx) {
-                ctx.window.request_redraw();
-            }
-        }
-        if let Some(path) = self.input.dropped_file() {
-            self.app.dropped_file(path.to_str().unwrap().to_string());
-            ctx.window.request_redraw();
-        }
 
         #[cfg(feature = "ui")]
         if self.ui.update(&mut ctx.ctx) {
