@@ -1,4 +1,8 @@
 use crate::prelude::*;
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 
 const TREE_INDENT: i32 = 20;
 const TREE_VERTICAL_SPACING: i32 = 2;
@@ -16,6 +20,7 @@ pub struct TheTreeNode {
 
     layout_id: Option<TheId>,
     selected_widget: Option<Uuid>,
+    layout_dirty_flag: Arc<AtomicBool>,
 }
 
 impl Default for TheTreeNode {
@@ -26,6 +31,11 @@ impl Default for TheTreeNode {
 
 impl TheTreeNode {
     pub fn new(id: TheId) -> Self {
+        let layout_dirty_flag = Arc::new(AtomicBool::new(false));
+        Self::new_with_dirty_flag(id, layout_dirty_flag)
+    }
+
+    fn new_with_dirty_flag(id: TheId, layout_dirty_flag: Arc<AtomicBool>) -> Self {
         let mut snapper = TheSnapperbar::new(id.clone());
         snapper.set_associated_layout(id.clone());
         snapper.set_text(id.name.clone());
@@ -38,10 +48,25 @@ impl TheTreeNode {
             widgets: vec![],
             layout_id: None,
             selected_widget: None,
+            layout_dirty_flag,
         }
     }
 
+    fn set_layout_dirty_flag(&mut self, layout_dirty_flag: Arc<AtomicBool>) {
+        self.layout_dirty_flag = layout_dirty_flag.clone();
+        for child in &mut self.childs {
+            child.set_layout_dirty_flag(layout_dirty_flag.clone());
+        }
+    }
+
+    fn mark_layout_dirty(&self) {
+        self.layout_dirty_flag.store(true, Ordering::Relaxed);
+    }
+
     pub fn set_open(&mut self, open: bool) {
+        if self.open != open {
+            self.mark_layout_dirty();
+        }
         self.open = open;
         if let Some(snapper) = self.widget.as_any().downcast_mut::<TheSnapperbar>() {
             snapper.set_open(open);
@@ -60,6 +85,7 @@ impl TheTreeNode {
         }
         for child in &mut self.childs {
             child.set_layout_id(layout_id.clone());
+            child.set_layout_dirty_flag(self.layout_dirty_flag.clone());
         }
     }
 
@@ -67,14 +93,18 @@ impl TheTreeNode {
         if let Some(layout_id) = &self.layout_id {
             node.set_layout_id(layout_id.clone());
         }
+        node.set_layout_dirty_flag(self.layout_dirty_flag.clone());
         self.childs.push(node);
+        self.mark_layout_dirty();
     }
 
     pub fn add_child_at(&mut self, index: usize, mut node: TheTreeNode) {
         if let Some(layout_id) = &self.layout_id {
             node.set_layout_id(layout_id.clone());
         }
+        node.set_layout_dirty_flag(self.layout_dirty_flag.clone());
         self.childs.insert(index, node);
+        self.mark_layout_dirty();
     }
 
     pub fn add_widget(&mut self, mut widget: Box<dyn TheWidget>) {
@@ -84,6 +114,7 @@ impl TheTreeNode {
             }
         }
         self.widgets.push(widget);
+        self.mark_layout_dirty();
     }
 
     pub fn clear_selection(&mut self) {
@@ -139,11 +170,13 @@ impl TheTreeNode {
 
     pub fn remove_child_by_uuid(&mut self, uuid: &Uuid) -> Option<TheTreeNode> {
         if let Some(index) = self.childs.iter().position(|child| child.id.uuid == *uuid) {
+            self.mark_layout_dirty();
             return Some(self.childs.remove(index));
         }
 
         for child in &mut self.childs {
             if let Some(removed) = child.remove_child_by_uuid(uuid) {
+                self.mark_layout_dirty();
                 return Some(removed);
             }
         }
@@ -161,11 +194,13 @@ impl TheTreeNode {
             if self.selected_widget == Some(*uuid) {
                 self.selected_widget = None;
             }
+            self.mark_layout_dirty();
             return Some(removed);
         }
 
         for child in &mut self.childs {
             if let Some(removed) = child.remove_widget_by_uuid(uuid) {
+                self.mark_layout_dirty();
                 return Some(removed);
             }
         }
@@ -410,6 +445,7 @@ pub struct TheTreeLayout {
 
     background: Option<TheThemeColors>,
     headerless: bool,
+    layout_dirty_flag: Arc<AtomicBool>,
 }
 
 impl TheLayout for TheTreeLayout {
@@ -417,7 +453,9 @@ impl TheLayout for TheTreeLayout {
     where
         Self: Sized,
     {
+        let layout_dirty_flag = Arc::new(AtomicBool::new(false));
         let mut root = TheTreeNode::new(id.clone());
+        root.set_layout_dirty_flag(layout_dirty_flag.clone());
         root.set_layout_id(id.clone());
         root.open = true;
         Self {
@@ -438,6 +476,7 @@ impl TheLayout for TheTreeLayout {
 
             background: Some(TextLayoutBackground),
             headerless: true,
+            layout_dirty_flag,
         }
     }
 
@@ -454,6 +493,9 @@ impl TheLayout for TheTreeLayout {
     }
 
     fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
+        if self.layout_dirty_flag.load(Ordering::Relaxed) {
+            return None;
+        }
         if !self.dim.contains(coord) {
             return None;
         }
@@ -520,70 +562,9 @@ impl TheLayout for TheTreeLayout {
     }
 
     fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {
-        if self.dim != dim || ctx.ui.relayout {
+        if self.dim != dim || ctx.ui.relayout || self.layout_dirty_flag.load(Ordering::Relaxed) {
             self.dim = dim;
-
-            let scrollbar_width = 13;
-            let mut available_width = dim.width;
-            let origin = Vec2::new(dim.x, dim.y);
-
-            loop {
-                let mut y_cursor = 0;
-                self.root.layout(
-                    origin,
-                    available_width,
-                    dim.height,
-                    0,
-                    !self.headerless,
-                    &mut y_cursor,
-                    ctx,
-                );
-
-                let mut content_height = y_cursor;
-                if content_height > 0 {
-                    content_height = (content_height - TREE_VERTICAL_SPACING).max(0);
-                }
-
-                let mut total_height = content_height.max(dim.height);
-
-                self.vertical_scrollbar.set_dim(
-                    TheDim::new(
-                        dim.x + dim.width - scrollbar_width,
-                        dim.y,
-                        scrollbar_width,
-                        dim.height,
-                    ),
-                    ctx,
-                );
-                self.vertical_scrollbar.dim_mut().set_buffer_offset(
-                    self.dim.buffer_x + dim.width - scrollbar_width,
-                    self.dim.buffer_y,
-                );
-
-                let mut scrollbar_visible = false;
-                if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
-                    scroll_bar.set_total_height(total_height);
-                    scrollbar_visible = scroll_bar.needs_scrollbar();
-                    if scrollbar_visible {
-                        total_height += TREE_BOTTOM_MARGIN;
-                        scroll_bar.set_total_height(total_height);
-                    }
-                }
-
-                self.content_buffer
-                    .set_dim(TheDim::new(0, 0, available_width, total_height));
-
-                if scrollbar_visible && available_width == dim.width {
-                    available_width = (dim.width - scrollbar_width).max(0);
-                    continue;
-                } else if !scrollbar_visible && available_width != dim.width {
-                    available_width = dim.width;
-                    continue;
-                } else {
-                    self.vertical_scrollbar_visible = scrollbar_visible;
-                    break;
-                }
-            }
+            self.recalculate_layout(ctx);
         }
     }
 
@@ -603,6 +584,10 @@ impl TheLayout for TheTreeLayout {
     ) {
         if !self.dim().is_valid() {
             return;
+        }
+
+        if self.layout_dirty_flag.load(Ordering::Relaxed) {
+            self.recalculate_layout(ctx);
         }
 
         // println!("treelayout true");
@@ -731,5 +716,79 @@ impl TheTreeLayoutTrait for TheTreeLayout {
         if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
             scroll_bar.scroll_by(-delta.y);
         }
+    }
+}
+
+impl TheTreeLayout {
+    fn recalculate_layout(&mut self, ctx: &mut TheContext) {
+        if self.dim.width <= 0 || self.dim.height <= 0 {
+            self.layout_dirty_flag.store(false, Ordering::Relaxed);
+            return;
+        }
+
+        let dim = self.dim;
+        let scrollbar_width = 13;
+        let mut available_width = dim.width;
+        let origin = Vec2::new(dim.x, dim.y);
+
+        loop {
+            let mut y_cursor = 0;
+            self.root.layout(
+                origin,
+                available_width,
+                dim.height,
+                0,
+                !self.headerless,
+                &mut y_cursor,
+                ctx,
+            );
+
+            let mut content_height = y_cursor;
+            if content_height > 0 {
+                content_height = (content_height - TREE_VERTICAL_SPACING).max(0);
+            }
+
+            let mut total_height = content_height.max(dim.height);
+
+            self.vertical_scrollbar.set_dim(
+                TheDim::new(
+                    dim.x + dim.width - scrollbar_width,
+                    dim.y,
+                    scrollbar_width,
+                    dim.height,
+                ),
+                ctx,
+            );
+            self.vertical_scrollbar.dim_mut().set_buffer_offset(
+                self.dim.buffer_x + dim.width - scrollbar_width,
+                self.dim.buffer_y,
+            );
+
+            let mut scrollbar_visible = false;
+            if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+                scroll_bar.set_total_height(total_height);
+                scrollbar_visible = scroll_bar.needs_scrollbar();
+                if scrollbar_visible {
+                    total_height += TREE_BOTTOM_MARGIN;
+                    scroll_bar.set_total_height(total_height);
+                }
+            }
+
+            self.content_buffer
+                .set_dim(TheDim::new(0, 0, available_width, total_height));
+
+            if scrollbar_visible && available_width == dim.width {
+                available_width = (dim.width - scrollbar_width).max(0);
+                continue;
+            } else if !scrollbar_visible && available_width != dim.width {
+                available_width = dim.width;
+                continue;
+            } else {
+                self.vertical_scrollbar_visible = scrollbar_visible;
+                break;
+            }
+        }
+
+        self.layout_dirty_flag.store(false, Ordering::Relaxed);
     }
 }
