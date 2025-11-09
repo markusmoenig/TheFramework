@@ -495,7 +495,7 @@ impl TheWidget for TheTreeItem {
                 );
 
                 // Set buffer offset for drawing (dimension should already be set in set_dim)
-                let y_offset = rect.1 as i32 + (22 - widget.dim().height) / 2;
+                let y_offset = rect.1 as i32 + (22 - widget.dim().height) / 2 - 1;
                 widget
                     .dim_mut()
                     .set_buffer_offset(rect.0 as i32 + 9, y_offset);
