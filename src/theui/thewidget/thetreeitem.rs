@@ -188,33 +188,37 @@ impl TheWidget for TheTreeItem {
             _ => {
                 // Only pass specific events to embedded widget that don't depend on mouse position
                 // This prevents embedded widgets from receiving events that should only go to the tree item
+                let has_focus = ctx.ui.has_focus(self.id());
                 if let Some((_, w)) = &mut self.widget_column {
                     match event {
                         // Pass focus events to embedded widget
                         TheEvent::GainedFocus(_) | TheEvent::LostFocus(_) => {
                             redraw = w.on_event(event, ctx);
                         }
-                        // Pass keyboard events to embedded widget when it has focus
-                        TheEvent::KeyDown(_) | TheEvent::KeyUp(_) => {
-                            if ctx.ui.has_focus(w.id()) {
+                        // Pass keyboard events to embedded widget when parent tree item has focus
+                        TheEvent::KeyDown(_)
+                        | TheEvent::KeyUp(_)
+                        | TheEvent::KeyCodeDown(_)
+                        | TheEvent::KeyCodeUp(_) => {
+                            if has_focus {
                                 redraw = w.on_event(event, ctx);
                             }
                         }
-                        // Pass modifier changes to embedded widget when it has focus
+                        // Pass modifier changes to embedded widget when parent tree item has focus
                         TheEvent::ModifierChanged(_, _, _, _) => {
-                            if ctx.ui.has_focus(w.id()) {
+                            if has_focus {
                                 redraw = w.on_event(event, ctx);
                             }
                         }
-                        // Pass clipboard events to embedded widget when it has focus
+                        // Pass clipboard events to embedded widget when parent tree item has focus
                         TheEvent::Cut | TheEvent::Copy | TheEvent::Paste(_, _) => {
-                            if ctx.ui.has_focus(w.id()) {
+                            if has_focus {
                                 redraw = w.on_event(event, ctx);
                             }
                         }
-                        // Pass undo/redo events to embedded widget when it has focus
+                        // Pass undo/redo events to embedded widget when parent tree item has focus
                         TheEvent::Undo | TheEvent::Redo => {
-                            if ctx.ui.has_focus(w.id()) {
+                            if has_focus {
                                 redraw = w.on_event(event, ctx);
                             }
                         }
