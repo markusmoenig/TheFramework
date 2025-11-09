@@ -861,6 +861,17 @@ impl TheWidget for TheTextLineEdit {
             return;
         }
 
+        let should_relayout = self.modified_since_last_tick || self.renderer.row_count() == 0;
+
+        if should_relayout {
+            self.renderer.prepare(
+                &self.state.to_text(),
+                ctx.ui.font.as_ref().unwrap(),
+                &ctx.draw,
+            );
+            self.reset_renderer_padding();
+        }
+
         let mut shrinker = TheDimShrinker::zero();
         self.renderer.render_widget(
             &mut shrinker,
@@ -875,10 +886,7 @@ impl TheWidget for TheTextLineEdit {
             false,
         );
 
-        let font = ctx.ui.font.as_ref().unwrap();
-        if self.modified_since_last_tick || self.renderer.row_count() == 0 {
-            self.renderer
-                .prepare(&self.state.to_text(), font, &ctx.draw);
+        if should_relayout {
             let visible_area = self.dim.to_buffer_shrunk_utuple(&shrinker);
             self.renderer.set_dim(
                 visible_area.0,
@@ -929,6 +937,9 @@ impl TheWidget for TheTextLineEdit {
             }
         }
 
+        // Never scroll vertically
+        self.renderer.scroll_offset.y = 0;
+
         self.renderer.render_text(
             &self.state,
             if !self.embedded {
@@ -939,7 +950,7 @@ impl TheWidget for TheTextLineEdit {
             false,
             buffer,
             style,
-            font,
+            ctx.ui.font.as_ref().unwrap(),
             &ctx.draw,
         );
 
@@ -1070,5 +1081,15 @@ impl TheTextLineEditTrait for TheTextLineEdit {
 impl TheTextLineEdit {
     fn is_range(&self) -> bool {
         self.range.is_some()
+    }
+
+    fn reset_renderer_padding(&mut self) {
+        if self.dim.height == 0 || self.renderer.actual_size.y == 0 {
+            return;
+        }
+
+        let padding = ((self.dim.height as f32 - self.renderer.font_size as f32) * 0.5) as i32
+            - (self.renderer.actual_size.y as f32 - self.renderer.font_size) as i32;
+        self.renderer.padding.1 = padding.max(0);
     }
 }

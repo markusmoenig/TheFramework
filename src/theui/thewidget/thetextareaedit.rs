@@ -1330,9 +1330,9 @@ impl TheWidget for TheTextAreaEdit {
             }
             if let Some(scrollbar) = self.hscrollbar.as_horizontal_scrollbar() {
                 scrollbar.set_total_width(
-                    (self.renderer.actual_size.x
+                    self.renderer.actual_size.x as i32
                         + self.renderer.padding.0
-                        + self.renderer.padding.2) as i32,
+                        + self.renderer.padding.2,
                 );
             }
 
@@ -1351,9 +1351,9 @@ impl TheWidget for TheTextAreaEdit {
             }
             if let Some(scrollbar) = self.vscrollbar.as_vertical_scrollbar() {
                 scrollbar.set_total_height(
-                    (self.renderer.actual_size.y
+                    self.renderer.actual_size.y as i32
                         + self.renderer.padding.1
-                        + self.renderer.padding.3) as i32,
+                        + self.renderer.padding.3,
                 );
             }
         }
