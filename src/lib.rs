@@ -90,6 +90,7 @@ pub mod prelude {
     pub use crate::theapp::TheApp;
     pub use crate::thecolor::TheColor;
     pub use crate::thecontext::TheContext;
+    pub use crate::thecontext::TheCursorIcon;
     pub use crate::thedraw2d::TheDraw2D;
     pub use crate::thedraw2d::TheHorizontalAlign;
     pub use crate::thedraw2d::TheVerticalAlign;

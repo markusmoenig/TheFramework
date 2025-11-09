@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use crate::thecontext::TheCursorIcon;
 
 pub struct TheDropdownMenu {
     id: TheId,
@@ -46,6 +47,14 @@ impl TheWidget for TheDropdownMenu {
 
             safety_offset: Vec2::new(0, 0),
         }
+    }
+
+    fn cursor_icon(&self) -> Option<TheCursorIcon> {
+        Some(TheCursorIcon::Hand)
+    }
+
+    fn set_cursor_icon(&mut self, _icon: Option<TheCursorIcon>) {
+        // Store the cursor icon if needed for dynamic changes
     }
 
     fn id(&self) -> &TheId {

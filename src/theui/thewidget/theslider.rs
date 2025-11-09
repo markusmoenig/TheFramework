@@ -22,6 +22,7 @@ pub struct TheSlider {
 
     embedded: bool,
     parent_id: Option<TheId>,
+    cursor_icon: Option<TheCursorIcon>,
 }
 
 impl TheWidget for TheSlider {
@@ -55,6 +56,7 @@ impl TheWidget for TheSlider {
 
             embedded: false,
             parent_id: None,
+            cursor_icon: None,
         }
     }
 
@@ -116,6 +118,14 @@ impl TheWidget for TheSlider {
 
     fn set_parent_id(&mut self, parent_id: TheId) {
         self.parent_id = Some(parent_id);
+    }
+
+    fn cursor_icon(&self) -> Option<TheCursorIcon> {
+        self.cursor_icon
+    }
+
+    fn set_cursor_icon(&mut self, icon: Option<TheCursorIcon>) {
+        self.cursor_icon = icon;
     }
 
     fn parent_id(&self) -> Option<&TheId> {

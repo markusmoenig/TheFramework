@@ -620,12 +620,24 @@ impl TheUI {
                     }
                     TheEvent::GainedFocus(id) => {
                         //println!("Gained focus {:?}", id);
+                        if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
+                            widget.on_event(&TheEvent::GainedFocus(widget.id().clone()), ctx);
+                            widget.set_needs_redraw(true);
+
+                            // Update cursor when widget gains focus
+                            if let Some(cursor_icon) = widget.cursor_icon() {
+                                ctx.set_cursor_icon(cursor_icon);
+                            }
+                        }
                     }
                     TheEvent::LostFocus(id) => {
                         //println!("Lost focus {:?}", id);
                         if let Some(widget) = self.canvas.get_widget(None, Some(&id.uuid)) {
                             widget.on_event(&TheEvent::LostFocus(widget.id().clone()), ctx);
                             widget.set_needs_redraw(true);
+
+                            // Reset cursor to default when widget loses focus
+                            ctx.set_cursor_icon(TheCursorIcon::Default);
                         }
                     }
                     TheEvent::GainedHover(id) => {
@@ -890,9 +902,16 @@ impl TheUI {
         }
 
         if let Some(widget) = self.get_widget_at_coord(coord) {
-            // println!("Hover {:?}", widget.id());
             let event = TheEvent::Hover(widget.dim().to_local(coord));
             redraw = widget.on_event(&event, ctx);
+
+            // Check if the widget has a cursor icon and set it
+            if let Some(cursor_icon) = widget.cursor_icon() {
+                ctx.set_cursor_icon(cursor_icon);
+            } else {
+                // Reset to default if widget doesn't specify a cursor
+                ctx.set_cursor_icon(TheCursorIcon::Default);
+            }
 
             // If the new hover widget does not support a hover state, make sure to unhover the current widget if any
             if !widget.supports_hover() {
@@ -908,6 +927,10 @@ impl TheUI {
             ctx.ui.send(TheEvent::LostHover(hover.clone()));
             redraw = true;
             ctx.ui.hover = None;
+
+            // Reset cursor to default when no widget is hovered
+            ctx.set_cursor_icon(TheCursorIcon::Default);
+
             self.process_events(ctx);
         }
         redraw

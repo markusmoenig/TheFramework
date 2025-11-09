@@ -22,6 +22,7 @@ pub struct TheTreeItem {
     widget_column: Option<(i32, Box<dyn TheWidget>)>,
 
     context_menu: Option<TheContextMenu>,
+    cursor_icon: Option<TheCursorIcon>,
 
     background: Option<TheColor>,
 }
@@ -56,6 +57,7 @@ impl TheWidget for TheTreeItem {
             widget_column: None,
 
             context_menu: None,
+            cursor_icon: None,
 
             background: None,
         }
@@ -134,17 +136,49 @@ impl TheWidget for TheTreeItem {
                     let dim = w.dim();
                     let widget_coord = Vec2::new(coord.x - dim.x, coord.y - dim.y);
 
-                    // Always pass dragged events to the widget, even if outside bounds
-                    w.on_event(&TheEvent::MouseDragged(widget_coord), ctx);
-                    self.is_dirty = true;
-                    redraw = true;
+                    // Only pass dragged events to the widget if within bounds
+                    if widget_coord.x >= 0
+                        && widget_coord.y >= 0
+                        && widget_coord.x < dim.width
+                        && widget_coord.y < dim.height
+                    {
+                        w.on_event(&TheEvent::MouseDragged(widget_coord), ctx);
+                        self.is_dirty = true;
+                        redraw = true;
+                    }
                 }
             }
-            TheEvent::Hover(_coord) => {
+            TheEvent::Hover(coord) => {
                 if self.state != TheWidgetState::Selected && !self.id().equals(&ctx.ui.hover) {
                     self.is_dirty = true;
                     ctx.ui.set_hover(self.id());
                     redraw = true;
+                }
+
+                // Pass hover events to embedded widget
+                if let Some((_, w)) = &mut self.widget_column {
+                    let dim = w.dim();
+                    let widget_coord = Vec2::new(coord.x - dim.x, coord.y - dim.y);
+
+                    // Check if the hover is within the embedded widget bounds
+                    if widget_coord.x >= 0
+                        && widget_coord.y >= 0
+                        && widget_coord.x < dim.width
+                        && widget_coord.y < dim.height
+                    {
+                        w.on_event(&TheEvent::Hover(widget_coord), ctx);
+
+                        // Update cursor icon based on embedded widget
+                        if let Some(cursor_icon) = w.cursor_icon() {
+                            self.cursor_icon = Some(cursor_icon);
+                        }
+                    } else {
+                        // Reset cursor icon when not hovering embedded widget
+                        self.cursor_icon = None;
+                    }
+                } else {
+                    // Reset cursor icon when no embedded widget
+                    self.cursor_icon = None;
                 }
             }
             TheEvent::MouseWheel(delta) => {
@@ -152,8 +186,41 @@ impl TheWidget for TheTreeItem {
                     .send(TheEvent::ScrollLayout(self.layout_id.clone(), *delta));
             }
             _ => {
+                // Only pass specific events to embedded widget that don't depend on mouse position
+                // This prevents embedded widgets from receiving events that should only go to the tree item
                 if let Some((_, w)) = &mut self.widget_column {
-                    redraw = w.on_event(event, ctx)
+                    match event {
+                        // Pass focus events to embedded widget
+                        TheEvent::GainedFocus(_) | TheEvent::LostFocus(_) => {
+                            redraw = w.on_event(event, ctx);
+                        }
+                        // Pass keyboard events to embedded widget when it has focus
+                        TheEvent::KeyDown(_) | TheEvent::KeyUp(_) => {
+                            if ctx.ui.has_focus(w.id()) {
+                                redraw = w.on_event(event, ctx);
+                            }
+                        }
+                        // Pass modifier changes to embedded widget when it has focus
+                        TheEvent::ModifierChanged(_, _, _, _) => {
+                            if ctx.ui.has_focus(w.id()) {
+                                redraw = w.on_event(event, ctx);
+                            }
+                        }
+                        // Pass clipboard events to embedded widget when it has focus
+                        TheEvent::Cut | TheEvent::Copy | TheEvent::Paste(_, _) => {
+                            if ctx.ui.has_focus(w.id()) {
+                                redraw = w.on_event(event, ctx);
+                            }
+                        }
+                        // Pass undo/redo events to embedded widget when it has focus
+                        TheEvent::Undo | TheEvent::Redo => {
+                            if ctx.ui.has_focus(w.id()) {
+                                redraw = w.on_event(event, ctx);
+                            }
+                        }
+                        // Don't pass other events to prevent unwanted value changes
+                        _ => {}
+                    }
                 }
             }
         }
@@ -223,6 +290,21 @@ impl TheWidget for TheTreeItem {
             return widget.supports_text_input();
         }
         false
+    }
+
+    fn cursor_icon(&self) -> Option<TheCursorIcon> {
+        // Return cursor icon from embedded widget if available, otherwise None
+        if let Some(cursor_icon) = self.cursor_icon {
+            Some(cursor_icon)
+        } else if let Some((_, widget)) = &self.widget_column {
+            widget.cursor_icon()
+        } else {
+            None
+        }
+    }
+
+    fn set_cursor_icon(&mut self, icon: Option<TheCursorIcon>) {
+        self.cursor_icon = icon;
     }
 
     fn value(&self) -> TheValue {

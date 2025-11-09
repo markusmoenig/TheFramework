@@ -187,6 +187,14 @@ pub trait TheWidget: Send {
         }
     }
 
+    /// Get the cursor icon for this widget when hovered.
+    fn cursor_icon(&self) -> Option<TheCursorIcon> {
+        None
+    }
+
+    /// Set the cursor icon for this widget.
+    fn set_cursor_icon(&mut self, _icon: Option<TheCursorIcon>) {}
+
     /// Get the widget value.
     fn value(&self) -> TheValue {
         TheValue::Empty

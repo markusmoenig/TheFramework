@@ -1,5 +1,7 @@
 use std::{num::NonZeroU32, sync::Arc};
 
+use crate::thecontext::TheCursorIcon;
+
 #[cfg(target_os = "macos")]
 use winit::platform::macos::WindowExtMacOS;
 
@@ -343,6 +345,11 @@ impl ApplicationHandler for TheWinitApp {
         if self.ctx.is_none() {
             if let Some(window) = self.create_window(event_loop) {
                 self.ctx = Some(self.init_context(window));
+                // Set initial cursor to default and ensure it's visible
+                if let Some(ctx) = &mut self.ctx {
+                    ctx.ctx.set_cursor_icon(TheCursorIcon::Default);
+                    ctx.window.set_cursor_visible(true);
+                }
             }
         }
     }
@@ -438,6 +445,67 @@ impl ApplicationHandler for TheWinitApp {
                                     ctx.window.request_redraw();
                                 }
                             }
+
+                            // Update cursor icon after keyboard events (focus may have changed)
+                            if ctx.ctx.cursor_changed() {
+                                let cursor_icon = match ctx.ctx.cursor_icon() {
+                                    TheCursorIcon::Default => winit::window::CursorIcon::Default,
+                                    TheCursorIcon::Crosshair => {
+                                        winit::window::CursorIcon::Crosshair
+                                    }
+                                    TheCursorIcon::Hand => winit::window::CursorIcon::Pointer,
+                                    TheCursorIcon::Arrow => winit::window::CursorIcon::Default,
+                                    TheCursorIcon::Text => winit::window::CursorIcon::Text,
+                                    TheCursorIcon::Wait => winit::window::CursorIcon::Wait,
+                                    TheCursorIcon::Help => winit::window::CursorIcon::Help,
+                                    TheCursorIcon::Progress => winit::window::CursorIcon::Progress,
+                                    TheCursorIcon::NotAllowed => {
+                                        winit::window::CursorIcon::NotAllowed
+                                    }
+                                    TheCursorIcon::ContextMenu => {
+                                        winit::window::CursorIcon::ContextMenu
+                                    }
+                                    TheCursorIcon::Cell => winit::window::CursorIcon::Cell,
+                                    TheCursorIcon::VerticalText => {
+                                        winit::window::CursorIcon::VerticalText
+                                    }
+                                    TheCursorIcon::Alias => winit::window::CursorIcon::Alias,
+                                    TheCursorIcon::Copy => winit::window::CursorIcon::Copy,
+                                    TheCursorIcon::NoDrop => winit::window::CursorIcon::NoDrop,
+                                    TheCursorIcon::Grab => winit::window::CursorIcon::Grab,
+                                    TheCursorIcon::Grabbing => winit::window::CursorIcon::Grabbing,
+                                    TheCursorIcon::AllScroll => {
+                                        winit::window::CursorIcon::AllScroll
+                                    }
+                                    TheCursorIcon::ZoomIn => winit::window::CursorIcon::ZoomIn,
+                                    TheCursorIcon::ZoomOut => winit::window::CursorIcon::ZoomOut,
+                                    TheCursorIcon::EResize => winit::window::CursorIcon::EResize,
+                                    TheCursorIcon::NResize => winit::window::CursorIcon::NResize,
+                                    TheCursorIcon::NEResize => winit::window::CursorIcon::NeResize,
+                                    TheCursorIcon::NWResize => winit::window::CursorIcon::NwResize,
+                                    TheCursorIcon::SResize => winit::window::CursorIcon::SResize,
+                                    TheCursorIcon::SEResize => winit::window::CursorIcon::SeResize,
+                                    TheCursorIcon::SWResize => winit::window::CursorIcon::SwResize,
+                                    TheCursorIcon::WResize => winit::window::CursorIcon::WResize,
+                                    TheCursorIcon::EWResize => winit::window::CursorIcon::EwResize,
+                                    TheCursorIcon::NSResize => winit::window::CursorIcon::NsResize,
+                                    TheCursorIcon::NESWResize => {
+                                        winit::window::CursorIcon::NeswResize
+                                    }
+                                    TheCursorIcon::NWSEResize => {
+                                        winit::window::CursorIcon::NwseResize
+                                    }
+                                    TheCursorIcon::ColResize => {
+                                        winit::window::CursorIcon::ColResize
+                                    }
+                                    TheCursorIcon::RowResize => {
+                                        winit::window::CursorIcon::RowResize
+                                    }
+                                };
+                                ctx.window.set_cursor(cursor_icon);
+                                ctx.window.set_cursor_visible(true);
+                                ctx.ctx.reset_cursor_changed();
+                            }
                         }
                         if key_event.state == ElementState::Released {
                             let key = match &key_event.logical_key {
@@ -496,6 +564,67 @@ impl ApplicationHandler for TheWinitApp {
                                     ctx.window.request_redraw();
                                 }
                             }
+
+                            // Update cursor icon after keyboard events (focus may have changed)
+                            if ctx.ctx.cursor_changed() {
+                                let cursor_icon = match ctx.ctx.cursor_icon() {
+                                    TheCursorIcon::Default => winit::window::CursorIcon::Default,
+                                    TheCursorIcon::Crosshair => {
+                                        winit::window::CursorIcon::Crosshair
+                                    }
+                                    TheCursorIcon::Hand => winit::window::CursorIcon::Pointer,
+                                    TheCursorIcon::Arrow => winit::window::CursorIcon::Default,
+                                    TheCursorIcon::Text => winit::window::CursorIcon::Text,
+                                    TheCursorIcon::Wait => winit::window::CursorIcon::Wait,
+                                    TheCursorIcon::Help => winit::window::CursorIcon::Help,
+                                    TheCursorIcon::Progress => winit::window::CursorIcon::Progress,
+                                    TheCursorIcon::NotAllowed => {
+                                        winit::window::CursorIcon::NotAllowed
+                                    }
+                                    TheCursorIcon::ContextMenu => {
+                                        winit::window::CursorIcon::ContextMenu
+                                    }
+                                    TheCursorIcon::Cell => winit::window::CursorIcon::Cell,
+                                    TheCursorIcon::VerticalText => {
+                                        winit::window::CursorIcon::VerticalText
+                                    }
+                                    TheCursorIcon::Alias => winit::window::CursorIcon::Alias,
+                                    TheCursorIcon::Copy => winit::window::CursorIcon::Copy,
+                                    TheCursorIcon::NoDrop => winit::window::CursorIcon::NoDrop,
+                                    TheCursorIcon::Grab => winit::window::CursorIcon::Grab,
+                                    TheCursorIcon::Grabbing => winit::window::CursorIcon::Grabbing,
+                                    TheCursorIcon::AllScroll => {
+                                        winit::window::CursorIcon::AllScroll
+                                    }
+                                    TheCursorIcon::ZoomIn => winit::window::CursorIcon::ZoomIn,
+                                    TheCursorIcon::ZoomOut => winit::window::CursorIcon::ZoomOut,
+                                    TheCursorIcon::EResize => winit::window::CursorIcon::EResize,
+                                    TheCursorIcon::NResize => winit::window::CursorIcon::NResize,
+                                    TheCursorIcon::NEResize => winit::window::CursorIcon::NeResize,
+                                    TheCursorIcon::NWResize => winit::window::CursorIcon::NwResize,
+                                    TheCursorIcon::SResize => winit::window::CursorIcon::SResize,
+                                    TheCursorIcon::SEResize => winit::window::CursorIcon::SeResize,
+                                    TheCursorIcon::SWResize => winit::window::CursorIcon::SwResize,
+                                    TheCursorIcon::WResize => winit::window::CursorIcon::WResize,
+                                    TheCursorIcon::EWResize => winit::window::CursorIcon::EwResize,
+                                    TheCursorIcon::NSResize => winit::window::CursorIcon::NsResize,
+                                    TheCursorIcon::NESWResize => {
+                                        winit::window::CursorIcon::NeswResize
+                                    }
+                                    TheCursorIcon::NWSEResize => {
+                                        winit::window::CursorIcon::NwseResize
+                                    }
+                                    TheCursorIcon::ColResize => {
+                                        winit::window::CursorIcon::ColResize
+                                    }
+                                    TheCursorIcon::RowResize => {
+                                        winit::window::CursorIcon::RowResize
+                                    }
+                                };
+                                ctx.window.set_cursor(cursor_icon);
+                                ctx.window.set_cursor_visible(true);
+                                ctx.ctx.reset_cursor_changed();
+                            }
                         }
                     }
                     WindowEvent::ModifiersChanged(modifiers) => {
@@ -550,6 +679,53 @@ impl ApplicationHandler for TheWinitApp {
                             if self.app.hover(x, y, &mut ctx.ctx) {
                                 redraw = true;
                             }
+                        }
+
+                        // Update cursor icon immediately after hover detection
+                        if ctx.ctx.cursor_changed() {
+                            let cursor_icon = match ctx.ctx.cursor_icon() {
+                                TheCursorIcon::Default => winit::window::CursorIcon::Default,
+                                TheCursorIcon::Crosshair => winit::window::CursorIcon::Crosshair,
+                                TheCursorIcon::Hand => winit::window::CursorIcon::Pointer,
+                                TheCursorIcon::Arrow => winit::window::CursorIcon::Default,
+                                TheCursorIcon::Text => winit::window::CursorIcon::Text,
+                                TheCursorIcon::Wait => winit::window::CursorIcon::Wait,
+                                TheCursorIcon::Help => winit::window::CursorIcon::Help,
+                                TheCursorIcon::Progress => winit::window::CursorIcon::Progress,
+                                TheCursorIcon::NotAllowed => winit::window::CursorIcon::NotAllowed,
+                                TheCursorIcon::ContextMenu => {
+                                    winit::window::CursorIcon::ContextMenu
+                                }
+                                TheCursorIcon::Cell => winit::window::CursorIcon::Cell,
+                                TheCursorIcon::VerticalText => {
+                                    winit::window::CursorIcon::VerticalText
+                                }
+                                TheCursorIcon::Alias => winit::window::CursorIcon::Alias,
+                                TheCursorIcon::Copy => winit::window::CursorIcon::Copy,
+                                TheCursorIcon::NoDrop => winit::window::CursorIcon::NoDrop,
+                                TheCursorIcon::Grab => winit::window::CursorIcon::Grab,
+                                TheCursorIcon::Grabbing => winit::window::CursorIcon::Grabbing,
+                                TheCursorIcon::AllScroll => winit::window::CursorIcon::AllScroll,
+                                TheCursorIcon::ZoomIn => winit::window::CursorIcon::ZoomIn,
+                                TheCursorIcon::ZoomOut => winit::window::CursorIcon::ZoomOut,
+                                TheCursorIcon::EResize => winit::window::CursorIcon::EResize,
+                                TheCursorIcon::NResize => winit::window::CursorIcon::NResize,
+                                TheCursorIcon::NEResize => winit::window::CursorIcon::NeResize,
+                                TheCursorIcon::NWResize => winit::window::CursorIcon::NwResize,
+                                TheCursorIcon::SResize => winit::window::CursorIcon::SResize,
+                                TheCursorIcon::SEResize => winit::window::CursorIcon::SeResize,
+                                TheCursorIcon::SWResize => winit::window::CursorIcon::SwResize,
+                                TheCursorIcon::WResize => winit::window::CursorIcon::WResize,
+                                TheCursorIcon::EWResize => winit::window::CursorIcon::EwResize,
+                                TheCursorIcon::NSResize => winit::window::CursorIcon::NsResize,
+                                TheCursorIcon::NESWResize => winit::window::CursorIcon::NeswResize,
+                                TheCursorIcon::NWSEResize => winit::window::CursorIcon::NwseResize,
+                                TheCursorIcon::ColResize => winit::window::CursorIcon::ColResize,
+                                TheCursorIcon::RowResize => winit::window::CursorIcon::RowResize,
+                            };
+                            ctx.window.set_cursor(cursor_icon);
+                            ctx.window.set_cursor_visible(true);
+                            ctx.ctx.reset_cursor_changed();
                         }
 
                         if redraw {
@@ -664,6 +840,67 @@ impl ApplicationHandler for TheWinitApp {
                                     }
                                 }
                                 _ => {}
+                            }
+
+                            // Update cursor icon after mouse input events that may change focus
+                            if ctx.ctx.cursor_changed() {
+                                let cursor_icon = match ctx.ctx.cursor_icon() {
+                                    TheCursorIcon::Default => winit::window::CursorIcon::Default,
+                                    TheCursorIcon::Crosshair => {
+                                        winit::window::CursorIcon::Crosshair
+                                    }
+                                    TheCursorIcon::Hand => winit::window::CursorIcon::Pointer,
+                                    TheCursorIcon::Arrow => winit::window::CursorIcon::Default,
+                                    TheCursorIcon::Text => winit::window::CursorIcon::Text,
+                                    TheCursorIcon::Wait => winit::window::CursorIcon::Wait,
+                                    TheCursorIcon::Help => winit::window::CursorIcon::Help,
+                                    TheCursorIcon::Progress => winit::window::CursorIcon::Progress,
+                                    TheCursorIcon::NotAllowed => {
+                                        winit::window::CursorIcon::NotAllowed
+                                    }
+                                    TheCursorIcon::ContextMenu => {
+                                        winit::window::CursorIcon::ContextMenu
+                                    }
+                                    TheCursorIcon::Cell => winit::window::CursorIcon::Cell,
+                                    TheCursorIcon::VerticalText => {
+                                        winit::window::CursorIcon::VerticalText
+                                    }
+                                    TheCursorIcon::Alias => winit::window::CursorIcon::Alias,
+                                    TheCursorIcon::Copy => winit::window::CursorIcon::Copy,
+                                    TheCursorIcon::NoDrop => winit::window::CursorIcon::NoDrop,
+                                    TheCursorIcon::Grab => winit::window::CursorIcon::Grab,
+                                    TheCursorIcon::Grabbing => winit::window::CursorIcon::Grabbing,
+                                    TheCursorIcon::AllScroll => {
+                                        winit::window::CursorIcon::AllScroll
+                                    }
+                                    TheCursorIcon::ZoomIn => winit::window::CursorIcon::ZoomIn,
+                                    TheCursorIcon::ZoomOut => winit::window::CursorIcon::ZoomOut,
+                                    TheCursorIcon::EResize => winit::window::CursorIcon::EResize,
+                                    TheCursorIcon::NResize => winit::window::CursorIcon::NResize,
+                                    TheCursorIcon::NEResize => winit::window::CursorIcon::NeResize,
+                                    TheCursorIcon::NWResize => winit::window::CursorIcon::NwResize,
+                                    TheCursorIcon::SResize => winit::window::CursorIcon::SResize,
+                                    TheCursorIcon::SEResize => winit::window::CursorIcon::SeResize,
+                                    TheCursorIcon::SWResize => winit::window::CursorIcon::SwResize,
+                                    TheCursorIcon::WResize => winit::window::CursorIcon::WResize,
+                                    TheCursorIcon::EWResize => winit::window::CursorIcon::EwResize,
+                                    TheCursorIcon::NSResize => winit::window::CursorIcon::NsResize,
+                                    TheCursorIcon::NESWResize => {
+                                        winit::window::CursorIcon::NeswResize
+                                    }
+                                    TheCursorIcon::NWSEResize => {
+                                        winit::window::CursorIcon::NwseResize
+                                    }
+                                    TheCursorIcon::ColResize => {
+                                        winit::window::CursorIcon::ColResize
+                                    }
+                                    TheCursorIcon::RowResize => {
+                                        winit::window::CursorIcon::RowResize
+                                    }
+                                };
+                                ctx.window.set_cursor(cursor_icon);
+                                ctx.window.set_cursor_visible(true);
+                                ctx.ctx.reset_cursor_changed();
                             }
 
                             if redraw {

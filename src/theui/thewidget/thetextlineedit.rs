@@ -53,6 +53,7 @@ pub struct TheTextLineEdit {
     is_dirty: bool,
     embedded: bool,
     parent_id: Option<TheId>,
+    cursor_icon: Option<TheCursorIcon>,
 
     layout_id: Option<TheId>,
     continuous: bool,
@@ -103,6 +104,7 @@ impl TheWidget for TheTextLineEdit {
             is_dirty: false,
             embedded: false,
             parent_id: None,
+            cursor_icon: Some(TheCursorIcon::Text),
 
             layout_id: None,
             continuous: false,
@@ -134,6 +136,14 @@ impl TheWidget for TheTextLineEdit {
 
     fn set_parent_id(&mut self, parent_id: TheId) {
         self.parent_id = Some(parent_id);
+    }
+
+    fn cursor_icon(&self) -> Option<TheCursorIcon> {
+        self.cursor_icon
+    }
+
+    fn set_cursor_icon(&mut self, icon: Option<TheCursorIcon>) {
+        self.cursor_icon = icon;
     }
 
     fn parent_id(&self) -> Option<&TheId> {
@@ -211,6 +221,11 @@ impl TheWidget for TheTextLineEdit {
                 self.modifier_logo = *logo;
                 self.modifier_shift = *shift;
             }
+            TheEvent::GainedFocus(_id) => {
+                // Set text cursor when gaining focus
+                self.cursor_icon = Some(TheCursorIcon::Text);
+            }
+
             TheEvent::MouseDown(coord) => {
                 if !self.state.is_empty() {
                     let (cursor_row, cursor_column) = self
@@ -649,10 +664,16 @@ impl TheWidget for TheTextLineEdit {
                         ctx.ui.send_widget_value_changed(self.id(), self.value());
                     }
                 }
+                // Reset cursor when losing focus
+                self.cursor_icon = Some(TheCursorIcon::Text);
             }
             TheEvent::Hover(_coord) => {
                 if !self.id().equals(&ctx.ui.hover) {
                     ctx.ui.set_hover(self.id());
+                }
+                // Set text cursor when hovered (only if not already focused)
+                if !ctx.ui.has_focus(self.id()) {
+                    self.cursor_icon = Some(TheCursorIcon::Text);
                 }
             }
             TheEvent::Undo => {

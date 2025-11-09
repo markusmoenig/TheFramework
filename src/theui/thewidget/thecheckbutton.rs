@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use crate::thecontext::TheCursorIcon;
 
 pub struct TheCheckButton {
     id: TheId,
@@ -9,6 +10,7 @@ pub struct TheCheckButton {
 
     dim: TheDim,
     is_dirty: bool,
+    cursor_icon: Option<TheCursorIcon>,
 }
 
 impl TheWidget for TheCheckButton {
@@ -28,7 +30,16 @@ impl TheWidget for TheCheckButton {
 
             dim: TheDim::zero(),
             is_dirty: false,
+            cursor_icon: Some(TheCursorIcon::Hand),
         }
+    }
+
+    fn cursor_icon(&self) -> Option<TheCursorIcon> {
+        self.cursor_icon
+    }
+
+    fn set_cursor_icon(&mut self, icon: Option<TheCursorIcon>) {
+        self.cursor_icon = icon;
     }
 
     fn id(&self) -> &TheId {

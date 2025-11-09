@@ -64,6 +64,9 @@ pub struct TheTextAreaEdit {
     last_mouse_down_time: Instant,
     readonly: bool,
 
+    // Cursor icon
+    cursor_icon: Option<TheCursorIcon>,
+
     // Modifiers
     modifier_alt: bool,
     modifier_ctrl: bool,
@@ -146,6 +149,8 @@ impl TheWidget for TheTextAreaEdit {
             continuous: false,
 
             undo_stack: TheUndoStack::default(),
+
+            cursor_icon: Some(TheCursorIcon::Text),
         }
     }
 
@@ -1104,10 +1109,17 @@ impl TheWidget for TheTextAreaEdit {
                     self.undo_stack.add(undo);
                 }
             }
+            TheEvent::GainedFocus(_id) => {
+                // Set text cursor when gaining focus
+                self.cursor_icon = Some(TheCursorIcon::Text);
+            }
             TheEvent::LostFocus(_id) => {
                 // if self.modified_since_last_return {
                 //     self.emit_value_changed(ctx);
                 // }
+
+                // Reset cursor to text when losing focus
+                self.cursor_icon = Some(TheCursorIcon::Text);
             }
             TheEvent::Hover(coord) => {
                 // The hovered widget is always current widget not scrollbars
@@ -1137,6 +1149,11 @@ impl TheWidget for TheTextAreaEdit {
                     redraw = true;
                 }
 
+                // Set text cursor when hovered (only if not already focused)
+                if !ctx.ui.has_focus(self.id()) {
+                    self.cursor_icon = Some(TheCursorIcon::Text);
+                }
+
                 self.hover_coord = *coord;
             }
             _ => {}
@@ -1150,6 +1167,14 @@ impl TheWidget for TheTextAreaEdit {
         }
 
         redraw
+    }
+
+    fn cursor_icon(&self) -> Option<TheCursorIcon> {
+        self.cursor_icon
+    }
+
+    fn set_cursor_icon(&mut self, icon: Option<TheCursorIcon>) {
+        self.cursor_icon = icon;
     }
 
     fn value(&self) -> TheValue {
