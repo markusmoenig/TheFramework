@@ -131,6 +131,21 @@ impl TheWidget for TheTreeItem {
                     self.is_dirty = true;
                 }
             }
+            TheEvent::Cut => {
+                if let Some((_, w)) = &mut self.widget_column {
+                    redraw = w.on_event(event, ctx);
+                }
+            }
+            TheEvent::Copy => {
+                if let Some((_, w)) = &mut self.widget_column {
+                    redraw = w.on_event(event, ctx);
+                }
+            }
+            TheEvent::Paste(value, app_type) => {
+                if let Some((_, w)) = &mut self.widget_column {
+                    redraw = w.on_event(&TheEvent::Paste(value.clone(), app_type.clone()), ctx);
+                }
+            }
             TheEvent::MouseDragged(coord) => {
                 if let Some((_, w)) = &mut self.widget_column {
                     let dim = w.dim();
@@ -210,12 +225,7 @@ impl TheWidget for TheTreeItem {
                                 redraw = w.on_event(event, ctx);
                             }
                         }
-                        // Pass clipboard events to embedded widget when parent tree item has focus
-                        TheEvent::Cut | TheEvent::Copy | TheEvent::Paste(_, _) => {
-                            if has_focus {
-                                redraw = w.on_event(event, ctx);
-                            }
-                        }
+
                         // Pass undo/redo events to embedded widget when parent tree item has focus
                         TheEvent::Undo | TheEvent::Redo => {
                             if has_focus {
@@ -309,6 +319,14 @@ impl TheWidget for TheTreeItem {
 
     fn set_cursor_icon(&mut self, icon: Option<TheCursorIcon>) {
         self.cursor_icon = icon;
+    }
+
+    fn supports_clipboard(&mut self) -> bool {
+        if let Some((_, widget)) = &mut self.widget_column {
+            widget.supports_clipboard()
+        } else {
+            false
+        }
     }
 
     fn value(&self) -> TheValue {
