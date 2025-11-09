@@ -21,6 +21,7 @@ pub struct TheSlider {
     continuous: bool,
 
     embedded: bool,
+    parent_id: Option<TheId>,
 }
 
 impl TheWidget for TheSlider {
@@ -53,6 +54,7 @@ impl TheWidget for TheSlider {
             continuous: false,
 
             embedded: false,
+            parent_id: None,
         }
     }
 
@@ -112,6 +114,14 @@ impl TheWidget for TheSlider {
         self.embedded = embedded;
     }
 
+    fn set_parent_id(&mut self, parent_id: TheId) {
+        self.parent_id = Some(parent_id);
+    }
+
+    fn parent_id(&self) -> Option<&TheId> {
+        self.parent_id.as_ref()
+    }
+
     fn supports_hover(&mut self) -> bool {
         true
     }
@@ -151,6 +161,14 @@ impl TheWidget for TheSlider {
                         ctx.ui
                             .send_widget_value_changed(self.id(), self.value.clone());
                     }
+                } else if coord.x < 0 {
+                    // Mouse to the left of slider - set to min value
+                    if let Some(range_f32) = self.range.to_range_f32() {
+                        self.value = TheValue::Float(*range_f32.start());
+                    } else if let Some(range_i32) = self.range.to_range_i32() {
+                        self.value = TheValue::Int(*range_i32.start());
+                    }
+                    self.original = self.value.clone();
                 } else if let Some(range_f32) = self.range.to_range_f32() {
                     let d = (range_f32.end() - range_f32.start()).abs()
                         * (coord.x as f32 / (self.dim.width - self.text_width) as f32)
@@ -169,6 +187,20 @@ impl TheWidget for TheSlider {
             }
             TheEvent::MouseDragged(coord) => {
                 if coord.x > self.dim.width - self.text_width + 5 {
+                } else if coord.x < 0 {
+                    // Mouse to the left of slider - set to min value
+                    if let Some(range_f32) = self.range.to_range_f32() {
+                        self.value = TheValue::Float(*range_f32.start());
+                    } else if let Some(range_i32) = self.range.to_range_i32() {
+                        self.value = TheValue::Int(*range_i32.start());
+                    }
+                } else if coord.x > self.dim.width - self.text_width {
+                    // Mouse to the right of slider - set to max value
+                    if let Some(range_f32) = self.range.to_range_f32() {
+                        self.value = TheValue::Float(*range_f32.end());
+                    } else if let Some(range_i32) = self.range.to_range_i32() {
+                        self.value = TheValue::Int(*range_i32.end());
+                    }
                 } else if let Some(range_f32) = self.range.to_range_f32() {
                     let d = (range_f32.end() - range_f32.start()).abs()
                         * (coord.x as f32 / (self.dim.width - self.text_width) as f32)
@@ -303,6 +335,7 @@ impl TheWidget for TheSlider {
                 icon_name = "dark_slider_small_selected".to_string()
             }
         }
+        // Embedded sliders don't show focus styling since they have no background
 
         let mut pos = 0;
         let mut text = "".to_string();

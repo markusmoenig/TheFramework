@@ -1,5 +1,8 @@
 use std::{num::NonZeroU32, sync::Arc};
 
+#[cfg(target_os = "macos")]
+use winit::platform::macos::WindowExtMacOS;
+
 use crate::prelude::*;
 use softbuffer::Surface;
 use web_time::{Duration, Instant};
@@ -183,6 +186,7 @@ struct TheWinitApp {
     next_frame_time: Instant,
     last_cursor_pos: Option<(f32, f32)>,
     left_mouse_down: bool,
+    has_changes: bool,
 
     #[cfg(feature = "ui")]
     ui: TheUI,
@@ -201,6 +205,7 @@ impl TheWinitApp {
             next_frame_time: Instant::now(),
             last_cursor_pos: None,
             left_mouse_down: false,
+            has_changes: false,
             #[cfg(feature = "ui")]
             ui: TheUI::new(),
         }
@@ -716,6 +721,14 @@ impl ApplicationHandler for TheWinitApp {
         let Some(ctx) = &mut self.ctx else {
             return;
         };
+
+        // Check for changes and update window document modified state
+        let current_has_changes = self.app.has_changes();
+        if current_has_changes != self.has_changes {
+            self.has_changes = current_has_changes;
+            #[cfg(target_os = "macos")]
+            ctx.window.set_document_edited(current_has_changes);
+        }
 
         #[cfg(feature = "ui")]
         if self.ui.update(&mut ctx.ctx) {

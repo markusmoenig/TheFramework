@@ -125,4 +125,11 @@ pub trait TheTrait {
     fn undo(&mut self) {}
 
     fn redo(&mut self) {}
+
+    //
+
+    /// Returns true if the app has internal changes.
+    fn has_changes(&self) -> bool {
+        false
+    }
 }

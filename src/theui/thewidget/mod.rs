@@ -170,6 +170,23 @@ pub trait TheWidget: Send {
     /// Set the embedded state.
     fn set_embedded(&mut self, embedded: bool) {}
 
+    /// Set the parent id for embedded widgets.
+    fn set_parent_id(&mut self, parent_id: TheId) {}
+
+    /// Get the parent id for embedded widgets.
+    fn parent_id(&self) -> Option<&TheId> {
+        None
+    }
+
+    /// Check if the parent widget has focus (for embedded widgets).
+    fn has_parent_focus(&self, ctx: &TheContext) -> bool {
+        if let Some(parent_id) = self.parent_id() {
+            ctx.ui.has_focus(parent_id)
+        } else {
+            false
+        }
+    }
+
     /// Get the widget value.
     fn value(&self) -> TheValue {
         TheValue::Empty

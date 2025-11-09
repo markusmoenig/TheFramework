@@ -52,6 +52,7 @@ pub struct TheTextLineEdit {
 
     is_dirty: bool,
     embedded: bool,
+    parent_id: Option<TheId>,
 
     layout_id: Option<TheId>,
     continuous: bool,
@@ -101,6 +102,7 @@ impl TheWidget for TheTextLineEdit {
 
             is_dirty: false,
             embedded: false,
+            parent_id: None,
 
             layout_id: None,
             continuous: false,
@@ -128,6 +130,14 @@ impl TheWidget for TheTextLineEdit {
     fn set_embedded(&mut self, embedded: bool) {
         self.embedded = embedded;
         self.limiter_mut().set_max_height(16);
+    }
+
+    fn set_parent_id(&mut self, parent_id: TheId) {
+        self.parent_id = Some(parent_id);
+    }
+
+    fn parent_id(&self) -> Option<&TheId> {
+        self.parent_id.as_ref()
     }
 
     fn disabled(&self) -> bool {
@@ -310,6 +320,7 @@ impl TheWidget for TheTextLineEdit {
                             .scroll(&Vec2::new(delta_x / ratio, delta_y / ratio), true);
                     }
 
+                    // Always update cursor position during drag for text selection
                     let (cursor_row, cursor_column) = self
                         .state
                         .find_row_col_of_index(self.renderer.find_cursor_index(coord));
@@ -321,9 +332,8 @@ impl TheWidget for TheTextLineEdit {
                         let start = self.drag_start_index.min(cursor_index);
                         let end = self.drag_start_index.max(cursor_index);
                         self.state.select(start, end);
-                    } else {
-                        self.state.reset_selection();
                     }
+                    // Don't reset selection when cursor hasn't moved - this preserves the initial selection
                 }
             }
             TheEvent::MouseUp(_coord) => {
@@ -903,7 +913,7 @@ impl TheWidget for TheTextLineEdit {
             if !self.embedded {
                 ctx.ui.has_focus(self.id())
             } else {
-                false
+                self.has_parent_focus(ctx)
             },
             false,
             buffer,

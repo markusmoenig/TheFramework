@@ -99,34 +99,43 @@ impl TheWidget for TheTreeItem {
 
                 ctx.ui.set_focus(self.id());
 
-                if let Some((_, w)) = &mut self.widget_column {
+                if let Some((_width, w)) = &mut self.widget_column {
                     let dim = w.dim();
-                    let c = Vec2::new(coord.x - dim.x + 15, coord.y - dim.y);
-                    if c.x > 0 {
-                        redraw = w.on_event(
-                            &TheEvent::MouseDown(Vec2::new(coord.x - dim.x + 15, coord.y - dim.y)),
-                            ctx,
-                        );
+                    let widget_coord = Vec2::new(coord.x - dim.x, coord.y - dim.y);
+
+                    // Check if the click is within the embedded widget bounds
+                    if widget_coord.x >= 0
+                        && widget_coord.y >= 0
+                        && widget_coord.x < dim.width
+                        && widget_coord.y < dim.height
+                    {
+                        redraw = w.on_event(&TheEvent::MouseDown(widget_coord), ctx);
                     }
                 }
             }
             TheEvent::MouseUp(coord) => {
                 if let Some((_, w)) = &mut self.widget_column {
                     let dim = w.dim();
-                    redraw = w.on_event(
-                        &TheEvent::MouseUp(Vec2::new(coord.x - dim.x + 15, coord.y)),
-                        ctx,
-                    );
+                    let widget_coord = Vec2::new(coord.x - dim.x, coord.y - dim.y);
+
+                    // Check if the click is within the embedded widget bounds
+                    if widget_coord.x >= 0
+                        && widget_coord.y >= 0
+                        && widget_coord.x < dim.width
+                        && widget_coord.y < dim.height
+                    {
+                        redraw = w.on_event(&TheEvent::MouseUp(widget_coord), ctx);
+                    }
                     self.is_dirty = true;
                 }
             }
             TheEvent::MouseDragged(coord) => {
                 if let Some((_, w)) = &mut self.widget_column {
                     let dim = w.dim();
-                    w.on_event(
-                        &TheEvent::MouseDragged(Vec2::new(coord.x - dim.x + 15, coord.y)),
-                        ctx,
-                    );
+                    let widget_coord = Vec2::new(coord.x - dim.x, coord.y - dim.y);
+
+                    // Always pass dragged events to the widget, even if outside bounds
+                    w.on_event(&TheEvent::MouseDragged(widget_coord), ctx);
                     self.is_dirty = true;
                     redraw = true;
                 }
@@ -159,10 +168,24 @@ impl TheWidget for TheTreeItem {
         &mut self.dim
     }
 
-    fn set_dim(&mut self, dim: TheDim, _ctx: &mut TheContext) {
+    fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {
         if self.dim != dim {
             self.dim = dim;
             self.is_dirty = true;
+
+            // Set dimension for embedded widget column
+            if let Some((width, widget)) = &mut self.widget_column {
+                widget.calculate_size(ctx);
+                let height = widget.limiter().get_max_height();
+                let y = (22 - height) / 2;
+
+                // Position widget at the right side with +9 offset (matching draw method)
+                let widget_x = self.dim.width - *width;
+                widget.set_dim(
+                    TheDim::new(widget_x + 9, y, *width as i32 - 10, height),
+                    ctx,
+                );
+            }
         }
     }
 
@@ -359,7 +382,7 @@ impl TheWidget for TheTreeItem {
 
             rect.0 += rect.2 - right_width as usize;
 
-            if let Some((width, widget)) = &mut self.widget_column {
+            if let Some((_width, widget)) = &mut self.widget_column {
                 ctx.draw.rect(
                     buffer.pixels_mut(),
                     &(rect.0, rect.1 - 1, 1, rect.3 + 2),
@@ -367,18 +390,11 @@ impl TheWidget for TheTreeItem {
                     style.theme().color(ListLayoutBackground),
                 );
 
-                widget.calculate_size(ctx);
-                let mut y = rect.1 as i32;
-                let height = widget.limiter().get_max_height();
-                if height < 22 {
-                    y += (22 - height) / 2 - 1;
-                }
-
-                widget.set_dim(
-                    TheDim::new(rect.0 as i32 + 9, y, *width as i32 - 10, height),
-                    ctx,
-                );
-                widget.dim_mut().set_buffer_offset(rect.0 as i32 + 9, y);
+                // Set buffer offset for drawing (dimension should already be set in set_dim)
+                let y_offset = rect.1 as i32 + (22 - widget.dim().height) / 2;
+                widget
+                    .dim_mut()
+                    .set_buffer_offset(rect.0 as i32 + 9, y_offset);
                 widget.draw(buffer, style, ctx);
             }
 
@@ -479,6 +495,7 @@ impl TheTreeItemTrait for TheTreeItem {
     }
     fn add_widget_column(&mut self, width: i32, mut widget: Box<dyn TheWidget>) {
         widget.set_embedded(true);
+        widget.set_parent_id(self.id.clone());
         self.widget_column = Some((width, widget));
     }
 }
