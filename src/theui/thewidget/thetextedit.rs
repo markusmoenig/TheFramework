@@ -1054,7 +1054,7 @@ pub struct TheTextRenderer {
     pub font_size: f32,
     pub indicate_space: bool,
     pub max_width: Option<f32>,
-    pub padding: (usize, usize, usize, usize), // left top right bottom
+    pub padding: (i32, i32, i32, i32), // left top right bottom
     row_extend: usize,
 
     // State
@@ -1112,10 +1112,10 @@ impl TheTextRenderer {
 
     pub fn dim(&self) -> TheDim {
         TheDim::new(
-            (self.left - self.padding.0) as i32,
-            (self.top - self.padding.1) as i32,
-            (self.width + self.padding.0 + self.padding.2) as i32,
-            (self.height + self.padding.1 + self.padding.3) as i32,
+            self.left as i32 - self.padding.0,
+            self.top as i32 - self.padding.1,
+            self.width as i32 + self.padding.0 + self.padding.2,
+            self.height as i32 + self.padding.1 + self.padding.3,
         )
     }
 
@@ -2189,7 +2189,7 @@ impl TheTextRenderer {
         }
 
         let left = (self.left + left) as i32 - self.scroll_offset.x as i32;
-        let top = (self.top + row.bottom - row_height) as i32 - self.scroll_offset.y as i32;
+        let top = (self.top + row.bottom) as i32 - row_height as i32 - self.scroll_offset.y as i32;
 
         let right = (left + width.to_i32().unwrap())
             .max(0)

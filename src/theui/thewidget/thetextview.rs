@@ -537,9 +537,9 @@ impl TheWidget for TheTextView {
             }
             if let Some(scrollbar) = self.hscrollbar.as_horizontal_scrollbar() {
                 scrollbar.set_total_width(
-                    (self.renderer.actual_size.x
+                    self.renderer.actual_size.x as i32
                         + self.renderer.padding.0
-                        + self.renderer.padding.2) as i32,
+                        + self.renderer.padding.2,
                 );
             }
 
@@ -558,9 +558,9 @@ impl TheWidget for TheTextView {
             }
             if let Some(scrollbar) = self.vscrollbar.as_vertical_scrollbar() {
                 scrollbar.set_total_height(
-                    (self.renderer.actual_size.y
+                    self.renderer.actual_size.y as i32
                         + self.renderer.padding.1
-                        + self.renderer.padding.3) as i32,
+                        + self.renderer.padding.3,
                 );
             }
         }
@@ -653,7 +653,12 @@ impl TheTextViewTrait for TheTextView {
         self.is_dirty = true;
     }
     fn set_padding(&mut self, padding: (usize, usize, usize, usize)) {
-        self.renderer.padding = padding;
+        self.renderer.padding = (
+            padding.0 as i32,
+            padding.1 as i32,
+            padding.2 as i32,
+            padding.3 as i32,
+        );
         self.is_dirty = true;
     }
     fn draw_background(&mut self, draw_background: bool) {
