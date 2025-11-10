@@ -1,5 +1,8 @@
 use std::{num::NonZeroU32, sync::Arc};
 
+#[cfg(feature = "ui")]
+use rfd::MessageDialog;
+
 use crate::thecontext::TheCursorIcon;
 
 #[cfg(target_os = "macos")]
@@ -366,7 +369,28 @@ impl ApplicationHandler for TheWinitApp {
             }
             WindowEvent::CloseRequested => {
                 if !self.app.closing() {
-                    event_loop.exit();
+                    #[cfg(feature = "ui")]
+                    {
+                        if self.app.has_changes() {
+                            let result = MessageDialog::new()
+                                .set_title("Unsaved Changes")
+                                .set_description(
+                                    "You have unsaved changes. Are you sure you want to quit?",
+                                )
+                                .set_buttons(rfd::MessageButtons::YesNo)
+                                .show();
+
+                            if result == rfd::MessageDialogResult::Yes {
+                                event_loop.exit();
+                            }
+                        } else {
+                            event_loop.exit();
+                        }
+                    }
+                    #[cfg(not(feature = "ui"))]
+                    {
+                        event_loop.exit();
+                    }
                 }
             }
             WindowEvent::Resized(size) => {
