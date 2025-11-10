@@ -274,18 +274,24 @@ impl TheTreeNode {
             let node_width = (available_width - indent - TREE_RIGHT_MARGIN).max(0);
             let node_height = self.widget.limiter().get_height(max_height);
 
+            // Make items 2 pixels taller for transparent hit areas (1px top, 1px bottom)
+            let hit_height = node_height + 2;
+
             self.widget.set_dim(
                 TheDim::new(
                     origin.x + indent,
                     origin.y + *y_cursor,
                     node_width,
-                    node_height,
+                    hit_height,
                 ),
                 ctx,
             );
-            self.widget.dim_mut().set_buffer_offset(indent, *y_cursor);
+            // Position content 1 pixel lower within the larger buffer area
+            self.widget
+                .dim_mut()
+                .set_buffer_offset(indent, *y_cursor + 1);
 
-            *y_cursor += node_height + TREE_VERTICAL_SPACING;
+            *y_cursor += hit_height + TREE_VERTICAL_SPACING - 2;
         }
 
         if !self.open {
@@ -305,18 +311,24 @@ impl TheTreeNode {
             let widget_width = widget.limiter().get_width(available_child_width);
             let widget_height = widget.limiter().get_height(max_height);
 
+            // Make embedded widgets 2 pixels taller for transparent hit areas (1px top, 1px bottom)
+            let hit_height = widget_height + 2;
+
             widget.set_dim(
                 TheDim::new(
                     origin.x + child_indent,
                     origin.y + *y_cursor,
                     widget_width,
-                    widget_height,
+                    hit_height,
                 ),
                 ctx,
             );
-            widget.dim_mut().set_buffer_offset(child_indent, *y_cursor);
+            // Position content 1 pixel lower within the larger buffer area
+            widget
+                .dim_mut()
+                .set_buffer_offset(child_indent, *y_cursor + 1);
 
-            *y_cursor += widget_height + TREE_VERTICAL_SPACING;
+            *y_cursor += hit_height + TREE_VERTICAL_SPACING - 2;
         }
 
         for child in &mut self.childs {
@@ -613,6 +625,14 @@ impl TheLayout for TheTreeLayout {
 
         let stride = self.content_buffer.stride();
         let utuple: (usize, usize, usize, usize) = self.content_buffer.dim().to_buffer_utuple();
+
+        // Clear entire content buffer with transparency first
+        ctx.draw.rect(
+            self.content_buffer.pixels_mut(),
+            &utuple,
+            stride,
+            &[0, 0, 0, 0], // Transparent
+        );
 
         if let Some(background) = self.background {
             ctx.draw.rect(

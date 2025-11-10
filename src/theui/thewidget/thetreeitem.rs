@@ -404,38 +404,50 @@ impl TheWidget for TheTreeItem {
         let mut shrinker = TheDimShrinker::zero();
 
         // Safety check: ensure tree item is within buffer bounds before drawing outline
-        let utuple = self.dim.to_buffer_shrunk_utuple(&shrinker);
+        // Adjust for transparent top/bottom areas: draw 1px lower and 2px shorter
+        let mut adjusted_utuple = self.dim.to_buffer_shrunk_utuple(&shrinker);
+        adjusted_utuple.1 += 1; // Draw 1px lower
+        adjusted_utuple.3 = adjusted_utuple.3.saturating_sub(2); // Reduce height by 2px
         let buffer_width = buffer.dim().width as usize;
         let buffer_height = buffer.dim().height as usize;
 
         // Additional defensive check: ensure we don't draw outside buffer bounds
-        if utuple.0 < buffer_width
-            && utuple.1 < buffer_height
-            && utuple.0 + utuple.2 <= buffer_width
-            && utuple.1 + utuple.3 <= buffer_height
+        if adjusted_utuple.0 < buffer_width
+            && adjusted_utuple.1 < buffer_height
+            && adjusted_utuple.0 + adjusted_utuple.2 <= buffer_width
+            && adjusted_utuple.1 + adjusted_utuple.3 <= buffer_height
         {
-            ctx.draw
-                .rect_outline_border_open(buffer.pixels_mut(), &utuple, stride, &color, 1);
+            ctx.draw.rect_outline_border_open(
+                buffer.pixels_mut(),
+                &adjusted_utuple,
+                stride,
+                &color,
+                1,
+            );
         }
 
         shrinker.shrink(1);
         // Safety check: ensure tree item is within buffer bounds before drawing fill
-        let utuple = self.dim.to_buffer_shrunk_utuple(&shrinker);
+        // Adjust for transparent top/bottom areas: draw 1px lower and 2px shorter
+        let mut adjusted_utuple = self.dim.to_buffer_shrunk_utuple(&shrinker);
+        adjusted_utuple.1 += 1; // Draw 1px lower
+        adjusted_utuple.3 = adjusted_utuple.3.saturating_sub(2); // Reduce height by 2px
         let buffer_width = buffer.dim().width as usize;
         let buffer_height = buffer.dim().height as usize;
 
         // Additional defensive check: ensure we don't draw outside buffer bounds
-        if utuple.0 < buffer_width
-            && utuple.1 < buffer_height
-            && utuple.0 + utuple.2 <= buffer_width
-            && utuple.1 + utuple.3 <= buffer_height
+        if adjusted_utuple.0 < buffer_width
+            && adjusted_utuple.1 < buffer_height
+            && adjusted_utuple.0 + adjusted_utuple.2 <= buffer_width
+            && adjusted_utuple.1 + adjusted_utuple.3 <= buffer_height
         {
-            ctx.draw.rect(buffer.pixels_mut(), &utuple, stride, &color);
+            ctx.draw
+                .rect(buffer.pixels_mut(), &adjusted_utuple, stride, &color);
         }
 
         if let Some(icon) = &self.icon {
             let ut = self.dim.to_buffer_shrunk_utuple(&shrinker);
-            let icon_rect = (ut.0 + 1, ut.1 + 1, 38, 38);
+            let icon_rect = (ut.0 + 1, ut.1 + 2, 38, 38); // Adjust Y position by +1px
             let buffer_width = buffer.dim().width as usize;
             let buffer_height = buffer.dim().height as usize;
 
@@ -453,7 +465,7 @@ impl TheWidget for TheTreeItem {
                     1,
                 );
             }
-            let icon_copy_rect = (ut.0 + 2, ut.1 + 2, 36, 36);
+            let icon_copy_rect = (ut.0 + 2, ut.1 + 3, 36, 36); // Adjust Y position by +1px
             let buffer_width = buffer.dim().width as usize;
             let buffer_height = buffer.dim().height as usize;
 
@@ -470,7 +482,7 @@ impl TheWidget for TheTreeItem {
             if let Some(font) = &ctx.ui.font {
                 let text_rect = (
                     ut.0 + 38 + 7 + 5,
-                    ut.1 + 5,
+                    ut.1 + 6, // Adjust Y position by +1px
                     (self.dim.width - 38 - 7 - 10) as usize,
                     13,
                 );
@@ -499,7 +511,7 @@ impl TheWidget for TheTreeItem {
                 if !self.sub_text.is_empty() {
                     let sub_text_rect = (
                         ut.0 + 38 + 7 + 5,
-                        ut.1 + 22,
+                        ut.1 + 23, // Adjust Y position by +1px
                         (self.dim.width - 38 - 7 - 10) as usize,
                         13,
                     );
@@ -540,7 +552,12 @@ impl TheWidget for TheTreeItem {
                 self.dim.to_buffer_shrunk_utuple(&shrinker);
 
             if let Some(font) = &ctx.ui.font {
-                let text_rect = (rect.0, rect.1, rect.2 - right_width as usize, rect.3);
+                let text_rect = (
+                    rect.0,
+                    rect.1 + 1,
+                    rect.2 - right_width as usize,
+                    rect.3.saturating_sub(2),
+                ); // Adjust Y position by +1px and reduce height by 2px
                 let buffer_width = buffer.dim().width as usize;
                 let buffer_height = buffer.dim().height as usize;
 
@@ -575,7 +592,7 @@ impl TheWidget for TheTreeItem {
                 );
 
                 // Set buffer offset for drawing (dimension should already be set in set_dim)
-                let y_offset = rect.1 as i32 + (22 - widget.dim().height) / 2 - 1;
+                let y_offset = rect.1 as i32 + (22 - widget.dim().height) / 2;
                 widget
                     .dim_mut()
                     .set_buffer_offset(rect.0 as i32 + 9, y_offset);
@@ -594,7 +611,12 @@ impl TheWidget for TheTreeItem {
                     #[allow(clippy::single_match)]
                     match value {
                         TheValue::Text(text) => {
-                            let value_rect = (rect.0 + 9, rect.1, *width as usize - 10, rect.3);
+                            let value_rect = (
+                                rect.0 + 9,
+                                rect.1 + 1,
+                                *width as usize - 10,
+                                rect.3.saturating_sub(2),
+                            ); // Adjust Y position by +1px and reduce height by 2px
                             let buffer_width = buffer.dim().width as usize;
                             let buffer_height = buffer.dim().height as usize;
 
@@ -618,7 +640,12 @@ impl TheWidget for TheTreeItem {
                             }
                         }
                         _ => {
-                            let value_rect = (rect.0 + 9, rect.1, *width as usize - 10, rect.3);
+                            let value_rect = (
+                                rect.0 + 9,
+                                rect.1 + 1,
+                                *width as usize - 10,
+                                rect.3.saturating_sub(2),
+                            ); // Adjust Y position by +1px and reduce height by 2px
                             let buffer_width = buffer.dim().width as usize;
                             let buffer_height = buffer.dim().height as usize;
 
