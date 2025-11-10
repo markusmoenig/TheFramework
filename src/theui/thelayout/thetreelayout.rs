@@ -343,13 +343,13 @@ impl TheTreeNode {
             self.widget.draw(buffer, style, ctx);
         }
 
-        // Draw embedded widgets regardless of whether node is open
-        for widget in &mut self.widgets {
-            widget.draw(buffer, style, ctx);
-        }
-
         if !self.open {
             return;
+        }
+
+        // Draw embedded widgets only when node is open
+        for widget in &mut self.widgets {
+            widget.draw(buffer, style, ctx);
         }
 
         for child in &mut self.childs {
@@ -366,14 +366,14 @@ impl TheTreeNode {
             return Some(&mut self.widget);
         }
 
-        // Check embedded widgets regardless of whether node is open
-        for widget in &mut self.widgets {
-            if widget.dim().contains(coord) {
-                return Some(widget);
-            }
-        }
-
         if self.open {
+            // Check embedded widgets only when node is open
+            for widget in &mut self.widgets {
+                if widget.dim().contains(coord) {
+                    return Some(widget);
+                }
+            }
+
             for child in &mut self.childs {
                 if let Some(found) = child.find_widget_at_coord(coord, true) {
                     return Some(found);

@@ -369,6 +369,21 @@ impl TheWidget for TheTreeItem {
             return;
         }
 
+        // Fundamental safety check: ensure we don't draw outside buffer bounds
+        // Use buffer coordinates (which are relative to the content buffer)
+        let buffer_width = buffer.dim().width as i32;
+        let buffer_height = buffer.dim().height as i32;
+        let item_buffer_x = self.dim().buffer_x;
+        let item_buffer_y = self.dim().buffer_y;
+
+        if item_buffer_x < 0
+            || item_buffer_y < 0
+            || item_buffer_x + self.dim().width > buffer_width
+            || item_buffer_y + self.dim().height > buffer_height
+        {
+            return;
+        }
+
         let mut color = if self.state == TheWidgetState::Selected {
             if !self.id().equals(&ctx.ui.focus) {
                 *style.theme().color(ListItemSelectedNoFocus)
@@ -393,6 +408,7 @@ impl TheWidget for TheTreeItem {
         let buffer_width = buffer.dim().width as usize;
         let buffer_height = buffer.dim().height as usize;
 
+        // Additional defensive check: ensure we don't draw outside buffer bounds
         if utuple.0 < buffer_width
             && utuple.1 < buffer_height
             && utuple.0 + utuple.2 <= buffer_width
@@ -408,6 +424,7 @@ impl TheWidget for TheTreeItem {
         let buffer_width = buffer.dim().width as usize;
         let buffer_height = buffer.dim().height as usize;
 
+        // Additional defensive check: ensure we don't draw outside buffer bounds
         if utuple.0 < buffer_width
             && utuple.1 < buffer_height
             && utuple.0 + utuple.2 <= buffer_width
