@@ -634,20 +634,26 @@ impl TheLayout for TheTreeLayout {
             if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
                 let offset = scroll_bar.scroll_offset();
                 let range = offset..offset + self.dim.height;
+                // Safety check: ensure we don't copy beyond content buffer bounds
+                let content_height = self.content_buffer.dim().height as i32;
+                let safe_range = range.start.min(content_height)..range.end.min(content_height);
                 buffer.copy_vertical_range_into(
                     self.dim.buffer_x,
                     self.dim.buffer_y,
                     &self.content_buffer,
-                    range,
+                    safe_range,
                 );
             }
-        } else if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
-            let range = 0..scroll_bar.total_height();
+        } else {
+            let range = 0..self.dim.height;
+            // Safety check: ensure we don't copy beyond content buffer bounds
+            let content_height = self.content_buffer.dim().height as i32;
+            let safe_range = 0..range.end.min(content_height);
             buffer.copy_vertical_range_into(
                 self.dim.buffer_x,
                 self.dim.buffer_y,
                 &self.content_buffer,
-                range,
+                safe_range,
             );
         }
 
@@ -773,6 +779,18 @@ impl TheTreeLayout {
                 if scrollbar_visible {
                     total_height += TREE_BOTTOM_MARGIN;
                     scroll_bar.set_total_height(total_height);
+                }
+
+                // Clamp scroll offset to valid range after content height change
+                let current_offset = scroll_bar.scroll_offset();
+                let max_offset = (total_height - dim.height).max(0);
+                if current_offset > max_offset {
+                    scroll_bar.set_scroll_offset(max_offset);
+                }
+
+                // Reset scroll offset to 0 when scrollbar becomes not visible
+                if !scrollbar_visible && current_offset != 0 {
+                    scroll_bar.set_scroll_offset(0);
                 }
             }
 

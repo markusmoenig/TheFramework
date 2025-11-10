@@ -30,7 +30,7 @@ futures = { version = "0.3" }
 serde = { version = "1.0", features = ["derive"], optional = false }
 serde_json = { version = "1.0", optional = false }
 flate2 = { version = "1.0" }
-rayon = { version = "1", optional = true }
+rayon = { version = "1" }
 vectorize = "0.2.0"
 indexmap = { version = "2", features = ["serde"], default-features = true }
 zeno = { version = "0.3.1", optional = true }
@@ -81,6 +81,7 @@ winit_app = ["winit", "softbuffer"]
 log = ["log4rs"]
 
 default = ["winit_app"]
+rayon = []
 
 [workspace]
 members = ["examples/*", "run-wasm"]
