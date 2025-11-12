@@ -73,6 +73,12 @@ impl TheTreeNode {
         }
     }
 
+    pub fn set_root_mode(&mut self, root_mode: bool) {
+        if let Some(snapper) = self.widget.as_any().downcast_mut::<TheSnapperbar>() {
+            snapper.set_root_mode(root_mode);
+        }
+    }
+
     pub fn set_layout_id(&mut self, layout_id: TheId) {
         self.layout_id = Some(layout_id.clone());
         if let Some(snapper) = self.widget.as_any().downcast_mut::<TheSnapperbar>() {

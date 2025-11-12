@@ -16,6 +16,8 @@ pub struct TheSnapperbar {
     is_dirty: bool,
 
     layout_id: TheId,
+
+    root_mode: bool,
 }
 
 impl TheWidget for TheSnapperbar {
@@ -41,6 +43,8 @@ impl TheWidget for TheSnapperbar {
             is_dirty: false,
 
             layout_id: TheId::empty(),
+
+            root_mode: true,
         }
     }
 
@@ -158,58 +162,86 @@ impl TheWidget for TheSnapperbar {
         }
 
         let stride = buffer.stride();
-        let utuple: (usize, usize, usize, usize) = self.dim.to_buffer_utuple();
+        let mut utuple: (usize, usize, usize, usize) = self.dim.to_buffer_utuple();
 
-        let mut icon_state = if self.state == TheWidgetState::Clicked {
-            "clicked".to_string()
-        } else {
-            "normal".to_string()
-        };
+        if self.root_mode {
+            let mut icon_state = if self.state == TheWidgetState::Clicked {
+                "clicked".to_string()
+            } else {
+                "normal".to_string()
+            };
 
-        if self.state != TheWidgetState::Selected && self.id().equals(&ctx.ui.hover) {
-            icon_state = "hover".to_string()
-        }
-
-        if let Some(mut icon) = ctx
-            .ui
-            .icon(format!("dark_snapperbar_{}_front", icon_state).as_str())
-            .cloned()
-        {
-            if self.selected {
-                let col = *style.theme().color(DefaultSelection);
-                icon.multiply_by_pixel([100, 100, 100, 255], col);
+            if self.state != TheWidgetState::Selected && self.id().equals(&ctx.ui.hover) {
+                icon_state = "hover".to_string()
             }
 
-            let r = (utuple.0, utuple.1 + 1, 1, icon.dim().height as usize);
-            ctx.draw
-                .copy_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
+            if let Some(mut icon) = ctx
+                .ui
+                .icon(format!("dark_snapperbar_{}_front", icon_state).as_str())
+                .cloned()
+            {
+                if self.selected {
+                    let col = *style.theme().color(DefaultSelection);
+                    icon.multiply_by_pixel([100, 100, 100, 255], col);
+                }
 
-            let r = (
-                utuple.0 + utuple.2 - 1,
-                utuple.1 + 1,
-                1,
-                icon.dim().height as usize,
-            );
-            ctx.draw
-                .copy_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
-        }
+                let r = (utuple.0, utuple.1 + 1, 1, icon.dim().height as usize);
+                ctx.draw
+                    .copy_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
 
-        if let Some(mut icon) = ctx
-            .ui
-            .icon(format!("dark_snapperbar_{}_middle", icon_state).as_str())
-            .cloned()
-        {
-            if self.selected {
-                let col = *style.theme().color(DefaultSelection);
-                icon.multiply_by_pixel([100, 100, 100, 255], col);
-            }
-
-            for x in 1..utuple.2 - 1 {
-                let r = (utuple.0 + x, utuple.1, 1, icon.dim().height as usize);
+                let r = (
+                    utuple.0 + utuple.2 - 1,
+                    utuple.1 + 1,
+                    1,
+                    icon.dim().height as usize,
+                );
                 ctx.draw
                     .copy_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
             }
+
+            if let Some(mut icon) = ctx
+                .ui
+                .icon(format!("dark_snapperbar_{}_middle", icon_state).as_str())
+                .cloned()
+            {
+                if self.selected {
+                    let col = *style.theme().color(DefaultSelection);
+                    icon.multiply_by_pixel([100, 100, 100, 255], col);
+                }
+
+                for x in 1..utuple.2 - 1 {
+                    let r = (utuple.0 + x, utuple.1, 1, icon.dim().height as usize);
+                    ctx.draw
+                        .copy_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
+                }
+            }
+        } else {
+            // --- No Gradient
+
+            utuple.3 -= 1;
+            let color = if self.selected {
+                *style.theme().color(ListItemSelected)
+            } else {
+                *style.theme().color(ListItemNormal)
+            };
+
+            ctx.draw.rect_outline_border_open(
+                buffer.pixels_mut(),
+                &utuple,
+                stride,
+                &style.theme().color(ListItemIconBorder),
+                1,
+            );
+
+            ctx.draw.rect(
+                buffer.pixels_mut(),
+                &(utuple.0, utuple.1 + 1, utuple.2, utuple.3 - 2),
+                stride,
+                &color,
+            );
         }
+
+        // ---
 
         if self.open {
             if let Some(icon) = ctx.ui.icon("dark_snapperbar_open") {
@@ -265,6 +297,7 @@ pub trait TheSnapperbarTrait {
     fn is_open(&self) -> bool;
     fn set_open(&mut self, open: bool);
     fn set_selected(&mut self, open: bool);
+    fn set_root_mode(&mut self, root_mode: bool);
 }
 
 impl TheSnapperbarTrait for TheSnapperbar {
@@ -286,6 +319,10 @@ impl TheSnapperbarTrait for TheSnapperbar {
     }
     fn set_selected(&mut self, selected: bool) {
         self.selected = selected;
+        self.is_dirty = true;
+    }
+    fn set_root_mode(&mut self, root_mode: bool) {
+        self.root_mode = root_mode;
         self.is_dirty = true;
     }
 }
