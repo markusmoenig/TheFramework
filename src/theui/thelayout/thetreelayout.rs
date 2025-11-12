@@ -773,7 +773,9 @@ impl TheTreeLayout {
 
             let mut content_height = y_cursor;
             if content_height > 0 {
-                content_height = (content_height - TREE_VERTICAL_SPACING).max(0);
+                // Widgets grow by 2px for transparent hit areas, so only remove the effective spacing
+                let trailing_spacing = (TREE_VERTICAL_SPACING - 2).max(0);
+                content_height = (content_height - trailing_spacing).max(0);
             }
 
             let mut total_height = content_height.max(dim.height);
