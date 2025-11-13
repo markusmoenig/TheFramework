@@ -280,6 +280,11 @@ pub trait TheWidget: Send {
         None
     }
 
+    /// Attempts to cast to TheTreeItemTrait. Only valid for TheListItem.
+    fn as_tree_item(&mut self) -> Option<&mut dyn TheTreeItemTrait> {
+        None
+    }
+
     /// Attempts to cast to TheRowListItemTrait. Only valid for TheRowListItem.
     fn as_rowlist_item(&mut self) -> Option<&mut dyn TheRowListItemTrait> {
         None

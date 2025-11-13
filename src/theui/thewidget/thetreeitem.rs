@@ -676,9 +676,9 @@ impl TheWidget for TheTreeItem {
         self.is_dirty = false;
     }
 
-    // fn as_list_item(&mut self) -> Option<&mut dyn TheListItemTrait> {
-    //     Some(self)
-    // }
+    fn as_tree_item(&mut self) -> Option<&mut dyn TheTreeItemTrait> {
+        Some(self)
+    }
 
     fn as_any(&mut self) -> &mut dyn std::any::Any {
         self
@@ -695,6 +695,7 @@ pub trait TheTreeItemTrait {
     fn set_scroll_offset(&mut self, offset: i32);
     fn add_value_column(&mut self, width: i32, value: TheValue);
     fn add_widget_column(&mut self, width: i32, value: Box<dyn TheWidget>);
+    fn embedded_widget_mut(&mut self) -> Option<&mut Box<dyn TheWidget>>;
 }
 
 impl TheTreeItemTrait for TheTreeItem {
@@ -730,5 +731,8 @@ impl TheTreeItemTrait for TheTreeItem {
         widget.set_embedded(true);
         widget.set_parent_id(self.id.clone());
         self.widget_column = Some((width, widget));
+    }
+    fn embedded_widget_mut(&mut self) -> Option<&mut Box<dyn TheWidget>> {
+        self.widget_column.as_mut().map(|(_, widget)| widget)
     }
 }

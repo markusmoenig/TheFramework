@@ -653,17 +653,17 @@ impl TheWidget for TheTextLineEdit {
                 }
             }
             TheEvent::LostFocus(_id) => {
-                if self.modified_since_last_return {
-                    if let Some(layout_id) = &self.layout_id {
-                        ctx.ui.send(TheEvent::RedirectWidgetValueToLayout(
-                            layout_id.clone(),
-                            self.id().clone(),
-                            self.value(),
-                        ));
-                    } else {
-                        ctx.ui.send_widget_value_changed(self.id(), self.value());
-                    }
-                }
+                // if self.modified_since_last_return {
+                //     if let Some(layout_id) = &self.layout_id {
+                //         ctx.ui.send(TheEvent::RedirectWidgetValueToLayout(
+                //             layout_id.clone(),
+                //             self.id().clone(),
+                //             self.value(),
+                //         ));
+                //     } else {
+                //         ctx.ui.send_widget_value_changed(self.id(), self.value());
+                //     }
+                // }
                 // Reset cursor when losing focus
                 self.cursor_icon = Some(TheCursorIcon::Text);
             }
