@@ -321,15 +321,6 @@ impl TheTreeNode {
             let widget_width = widget.limiter().get_width(available_child_width);
             let widget_height = widget.limiter().get_height(max_height);
 
-            if let Some(_) = widget.as_tree_icons() {
-                println!(
-                    "TheTreeLayout widget: max_height={}, limiter.max={}, widget_height={}",
-                    max_height,
-                    widget.limiter().get_max_height(),
-                    widget_height
-                );
-            }
-
             // Make embedded widgets 2 pixels taller for transparent hit areas (1px top, 1px bottom)
             let hit_height = widget_height + 2;
 
