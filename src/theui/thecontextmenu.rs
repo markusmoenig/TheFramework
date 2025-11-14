@@ -122,7 +122,7 @@ impl TheContextMenu {
     }
 
     /// Sets the position of the context menu while making it sure it fits on the screen.
-    pub fn set_position(&mut self, position: Vec2<i32>, _ctx: &mut TheContext) {
+    pub fn set_position(&mut self, position: Vec2<i32>, ctx: &mut TheContext) {
         let mut height = 2 * 8; // Borders
         for item in self.items.iter() {
             if item.name.is_empty() {
@@ -131,9 +131,23 @@ impl TheContextMenu {
                 height += self.item_height;
             }
         }
-        self.dim = TheDim::new(position.x, position.y, self.width, height);
-        self.dim.buffer_x = position.x;
-        self.dim.buffer_y = position.y;
+
+        let mut x = position.x;
+        let mut y = position.y;
+
+        // Make sure the menu fits horizontally on screen
+        if x + self.width > ctx.width as i32 {
+            x = ctx.width as i32 - self.width;
+        }
+
+        // Make sure the menu fits vertically on screen
+        if y + height > ctx.height as i32 {
+            y = ctx.height as i32 - height;
+        }
+
+        self.dim = TheDim::new(x, y, self.width, height);
+        self.dim.buffer_x = x;
+        self.dim.buffer_y = y;
     }
 
     pub fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
