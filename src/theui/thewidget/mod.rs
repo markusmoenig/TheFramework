@@ -42,12 +42,14 @@ pub mod thetoollistbar;
 pub mod thetoollistbutton;
 pub mod thetraybar;
 pub mod thetraybarbutton;
+pub mod thetreeicons;
 pub mod thetreeitem;
 pub mod theverticalscrollbar;
 
 use std::any::Any;
 
 pub mod prelude {
+    pub use crate::theui::thewidget::thetreeicons::{TheTreeIcons, TheTreeIconsTrait};
     pub use crate::theui::thewidget::thetreeitem::{TheTreeItem, TheTreeItemTrait};
 
     pub use crate::theui::thewidget::thecolorbutton::TheColorButton;
@@ -382,6 +384,11 @@ pub trait TheWidget: Send {
 
     /// Attempts to cast to TheMenuTrait. Only valid for TheMenu.
     fn as_menu(&mut self) -> Option<&mut dyn TheMenuTrait> {
+        None
+    }
+
+    /// Attempts to cast to TheTreeIconsTrait. Only valid for TheTreeIcons.
+    fn as_tree_icons(&mut self) -> Option<&mut dyn TheTreeIconsTrait> {
         None
     }
 

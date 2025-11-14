@@ -85,8 +85,10 @@ impl TheTreeNode {
             snapper.set_associated_layout(layout_id.clone());
         }
         for widget in &mut self.widgets {
-            if let Some(tree_item) = widget.as_any().downcast_mut::<TheTreeItem>() {
+            if let Some(tree_item) = widget.as_tree_item() {
                 tree_item.set_associated_layout(layout_id.clone());
+            } else if let Some(tree_icons) = widget.as_tree_icons() {
+                tree_icons.set_associated_layout(layout_id.clone());
             }
         }
         for child in &mut self.childs {
@@ -115,8 +117,10 @@ impl TheTreeNode {
 
     pub fn add_widget(&mut self, mut widget: Box<dyn TheWidget>) {
         if let Some(layout_id) = &self.layout_id {
-            if let Some(tree_item) = widget.as_any().downcast_mut::<TheTreeItem>() {
+            if let Some(tree_item) = widget.as_tree_item() {
                 tree_item.set_associated_layout(layout_id.clone());
+            } else if let Some(tree_icons) = widget.as_tree_icons() {
+                tree_icons.set_associated_layout(layout_id.clone());
             }
         }
         self.widgets.push(widget);
@@ -317,6 +321,15 @@ impl TheTreeNode {
             let widget_width = widget.limiter().get_width(available_child_width);
             let widget_height = widget.limiter().get_height(max_height);
 
+            if let Some(_) = widget.as_tree_icons() {
+                println!(
+                    "TheTreeLayout widget: max_height={}, limiter.max={}, widget_height={}",
+                    max_height,
+                    widget.limiter().get_max_height(),
+                    widget_height
+                );
+            }
+
             // Make embedded widgets 2 pixels taller for transparent hit areas (1px top, 1px bottom)
             let hit_height = widget_height + 2;
 
@@ -347,6 +360,24 @@ impl TheTreeNode {
                 y_cursor,
                 ctx,
             );
+        }
+    }
+
+    fn apply_scroll_offset(&mut self, offset: i32) {
+        // Apply scroll offset to embedded widgets
+        for widget in &mut self.widgets {
+            if let Some(tree_item) = widget.as_tree_item() {
+                tree_item.set_scroll_offset(offset);
+            } else if let Some(tree_icons) = widget.as_tree_icons() {
+                tree_icons.set_scroll_offset(offset);
+            }
+        }
+
+        // Recursively apply to child nodes
+        if self.open {
+            for child in &mut self.childs {
+                child.apply_scroll_offset(offset);
+            }
         }
     }
 
@@ -749,6 +780,9 @@ impl TheTreeLayoutTrait for TheTreeLayout {
     fn scroll_by(&mut self, delta: Vec2<i32>) {
         if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
             scroll_bar.scroll_by(-delta.y);
+            // Apply the new scroll offset to all widgets
+            let offset = scroll_bar.scroll_offset();
+            self.root.apply_scroll_offset(offset);
         }
     }
 }
@@ -770,7 +804,7 @@ impl TheTreeLayout {
             self.root.layout(
                 origin,
                 available_width,
-                dim.height,
+                dim.height + 100,
                 0,
                 !self.headerless,
                 &mut y_cursor,
@@ -824,6 +858,11 @@ impl TheTreeLayout {
 
             self.content_buffer
                 .set_dim(TheDim::new(0, 0, available_width, total_height));
+
+            // Apply scroll offset to all widgets
+            if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+                self.root.apply_scroll_offset(scroll_bar.scroll_offset());
+            }
 
             if scrollbar_visible && available_width == dim.width {
                 available_width = (dim.width - scrollbar_width).max(0);

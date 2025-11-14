@@ -103,7 +103,8 @@ impl TheWidget for TheTreeItem {
 
                 if let Some((_width, w)) = &mut self.widget_column {
                     let dim = w.dim();
-                    let widget_coord = Vec2::new(coord.x - dim.x, coord.y - dim.y);
+                    let widget_coord =
+                        Vec2::new(coord.x - dim.x, coord.y - dim.y + self.scroll_offset);
 
                     // Check if the click is within the embedded widget bounds
                     if widget_coord.x >= 0
@@ -118,7 +119,8 @@ impl TheWidget for TheTreeItem {
             TheEvent::MouseUp(coord) => {
                 if let Some((_, w)) = &mut self.widget_column {
                     let dim = w.dim();
-                    let widget_coord = Vec2::new(coord.x - dim.x, coord.y - dim.y);
+                    let widget_coord =
+                        Vec2::new(coord.x - dim.x, coord.y - dim.y + self.scroll_offset);
 
                     // Check if the click is within the embedded widget bounds
                     if widget_coord.x >= 0
@@ -149,7 +151,8 @@ impl TheWidget for TheTreeItem {
             TheEvent::MouseDragged(coord) => {
                 if let Some((_, w)) = &mut self.widget_column {
                     let dim = w.dim();
-                    let widget_coord = Vec2::new(coord.x - dim.x, coord.y - dim.y);
+                    let widget_coord =
+                        Vec2::new(coord.x - dim.x, coord.y - dim.y + self.scroll_offset);
 
                     // Only pass dragged events to the widget if within bounds
                     if widget_coord.x >= 0
