@@ -1,13 +1,19 @@
 use crate::prelude::*;
 
+/// The display and interaction mode for TheRGBAView
 #[derive(PartialEq, Clone, Debug)]
 pub enum TheRGBAViewMode {
+    /// Display-only mode with no interaction
     Display,
+    /// Allow selecting multiple tiles
     TileSelection,
+    /// Edit tiles with click/drag events
     TileEditor,
+    /// Pick a single tile
     TilePicker,
 }
 
+/// A widget for displaying and interacting with RGBA buffers with zoom and grid support
 pub struct TheRGBAView {
     id: TheId,
     limiter: TheSizeLimiter,
@@ -56,6 +62,42 @@ pub struct TheRGBAView {
 
     supports_external_zoom: bool,
     zoom_modifier_down: bool,
+}
+
+impl TheRGBAView {
+    /// Calculate the centered offset for the X axis when the buffer is smaller than the view
+    #[inline]
+    fn centered_offset_x(&self) -> f32 {
+        if (self.zoom * self.buffer.dim().width as f32) < self.dim.width as f32 {
+            (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32) / 2.0
+        } else {
+            0.0
+        }
+    }
+
+    /// Calculate the centered offset for the Y axis when the buffer is smaller than the view
+    #[inline]
+    fn centered_offset_y(&self) -> f32 {
+        if (self.zoom * self.buffer.dim().height as f32) < self.dim.height as f32 {
+            (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32) / 2.0
+        } else {
+            0.0
+        }
+    }
+
+    /// Convert screen coordinates to buffer coordinates (in pixels)
+    #[inline]
+    fn screen_to_buffer(&self, coord: Vec2<i32>) -> (f32, f32) {
+        let centered_offset_x = self.centered_offset_x();
+        let centered_offset_y = self.centered_offset_y();
+
+        let source_x =
+            ((coord.x as f32 - centered_offset_x) + self.scroll_offset.x as f32) / self.zoom;
+        let source_y =
+            ((coord.y as f32 - centered_offset_y) + self.scroll_offset.y as f32) / self.zoom;
+
+        (source_x, source_y)
+    }
 }
 
 impl TheWidget for TheRGBAView {
@@ -307,32 +349,11 @@ impl TheWidget for TheRGBAView {
                 if self.mode == TheRGBAViewMode::TileEditor
                     || self.mode == TheRGBAViewMode::TilePicker
                     || self.mode == TheRGBAViewMode::TileSelection
-                //&& self.hover_color.is_some()
                 {
                     if let Some(grid) = self.grid {
-                        let centered_offset_x = if (self.zoom * self.buffer.dim().width as f32)
-                            < self.dim.width as f32
-                        {
-                            (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32)
-                                / 2.0
-                        } else {
-                            0.0
-                        };
-                        let centered_offset_y = if (self.zoom * self.buffer.dim().height as f32)
-                            < self.dim.height as f32
-                        {
-                            (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32)
-                                / 2.0
-                        } else {
-                            0.0
-                        };
-
-                        let source_x = ((coord.x as f32 - centered_offset_x) / self.zoom
-                            + self.scroll_offset.x as f32 / self.zoom)
-                            .floor() as i32;
-                        let source_y = ((coord.y as f32 - centered_offset_y) / self.zoom
-                            + self.scroll_offset.y as f32 / self.zoom)
-                            .floor() as i32;
+                        let (source_x, source_y) = self.screen_to_buffer(*coord);
+                        let source_x = source_x.floor() as i32;
+                        let source_y = source_y.floor() as i32;
 
                         if source_x >= 0
                             && source_x < self.buffer.dim().width
@@ -502,7 +523,8 @@ impl TheWidget for TheRGBAView {
             return;
         }
 
-        pub fn mix_color(a: &[u8; 4], b: &[u8; 4], v: f32) -> [u8; 4] {
+        /// Mix two colors together with linear interpolation
+        fn mix_color(a: &[u8; 4], b: &[u8; 4], v: f32) -> [u8; 4] {
             [
                 (((1.0 - v) * (a[0] as f32 / 255.0) + b[0] as f32 / 255.0 * v) * 255.0) as u8,
                 (((1.0 - v) * (a[1] as f32 / 255.0) + b[1] as f32 / 255.0 * v) * 255.0) as u8,
@@ -564,35 +586,10 @@ impl TheWidget for TheRGBAView {
                     if let Some(grid) = self.grid {
                         if src_x as i32 % grid == 0 || src_y as i32 % grid == 0 {
                             if self.rectangular_selection {
-                                let centered_offset_x = if (self.zoom
-                                    * self.buffer.dim().width as f32)
-                                    < self.dim.width as f32
-                                {
-                                    (self.dim.width as f32
-                                        - self.zoom * self.buffer.dim().width as f32)
-                                        / 2.0
-                                } else {
-                                    0.0
-                                };
-                                let centered_offset_y = if (self.zoom
-                                    * self.buffer.dim().height as f32)
-                                    < self.dim.height as f32
-                                {
-                                    (self.dim.height as f32
-                                        - self.zoom * self.buffer.dim().height as f32)
-                                        / 2.0
-                                } else {
-                                    0.0
-                                };
-
-                                let source_x = (((target_x as f32 - centered_offset_x)
-                                    + self.scroll_offset.x as f32)
-                                    / self.zoom)
-                                    .round() as i32;
-                                let source_y = (((target_y as f32 - centered_offset_y)
-                                    + self.scroll_offset.y as f32)
-                                    / self.zoom)
-                                    .round() as i32;
+                                let (source_x, source_y) =
+                                    self.screen_to_buffer(Vec2::new(target_x, target_y));
+                                let source_x = source_x.round() as i32;
+                                let source_y = source_y.round() as i32;
 
                                 if source_x >= 0
                                     && source_x < self.buffer.dim().width
@@ -720,33 +717,6 @@ impl TheWidget for TheRGBAView {
             );
         }
 
-        /*
-        // Loop over every pixel in the target buffer
-        for target_y in 0..self.dim.height {
-            for target_x in 0..self.dim.width {
-                // Calculate the corresponding source coordinates
-                let src_x = (target_x as f32 / self.zoom) - self.scroll_offset.x as f32;
-                let src_y = (target_y as f32 / self.zoom) + self.scroll_offset.y as f32;
-
-                // Calculate the index for the destination pixel
-                let target_index = (target_y * target.dim().width + target_x) as usize * 4;
-
-                if src_x >= 0.0 && src_x < src_width && src_y >= 0.0 && src_y < src_height {
-                    // Perform nearest neighbor interpolation for simplicity here
-                    let src_x = src_x as i32;
-                    let src_y = src_y as i32;
-                    let src_index = (src_y * self.buffer.stride() as i32 + src_x) as usize * 4;
-
-                    // Copy the pixel from the source buffer to the target buffer
-                    target.pixels_mut()[target_index..target_index + 4]
-                        .copy_from_slice(&self.buffer.pixels()[src_index..src_index + 4]);
-                } else {
-                    // Set the pixel to black if it's out of the source bounds
-                    target.pixels_mut()[target_index..target_index + 4].fill(0);
-                }
-            }
-        }*/
-
         self.is_dirty = false;
     }
 
@@ -805,31 +775,11 @@ impl TheRGBAViewTrait for TheRGBAView {
     }
     fn get_grid_location(&self, coord: Vec2<i32>) -> Option<(i32, i32)> {
         if let Some(grid) = self.grid {
-            let centered_offset_x =
-                if (self.zoom * self.buffer.dim().width as f32) < self.dim.width as f32 {
-                    (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32) / 2.0
-                } else {
-                    0.0
-                };
-            let centered_offset_y =
-                if (self.zoom * self.buffer.dim().height as f32) < self.dim.height as f32 {
-                    (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32) / 2.0
-                } else {
-                    0.0
-                };
+            let (source_x, source_y) = self.screen_to_buffer(coord);
 
-            // let source_x = ((coord.x as f32 - centered_offset_x) / self.zoom
-            //     + self.scroll_offset.x as f32 / self.zoom)
-            //     .round() as i32;
-            // let source_y = ((coord.y as f32 - centered_offset_y) / self.zoom
-            //     + self.scroll_offset.y as f32 / self.zoom)
-            //     .round() as i32;
-            let source_x = (((coord.x as f32 - centered_offset_x) + self.scroll_offset.x as f32)
-                / self.zoom)
-                .round() as i32;
-            let source_y = (((coord.y as f32 - centered_offset_y) + self.scroll_offset.y as f32)
-                / self.zoom)
-                .round() as i32;
+            // Use floor for consistent grid location regardless of where in the pixel you click
+            let source_x = source_x.floor() as i32;
+            let source_y = source_y.floor() as i32;
 
             if source_x >= 0
                 && source_x < self.buffer.dim().width
@@ -851,23 +801,7 @@ impl TheRGBAViewTrait for TheRGBAView {
 
     fn get_grid_location_f(&self, coord: Vec2<i32>) -> Option<(f32, f32)> {
         if let Some(grid) = self.grid {
-            let centered_offset_x =
-                if (self.zoom * self.buffer.dim().width as f32) < self.dim.width as f32 {
-                    (self.dim.width as f32 - self.zoom * self.buffer.dim().width as f32) / 2.0
-                } else {
-                    0.0
-                };
-            let centered_offset_y =
-                if (self.zoom * self.buffer.dim().height as f32) < self.dim.height as f32 {
-                    (self.dim.height as f32 - self.zoom * self.buffer.dim().height as f32) / 2.0
-                } else {
-                    0.0
-                };
-
-            let source_x =
-                ((coord.x as f32 - centered_offset_x) + self.scroll_offset.x as f32) / self.zoom;
-            let source_y =
-                ((coord.y as f32 - centered_offset_y) + self.scroll_offset.y as f32) / self.zoom;
+            let (source_x, source_y) = self.screen_to_buffer(coord);
 
             if source_x >= 0.0
                 && source_x < self.buffer.dim().width as f32
