@@ -158,8 +158,8 @@ impl TheLayout for TheStackLayout {
 
 /// TheHLayout specific functions.
 pub trait TheStackLayoutTrait: TheLayout {
-    /// Add a canvas to the stack.
-    fn add_canvas(&mut self, canvas: TheCanvas);
+    /// Add a canvas to the stack and returns the index.
+    fn add_canvas(&mut self, canvas: TheCanvas) -> usize;
 
     /// Returns the index of the current layout.
     fn index(&self) -> usize;
@@ -172,8 +172,10 @@ pub trait TheStackLayoutTrait: TheLayout {
 }
 
 impl TheStackLayoutTrait for TheStackLayout {
-    fn add_canvas(&mut self, canvas: TheCanvas) {
+    fn add_canvas(&mut self, canvas: TheCanvas) -> usize {
+        let index = self.canvas.len();
         self.canvas.push(canvas);
+        index
     }
 
     fn index(&self) -> usize {
