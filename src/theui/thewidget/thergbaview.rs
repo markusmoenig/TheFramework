@@ -62,6 +62,9 @@ pub struct TheRGBAView {
 
     supports_external_zoom: bool,
     zoom_modifier_down: bool,
+
+    show_transparency: bool,
+    transparency_color: RGBA,
 }
 
 impl TheRGBAView {
@@ -97,6 +100,20 @@ impl TheRGBAView {
             ((coord.y as f32 - centered_offset_y) + self.scroll_offset.y as f32) / self.zoom;
 
         (source_x, source_y)
+    }
+
+    /// Blend a source color with alpha over a background color
+    #[inline]
+    fn blend_alpha(src: &[u8; 4], bg: &RGBA) -> [u8; 4] {
+        let alpha = src[3] as f32 / 255.0;
+        let inv_alpha = 1.0 - alpha;
+
+        [
+            ((src[0] as f32 * alpha) + (bg[0] as f32 * inv_alpha)) as u8,
+            ((src[1] as f32 * alpha) + (bg[1] as f32 * inv_alpha)) as u8,
+            ((src[2] as f32 * alpha) + (bg[2] as f32 * inv_alpha)) as u8,
+            255,
+        ]
     }
 }
 
@@ -155,6 +172,9 @@ impl TheWidget for TheRGBAView {
 
             supports_external_zoom: false,
             zoom_modifier_down: false,
+
+            show_transparency: false,
+            transparency_color: [255, 0, 255, 255], // Magenta - a cool default that stands out
         }
     }
 
@@ -582,6 +602,7 @@ impl TheWidget for TheRGBAView {
                     + self.dim.buffer_x) as usize
                     * 4;
 
+                // TileSelection mode - use original grid drawing logic
                 if !self.dont_show_grid && self.mode == TheRGBAViewMode::TileSelection {
                     if let Some(grid) = self.grid {
                         if src_x as i32 % grid == 0 || src_y as i32 % grid == 0 {
@@ -614,6 +635,53 @@ impl TheWidget for TheRGBAView {
                     let src_x = src_x as i32;
                     let src_y = src_y as i32;
                     let src_index = (src_y * self.buffer.stride() as i32 + src_x) as usize * 4;
+
+                    // TileEditor mode - check if we should draw grid line instead of image
+                    let mut draw_grid_line = false;
+                    if !self.dont_show_grid && self.mode == TheRGBAViewMode::TileEditor {
+                        if let Some(grid) = self.grid {
+                            // Calculate which screen pixel within the zoomed grid cell we're drawing
+                            // This ensures grid lines are always 1 screen pixel wide regardless of zoom
+                            let grid_size_pixels = grid as f32 * self.zoom;
+
+                            // Find position within the current grid cell (in screen pixels)
+                            let pos_x = (target_x as f32 - offset_x) % grid_size_pixels;
+                            let pos_y = (target_y as f32 - offset_y) % grid_size_pixels;
+
+                            // Draw 1-pixel grid line at the start of each cell
+                            // Handle negative modulo for offsets
+                            let pos_x = if pos_x < 0.0 {
+                                pos_x + grid_size_pixels
+                            } else {
+                                pos_x
+                            };
+                            let pos_y = if pos_y < 0.0 {
+                                pos_y + grid_size_pixels
+                            } else {
+                                pos_y
+                            };
+
+                            // Draw grid lines at cell boundaries (left/top edges)
+                            let at_grid_edge = pos_x < 1.0 || pos_y < 1.0;
+
+                            // Also draw right and bottom borders at image bounds (in screen space)
+                            // Check if the NEXT screen pixel would be outside the image
+                            let next_src_x = (target_x as f32 + 1.0 - offset_x) / self.zoom;
+                            let next_src_y = (target_y as f32 + 1.0 - offset_y) / self.zoom;
+                            let at_right_edge =
+                                (src_x as f32) < src_width && next_src_x >= src_width;
+                            let at_bottom_edge =
+                                (src_y as f32) < src_height && next_src_y >= src_height;
+
+                            draw_grid_line = at_grid_edge || at_right_edge || at_bottom_edge;
+                        }
+                    }
+
+                    if draw_grid_line {
+                        target.pixels_mut()[target_index..target_index + 4]
+                            .copy_from_slice(&self.grid_color);
+                        continue;
+                    }
 
                     let mut copy = true;
                     if let Some(grid) = self.grid {
@@ -695,8 +763,20 @@ impl TheWidget for TheRGBAView {
 
                     // Copy the pixel from the source buffer to the target buffer
                     if copy {
-                        target.pixels_mut()[target_index..target_index + 4]
-                            .copy_from_slice(&self.buffer.pixels()[src_index..src_index + 4]);
+                        let src_pixel = &self.buffer.pixels()[src_index..src_index + 4];
+
+                        // If transparency is enabled and the pixel has alpha < 255, blend with solid color
+                        if self.show_transparency && src_pixel[3] < 255 {
+                            let blended = Self::blend_alpha(
+                                &[src_pixel[0], src_pixel[1], src_pixel[2], src_pixel[3]],
+                                &self.transparency_color,
+                            );
+                            target.pixels_mut()[target_index..target_index + 4]
+                                .copy_from_slice(&blended);
+                        } else {
+                            target.pixels_mut()[target_index..target_index + 4]
+                                .copy_from_slice(src_pixel);
+                        }
                     }
                 } else {
                     // Set the pixel to black if it's out of the source bounds
@@ -767,6 +847,10 @@ pub trait TheRGBAViewTrait: TheWidget {
     fn set_rectangular_selection(&mut self, rectangular_selection: bool);
 
     fn set_supports_external_zoom(&mut self, zoom: bool);
+
+    fn set_show_transparency(&mut self, show: bool);
+    fn show_transparency(&self) -> bool;
+    fn set_transparency_color(&mut self, color: RGBA);
 }
 
 impl TheRGBAViewTrait for TheRGBAView {
@@ -958,5 +1042,23 @@ impl TheRGBAViewTrait for TheRGBAView {
 
     fn set_supports_external_zoom(&mut self, zoom: bool) {
         self.supports_external_zoom = zoom;
+    }
+
+    fn set_show_transparency(&mut self, show: bool) {
+        if self.show_transparency != show {
+            self.show_transparency = show;
+            self.is_dirty = true;
+        }
+    }
+
+    fn show_transparency(&self) -> bool {
+        self.show_transparency
+    }
+
+    fn set_transparency_color(&mut self, color: RGBA) {
+        self.transparency_color = color;
+        if self.show_transparency {
+            self.is_dirty = true;
+        }
     }
 }
