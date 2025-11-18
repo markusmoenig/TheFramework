@@ -352,14 +352,23 @@ impl TheWidget for TheTreeIcons {
 
                 // Draw icon content
                 if let Some(icon) = icon_opt {
-                    let content_rect = (
-                        icon_rect.0 + 2,
-                        icon_rect.1 + 2,
-                        icon_rect.2.saturating_sub(4),
-                        icon_rect.3.saturating_sub(4),
-                    );
-                    ctx.draw
-                        .copy_slice(buffer.pixels_mut(), icon.pixels(), &content_rect, stride);
+                    // Only draw if the icon matches the expected size
+                    if icon.dim().width == self.icon_size - 4
+                        && icon.dim().height == self.icon_size - 4
+                    {
+                        let content_rect = (
+                            icon_rect.0 + 2,
+                            icon_rect.1 + 2,
+                            (self.icon_size - 4) as usize,
+                            (self.icon_size - 4) as usize,
+                        );
+                        ctx.draw.copy_slice(
+                            buffer.pixels_mut(),
+                            icon.pixels(),
+                            &content_rect,
+                            stride,
+                        );
+                    }
                 }
             }
 
@@ -455,7 +464,17 @@ impl TheTreeIconsTrait for TheTreeIcons {
 
     fn set_icon(&mut self, index: usize, icon: TheRGBABuffer) {
         if index < self.icons.len() {
-            self.icons[index] = Some(icon);
+            let expected_size = self.icon_size - 4;
+
+            // Automatically resize icon if it doesn't match the expected size
+            let final_icon =
+                if icon.dim().width != expected_size || icon.dim().height != expected_size {
+                    icon.scaled(expected_size, expected_size)
+                } else {
+                    icon
+                };
+
+            self.icons[index] = Some(final_icon);
             self.is_dirty = true;
         }
     }
