@@ -1543,6 +1543,7 @@ pub trait TheTextAreaEditTrait: TheWidget {
     fn as_code_editor(&mut self, code_type: &str, settings: TheCodeEditorSettings);
     fn set_code_type(&mut self, code_type: &str);
     fn add_syntax_from_string(&mut self, syntax: &str);
+    fn add_theme_from_string(&mut self, theme: &str);
     fn set_code_theme(&mut self, code_theme: &str);
     fn set_tab_spaces(&mut self, tab_spaces: usize);
     fn auto_scroll_to_cursor(&mut self, auto_scroll_to_cursor: bool);
@@ -1592,6 +1593,11 @@ impl TheTextAreaEditTrait for TheTextAreaEdit {
     }
     fn add_syntax_from_string(&mut self, code_type: &str) {
         self.renderer.add_syntax_from_string(code_type);
+        self.modified_since_last_tick = true;
+        self.is_dirty = true;
+    }
+    fn add_theme_from_string(&mut self, theme: &str) {
+        self.renderer.add_theme_from_string(theme);
         self.modified_since_last_tick = true;
         self.is_dirty = true;
     }

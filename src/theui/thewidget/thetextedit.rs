@@ -1510,6 +1510,16 @@ impl TheTextRenderer {
         }
     }
 
+    pub fn add_theme_from_string(&mut self, theme: &str) {
+        if let Some(highlighter) = self.highlighter.as_mut() {
+            _ = highlighter.add_theme_from_string(theme);
+        } else {
+            let mut highlighter = TheCodeHighlighter::default();
+            _ = highlighter.add_theme_from_string(theme);
+            self.highlighter = Some(Box::new(highlighter));
+        }
+    }
+
     pub fn set_code_theme(&mut self, code_theme: &str) {
         if let Some(highlighter) = self.highlighter.as_mut() {
             highlighter.set_theme(code_theme);

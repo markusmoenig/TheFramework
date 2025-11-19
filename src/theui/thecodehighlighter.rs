@@ -15,7 +15,8 @@ lazy_static! {
 pub struct TheCodeHighlighter {
     syntax_set: SyntaxSet,
     syntax: Arc<SyntaxReference>,
-    theme: &'static Theme,
+    theme: Theme,
+    using_custom_theme: bool,
 }
 
 impl Default for TheCodeHighlighter {
@@ -23,8 +24,9 @@ impl Default for TheCodeHighlighter {
         let syntax_set = SyntaxSet::load_defaults_nonewlines();
         Self {
             syntax: Arc::new(syntax_set.find_syntax_plain_text().clone()),
-            theme: &THEME_SET.themes["Solarized (light)"],
+            theme: THEME_SET.themes["Solarized (light)"].clone(),
             syntax_set,
+            using_custom_theme: false,
         }
     }
 }
@@ -38,6 +40,7 @@ pub trait TheCodeHighlighterTrait: Send {
     fn set_syntax_by_name(&mut self, name: &str);
     fn set_theme(&mut self, theme: &str);
     fn add_syntax_from_string(&mut self, syntax_str: &str) -> Result<(), String>;
+    fn add_theme_from_string(&mut self, theme_str: &str) -> Result<(), String>;
 
     fn background(&self) -> Option<TheColor>;
     fn caret(&self) -> Option<TheColor>;
@@ -65,7 +68,7 @@ impl TheCodeHighlighterTrait for TheCodeHighlighter {
     }
 
     fn syntect_theme(&self) -> &Theme {
-        self.theme
+        &self.theme
     }
 
     fn set_syntax_by_name(&mut self, name: &str) {
@@ -76,7 +79,8 @@ impl TheCodeHighlighterTrait for TheCodeHighlighter {
 
     fn set_theme(&mut self, theme: &str) {
         if let Some(theme) = THEME_SET.themes.get(theme) {
-            self.theme = theme;
+            self.theme = theme.clone();
+            self.using_custom_theme = false;
         }
     }
 
@@ -91,6 +95,20 @@ impl TheCodeHighlighterTrait for TheCodeHighlighter {
                 Ok(())
             }
             Err(e) => Err(format!("Failed to load syntax: {}", e)),
+        }
+    }
+
+    fn add_theme_from_string(&mut self, theme_str: &str) -> Result<(), String> {
+        use std::io::Cursor;
+
+        // Parse the theme from the provided string (expects .tmTheme XML format)
+        match ThemeSet::load_from_reader(&mut Cursor::new(theme_str)) {
+            Ok(theme) => {
+                self.theme = theme;
+                self.using_custom_theme = true;
+                Ok(())
+            }
+            Err(e) => Err(format!("Failed to load theme: {}", e)),
         }
     }
 
