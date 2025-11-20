@@ -158,6 +158,17 @@ impl TheWinitContext {
         let scale_factor = window.scale_factor() as f32;
 
         let size = window.inner_size();
+
+        println!("=== from_window DEBUG ===");
+        println!(
+            "Window scale_factor (from winit): {}",
+            window.scale_factor()
+        );
+        println!("Using scale_factor: {}", scale_factor);
+        println!("Physical size (inner_size): {}x{}", size.width, size.height);
+        println!("Context size: {}x{}", size.width, size.height);
+        println!("ui_frame size: {} bytes", size.width * size.height * 4);
+
         let ctx = TheContext::new(size.width as usize, size.height as usize, scale_factor);
 
         let ui_frame = vec![0; (size.width * size.height * 4) as usize];
@@ -165,12 +176,25 @@ impl TheWinitContext {
         let context = softbuffer::Context::new(window.clone()).unwrap();
         let mut surface = softbuffer::Surface::new(&context, window.clone()).unwrap();
 
+        // On Windows/Linux, don't scale the surface (use 1.0)
+        // On macOS, scale by scale_factor
+        #[cfg(target_os = "macos")]
+        let surface_scale = scale_factor;
+        #[cfg(not(target_os = "macos"))]
+        let surface_scale = 1.0;
+
+        let surface_width = size.width * surface_scale as u32;
+        let surface_height = size.height * surface_scale as u32;
+        println!("Surface scale: {}", surface_scale);
+        println!("Surface size: {}x{}", surface_width, surface_height);
+
         if let (Some(width), Some(height)) = (
-            NonZeroU32::new(size.width * scale_factor as u32),
-            NonZeroU32::new(size.height * scale_factor as u32),
+            NonZeroU32::new(surface_width),
+            NonZeroU32::new(surface_height),
         ) {
             surface.resize(width, height).unwrap();
         }
+        println!("========================\n");
 
         TheWinitContext {
             window,
@@ -292,10 +316,17 @@ impl TheWinitApp {
         // but do not use the UI API
         self.app.draw(&mut ctx.ui_frame, &mut ctx.ctx);
 
+        // On Windows/Linux, always use scale_factor = 1 for blitting to avoid crashes
+        // On macOS, use the actual scale_factor for Retina displays
+        #[cfg(target_os = "macos")]
+        let blit_scale_factor = ctx.ctx.scale_factor as usize;
+        #[cfg(not(target_os = "macos"))]
+        let blit_scale_factor = 1;
+
         let mut buffer = ctx.surface.buffer_mut().unwrap();
         blit_rgba_into_softbuffer(
             &ctx.ui_frame,
-            ctx.ctx.scale_factor as usize,
+            blit_scale_factor,
             ctx.ctx.width,
             ctx.ctx.height,
             &mut *buffer,
@@ -312,6 +343,9 @@ impl TheWinitApp {
         };
 
         if size.width != 0 && size.height != 0 {
+            println!("=== resize DEBUG ===");
+            println!("New physical size: {}x{}", size.width, size.height);
+
             ctx.surface
                 .resize(
                     NonZeroU32::new(size.width).unwrap(),
@@ -324,10 +358,16 @@ impl TheWinitApp {
 
             let width = (size.width as f32 / scale_factor) as usize;
             let height = (size.height as f32 / scale_factor) as usize;
+
+            println!("Window scale_factor: {}", scale_factor);
+            println!("New logical size: {}x{}", width, height);
+            println!("New ui_frame size: {} bytes", width * height * 4);
+
             ctx.ctx.width = width;
             ctx.ctx.height = height;
 
             ctx.ui_frame.resize(width * height * 4, 0);
+            println!("===================\n");
 
             #[cfg(feature = "ui")]
             self.ui
