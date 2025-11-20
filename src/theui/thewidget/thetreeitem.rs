@@ -12,6 +12,8 @@ pub struct TheTreeItem {
     dim: TheDim,
     is_dirty: bool,
 
+    mouse_down_pos: Vec2<i32>,
+
     icon: Option<TheRGBABuffer>,
     status: Option<String>,
 
@@ -46,6 +48,7 @@ impl TheWidget for TheTreeItem {
 
             dim: TheDim::zero(),
             is_dirty: true,
+            mouse_down_pos: Vec2::zero(),
 
             icon: None,
             status: None,
@@ -115,6 +118,8 @@ impl TheWidget for TheTreeItem {
                         redraw = w.on_event(&TheEvent::MouseDown(widget_coord), ctx);
                     }
                 }
+
+                self.mouse_down_pos = Vec2::new(coord.x, coord.y + self.scroll_offset);
             }
             TheEvent::MouseUp(coord) => {
                 if let Some((_, w)) = &mut self.widget_column {
@@ -149,21 +154,20 @@ impl TheWidget for TheTreeItem {
                 }
             }
             TheEvent::MouseDragged(coord) => {
-                if let Some((_, w)) = &mut self.widget_column {
-                    let dim = w.dim();
-                    let widget_coord =
-                        Vec2::new(coord.x - dim.x, coord.y - dim.y + self.scroll_offset);
-
-                    // Only pass dragged events to the widget if within bounds
-                    if widget_coord.x >= 0
-                        && widget_coord.y >= 0
-                        && widget_coord.x < dim.width
-                        && widget_coord.y < dim.height
-                    {
-                        w.on_event(&TheEvent::MouseDragged(widget_coord), ctx);
-                        self.is_dirty = true;
-                        redraw = true;
+                let coord = Vec2::new(coord.x, coord.y + self.scroll_offset);
+                if ctx.ui.drop.is_none()
+                    && Vec2::new(self.mouse_down_pos.x as f32, self.mouse_down_pos.y as f32)
+                        .distance(Vec2::new(coord.x as f32, coord.y as f32))
+                        >= 5.0
+                {
+                    let mut text = self.text.clone();
+                    if let Some((_, w)) = &mut self.widget_column {
+                        if let TheValue::Text(t) = w.value() {
+                            text = t.clone();
+                        }
                     }
+                    ctx.ui
+                        .send(TheEvent::DragStarted(self.id().clone(), text, coord));
                 }
             }
             TheEvent::Hover(coord) => {
