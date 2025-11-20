@@ -87,6 +87,7 @@ pub struct TheTextAreaEdit {
     continuous: bool,
 
     undo_stack: TheUndoStack,
+    supports_undo: bool,
 }
 
 impl TheWidget for TheTextAreaEdit {
@@ -151,6 +152,7 @@ impl TheWidget for TheTextAreaEdit {
             undo_stack: TheUndoStack::default(),
 
             cursor_icon: Some(TheCursorIcon::Text),
+            supports_undo: true,
         }
     }
 
@@ -222,7 +224,7 @@ impl TheWidget for TheTextAreaEdit {
     }
 
     fn supports_undo_redo(&mut self) -> bool {
-        true
+        self.supports_undo
     }
 
     #[allow(clippy::single_match)]
@@ -1558,6 +1560,9 @@ pub trait TheTextAreaEditTrait: TheWidget {
     fn clear_errors(&mut self);
     fn goto_char_by_index(&mut self, char_index: usize);
     fn goto_line(&mut self, line_number: usize);
+    fn set_supports_undo(&mut self, supports_undo: bool);
+    fn get_state(&self) -> TheTextEditState;
+    fn set_state(&mut self, state: TheTextEditState);
 }
 
 impl TheTextAreaEditTrait for TheTextAreaEdit {
@@ -1669,6 +1674,17 @@ impl TheTextAreaEditTrait for TheTextAreaEdit {
             self.modified_since_last_tick = true;
             self.is_dirty = true;
         }
+    }
+    fn set_supports_undo(&mut self, supports_undo: bool) {
+        self.supports_undo = supports_undo;
+    }
+    fn get_state(&self) -> TheTextEditState {
+        self.state.clone()
+    }
+    fn set_state(&mut self, state: TheTextEditState) {
+        self.state = state;
+        self.modified_since_last_tick = true;
+        self.is_dirty = true;
     }
 }
 
