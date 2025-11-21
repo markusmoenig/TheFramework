@@ -51,6 +51,15 @@ impl TheId {
         }
     }
 
+    /// Creates an Id based on a given name, id and reference uuid.
+    pub fn named_with_id_and_reference(name: &str, uuid: Uuid, references: Uuid) -> Self {
+        Self {
+            name: name.to_string(),
+            uuid,
+            references,
+        }
+    }
+
     /// Creates an empty id (an id wth an empty name).
     pub fn empty() -> Self {
         Self {
