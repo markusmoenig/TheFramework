@@ -262,7 +262,6 @@ impl TheWidget for TheRGBAView {
                         self.layout_id.clone(),
                     ));
                     ctx.ui.set_focus(self.id());
-                    redraw = true;
                 }
 
                 if self.mode != TheRGBAViewMode::Display {
@@ -319,8 +318,10 @@ impl TheWidget for TheRGBAView {
                             }
                         }
                     }
-                    redraw = true;
                 }
+
+                self.is_dirty = true;
+                redraw = true;
             }
             TheEvent::MouseUp(_id) => {
                 self.drop = None;
