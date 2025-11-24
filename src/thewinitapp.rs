@@ -159,6 +159,19 @@ impl TheWinitContext {
 
         let size = window.inner_size();
 
+        // WASM-specific fix: On WASM with Retina displays, inner_size() returns physical size
+        // We need to divide by scale factor to get logical size
+        #[cfg(target_arch = "wasm32")]
+        let (width, height) = {
+            let wasm_scale = window.scale_factor() as f32;
+            (
+                (size.width as f32 / wasm_scale) as usize,
+                (size.height as f32 / wasm_scale) as usize,
+            )
+        };
+        #[cfg(not(target_arch = "wasm32"))]
+        let (width, height) = (size.width as usize, size.height as usize);
+
         println!("=== from_window DEBUG ===");
         println!(
             "Window scale_factor (from winit): {}",
@@ -166,26 +179,33 @@ impl TheWinitContext {
         );
         println!("Using scale_factor: {}", scale_factor);
         println!("Physical size (inner_size): {}x{}", size.width, size.height);
-        println!("Context size: {}x{}", size.width, size.height);
-        println!("ui_frame size: {} bytes", size.width * size.height * 4);
+        println!("Context size: {}x{}", width, height);
+        println!("ui_frame size: {} bytes", width * height * 4);
 
-        let ctx = TheContext::new(size.width as usize, size.height as usize, scale_factor);
+        let ctx = TheContext::new(width, height, scale_factor);
 
-        let ui_frame = vec![0; (size.width * size.height * 4) as usize];
+        let ui_frame = vec![0; (width * height * 4) as usize];
 
         let context = softbuffer::Context::new(window.clone()).unwrap();
         let mut surface = softbuffer::Surface::new(&context, window.clone()).unwrap();
 
         // On Windows/Linux, don't scale the surface (use 1.0)
         // On macOS, scale by scale_factor
-        #[cfg(target_os = "macos")]
-        let surface_scale = scale_factor;
-        #[cfg(not(target_os = "macos"))]
-        let surface_scale = 1.0;
+        // On WASM, use logical size directly
+        #[cfg(target_arch = "wasm32")]
+        let (surface_width, surface_height) = (width as u32, height as u32);
+        #[cfg(not(target_arch = "wasm32"))]
+        let (surface_width, surface_height) = {
+            #[cfg(target_os = "macos")]
+            let surface_scale = scale_factor;
+            #[cfg(not(target_os = "macos"))]
+            let surface_scale = 1.0;
 
-        let surface_width = size.width * surface_scale as u32;
-        let surface_height = size.height * surface_scale as u32;
-        println!("Surface scale: {}", surface_scale);
+            (
+                size.width * surface_scale as u32,
+                size.height * surface_scale as u32,
+            )
+        };
         println!("Surface size: {}x{}", surface_width, surface_height);
 
         if let (Some(width), Some(height)) = (
@@ -346,18 +366,29 @@ impl TheWinitApp {
             println!("=== resize DEBUG ===");
             println!("New physical size: {}x{}", size.width, size.height);
 
+            let scale_factor = ctx.window.scale_factor() as f32;
+            ctx.ctx.scale_factor = scale_factor;
+
+            let width = (size.width as f32 / scale_factor) as usize;
+            let height = (size.height as f32 / scale_factor) as usize;
+
+            // WASM-specific: surface should use logical size
+            #[cfg(target_arch = "wasm32")]
+            ctx.surface
+                .resize(
+                    NonZeroU32::new(width as u32).unwrap(),
+                    NonZeroU32::new(height as u32).unwrap(),
+                )
+                .unwrap();
+
+            // Desktop: surface uses physical size
+            #[cfg(not(target_arch = "wasm32"))]
             ctx.surface
                 .resize(
                     NonZeroU32::new(size.width).unwrap(),
                     NonZeroU32::new(size.height).unwrap(),
                 )
                 .unwrap();
-
-            let scale_factor = ctx.window.scale_factor() as f32;
-            ctx.ctx.scale_factor = scale_factor;
-
-            let width = (size.width as f32 / scale_factor) as usize;
-            let height = (size.height as f32 / scale_factor) as usize;
 
             println!("Window scale_factor: {}", scale_factor);
             println!("New logical size: {}x{}", width, height);
