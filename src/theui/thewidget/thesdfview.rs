@@ -184,11 +184,15 @@ impl TheWidget for TheSDFView {
 
     fn calculate_size(&mut self, ctx: &mut TheContext) {
         if !self.text.is_empty() {
-            if let Some(font) = &ctx.ui.font {
-                let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
-                self.limiter_mut()
-                    .set_max_width((size.0 as f32).ceil() as i32 + 15);
-            }
+            let size = ctx.draw.get_text_size(
+                &self.text,
+                &TheFontSettings {
+                    size: self.text_size,
+                    ..Default::default()
+                },
+            );
+            self.limiter_mut()
+                .set_max_width((size.0 as f32).ceil() as i32 + 15);
         }
     }
 

@@ -99,19 +99,19 @@ impl TheWidget for TheToolListBar {
             }
         }
 
-        if let Some(font) = &ctx.ui.font {
-            ctx.draw.text_rect_blend(
-                buffer.pixels_mut(),
-                &utuple,
-                stride,
-                font,
-                11.5,
-                &self.text,
-                &WHITE,
-                TheHorizontalAlign::Center,
-                TheVerticalAlign::Center,
-            );
-        }
+        ctx.draw.text_rect_blend(
+            buffer.pixels_mut(),
+            &utuple,
+            stride,
+            &self.text,
+            TheFontSettings {
+                size: 11.5,
+                ..Default::default()
+            },
+            &WHITE,
+            TheHorizontalAlign::Center,
+            TheVerticalAlign::Center,
+        );
 
         self.is_dirty = false;
     }

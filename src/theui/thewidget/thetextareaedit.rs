@@ -1207,7 +1207,7 @@ impl TheWidget for TheTextAreaEdit {
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
-        if !self.dim.is_valid() || ctx.ui.code_font.is_none() {
+        if !self.dim.is_valid() {
             return;
         }
 
@@ -1226,11 +1226,8 @@ impl TheWidget for TheTextAreaEdit {
         );
 
         if self.modified_since_last_tick || self.renderer.row_count() == 0 {
-            self.renderer.prepare(
-                &self.state.to_text(),
-                ctx.ui.code_font.as_ref().unwrap(),
-                &ctx.draw,
-            );
+            self.renderer
+                .prepare(&self.state.to_text(), TheFontPreference::Code, &ctx.draw);
 
             shrinker.shrink_by(
                 -(self.renderer.padding.0 as i32),
@@ -1268,9 +1265,11 @@ impl TheWidget for TheTextAreaEdit {
                     .draw
                     // We assume '9' is one of the widest chars within 0-9
                     .get_text_size(
-                        ctx.ui.code_font.as_ref().unwrap(),
-                        font_size,
                         &"9".repeat(digit_count),
+                        &TheFontSettings {
+                            size: font_size,
+                            preference: TheFontPreference::Code,
+                        },
                     )
                     .0;
                 let line_number_area_width = line_number_width + font_size.round() as usize;
@@ -1366,7 +1365,7 @@ impl TheWidget for TheTextAreaEdit {
             self.readonly,
             buffer,
             style,
-            ctx.ui.code_font.as_ref().unwrap(),
+            TheFontPreference::Code,
             &ctx.draw,
         );
 
@@ -1396,9 +1395,13 @@ impl TheWidget for TheTextAreaEdit {
 
             let font_size = self.renderer.font_size * 0.8;
             let text = self.statusbar_text();
-            let text_size =
-                ctx.draw
-                    .get_text_size(ctx.ui.code_font.as_ref().unwrap(), font_size, &text);
+            let text_size = ctx.draw.get_text_size(
+                &text,
+                &TheFontSettings {
+                    size: font_size,
+                    preference: TheFontPreference::Code,
+                },
+            );
             let right = dim.x + dim.width - font_size.ceil() as i32;
             let top = dim.y + (dim.height as f32 * 0.5).round() as i32
                 - (text_size.1 as f32 * 0.5).round() as i32;
@@ -1407,9 +1410,11 @@ impl TheWidget for TheTextAreaEdit {
                 &Vec2::new(right - text_size.0 as i32, top - 1),
                 &dim.to_buffer_utuple(),
                 stride,
-                ctx.ui.code_font.as_ref().unwrap(),
-                font_size,
                 &text,
+                TheFontSettings {
+                    size: font_size,
+                    preference: TheFontPreference::Code,
+                },
                 style.theme().color_disabled_t(TextEditTextColor),
                 TheHorizontalAlign::Center,
                 TheVerticalAlign::Center,
@@ -1451,9 +1456,11 @@ impl TheWidget for TheTextAreaEdit {
                     .map(|i| format!("{}", i + 1))
                     .collect::<Vec<String>>();
                 let layout = ctx.draw.get_text_layout(
-                    ctx.ui.code_font.as_ref().unwrap(),
-                    font_size,
                     &text.join("\n"),
+                    &TheFontSettings {
+                        size: font_size,
+                        preference: TheFontPreference::Code,
+                    },
                     LayoutSettings {
                         horizontal_align: HorizontalAlign::Right,
                         max_width: Some(dim.width as f32 - font_size),
@@ -1483,9 +1490,11 @@ impl TheWidget for TheTextAreaEdit {
                         ),
                         &rect,
                         stride,
-                        ctx.ui.code_font.as_ref().unwrap(),
-                        font_size,
                         &text[i - start_row],
+                        TheFontSettings {
+                            size: font_size,
+                            preference: TheFontPreference::Code,
+                        },
                         color,
                         TheHorizontalAlign::Center,
                         TheVerticalAlign::Center,

@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use fontdue::{layout::LayoutSettings, Font};
+use fontdue::layout::LayoutSettings;
 use num_traits::ToPrimitive;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -1173,7 +1173,7 @@ impl TheTextRenderer {
         self.actual_size.y > self.height
     }
 
-    pub fn prepare(&mut self, text: &str, font: &Font, draw: &TheDraw2D) {
+    pub fn prepare(&mut self, text: &str, font_preference: TheFontPreference, draw: &TheDraw2D) {
         self.actual_size = Vec2::zero();
         self.glyphs.clear();
         self.row_info.clear();
@@ -1185,9 +1185,11 @@ impl TheTextRenderer {
         }
 
         let layout = draw.get_text_layout(
-            font,
-            self.font_size,
             &text,
+            &TheFontSettings {
+                size: self.font_size,
+                preference: font_preference.clone(),
+            },
             LayoutSettings {
                 max_width: self.max_width,
                 ..Default::default()
@@ -1208,8 +1210,14 @@ impl TheTextRenderer {
         // Hack: to get the width of a normal space,
         // for that fontdue will render the tailing space with zero width
         let space_width = {
-            let layout =
-                draw.get_text_layout(font, self.font_size, "  ", LayoutSettings::default());
+            let layout = draw.get_text_layout(
+                "  ",
+                &TheFontSettings {
+                    size: self.font_size,
+                    preference: font_preference,
+                },
+                LayoutSettings::default(),
+            );
             layout.glyphs().last().unwrap().x
                 - layout.glyphs().first().unwrap().x
                 - layout.glyphs().first().unwrap().width.to_f32().unwrap()
@@ -1324,10 +1332,19 @@ impl TheTextRenderer {
         readonly: bool,
         buffer: &mut TheRGBABuffer,
         style: &mut Box<dyn TheStyle>,
-        font: &Font,
+        font_preference: TheFontPreference,
         draw: &TheDraw2D,
     ) {
-        self.render_text_with_styles(state, focused, readonly, buffer, style, font, &[], draw);
+        self.render_text_with_styles(
+            state,
+            focused,
+            readonly,
+            buffer,
+            style,
+            font_preference,
+            &[],
+            draw,
+        );
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -1338,13 +1355,21 @@ impl TheTextRenderer {
         readonly: bool,
         buffer: &mut TheRGBABuffer,
         style: &mut Box<dyn TheStyle>,
-        font: &Font,
+        font_preference: TheFontPreference,
         styles: &[(Range<usize>, TheTextStyle)],
         draw: &TheDraw2D,
     ) {
         if let Some((start_row, end_row)) = self.visible_rows() {
             for i in start_row..=end_row {
-                self.render_row(state, i, buffer, style, font, styles, draw);
+                self.render_row(
+                    state,
+                    i,
+                    buffer,
+                    style,
+                    font_preference.clone(),
+                    styles,
+                    draw,
+                );
             }
 
             if focused && !readonly {
@@ -1786,7 +1811,7 @@ impl TheTextRenderer {
         row_number: usize,
         buffer: &mut TheRGBABuffer,
         style: &mut Box<dyn TheStyle>,
-        font: &Font,
+        font_preference: TheFontPreference,
         styles: &[(Range<usize>, TheTextStyle)],
         draw: &TheDraw2D,
     ) {
@@ -1954,9 +1979,11 @@ impl TheTextRenderer {
                                     &Vec2::new(left, top - 1),
                                     &(self.left, self.top, self.width, self.height),
                                     stride,
-                                    font,
-                                    self.font_size,
                                     &text_to_rendered,
+                                    TheFontSettings {
+                                        size: self.font_size,
+                                        preference: font_preference.clone(),
+                                    },
                                     &fg_color,
                                     TheHorizontalAlign::Center,
                                     TheVerticalAlign::Center,
@@ -2000,9 +2027,11 @@ impl TheTextRenderer {
                             &Vec2::new(left, top - 1),
                             &(self.left, self.top, self.width, self.height),
                             stride,
-                            font,
-                            self.font_size,
                             &text_to_rendered,
+                            TheFontSettings {
+                                size: self.font_size,
+                                preference: font_preference.clone(),
+                            },
                             &fg_color,
                             TheHorizontalAlign::Center,
                             TheVerticalAlign::Center,
@@ -2016,9 +2045,11 @@ impl TheTextRenderer {
                         &Vec2::new(left, top - 1),
                         &(self.left, self.top, self.width, self.height),
                         stride,
-                        font,
-                        self.font_size,
                         &text[token_start_in_row..token_end_in_row],
+                        TheFontSettings {
+                            size: self.font_size,
+                            preference: font_preference.clone(),
+                        },
                         &fg_color.to_u8_array(),
                         TheHorizontalAlign::Center,
                         TheVerticalAlign::Center,
@@ -2079,9 +2110,11 @@ impl TheTextRenderer {
                         &Vec2::new(left, top - 1),
                         &(self.left, self.top, self.width, self.height),
                         stride,
-                        font,
-                        self.font_size,
                         &text[start..end],
+                        TheFontSettings {
+                            size: self.font_size,
+                            preference: font_preference.clone(),
+                        },
                         &color.to_u8_array(),
                         TheHorizontalAlign::Center,
                         TheVerticalAlign::Center,
@@ -2128,9 +2161,11 @@ impl TheTextRenderer {
                     &Vec2::new(left, top - 1),
                     &(self.left, self.top, self.width, self.height),
                     stride,
-                    font,
-                    self.font_size,
                     &text[start..end],
+                    TheFontSettings {
+                        size: self.font_size,
+                        preference: font_preference.clone(),
+                    },
                     style.theme().color(TextEditTextColor),
                     TheHorizontalAlign::Center,
                     TheVerticalAlign::Center,

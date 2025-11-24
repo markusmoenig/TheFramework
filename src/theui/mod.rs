@@ -1505,19 +1505,19 @@ impl TheUI {
                 self.style.theme().color(WindowHeaderBorder2),
             );
 
-            if let Some(font) = &ctx.ui.font {
-                ctx.draw.text_rect_blend(
-                    self.canvas.buffer.pixels_mut(),
-                    &(tuple.0 + 13, tuple.1, tuple.2 - 13, 23),
-                    ctx.width,
-                    font,
-                    15.0,
-                    &self.dialog_text,
-                    &WHITE,
-                    TheHorizontalAlign::Left,
-                    TheVerticalAlign::Center,
-                );
-            }
+            ctx.draw.text_rect_blend(
+                self.canvas.buffer.pixels_mut(),
+                &(tuple.0 + 13, tuple.1, tuple.2 - 13, 23),
+                ctx.width,
+                &self.dialog_text,
+                TheFontSettings {
+                    size: 15.0,
+                    ..Default::default()
+                },
+                &WHITE,
+                TheHorizontalAlign::Left,
+                TheVerticalAlign::Center,
+            );
 
             self.canvas.buffer.copy_into(
                 dialog_canvas.dim.buffer_x,

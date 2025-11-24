@@ -857,18 +857,15 @@ impl TheWidget for TheTextLineEdit {
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
-        if !self.dim.is_valid() || ctx.ui.font.is_none() {
+        if !self.dim.is_valid() {
             return;
         }
 
         let should_relayout = self.modified_since_last_tick || self.renderer.row_count() == 0;
 
         if should_relayout {
-            self.renderer.prepare(
-                &self.state.to_text(),
-                ctx.ui.font.as_ref().unwrap(),
-                &ctx.draw,
-            );
+            self.renderer
+                .prepare(&self.state.to_text(), TheFontPreference::Default, &ctx.draw);
             self.reset_renderer_padding();
         }
 
@@ -950,7 +947,7 @@ impl TheWidget for TheTextLineEdit {
             false,
             buffer,
             style,
-            ctx.ui.font.as_ref().unwrap(),
+            TheFontPreference::Default,
             &ctx.draw,
         );
 
@@ -973,19 +970,19 @@ impl TheWidget for TheTextLineEdit {
             shrinker.shrink_by(0, 0, 5, 0);
             let utuple: (usize, usize, usize, usize) = self.dim.to_buffer_shrunk_utuple(&shrinker);
 
-            if let Some(font) = &ctx.ui.font {
-                ctx.draw.text_rect_blend(
-                    buffer.pixels_mut(),
-                    &utuple,
-                    stride,
-                    font,
-                    11.5,
-                    info_text,
-                    style.theme().color(DefaultWidgetDarkBackground),
-                    TheHorizontalAlign::Right,
-                    TheVerticalAlign::Center,
-                );
-            }
+            ctx.draw.text_rect_blend(
+                buffer.pixels_mut(),
+                &utuple,
+                stride,
+                info_text,
+                TheFontSettings {
+                    size: 11.5,
+                    ..Default::default()
+                },
+                style.theme().color(DefaultWidgetDarkBackground),
+                TheHorizontalAlign::Right,
+                TheVerticalAlign::Center,
+            );
         }
 
         self.modified_since_last_return =

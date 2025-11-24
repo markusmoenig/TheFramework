@@ -266,42 +266,44 @@ impl TheWidget for TheListItem {
                 stride,
             );
 
-            if let Some(font) = &ctx.ui.font {
+            ctx.draw.text_rect_blend(
+                buffer.pixels_mut(),
+                &(
+                    ut.0 + 38 + 7 + 5,
+                    ut.1 + 5,
+                    (self.dim.width - 38 - 7 - 10) as usize,
+                    13,
+                ),
+                stride,
+                &self.text,
+                TheFontSettings {
+                    size: 12.0,
+                    ..Default::default()
+                },
+                style.theme().color(ListItemText),
+                TheHorizontalAlign::Left,
+                TheVerticalAlign::Center,
+            );
+
+            if !self.sub_text.is_empty() {
                 ctx.draw.text_rect_blend(
                     buffer.pixels_mut(),
                     &(
                         ut.0 + 38 + 7 + 5,
-                        ut.1 + 5,
+                        ut.1 + 22,
                         (self.dim.width - 38 - 7 - 10) as usize,
                         13,
                     ),
                     stride,
-                    font,
-                    12.0,
-                    &self.text,
+                    &self.sub_text,
+                    TheFontSettings {
+                        size: 12.0,
+                        ..Default::default()
+                    },
                     style.theme().color(ListItemText),
                     TheHorizontalAlign::Left,
                     TheVerticalAlign::Center,
                 );
-
-                if !self.sub_text.is_empty() {
-                    ctx.draw.text_rect_blend(
-                        buffer.pixels_mut(),
-                        &(
-                            ut.0 + 38 + 7 + 5,
-                            ut.1 + 22,
-                            (self.dim.width - 38 - 7 - 10) as usize,
-                            13,
-                        ),
-                        stride,
-                        font,
-                        12.0,
-                        &self.sub_text,
-                        style.theme().color(ListItemText),
-                        TheHorizontalAlign::Left,
-                        TheVerticalAlign::Center,
-                    );
-                }
             }
         } else {
             let mut right_width = 5;
@@ -313,57 +315,61 @@ impl TheWidget for TheListItem {
             let mut rect: (usize, usize, usize, usize) =
                 self.dim.to_buffer_shrunk_utuple(&shrinker);
 
-            if let Some(font) = &ctx.ui.font {
-                ctx.draw.text_rect_blend(
+            ctx.draw.text_rect_blend(
+                buffer.pixels_mut(),
+                &(rect.0, rect.1, rect.2 - right_width as usize, rect.3),
+                stride,
+                &self.text,
+                TheFontSettings {
+                    size: 13.0,
+                    ..Default::default()
+                },
+                style.theme().color(ListItemText),
+                TheHorizontalAlign::Left,
+                TheVerticalAlign::Center,
+            );
+
+            rect.0 += rect.2 - right_width as usize;
+
+            for (width, value) in self.values.iter() {
+                ctx.draw.rect(
                     buffer.pixels_mut(),
-                    &(rect.0, rect.1, rect.2 - right_width as usize, rect.3),
+                    &(rect.0, rect.1 - 1, 1, rect.3 + 2),
                     stride,
-                    font,
-                    13.0,
-                    &self.text,
-                    style.theme().color(ListItemText),
-                    TheHorizontalAlign::Left,
-                    TheVerticalAlign::Center,
+                    style.theme().color(ListLayoutBackground),
                 );
 
-                rect.0 += rect.2 - right_width as usize;
-
-                for (width, value) in self.values.iter() {
-                    ctx.draw.rect(
-                        buffer.pixels_mut(),
-                        &(rect.0, rect.1 - 1, 1, rect.3 + 2),
-                        stride,
-                        style.theme().color(ListLayoutBackground),
-                    );
-
-                    #[allow(clippy::single_match)]
-                    match value {
-                        TheValue::Text(text) => {
-                            ctx.draw.text_rect_blend(
-                                buffer.pixels_mut(),
-                                &(rect.0 + 9, rect.1, *width as usize - 10, rect.3),
-                                stride,
-                                font,
-                                13.0,
-                                text,
-                                style.theme().color(ListItemText),
-                                TheHorizontalAlign::Left,
-                                TheVerticalAlign::Center,
-                            );
-                        }
-                        _ => {
-                            ctx.draw.text_rect_blend(
-                                buffer.pixels_mut(),
-                                &(rect.0 + 9, rect.1, *width as usize - 10, rect.3),
-                                stride,
-                                font,
-                                13.0,
-                                &value.describe(),
-                                style.theme().color(ListItemText),
-                                TheHorizontalAlign::Left,
-                                TheVerticalAlign::Center,
-                            );
-                        }
+                #[allow(clippy::single_match)]
+                match value {
+                    TheValue::Text(text) => {
+                        ctx.draw.text_rect_blend(
+                            buffer.pixels_mut(),
+                            &(rect.0 + 9, rect.1, *width as usize - 10, rect.3),
+                            stride,
+                            text,
+                            TheFontSettings {
+                                size: 13.0,
+                                ..Default::default()
+                            },
+                            style.theme().color(ListItemText),
+                            TheHorizontalAlign::Left,
+                            TheVerticalAlign::Center,
+                        );
+                    }
+                    _ => {
+                        ctx.draw.text_rect_blend(
+                            buffer.pixels_mut(),
+                            &(rect.0 + 9, rect.1, *width as usize - 10, rect.3),
+                            stride,
+                            &value.describe(),
+                            TheFontSettings {
+                                size: 13.0,
+                                ..Default::default()
+                            },
+                            style.theme().color(ListItemText),
+                            TheHorizontalAlign::Left,
+                            TheVerticalAlign::Center,
+                        );
                     }
                 }
             }

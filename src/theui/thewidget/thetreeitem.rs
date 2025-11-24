@@ -486,63 +486,65 @@ impl TheWidget for TheTreeItem {
                     .copy_slice(buffer.pixels_mut(), icon.pixels(), &icon_copy_rect, stride);
             }
 
-            if let Some(font) = &ctx.ui.font {
-                let text_rect = (
+            let text_rect = (
+                ut.0 + 38 + 7 + 5,
+                ut.1 + 6, // Adjust Y position by +1px
+                (self.dim.width - 38 - 7 - 10) as usize,
+                13,
+            );
+            let buffer_width = buffer.dim().width as usize;
+            let buffer_height = buffer.dim().height as usize;
+
+            // Safety check: ensure text is within buffer bounds before drawing
+            if text_rect.0 < buffer_width
+                && text_rect.1 < buffer_height
+                && text_rect.0 + text_rect.2 <= buffer_width
+                && text_rect.1 + text_rect.3 <= buffer_height
+            {
+                ctx.draw.text_rect_blend(
+                    buffer.pixels_mut(),
+                    &text_rect,
+                    stride,
+                    &self.text,
+                    TheFontSettings {
+                        size: 12.0,
+                        ..Default::default()
+                    },
+                    style.theme().color(ListItemText),
+                    TheHorizontalAlign::Left,
+                    TheVerticalAlign::Center,
+                );
+            }
+
+            if !self.sub_text.is_empty() {
+                let sub_text_rect = (
                     ut.0 + 38 + 7 + 5,
-                    ut.1 + 6, // Adjust Y position by +1px
+                    ut.1 + 23, // Adjust Y position by +1px
                     (self.dim.width - 38 - 7 - 10) as usize,
                     13,
                 );
                 let buffer_width = buffer.dim().width as usize;
                 let buffer_height = buffer.dim().height as usize;
 
-                // Safety check: ensure text is within buffer bounds before drawing
-                if text_rect.0 < buffer_width
-                    && text_rect.1 < buffer_height
-                    && text_rect.0 + text_rect.2 <= buffer_width
-                    && text_rect.1 + text_rect.3 <= buffer_height
+                // Safety check: ensure sub text is within buffer bounds before drawing
+                if sub_text_rect.0 < buffer_width
+                    && sub_text_rect.1 < buffer_height
+                    && sub_text_rect.0 + sub_text_rect.2 <= buffer_width
+                    && sub_text_rect.1 + sub_text_rect.3 <= buffer_height
                 {
                     ctx.draw.text_rect_blend(
                         buffer.pixels_mut(),
-                        &text_rect,
+                        &sub_text_rect,
                         stride,
-                        font,
-                        12.0,
-                        &self.text,
+                        &self.sub_text,
+                        TheFontSettings {
+                            size: 12.0,
+                            ..Default::default()
+                        },
                         style.theme().color(ListItemText),
                         TheHorizontalAlign::Left,
                         TheVerticalAlign::Center,
                     );
-                }
-
-                if !self.sub_text.is_empty() {
-                    let sub_text_rect = (
-                        ut.0 + 38 + 7 + 5,
-                        ut.1 + 23, // Adjust Y position by +1px
-                        (self.dim.width - 38 - 7 - 10) as usize,
-                        13,
-                    );
-                    let buffer_width = buffer.dim().width as usize;
-                    let buffer_height = buffer.dim().height as usize;
-
-                    // Safety check: ensure sub text is within buffer bounds before drawing
-                    if sub_text_rect.0 < buffer_width
-                        && sub_text_rect.1 < buffer_height
-                        && sub_text_rect.0 + sub_text_rect.2 <= buffer_width
-                        && sub_text_rect.1 + sub_text_rect.3 <= buffer_height
-                    {
-                        ctx.draw.text_rect_blend(
-                            buffer.pixels_mut(),
-                            &sub_text_rect,
-                            stride,
-                            font,
-                            12.0,
-                            &self.sub_text,
-                            style.theme().color(ListItemText),
-                            TheHorizontalAlign::Left,
-                            TheVerticalAlign::Center,
-                        );
-                    }
                 }
             }
         } else {
@@ -558,34 +560,34 @@ impl TheWidget for TheTreeItem {
             let mut rect: (usize, usize, usize, usize) =
                 self.dim.to_buffer_shrunk_utuple(&shrinker);
 
-            if let Some(font) = &ctx.ui.font {
-                let text_rect = (
-                    rect.0,
-                    rect.1 + 1,
-                    rect.2 - right_width as usize,
-                    rect.3.saturating_sub(2),
-                ); // Adjust Y position by +1px and reduce height by 2px
-                let buffer_width = buffer.dim().width as usize;
-                let buffer_height = buffer.dim().height as usize;
+            let text_rect = (
+                rect.0,
+                rect.1 + 1,
+                rect.2 - right_width as usize,
+                rect.3.saturating_sub(2),
+            ); // Adjust Y position by +1px and reduce height by 2px
+            let buffer_width = buffer.dim().width as usize;
+            let buffer_height = buffer.dim().height as usize;
 
-                // Safety check: ensure text is within buffer bounds before drawing
-                if text_rect.0 < buffer_width
-                    && text_rect.1 < buffer_height
-                    && text_rect.0 + text_rect.2 <= buffer_width
-                    && text_rect.1 + text_rect.3 <= buffer_height
-                {
-                    ctx.draw.text_rect_blend(
-                        buffer.pixels_mut(),
-                        &text_rect,
-                        stride,
-                        font,
-                        13.0,
-                        &self.text,
-                        style.theme().color(ListItemText),
-                        TheHorizontalAlign::Left,
-                        TheVerticalAlign::Center,
-                    );
-                }
+            // Safety check: ensure text is within buffer bounds before drawing
+            if text_rect.0 < buffer_width
+                && text_rect.1 < buffer_height
+                && text_rect.0 + text_rect.2 <= buffer_width
+                && text_rect.1 + text_rect.3 <= buffer_height
+            {
+                ctx.draw.text_rect_blend(
+                    buffer.pixels_mut(),
+                    &text_rect,
+                    stride,
+                    &self.text,
+                    TheFontSettings {
+                        size: 13.0,
+                        ..Default::default()
+                    },
+                    style.theme().color(ListItemText),
+                    TheHorizontalAlign::Left,
+                    TheVerticalAlign::Center,
+                );
             }
 
             rect.0 += rect.2 - right_width as usize;
@@ -606,74 +608,76 @@ impl TheWidget for TheTreeItem {
                 widget.draw(buffer, style, ctx);
             }
 
-            if let Some(font) = &ctx.ui.font {
-                for (width, value) in self.values.iter() {
-                    ctx.draw.rect(
-                        buffer.pixels_mut(),
-                        &(rect.0, rect.1 - 1, 1, rect.3 + 2),
-                        stride,
-                        style.theme().color(ListLayoutBackground),
-                    );
+            for (width, value) in self.values.iter() {
+                ctx.draw.rect(
+                    buffer.pixels_mut(),
+                    &(rect.0, rect.1 - 1, 1, rect.3 + 2),
+                    stride,
+                    style.theme().color(ListLayoutBackground),
+                );
 
-                    #[allow(clippy::single_match)]
-                    match value {
-                        TheValue::Text(text) => {
-                            let value_rect = (
-                                rect.0 + 9,
-                                rect.1 + 1,
-                                *width as usize - 10,
-                                rect.3.saturating_sub(2),
-                            ); // Adjust Y position by +1px and reduce height by 2px
-                            let buffer_width = buffer.dim().width as usize;
-                            let buffer_height = buffer.dim().height as usize;
+                #[allow(clippy::single_match)]
+                match value {
+                    TheValue::Text(text) => {
+                        let value_rect = (
+                            rect.0 + 9,
+                            rect.1 + 1,
+                            *width as usize - 10,
+                            rect.3.saturating_sub(2),
+                        ); // Adjust Y position by +1px and reduce height by 2px
+                        let buffer_width = buffer.dim().width as usize;
+                        let buffer_height = buffer.dim().height as usize;
 
-                            // Safety check: ensure value text is within buffer bounds before drawing
-                            if value_rect.0 < buffer_width
-                                && value_rect.1 < buffer_height
-                                && value_rect.0 + value_rect.2 <= buffer_width
-                                && value_rect.1 + value_rect.3 <= buffer_height
-                            {
-                                ctx.draw.text_rect_blend(
-                                    buffer.pixels_mut(),
-                                    &value_rect,
-                                    stride,
-                                    font,
-                                    13.0,
-                                    text,
-                                    style.theme().color(ListItemText),
-                                    TheHorizontalAlign::Left,
-                                    TheVerticalAlign::Center,
-                                );
-                            }
+                        // Safety check: ensure value text is within buffer bounds before drawing
+                        if value_rect.0 < buffer_width
+                            && value_rect.1 < buffer_height
+                            && value_rect.0 + value_rect.2 <= buffer_width
+                            && value_rect.1 + value_rect.3 <= buffer_height
+                        {
+                            ctx.draw.text_rect_blend(
+                                buffer.pixels_mut(),
+                                &value_rect,
+                                stride,
+                                text,
+                                TheFontSettings {
+                                    size: 13.0,
+                                    ..Default::default()
+                                },
+                                style.theme().color(ListItemText),
+                                TheHorizontalAlign::Left,
+                                TheVerticalAlign::Center,
+                            );
                         }
-                        _ => {
-                            let value_rect = (
-                                rect.0 + 9,
-                                rect.1 + 1,
-                                *width as usize - 10,
-                                rect.3.saturating_sub(2),
-                            ); // Adjust Y position by +1px and reduce height by 2px
-                            let buffer_width = buffer.dim().width as usize;
-                            let buffer_height = buffer.dim().height as usize;
+                    }
+                    _ => {
+                        let value_rect = (
+                            rect.0 + 9,
+                            rect.1 + 1,
+                            *width as usize - 10,
+                            rect.3.saturating_sub(2),
+                        ); // Adjust Y position by +1px and reduce height by 2px
+                        let buffer_width = buffer.dim().width as usize;
+                        let buffer_height = buffer.dim().height as usize;
 
-                            // Safety check: ensure value text is within buffer bounds before drawing
-                            if value_rect.0 < buffer_width
-                                && value_rect.1 < buffer_height
-                                && value_rect.0 + value_rect.2 <= buffer_width
-                                && value_rect.1 + value_rect.3 <= buffer_height
-                            {
-                                ctx.draw.text_rect_blend(
-                                    buffer.pixels_mut(),
-                                    &value_rect,
-                                    stride,
-                                    font,
-                                    13.0,
-                                    &value.describe(),
-                                    style.theme().color(ListItemText),
-                                    TheHorizontalAlign::Left,
-                                    TheVerticalAlign::Center,
-                                );
-                            }
+                        // Safety check: ensure value text is within buffer bounds before drawing
+                        if value_rect.0 < buffer_width
+                            && value_rect.1 < buffer_height
+                            && value_rect.0 + value_rect.2 <= buffer_width
+                            && value_rect.1 + value_rect.3 <= buffer_height
+                        {
+                            ctx.draw.text_rect_blend(
+                                buffer.pixels_mut(),
+                                &value_rect,
+                                stride,
+                                &value.describe(),
+                                TheFontSettings {
+                                    size: 13.0,
+                                    ..Default::default()
+                                },
+                                style.theme().color(ListItemText),
+                                TheHorizontalAlign::Left,
+                                TheVerticalAlign::Center,
+                            );
                         }
                     }
                 }

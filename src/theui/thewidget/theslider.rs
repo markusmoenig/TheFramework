@@ -382,19 +382,19 @@ impl TheWidget for TheSlider {
         shrinker.reset();
         shrinker.shrink_by(self.dim.width - self.text_width + 10, 0, 0, 0);
 
-        if let Some(font) = &ctx.ui.font {
-            ctx.draw.text_rect_blend(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                font,
-                13.0,
-                &text,
-                &WHITE,
-                TheHorizontalAlign::Left,
-                TheVerticalAlign::Center,
-            );
-        }
+        ctx.draw.text_rect_blend(
+            buffer.pixels_mut(),
+            &self.dim.to_buffer_shrunk_utuple(&shrinker),
+            stride,
+            &text,
+            TheFontSettings {
+                size: 13.0,
+                ..Default::default()
+            },
+            &WHITE,
+            TheHorizontalAlign::Left,
+            TheVerticalAlign::Center,
+        );
 
         self.is_dirty = false;
     }

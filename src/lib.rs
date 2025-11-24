@@ -91,9 +91,9 @@ pub mod prelude {
     pub use crate::thecolor::TheColor;
     pub use crate::thecontext::TheContext;
     pub use crate::thecontext::TheCursorIcon;
-    pub use crate::thedraw2d::TheDraw2D;
-    pub use crate::thedraw2d::TheHorizontalAlign;
-    pub use crate::thedraw2d::TheVerticalAlign;
+    pub use crate::thedraw2d::{
+        TheDraw2D, TheFontPreference, TheFontSettings, TheHorizontalAlign, TheVerticalAlign,
+    };
     pub use crate::thenodecanvas::{TheNode, TheNodeCanvas, TheNodeTerminal};
     pub use crate::thepalette::ThePalette;
     pub use crate::thetime::TheTime;

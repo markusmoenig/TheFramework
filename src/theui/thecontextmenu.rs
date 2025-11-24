@@ -302,14 +302,16 @@ impl TheContextMenu {
                     ctx.width,
                     style.theme().color(ContextMenuSeparator),
                 );
-            } else if let Some(font) = &ctx.ui.font {
+            } else {
                 ctx.draw.text_rect_blend(
                     pixels,
                     &(rect.0 + 16, rect.1, &rect.2 - 16, rect.3),
                     ctx.width,
-                    font,
-                    13.5,
                     &item.name,
+                    TheFontSettings {
+                        size: 13.5,
+                        ..Default::default()
+                    },
                     text_color,
                     TheHorizontalAlign::Left,
                     TheVerticalAlign::Center,
@@ -317,19 +319,19 @@ impl TheContextMenu {
             }
 
             if let Some(accel) = &item.accel {
-                if let Some(font) = &ctx.ui.font {
-                    ctx.draw.text_rect_blend(
-                        pixels,
-                        &(rect.0, rect.1, &rect.2 - 6, rect.3),
-                        ctx.width,
-                        font,
-                        12.0,
-                        &accel.description(),
-                        style.theme().color(ContextMenuTextDisabled),
-                        TheHorizontalAlign::Right,
-                        TheVerticalAlign::Center,
-                    );
-                }
+                ctx.draw.text_rect_blend(
+                    pixels,
+                    &(rect.0, rect.1, &rect.2 - 6, rect.3),
+                    ctx.width,
+                    &accel.description(),
+                    TheFontSettings {
+                        size: 12.0,
+                        ..Default::default()
+                    },
+                    style.theme().color(ContextMenuTextDisabled),
+                    TheHorizontalAlign::Right,
+                    TheVerticalAlign::Center,
+                );
             } else if let Some(sub_menu) = &mut item.sub_menu {
                 if !is_disabled {
                     if Some(item.id.clone()) == self.hovered {

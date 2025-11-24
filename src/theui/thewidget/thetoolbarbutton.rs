@@ -123,11 +123,15 @@ impl TheWidget for TheToolbarButton {
 
     fn calculate_size(&mut self, ctx: &mut TheContext) {
         if !self.text.is_empty() {
-            if let Some(font) = &ctx.ui.font {
-                let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
-                self.limiter_mut()
-                    .set_max_width((size.0 as f32).ceil() as i32 + 15);
-            }
+            let size = ctx.draw.get_text_size(
+                &self.text,
+                &TheFontSettings {
+                    size: self.text_size,
+                    ..Default::default()
+                },
+            );
+            self.limiter_mut()
+                .set_max_width((size.0 as f32).ceil() as i32 + 15);
         }
     }
 
@@ -216,19 +220,19 @@ impl TheWidget for TheToolbarButton {
         }
 
         if !self.text.is_empty() {
-            if let Some(font) = &ctx.ui.font {
-                ctx.draw.text_rect_blend(
-                    buffer.pixels_mut(),
-                    &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                    stride,
-                    font,
-                    self.text_size,
-                    &self.text,
-                    &WHITE,
-                    TheHorizontalAlign::Center,
-                    TheVerticalAlign::Center,
-                );
-            }
+            ctx.draw.text_rect_blend(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                stride,
+                &self.text,
+                TheFontSettings {
+                    size: self.text_size,
+                    ..Default::default()
+                },
+                &WHITE,
+                TheHorizontalAlign::Center,
+                TheVerticalAlign::Center,
+            );
         }
 
         self.is_dirty = false;

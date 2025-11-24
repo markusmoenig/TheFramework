@@ -112,21 +112,21 @@ impl TheWidget for TheSwitchbar {
         let mut shrinker = TheDimShrinker::zero();
         shrinker.shrink_by(30, 1, 0, 0);
 
-        if let Some(font) = &ctx.ui.font {
-            let mut r = self.dim.to_buffer_shrunk_utuple(&shrinker);
-            r.3 = 21;
-            ctx.draw.text_rect_blend(
-                buffer.pixels_mut(),
-                &r,
-                stride,
-                font,
-                13.0,
-                &self.text,
-                &WHITE,
-                TheHorizontalAlign::Left,
-                TheVerticalAlign::Center,
-            );
-        }
+        let mut r = self.dim.to_buffer_shrunk_utuple(&shrinker);
+        r.3 = 21;
+        ctx.draw.text_rect_blend(
+            buffer.pixels_mut(),
+            &r,
+            stride,
+            &self.text,
+            TheFontSettings {
+                size: 13.0,
+                ..Default::default()
+            },
+            &WHITE,
+            TheHorizontalAlign::Left,
+            TheVerticalAlign::Center,
+        );
 
         self.is_dirty = false;
     }

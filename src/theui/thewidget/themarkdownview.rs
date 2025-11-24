@@ -538,7 +538,7 @@ impl TheWidget for TheMarkdownView {
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
-        if !self.dim.is_valid() || ctx.ui.font.is_none() {
+        if !self.dim.is_valid() {
             return;
         }
 
@@ -564,11 +564,8 @@ impl TheWidget for TheMarkdownView {
                 );
             }
 
-            self.renderer.prepare(
-                &self.state.to_text(),
-                ctx.ui.font.as_ref().unwrap(),
-                &ctx.draw,
-            );
+            self.renderer
+                .prepare(&self.state.to_text(), TheFontPreference::Default, &ctx.draw);
 
             shrinker.shrink_by(
                 -(self.renderer.padding.0 as i32),
@@ -705,7 +702,7 @@ impl TheWidget for TheMarkdownView {
             true,
             buffer,
             style,
-            ctx.ui.font.as_ref().unwrap(),
+            TheFontPreference::Default,
             &styles,
             &ctx.draw,
         );
