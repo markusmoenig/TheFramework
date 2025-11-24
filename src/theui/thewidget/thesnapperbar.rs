@@ -268,19 +268,19 @@ impl TheWidget for TheSnapperbar {
         let mut shrinker = TheDimShrinker::zero();
         shrinker.shrink_by(30, 1, 0, 0);
 
-        if let Some(font) = &ctx.ui.font {
-            ctx.draw.text_rect_blend(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                font,
-                13.5,
-                &self.text,
-                &WHITE,
-                TheHorizontalAlign::Left,
-                TheVerticalAlign::Center,
-            );
-        }
+        ctx.draw.text_rect_blend(
+            buffer.pixels_mut(),
+            &self.dim.to_buffer_shrunk_utuple(&shrinker),
+            stride,
+            &self.text,
+            TheFontSettings {
+                size: 13.5,
+                ..Default::default()
+            },
+            &WHITE,
+            TheHorizontalAlign::Left,
+            TheVerticalAlign::Center,
+        );
 
         self.is_dirty = false;
     }

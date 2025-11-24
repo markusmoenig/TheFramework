@@ -260,19 +260,19 @@ impl TheWidget for TheDropdownMenu {
         shrinker.shrink_by(8, 0, 12, 0);
 
         if !self.options.is_empty() {
-            if let Some(font) = &ctx.ui.font {
-                ctx.draw.text_rect_blend(
-                    buffer.pixels_mut(),
-                    &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                    stride,
-                    font,
-                    12.5,
-                    self.options[self.selected as usize].as_str(),
-                    text_color,
-                    TheHorizontalAlign::Left,
-                    TheVerticalAlign::Center,
-                );
-            }
+            ctx.draw.text_rect_blend(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                stride,
+                self.options[self.selected as usize].as_str(),
+                TheFontSettings {
+                    size: 12.5,
+                    ..Default::default()
+                },
+                text_color,
+                TheHorizontalAlign::Left,
+                TheVerticalAlign::Center,
+            );
         }
 
         self.is_dirty = false;
@@ -341,19 +341,19 @@ impl TheWidget for TheDropdownMenu {
             );
 
             if !self.options.is_empty() {
-                if let Some(font) = &ctx.ui.font {
-                    ctx.draw.text_rect_blend(
-                        buffer.pixels_mut(),
-                        &(x + 8, y, width - 8, 21),
-                        width,
-                        font,
-                        12.5,
-                        self.options[i].as_str(),
-                        &WHITE,
-                        TheHorizontalAlign::Left,
-                        TheVerticalAlign::Center,
-                    );
-                }
+                ctx.draw.text_rect_blend(
+                    buffer.pixels_mut(),
+                    &(x + 8, y, width - 8, 21),
+                    width,
+                    self.options[i].as_str(),
+                    TheFontSettings {
+                        size: 12.5,
+                        ..Default::default()
+                    },
+                    &WHITE,
+                    TheHorizontalAlign::Left,
+                    TheVerticalAlign::Center,
+                );
             }
 
             y += 21;

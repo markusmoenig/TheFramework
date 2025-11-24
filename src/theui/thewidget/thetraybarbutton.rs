@@ -182,11 +182,15 @@ impl TheWidget for TheTraybarButton {
 
     fn calculate_size(&mut self, ctx: &mut TheContext) {
         if !self.text.is_empty() && !self.fixed_size {
-            if let Some(font) = &ctx.ui.font {
-                let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
-                self.limiter_mut()
-                    .set_max_width((size.0 as f32).ceil() as i32 + 15);
-            }
+            let size = ctx.draw.get_text_size(
+                &self.text,
+                &TheFontSettings {
+                    size: self.text_size,
+                    ..Default::default()
+                },
+            );
+            self.limiter_mut()
+                .set_max_width((size.0 as f32).ceil() as i32 + 15);
         }
     }
 
@@ -311,24 +315,24 @@ impl TheWidget for TheTraybarButton {
         }
 
         if !self.text.is_empty() {
-            if let Some(font) = &ctx.ui.font {
-                let color = if let Some(custom) = &self.custom_color {
-                    &custom.to_u8_array()
-                } else {
-                    &WHITE
-                };
-                ctx.draw.text_rect_blend(
-                    buffer.pixels_mut(),
-                    &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                    stride,
-                    font,
-                    self.text_size,
-                    &self.text,
-                    color,
-                    TheHorizontalAlign::Center,
-                    TheVerticalAlign::Center,
-                );
-            }
+            let color = if let Some(custom) = &self.custom_color {
+                &custom.to_u8_array()
+            } else {
+                &WHITE
+            };
+            ctx.draw.text_rect_blend(
+                buffer.pixels_mut(),
+                &self.dim.to_buffer_shrunk_utuple(&shrinker),
+                stride,
+                &self.text,
+                TheFontSettings {
+                    size: self.text_size,
+                    ..Default::default()
+                },
+                color,
+                TheHorizontalAlign::Center,
+                TheVerticalAlign::Center,
+            );
         }
 
         self.is_dirty = false;

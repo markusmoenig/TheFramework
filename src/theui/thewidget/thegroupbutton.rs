@@ -301,23 +301,23 @@ impl TheWidget for TheGroupButton {
                 }
             }
 
-            if let Some(font) = &ctx.ui.font {
-                ctx.draw.text_rect_blend(
-                    buffer.pixels_mut(),
-                    &(ut.0 + x + offset + 1, ut.1 + 1, self.item_width - 2, 18),
-                    stride,
-                    font,
-                    12.5,
-                    text,
-                    &WHITE,
-                    if has_icon {
-                        TheHorizontalAlign::Left
-                    } else {
-                        TheHorizontalAlign::Center
-                    },
-                    TheVerticalAlign::Center,
-                );
-            }
+            ctx.draw.text_rect_blend(
+                buffer.pixels_mut(),
+                &(ut.0 + x + offset + 1, ut.1 + 1, self.item_width - 2, 18),
+                stride,
+                text,
+                TheFontSettings {
+                    size: 12.5,
+                    ..Default::default()
+                },
+                &WHITE,
+                if has_icon {
+                    TheHorizontalAlign::Left
+                } else {
+                    TheHorizontalAlign::Center
+                },
+                TheVerticalAlign::Center,
+            );
 
             x += self.item_width;
             if (index as i32) < total {

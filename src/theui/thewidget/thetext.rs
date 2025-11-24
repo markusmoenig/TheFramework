@@ -76,22 +76,30 @@ impl TheWidget for TheText {
     }
 
     fn calculate_size(&mut self, ctx: &mut TheContext) {
-        if let Some(font) = &ctx.ui.font {
-            if self.fixed_size_text.is_empty() {
-                if !self.text.is_empty() {
-                    let size = ctx.draw.get_text_size(font, self.text_size, &self.text);
-                    self.limiter_mut()
-                        .set_max_size(Vec2::new(size.0 as i32 + 1, size.1 as i32 + 1));
-                } else {
-                    self.limiter_mut().set_max_size(Vec2::new(20, 20));
-                }
-            } else {
-                let size = ctx
-                    .draw
-                    .get_text_size(font, self.text_size, &self.fixed_size_text);
+        if self.fixed_size_text.is_empty() {
+            if !self.text.is_empty() {
+                let size = ctx.draw.get_text_size(
+                    &self.text,
+                    &TheFontSettings {
+                        size: self.text_size,
+                        ..Default::default()
+                    },
+                );
                 self.limiter_mut()
                     .set_max_size(Vec2::new(size.0 as i32 + 1, size.1 as i32 + 1));
+            } else {
+                self.limiter_mut().set_max_size(Vec2::new(20, 20));
             }
+        } else {
+            let size = ctx.draw.get_text_size(
+                &self.fixed_size_text,
+                &TheFontSettings {
+                    size: self.text_size,
+                    ..Default::default()
+                },
+            );
+            self.limiter_mut()
+                .set_max_size(Vec2::new(size.0 as i32 + 1, size.1 as i32 + 1));
         }
     }
 
@@ -110,19 +118,19 @@ impl TheWidget for TheText {
         let mut shrinker = TheDimShrinker::zero();
         shrinker.shrink_by(0, 1, 0, 0);
 
-        if let Some(font) = &ctx.ui.font {
-            ctx.draw.text_rect_blend(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                font,
-                self.text_size,
-                &self.text,
-                &self.text_color,
-                TheHorizontalAlign::Left,
-                TheVerticalAlign::Center,
-            );
-        }
+        ctx.draw.text_rect_blend(
+            buffer.pixels_mut(),
+            &self.dim.to_buffer_shrunk_utuple(&shrinker),
+            stride,
+            &self.text,
+            TheFontSettings {
+                size: self.text_size,
+                ..Default::default()
+            },
+            &self.text_color,
+            TheHorizontalAlign::Left,
+            TheVerticalAlign::Center,
+        );
 
         self.is_dirty = false;
     }

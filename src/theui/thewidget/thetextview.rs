@@ -447,7 +447,7 @@ impl TheWidget for TheTextView {
         style: &mut Box<dyn TheStyle>,
         ctx: &mut TheContext,
     ) {
-        if !self.dim.is_valid() || ctx.ui.code_font.is_none() {
+        if !self.dim.is_valid() {
             return;
         }
 
@@ -473,11 +473,8 @@ impl TheWidget for TheTextView {
                 );
             }
 
-            self.renderer.prepare(
-                &self.state.to_text(),
-                ctx.ui.code_font.as_ref().unwrap(),
-                &ctx.draw,
-            );
+            self.renderer
+                .prepare(&self.state.to_text(), TheFontPreference::Code, &ctx.draw);
 
             shrinker.shrink_by(
                 -(self.renderer.padding.0 as i32),
@@ -571,7 +568,7 @@ impl TheWidget for TheTextView {
             true,
             buffer,
             style,
-            ctx.ui.code_font.as_ref().unwrap(),
+            TheFontPreference::Code,
             &ctx.draw,
         );
 

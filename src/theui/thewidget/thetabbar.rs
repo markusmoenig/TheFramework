@@ -192,19 +192,19 @@ impl TheWidget for TheTabbar {
                 ctx.draw
                     .copy_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
 
-                if let Some(font) = &ctx.ui.font {
-                    ctx.draw.text_rect_blend(
-                        buffer.pixels_mut(),
-                        &r,
-                        stride,
-                        font,
-                        12.5,
-                        text.as_str(),
-                        style.theme().color(TabbarText),
-                        TheHorizontalAlign::Center,
-                        TheVerticalAlign::Center,
-                    );
-                }
+                ctx.draw.text_rect_blend(
+                    buffer.pixels_mut(),
+                    &r,
+                    stride,
+                    text.as_str(),
+                    TheFontSettings {
+                        size: 12.5,
+                        ..Default::default()
+                    },
+                    style.theme().color(TabbarText),
+                    TheHorizontalAlign::Center,
+                    TheVerticalAlign::Center,
+                );
 
                 x += icon.dim().width as usize;
             }

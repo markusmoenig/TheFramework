@@ -288,19 +288,19 @@ impl TheWidget for TheTimeSlider {
 
                 if i % 2 == 0 && i < 24 {
                     let text_pos = (x - text_space / 2, r.1, text_space, r.3 - 1);
-                    if let Some(font) = &ctx.ui.font {
-                        ctx.draw.text_rect_blend(
-                            buffer.pixels_mut(),
-                            &text_pos,
-                            stride,
-                            font,
-                            11.0,
-                            &i.to_string(),
-                            style.theme().color(TimeSliderText),
-                            TheHorizontalAlign::Center,
-                            TheVerticalAlign::Top,
-                        );
-                    }
+                    ctx.draw.text_rect_blend(
+                        buffer.pixels_mut(),
+                        &text_pos,
+                        stride,
+                        &i.to_string(),
+                        TheFontSettings {
+                            size: 11.0,
+                            ..Default::default()
+                        },
+                        style.theme().color(TimeSliderText),
+                        TheHorizontalAlign::Center,
+                        TheVerticalAlign::Top,
+                    );
                 }
             }
             x += marker_space;
@@ -308,19 +308,19 @@ impl TheWidget for TheTimeSlider {
 
         if let TheValue::Time(time) = &self.value {
             let text_pos = (r.0 + r.2, r.1, self.text_width as usize - 3, r.3);
-            if let Some(font) = &ctx.ui.font {
-                ctx.draw.text_rect_blend(
-                    buffer.pixels_mut(),
-                    &text_pos,
-                    stride,
-                    font,
-                    11.0,
-                    &time.to_time24(),
-                    style.theme().color(TimeSliderPosition),
-                    TheHorizontalAlign::Right,
-                    TheVerticalAlign::Center,
-                );
-            }
+            ctx.draw.text_rect_blend(
+                buffer.pixels_mut(),
+                &text_pos,
+                stride,
+                &time.to_time24(),
+                TheFontSettings {
+                    size: 11.0,
+                    ..Default::default()
+                },
+                style.theme().color(TimeSliderPosition),
+                TheHorizontalAlign::Right,
+                TheVerticalAlign::Center,
+            );
 
             let offset = time.to_widget_offset(r.2 as u32) as usize;
             let r = (r.0 + offset, r.1, 2, r.3);

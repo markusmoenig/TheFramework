@@ -54,10 +54,14 @@ pub trait TheStyle: Send {
     fn create_drop_image(&mut self, drop: &mut TheDrop, ctx: &mut TheContext) {
         let mut width: i32 = 120;
 
-        if let Some(font) = &ctx.ui.font {
-            let size = ctx.draw.get_text_size(font, 12.5, &drop.title);
-            width = size.0 as i32 + 20;
-        }
+        let size = ctx.draw.get_text_size(
+            &drop.title,
+            &TheFontSettings {
+                size: 12.5,
+                ..Default::default()
+            },
+        );
+        width = size.0 as i32 + 20;
 
         if drop.offset.x > width {
             drop.offset.x = width - 10;
@@ -81,19 +85,19 @@ pub trait TheStyle: Send {
             1.5,
         );
 
-        if let Some(font) = &ctx.ui.font {
-            ctx.draw.text_rect_blend(
-                buffer.pixels_mut(),
-                &utuple,
-                stride,
-                font,
-                12.5,
-                &drop.title,
-                self.theme().color(DropItemText),
-                TheHorizontalAlign::Center,
-                TheVerticalAlign::Center,
-            );
-        }
+        ctx.draw.text_rect_blend(
+            buffer.pixels_mut(),
+            &utuple,
+            stride,
+            &drop.title,
+            TheFontSettings {
+                size: 12.5,
+                ..Default::default()
+            },
+            self.theme().color(DropItemText),
+            TheHorizontalAlign::Center,
+            TheVerticalAlign::Center,
+        );
 
         drop.set_image(buffer);
     }

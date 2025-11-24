@@ -144,19 +144,19 @@ impl TheWidget for TheIconView {
         }
 
         if let Some(text) = &self.text {
-            if let Some(font) = &ctx.ui.font {
-                ctx.draw.text_rect_blend(
-                    buffer.pixels_mut(),
-                    &utuple,
-                    stride,
-                    font,
-                    self.text_size,
-                    text,
-                    &self.text_color,
-                    TheHorizontalAlign::Center,
-                    TheVerticalAlign::Center,
-                );
-            }
+            ctx.draw.text_rect_blend(
+                buffer.pixels_mut(),
+                &utuple,
+                stride,
+                text,
+                TheFontSettings {
+                    size: self.text_size,
+                    ..Default::default()
+                },
+                &self.text_color,
+                TheHorizontalAlign::Center,
+                TheVerticalAlign::Center,
+            );
         }
 
         if let Some(color) = self.border_color {

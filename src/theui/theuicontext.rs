@@ -22,7 +22,6 @@ impl TheFileExtension {
 
 pub struct TheUIContext {
     pub font: Option<Font>,
-    pub code_font: Option<Font>,
     icons: FxHashMap<String, TheRGBABuffer>,
 
     pub focus: Option<TheId>,
@@ -59,7 +58,6 @@ impl Default for TheUIContext {
 impl TheUIContext {
     pub fn new() -> Self {
         let mut font: Option<Font> = None;
-        let mut code_font: Option<Font> = None;
         let mut icons: FxHashMap<String, TheRGBABuffer> = FxHashMap::default();
 
         for file in Embedded::iter() {
@@ -71,14 +69,6 @@ impl TheUIContext {
                         Font::from_bytes(font_bytes.data, fontdue::FontSettings::default())
                     {
                         font = Some(f);
-                    }
-                }
-            } else if name.starts_with("fonts/Source") {
-                if let Some(font_bytes) = Embedded::get(name) {
-                    if let Ok(f) =
-                        Font::from_bytes(font_bytes.data, fontdue::FontSettings::default())
-                    {
-                        code_font = Some(f);
                     }
                 }
             } else if name.starts_with("icons/") {
@@ -127,7 +117,6 @@ impl TheUIContext {
             context_menu: None,
 
             font,
-            code_font,
             icons,
 
             disabled_ids: FxHashSet::default(),

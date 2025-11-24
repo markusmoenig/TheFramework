@@ -156,19 +156,19 @@ impl TheWidget for TheSectionbarButton {
                 .blend_slice(buffer.pixels_mut(), icon.pixels(), &r, stride);
         }
 
-        if let Some(font) = &ctx.ui.font {
-            ctx.draw.text_rect_blend(
-                buffer.pixels_mut(),
-                &self.dim.to_buffer_shrunk_utuple(&shrinker),
-                stride,
-                font,
-                15.0,
-                &self.text,
-                text_color,
-                TheHorizontalAlign::Center,
-                TheVerticalAlign::Center,
-            );
-        }
+        ctx.draw.text_rect_blend(
+            buffer.pixels_mut(),
+            &self.dim.to_buffer_shrunk_utuple(&shrinker),
+            stride,
+            &self.text,
+            TheFontSettings {
+                size: 15.0,
+                ..Default::default()
+            },
+            text_color,
+            TheHorizontalAlign::Center,
+            TheVerticalAlign::Center,
+        );
 
         self.is_dirty = false;
     }

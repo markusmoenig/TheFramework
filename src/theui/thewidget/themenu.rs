@@ -203,23 +203,23 @@ impl TheWidget for TheMenu {
                 );
             }
 
-            if let Some(font) = &ctx.ui.font {
-                ctx.draw.text_rect_blend(
-                    buffer.pixels_mut(),
-                    &rect,
-                    stride,
-                    font,
-                    14.0,
-                    &self.menus[i].name,
-                    if self.selected == Some(i) {
-                        style.theme().color(MenuTextHighlighted)
-                    } else {
-                        style.theme().color(MenuText)
-                    },
-                    TheHorizontalAlign::Center,
-                    TheVerticalAlign::Center,
-                );
-            }
+            ctx.draw.text_rect_blend(
+                buffer.pixels_mut(),
+                &rect,
+                stride,
+                &self.menus[i].name,
+                TheFontSettings {
+                    size: 14.0,
+                    ..Default::default()
+                },
+                if self.selected == Some(i) {
+                    style.theme().color(MenuTextHighlighted)
+                } else {
+                    style.theme().color(MenuText)
+                },
+                TheHorizontalAlign::Center,
+                TheVerticalAlign::Center,
+            );
         }
 
         self.is_dirty = false;

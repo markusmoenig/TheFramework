@@ -306,19 +306,19 @@ impl TheWidget for TheRowListItem {
         //     }
         // }
 
-        if let Some(font) = &ctx.ui.font {
-            ctx.draw.text_rect_blend(
-                buffer.pixels_mut(),
-                &(ut.0, ut.1 + self.dim.height as usize - 25, ut.2, 20),
-                stride,
-                font,
-                12.0,
-                &self.text,
-                style.theme().color(ListItemText),
-                TheHorizontalAlign::Center,
-                TheVerticalAlign::Center,
-            );
-        }
+        ctx.draw.text_rect_blend(
+            buffer.pixels_mut(),
+            &(ut.0, ut.1 + self.dim.height as usize - 25, ut.2, 20),
+            stride,
+            &self.text,
+            TheFontSettings {
+                size: 12.0,
+                ..Default::default()
+            },
+            style.theme().color(ListItemText),
+            TheHorizontalAlign::Center,
+            TheVerticalAlign::Center,
+        );
 
         self.is_dirty = false;
     }

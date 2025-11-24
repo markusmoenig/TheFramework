@@ -173,15 +173,19 @@ impl TheLayout for TheTextLayout {
             let mut text_width = 0;
 
             for t in &mut self.text {
-                if let Some(font) = &ctx.ui.font {
-                    let size = if !t.is_empty() {
-                        ctx.draw.get_text_size(font, self.text_size, t)
-                    } else {
-                        (0, 0)
-                    };
-                    if size.0 > text_width {
-                        text_width = size.0;
-                    }
+                let size = if !t.is_empty() {
+                    ctx.draw.get_text_size(
+                        t,
+                        &TheFontSettings {
+                            size: self.text_size,
+                            ..Default::default()
+                        },
+                    )
+                } else {
+                    (0, 0)
+                };
+                if size.0 > text_width {
+                    text_width = size.0;
                 }
             }
 
@@ -334,19 +338,19 @@ impl TheLayout for TheTextLayout {
                 color = [160, 160, 160, 255];
             }
 
-            if let Some(font) = &ctx.ui.font {
-                ctx.draw.text_rect_blend(
-                    self.list_buffer.pixels_mut(),
-                    &self.text_rect[i],
-                    stride,
-                    font,
-                    self.text_size,
-                    &self.text[i],
-                    &color,
-                    self.text_align.clone(),
-                    TheVerticalAlign::Top,
-                );
-            }
+            ctx.draw.text_rect_blend(
+                self.list_buffer.pixels_mut(),
+                &self.text_rect[i],
+                stride,
+                &self.text[i],
+                TheFontSettings {
+                    size: self.text_size,
+                    ..Default::default()
+                },
+                &color,
+                self.text_align.clone(),
+                TheVerticalAlign::Top,
+            );
         }
 
         for w in &mut self.widgets {

@@ -1,8 +1,20 @@
+use std::ops::Deref;
+
 use fontdue::layout::{
-    CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle, VerticalAlign,
+    CoordinateSystem, GlyphPosition, HorizontalAlign, Layout, LayoutSettings, TextStyle,
+    VerticalAlign,
 };
-use fontdue::Font;
+use fontdue::{Font, Metrics};
 use vek::*;
+
+use crate::Embedded;
+
+#[derive(Default, Clone)]
+pub enum TheFontPreference {
+    #[default]
+    Default,
+    Code,
+}
 
 #[derive(PartialEq, Clone, Eq)]
 pub enum TheHorizontalAlign {
@@ -18,10 +30,18 @@ pub enum TheVerticalAlign {
     Bottom,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Default)]
+pub struct TheFontSettings {
+    pub preference: TheFontPreference,
+    pub size: f32,
+}
+
+#[derive(Debug)]
 pub struct TheDraw2D {
     pub mask: Option<Vec<f32>>,
     pub mask_size: (usize, usize),
+    pub fonts: Vec<Font>,
+    pub code_fonts: Vec<Font>,
 }
 
 impl Default for TheDraw2D {
@@ -32,9 +52,25 @@ impl Default for TheDraw2D {
 
 impl TheDraw2D {
     pub fn new() -> Self {
+        let mut fonts = vec![];
+        if let Some(font_bytes) = Embedded::get("fonts/Roboto-Bold.ttf") {
+            if let Ok(f) = Font::from_bytes(font_bytes.data, fontdue::FontSettings::default()) {
+                fonts.push(f);
+            }
+        }
+
+        let mut code_fonts = vec![];
+        if let Some(font_bytes) = Embedded::get("fonts/SourceCodePro-Bold.ttf") {
+            if let Ok(f) = Font::from_bytes(font_bytes.data, fontdue::FontSettings::default()) {
+                code_fonts.push(f);
+            }
+        }
+
         Self {
             mask: None,
             mask_size: (0, 0),
+            fonts,
+            code_fonts,
         }
     }
 
@@ -586,9 +622,8 @@ impl TheDraw2D {
         frame: &mut [u8],
         rect: &(usize, usize, usize, usize),
         stride: usize,
-        font: &Font,
-        size: f32,
         text: &str,
+        settings: TheFontSettings,
         color: &[u8; 4],
         background: &[u8; 4],
         halign: TheHorizontalAlign,
@@ -600,13 +635,13 @@ impl TheDraw2D {
             return;
         }
 
-        let mut text_size = self.get_text_size(font, size, text_to_use.as_str());
+        let mut text_size = self.get_text_size(text_to_use.as_str(), &settings);
 
         let mut add_trail = false;
         // Text is too long ??
         while text_size.0 >= rect.2 {
             text_to_use.pop();
-            text_size = self.get_text_size(font, size, (text_to_use.clone() + "...").as_str());
+            text_size = self.get_text_size((text_to_use.clone() + "...").as_str(), &settings);
             add_trail = true;
         }
 
@@ -614,10 +649,11 @@ impl TheDraw2D {
             text_to_use += "...";
         }
 
+        let fonts = self.fonts_iter(&settings.preference);
+
         let layout = self.get_text_layout(
-            font,
-            size,
             &text_to_use,
+            &settings,
             LayoutSettings {
                 max_width: Some(rect.2 as f32),
                 max_height: Some(rect.3 as f32),
@@ -639,8 +675,9 @@ impl TheDraw2D {
             },
         );
         for glyph in layout.glyphs() {
-            let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
-            //println!("Metrics: {:?}", glyph);
+            let Some((metrics, alphamap)) = self.rasterize_glyph(glyph, &fonts) else {
+                continue;
+            };
 
             for y in 0..metrics.height {
                 for x in 0..metrics.width {
@@ -666,9 +703,8 @@ impl TheDraw2D {
         top_left: &Vec2<i32>,
         clip_rect: &(usize, usize, usize, usize),
         stride: usize,
-        font: &Font,
-        size: f32,
         text: &str,
+        settings: TheFontSettings,
         color: &[u8; 4],
         background: &[u8; 4],
         halign: TheHorizontalAlign,
@@ -680,10 +716,11 @@ impl TheDraw2D {
             return;
         }
 
+        let fonts = self.fonts_iter(&settings.preference);
+
         let layout = self.get_text_layout(
-            font,
-            size,
             &text_to_use,
+            &settings,
             LayoutSettings {
                 horizontal_align: if halign == TheHorizontalAlign::Left {
                     HorizontalAlign::Left
@@ -704,7 +741,9 @@ impl TheDraw2D {
             },
         );
         for glyph in layout.glyphs() {
-            let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
+            let Some((metrics, alphamap)) = self.rasterize_glyph(glyph, &fonts) else {
+                continue;
+            };
 
             for y in 0..metrics.height {
                 for x in 0..metrics.width {
@@ -744,9 +783,8 @@ impl TheDraw2D {
         frame: &mut [u8],
         rect: &(usize, usize, usize, usize),
         stride: usize,
-        font: &Font,
-        size: f32,
         text: &str,
+        settings: TheFontSettings,
         color: &[u8; 4],
         halign: TheHorizontalAlign,
         valign: TheVerticalAlign,
@@ -756,13 +794,13 @@ impl TheDraw2D {
             return;
         }
 
-        let mut text_size = self.get_text_size(font, size, text_to_use.as_str());
+        let mut text_size = self.get_text_size(text_to_use.as_str(), &settings);
 
         let mut add_trail = false;
         // Text is too long ??
         while text_size.0 >= rect.2 {
             text_to_use.pop();
-            text_size = self.get_text_size(font, size, (text_to_use.clone() + "...").as_str());
+            text_size = self.get_text_size((text_to_use.clone() + "...").as_str(), &settings);
             add_trail = true;
         }
 
@@ -770,10 +808,11 @@ impl TheDraw2D {
             text_to_use += "...";
         }
 
+        let fonts = self.fonts_iter(&settings.preference);
+
         let layout = self.get_text_layout(
-            font,
-            size,
             &text_to_use,
+            &settings,
             LayoutSettings {
                 max_width: Some(rect.2 as f32),
                 max_height: Some(rect.3 as f32),
@@ -795,8 +834,9 @@ impl TheDraw2D {
             },
         );
         for glyph in layout.glyphs() {
-            let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
-            //println!("Metrics: {:?}", glyph);
+            let Some((metrics, alphamap)) = self.rasterize_glyph(glyph, &fonts) else {
+                continue;
+            };
 
             for y in 0..metrics.height {
                 for x in 0..metrics.width {
@@ -829,9 +869,8 @@ impl TheDraw2D {
         top_left: &Vec2<i32>,
         clip_rect: &(usize, usize, usize, usize),
         stride: usize,
-        font: &Font,
-        size: f32,
         text: &str,
+        settings: TheFontSettings,
         color: &[u8; 4],
         halign: TheHorizontalAlign,
         valign: TheVerticalAlign,
@@ -841,10 +880,11 @@ impl TheDraw2D {
             return;
         }
 
+        let fonts = self.fonts_iter(&settings.preference);
+
         let layout = self.get_text_layout(
-            font,
-            size,
             &text_to_use,
+            &settings,
             LayoutSettings {
                 horizontal_align: if halign == TheHorizontalAlign::Left {
                     HorizontalAlign::Left
@@ -864,7 +904,9 @@ impl TheDraw2D {
             },
         );
         for glyph in layout.glyphs() {
-            let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
+            let Some((metrics, alphamap)) = self.rasterize_glyph(glyph, &fonts) else {
+                continue;
+            };
 
             for y in 0..metrics.height {
                 for x in 0..metrics.width {
@@ -905,9 +947,8 @@ impl TheDraw2D {
         frame: &mut [u8],
         pos: &(usize, usize),
         stride: usize,
-        font: &Font,
-        size: f32,
         text: &str,
+        settings: TheFontSettings,
         color: &[u8; 4],
         background: &[u8; 4],
     ) {
@@ -915,10 +956,13 @@ impl TheDraw2D {
             return;
         }
 
-        let layout = self.get_text_layout(font, size, text, LayoutSettings::default());
+        let fonts = self.fonts_iter(&settings.preference);
+
+        let layout = self.get_text_layout(text, &settings, LayoutSettings::default());
         for glyph in layout.glyphs() {
-            let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
-            //println!("Metrics: {:?}", glyph);
+            let Some((metrics, alphamap)) = self.rasterize_glyph(glyph, &fonts) else {
+                continue;
+            };
 
             for y in 0..metrics.height {
                 for x in 0..metrics.width {
@@ -943,19 +987,21 @@ impl TheDraw2D {
         frame: &mut [u8],
         pos: &(usize, usize),
         stride: usize,
-        font: &Font,
-        size: f32,
         text: &str,
+        settings: TheFontSettings,
         color: &[u8; 4],
     ) {
         if text.is_empty() {
             return;
         }
 
-        let layout = self.get_text_layout(font, size, text, LayoutSettings::default());
+        let fonts = self.fonts_iter(&settings.preference);
+
+        let layout = self.get_text_layout(text, &settings, LayoutSettings::default());
         for glyph in layout.glyphs() {
-            let (metrics, alphamap) = font.rasterize(glyph.parent, glyph.key.px);
-            //println!("Metrics: {:?}", glyph);
+            let Some((metrics, alphamap)) = self.rasterize_glyph(glyph, &fonts) else {
+                continue;
+            };
 
             for y in 0..metrics.height {
                 for x in 0..metrics.width {
@@ -977,27 +1023,52 @@ impl TheDraw2D {
     /// Returns the layout of the given text
     pub fn get_text_layout(
         &self,
-        font: &Font,
-        size: f32,
         text: &str,
-        settings: LayoutSettings,
+        font_settings: &TheFontSettings,
+        layout_settings: LayoutSettings,
     ) -> Layout {
-        let fonts = &[font];
-
         let mut layout = Layout::new(CoordinateSystem::PositiveYDown);
-        layout.reset(&settings);
-        layout.append(fonts, &TextStyle::new(text, size, 0));
+        layout.reset(&layout_settings);
+
+        let mut segment = String::default();
+        let mut last_font_index = 0;
+
+        let fonts = self.fonts_iter(&font_settings.preference);
+
+        for ch in text.chars() {
+            for (index, font) in fonts.iter().enumerate() {
+                if font.lookup_glyph_index(ch) != 0 {
+                    if index != last_font_index {
+                        layout.append(
+                            &fonts,
+                            &TextStyle::new(&segment, font_settings.size, last_font_index),
+                        );
+                        last_font_index = index;
+                        segment = String::default();
+                    }
+                    break;
+                }
+            }
+            segment.push(ch);
+        }
+
+        if !segment.is_empty() {
+            layout.append(
+                &fonts,
+                &TextStyle::new(&segment, font_settings.size, last_font_index),
+            );
+        }
 
         layout
     }
 
     /// Returns the size of the given text
-    pub fn get_text_size(&self, font: &Font, size: f32, text: &str) -> (usize, usize) {
+    pub fn get_text_size(&self, text: &str, settings: &TheFontSettings) -> (usize, usize) {
         if text.is_empty() {
             return (0, 0);
         }
 
-        let layout = self.get_text_layout(font, size, text, LayoutSettings::default());
+        let layout = self.get_text_layout(text, settings, LayoutSettings::default());
         let glyphs = layout.glyphs();
 
         let x = glyphs[glyphs.len() - 1].x.ceil() as usize + glyphs[glyphs.len() - 1].width + 1;
@@ -1327,6 +1398,34 @@ impl TheDraw2D {
         }
     }
 
+    pub fn add_font_data<Data>(&mut self, data: Data)
+    where
+        Data: Deref<Target = [u8]>,
+    {
+        match Font::from_bytes(data, fontdue::FontSettings::default()) {
+            Ok(font) => {
+                self.fonts.push(font);
+            }
+            Err(err) => {
+                println!("Failed to load font from data: {err:?}");
+            }
+        }
+    }
+
+    pub fn add_code_font_data<Data>(&mut self, data: Data)
+    where
+        Data: Deref<Target = [u8]>,
+    {
+        match Font::from_bytes(data, fontdue::FontSettings::default()) {
+            Ok(font) => {
+                self.code_fonts.push(font);
+            }
+            Err(err) => {
+                println!("Failed to load font from data: {err:?}");
+            }
+        }
+    }
+
     /// The fill mask for an SDF distance
     fn fill_mask(&self, dist: f32) -> f32 {
         (-dist).clamp(0.0, 1.0)
@@ -1335,6 +1434,39 @@ impl TheDraw2D {
     /// The border mask for an SDF distance
     fn border_mask(&self, dist: f32, width: f32) -> f32 {
         (dist + width).clamp(0.0, 1.0) - dist.clamp(0.0, 1.0)
+    }
+
+    fn fonts_iter(&self, font_preference: &TheFontPreference) -> Vec<&Font> {
+        let mut fonts_ref = self.fonts.iter().collect::<Vec<&Font>>();
+        let mut code_fonts_ref = self.code_fonts.iter().collect::<Vec<&Font>>();
+
+        match font_preference {
+            TheFontPreference::Default => {
+                fonts_ref.append(&mut code_fonts_ref);
+                fonts_ref
+            }
+            TheFontPreference::Code => {
+                code_fonts_ref.append(&mut fonts_ref);
+                code_fonts_ref
+            }
+        }
+    }
+
+    fn rasterize_glyph(
+        &self,
+        glyph: &GlyphPosition,
+        fonts: &[&Font],
+    ) -> Option<(Metrics, Vec<u8>)> {
+        if fonts.is_empty() {
+            return None;
+        }
+
+        let font = fonts
+            .iter()
+            .find(|font| font.lookup_glyph_index(glyph.parent) != 0)
+            .map_or(fonts.first().unwrap(), |font| font);
+
+        Some(font.rasterize(glyph.parent, glyph.key.px))
     }
 
     /// Smoothstep for f32
