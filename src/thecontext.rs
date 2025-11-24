@@ -106,4 +106,39 @@ impl TheContext {
         }
         time
     }
+
+    #[cfg(feature = "i18n")]
+    pub fn load_system_fonts(&mut self, fonts: Vec<TheFontScript>) {
+        use std::fs::read;
+
+        use font_kit::{
+            family_name::FamilyName, handle::Handle, properties::Properties, source::SystemSource,
+        };
+
+        if fonts.is_empty() {
+            return;
+        }
+
+        let source = SystemSource::new();
+
+        for font in fonts {
+            for font_name in font.fonts() {
+                if let Ok(handle) = source.select_best_match(
+                    &[FamilyName::Title(font_name.to_string())],
+                    &Properties::new(),
+                ) {
+                    let buf = match handle {
+                        Handle::Memory { bytes, .. } => Some(bytes.to_vec()),
+                        Handle::Path { path, .. } => read(path).ok(),
+                    };
+
+                    if let Some(buf) = buf {
+                        self.draw.add_font_data(buf);
+
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }

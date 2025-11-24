@@ -24,6 +24,11 @@ pub trait TheTrait {
         None
     }
 
+    #[cfg(feature = "i18n")]
+    fn fonts_to_load(&self) -> Vec<TheFontScript> {
+        vec![]
+    }
+
     fn set_cmd_line_args_early(&mut self, args: Vec<String>) {}
     fn set_cmd_line_args(&mut self, args: Vec<String>, ctx: &mut TheContext) {}
 

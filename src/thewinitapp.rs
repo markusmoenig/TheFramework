@@ -287,6 +287,9 @@ impl TheWinitApp {
                 .layout(ctx.ctx.width as i32, ctx.ctx.height as i32, &mut ctx.ctx);
         }
 
+        #[cfg(feature = "i18n")]
+        ctx.ctx.load_system_fonts(self.app.fonts_to_load());
+
         self.app.init(&mut ctx.ctx);
 
         // If available set the command line arguments to the trait.

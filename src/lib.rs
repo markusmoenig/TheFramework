@@ -17,6 +17,9 @@ pub mod theui;
 #[cfg(feature = "log")]
 pub mod thelogger;
 
+#[cfg(feature = "i18n")]
+pub mod thei18n;
+
 pub use crate::theapp::TheApp;
 pub use crate::thecontext::TheContext;
 pub use crate::thetrait::TheTrait;
@@ -115,4 +118,7 @@ pub mod prelude {
 
     #[cfg(feature = "winit_app")]
     pub use crate::thewinitapp::run_winit_app;
+
+    #[cfg(feature = "i18n")]
+    pub use crate::thei18n::TheFontScript;
 }
