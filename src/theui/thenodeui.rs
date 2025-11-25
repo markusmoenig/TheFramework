@@ -254,7 +254,7 @@ impl TheNodeUI {
                     //     view.set_font_size(12.5);
                     //     view.limiter_mut().set_max_width(360);
 
-                    let mut item = TheTreeItem::new(TheId::named("FloatEditSlider"));
+                    let mut item = TheTreeText::new(TheId::named("FloatEditSlider"));
                     item.set_text(text.clone());
                     // item.add_widget_column(200, Box::new(view));
                     // item.set_background_color(TheColor::from(ActionRole::Dock.to_color()));

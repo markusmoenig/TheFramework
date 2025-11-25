@@ -13,6 +13,7 @@ pub struct TheTreeItem {
     is_dirty: bool,
 
     mouse_down_pos: Vec2<i32>,
+    mouse_down_in_widget: bool,
 
     icon: Option<TheRGBABuffer>,
     status: Option<String>,
@@ -49,6 +50,7 @@ impl TheWidget for TheTreeItem {
             dim: TheDim::zero(),
             is_dirty: true,
             mouse_down_pos: Vec2::zero(),
+            mouse_down_in_widget: false,
 
             icon: None,
             status: None,
@@ -104,6 +106,8 @@ impl TheWidget for TheTreeItem {
 
                 ctx.ui.set_focus(self.id());
 
+                // Track if mouse down happened in embedded widget
+                self.mouse_down_in_widget = false;
                 if let Some((_width, w)) = &mut self.widget_column {
                     let dim = w.dim();
                     let widget_coord =
@@ -115,6 +119,7 @@ impl TheWidget for TheTreeItem {
                         && widget_coord.x < dim.width
                         && widget_coord.y < dim.height
                     {
+                        self.mouse_down_in_widget = true;
                         redraw = w.on_event(&TheEvent::MouseDown(widget_coord), ctx);
                     }
                 }
@@ -122,7 +127,17 @@ impl TheWidget for TheTreeItem {
                 self.mouse_down_pos = Vec2::new(coord.x, coord.y + self.scroll_offset);
             }
             TheEvent::MouseUp(coord) => {
-                if let Some((_, w)) = &mut self.widget_column {
+                // If mouse down was in widget, forward mouse up (even if outside bounds)
+                if self.mouse_down_in_widget {
+                    if let Some((_, w)) = &mut self.widget_column {
+                        let dim = w.dim();
+                        let widget_coord =
+                            Vec2::new(coord.x - dim.x, coord.y - dim.y + self.scroll_offset);
+                        redraw = w.on_event(&TheEvent::MouseUp(widget_coord), ctx);
+                        self.is_dirty = true;
+                    }
+                    self.mouse_down_in_widget = false;
+                } else if let Some((_, w)) = &mut self.widget_column {
                     let dim = w.dim();
                     let widget_coord =
                         Vec2::new(coord.x - dim.x, coord.y - dim.y + self.scroll_offset);
@@ -154,20 +169,37 @@ impl TheWidget for TheTreeItem {
                 }
             }
             TheEvent::MouseDragged(coord) => {
-                let coord = Vec2::new(coord.x, coord.y + self.scroll_offset);
-                if ctx.ui.drop.is_none()
-                    && Vec2::new(self.mouse_down_pos.x as f32, self.mouse_down_pos.y as f32)
-                        .distance(Vec2::new(coord.x as f32, coord.y as f32))
-                        >= 5.0
-                {
-                    let mut text = self.text.clone();
+                // If mouse down happened in embedded widget, always forward drags to it
+                let mut handled_by_widget = false;
+                if self.mouse_down_in_widget {
                     if let Some((_, w)) = &mut self.widget_column {
-                        if let TheValue::Text(t) = w.value() {
-                            text = t.clone();
-                        }
+                        let dim = w.dim();
+                        let widget_coord =
+                            Vec2::new(coord.x - dim.x, coord.y - dim.y + self.scroll_offset);
+
+                        // Always forward drag events if mouse down was in widget (even if mouse is now outside)
+                        redraw = w.on_event(&TheEvent::MouseDragged(widget_coord), ctx);
+                        handled_by_widget = true;
                     }
-                    ctx.ui
-                        .send(TheEvent::DragStarted(self.id().clone(), text, coord));
+                }
+
+                // Only handle drag for tree item if not handled by embedded widget
+                if !handled_by_widget {
+                    let coord = Vec2::new(coord.x, coord.y + self.scroll_offset);
+                    if ctx.ui.drop.is_none()
+                        && Vec2::new(self.mouse_down_pos.x as f32, self.mouse_down_pos.y as f32)
+                            .distance(Vec2::new(coord.x as f32, coord.y as f32))
+                            >= 5.0
+                    {
+                        let mut text = self.text.clone();
+                        if let Some((_, w)) = &mut self.widget_column {
+                            if let TheValue::Text(t) = w.value() {
+                                text = t.clone();
+                            }
+                        }
+                        ctx.ui
+                            .send(TheEvent::DragStarted(self.id().clone(), text, coord));
+                    }
                 }
             }
             TheEvent::Hover(coord) => {

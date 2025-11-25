@@ -89,6 +89,8 @@ impl TheTreeNode {
                 tree_item.set_associated_layout(layout_id.clone());
             } else if let Some(tree_icons) = widget.as_tree_icons() {
                 tree_icons.set_associated_layout(layout_id.clone());
+            } else if let Some(tree_text) = widget.as_tree_text() {
+                tree_text.set_associated_layout(layout_id.clone());
             }
         }
         for child in &mut self.childs {
@@ -121,6 +123,8 @@ impl TheTreeNode {
                 tree_item.set_associated_layout(layout_id.clone());
             } else if let Some(tree_icons) = widget.as_tree_icons() {
                 tree_icons.set_associated_layout(layout_id.clone());
+            } else if let Some(tree_text) = widget.as_tree_text() {
+                tree_text.set_associated_layout(layout_id.clone());
             }
         }
         self.widgets.push(widget);
@@ -361,6 +365,8 @@ impl TheTreeNode {
                 tree_item.set_scroll_offset(offset);
             } else if let Some(tree_icons) = widget.as_tree_icons() {
                 tree_icons.set_scroll_offset(offset);
+            } else if let Some(tree_text) = widget.as_tree_text() {
+                tree_text.set_scroll_offset(offset);
             }
         }
 
