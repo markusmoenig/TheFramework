@@ -228,6 +228,157 @@ impl TheNodeUI {
     }
 
     /// Add the items to the given text layout.
+    pub fn apply_to_tree_node(&self, node: &mut TheTreeNode) {
+        node.widgets.clear();
+        node.childs.clear();
+
+        for (_, item) in &self.items {
+            match item {
+                Text(id, name, status, value, default_value, continous) => {
+                    let mut edit = TheTextLineEdit::new(TheId::named(id));
+                    edit.set_text(value.clone());
+                    edit.set_continuous(*continous);
+                    edit.set_status_text(status);
+                    edit.set_info_text(default_value.clone());
+
+                    let mut item = TheTreeItem::new(TheId::named("Text"));
+                    item.set_text(name.clone());
+                    item.set_status_text(status);
+                    item.add_widget_column(200, Box::new(edit));
+
+                    node.add_widget(Box::new(item));
+                }
+                Markdown(_, text) => {
+                    //     let mut view = TheMarkdownView::new(TheId::named(id));
+                    //     view.set_text(text.clone());
+                    //     view.set_font_size(12.5);
+                    //     view.limiter_mut().set_max_width(360);
+
+                    let mut item = TheTreeItem::new(TheId::named("FloatEditSlider"));
+                    item.set_text(text.clone());
+                    // item.add_widget_column(200, Box::new(view));
+                    // item.set_background_color(TheColor::from(ActionRole::Dock.to_color()));
+
+                    node.add_widget(Box::new(item));
+                }
+                // Selector(id, name, status, values, value) => {
+                //     let mut dropdown = TheDropdownMenu::new(TheId::named(id));
+                //     for item in values {
+                //         dropdown.add_option(item.clone());
+                //     }
+                //     dropdown.set_selected_index(*value);
+                //     dropdown.set_status_text(status);
+                //     layout.add_pair(name.clone(), Box::new(dropdown));
+                // }
+                FloatEditSlider(id, name, status, value, range, continous) => {
+                    let mut slider = TheTextLineEdit::new(TheId::named(id));
+                    slider.set_value(TheValue::Float(*value));
+                    slider.set_range(TheValue::RangeF32(range.clone()));
+                    slider.set_continuous(*continous);
+                    slider.set_status_text(status);
+
+                    let mut item = TheTreeItem::new(TheId::named("FloatEditSlider"));
+                    item.set_text(name.clone());
+                    item.add_widget_column(200, Box::new(slider));
+                    item.set_status_text(status);
+
+                    node.add_widget(Box::new(item));
+                }
+                FloatSlider(id, name, status, value, range, default_value, continous) => {
+                    let mut slider = TheSlider::new(TheId::named(id));
+                    slider.set_value(TheValue::Float(*value));
+                    slider.set_default_value(TheValue::Float(*default_value));
+                    slider.set_range(TheValue::RangeF32(range.clone()));
+                    slider.set_continuous(*continous);
+                    slider.set_status_text(status);
+
+                    let mut item = TheTreeItem::new(TheId::named("FloatSlider"));
+                    item.set_text(name.clone());
+                    item.add_widget_column(200, Box::new(slider));
+                    item.set_status_text(status);
+
+                    node.add_widget(Box::new(item));
+                }
+                IntEditSlider(id, name, status, value, range, continous) => {
+                    let mut slider = TheTextLineEdit::new(TheId::named(id));
+                    slider.set_value(TheValue::Int(*value));
+                    slider.set_range(TheValue::RangeI32(range.clone()));
+                    slider.set_continuous(*continous);
+                    slider.set_status_text(status);
+
+                    let mut item = TheTreeItem::new(TheId::named("IntEditSlider"));
+                    item.set_text(name.clone());
+                    item.add_widget_column(200, Box::new(slider));
+                    item.set_status_text(status);
+
+                    node.add_widget(Box::new(item));
+                }
+                PaletteSlider(id, name, status, value, palette, continous) => {
+                    let mut slider = TheTextLineEdit::new(TheId::named(id));
+                    slider.set_value(TheValue::Int(*value));
+                    slider.set_range(TheValue::RangeI32(0..=255));
+                    slider.set_continuous(*continous);
+                    slider.set_status_text(status);
+                    slider.set_palette(palette.clone());
+
+                    let mut item = TheTreeItem::new(TheId::named("PaletteSlider"));
+                    item.set_text(name.clone());
+                    item.add_widget_column(200, Box::new(slider));
+                    item.set_status_text(status);
+
+                    node.add_widget(Box::new(item));
+                }
+                IntSlider(id, name, status, value, range, default_value, continous) => {
+                    let mut slider = TheSlider::new(TheId::named(id));
+                    slider.set_value(TheValue::Int(*value));
+                    slider.set_default_value(TheValue::Int(*default_value));
+                    slider.set_range(TheValue::RangeI32(range.clone()));
+                    slider.set_continuous(*continous);
+                    slider.set_status_text(status);
+
+                    let mut item = TheTreeItem::new(TheId::named("IntSlider"));
+                    item.set_text(name.clone());
+                    item.add_widget_column(200, Box::new(slider));
+                    item.set_status_text(status);
+
+                    node.add_widget(Box::new(item));
+                }
+                // Button(id, name, status, layout_text) => {
+                //     let mut button = TheTraybarButton::new(TheId::named(id));
+                //     button.set_text(name.clone());
+                //     button.set_status_text(status);
+                //     layout.add_pair(layout_text.clone(), Box::new(button));
+                // }
+                // ColorPicker(id, name, status, value, continuous) => {
+                //     let mut picker = TheColorPicker::new(TheId::named(id));
+                //     picker.set_value(TheValue::ColorObject(value.clone()));
+                //     picker.set_status_text(status);
+                //     picker.set_continuous(*continuous);
+                //     picker.limiter_mut().set_max_size(Vec2::new(200, 200));
+                //     layout.add_pair(name.clone(), Box::new(picker));
+                // }
+                Checkbox(id, name, status, value) => {
+                    let mut cb = TheCheckButton::new(TheId::named(id));
+                    cb.set_value(TheValue::Bool(*value));
+                    cb.set_status_text(status);
+
+                    let mut item = TheTreeItem::new(TheId::named("Checkbox"));
+                    item.set_text(name.clone());
+                    item.add_widget_column(200, Box::new(cb));
+                    item.set_status_text(status);
+
+                    node.add_widget(Box::new(item));
+                }
+                // Separator(name) => {
+                //     let sep = TheSeparator::new(TheId::named_with_id("Separator", Uuid::new_v4()));
+                //     layout.add_pair(name.clone(), Box::new(sep));
+                // }
+                _ => {}
+            }
+        }
+    }
+
+    /// Add the items to the given text layout.
     pub fn apply_to_text_layout(&self, layout: &mut dyn TheTextLayoutTrait) {
         layout.clear();
         for (_, item) in &self.items {
