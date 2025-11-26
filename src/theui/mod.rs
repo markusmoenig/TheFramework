@@ -156,27 +156,25 @@ impl TheAccelerator {
     /// Converts the accelerator to a string.
     pub fn description(&self) -> String {
         let mut str = "".to_string();
+
+        if self.accel.contains(TheAcceleratorKey::SHIFT) {
+            str += "Shift + ";
+        }
+
         if self.accel.contains(TheAcceleratorKey::CTRLCMD) {
             if cfg!(target_os = "macos") {
-                str = "Cmd + ".to_string();
+                str += "Cmd + ";
             } else {
-                str = "Ctrl + ".to_string();
+                str += "Ctrl + ";
             }
         }
 
         if self.accel.contains(TheAcceleratorKey::ALT) {
             if cfg!(target_os = "macos") {
-                str = "Option + ".to_string();
+                str += "Option + ";
             } else {
-                str = "Alt + ".to_string();
+                str += "Alt + ";
             }
-        }
-
-        if self.accel.contains(TheAcceleratorKey::SHIFT) {
-            if !str.is_empty() {
-                str += " ";
-            }
-            str += ("Shift + ".to_string() + &str).as_str();
         }
 
         let mut s = str.to_string();
