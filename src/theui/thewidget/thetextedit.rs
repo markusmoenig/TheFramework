@@ -34,9 +34,8 @@ impl TheCursor {
 struct TheGlyph {
     parent: char,
 
-    start: usize,
-    end: usize,
-
+    // start: usize,
+    // end: usize,
     x: f32,
     width: usize,
 }
@@ -1201,8 +1200,8 @@ impl TheTextRenderer {
             let end = start + glyph.parent.len_utf8();
             self.glyphs.push(TheGlyph {
                 parent: glyph.parent,
-                start,
-                end,
+                // start,
+                // end,
                 x: glyph.x,
                 width: glyph.width,
             });
@@ -1601,18 +1600,18 @@ impl TheTextRenderer {
         self.row_info[row].glyph_start + column
     }
 
-    fn get_glyph_text_range(&self, index: usize) -> (usize, usize) {
-        if self.glyphs.is_empty() {
-            return (0, 0);
-        }
+    // fn get_glyph_text_range(&self, index: usize) -> (usize, usize) {
+    //     if self.glyphs.is_empty() {
+    //         return (0, 0);
+    //     }
 
-        if let Some(glyph) = self.glyphs.get(index) {
-            return (glyph.start, glyph.end);
-        }
+    //     if let Some(glyph) = self.glyphs.get(index) {
+    //         return (glyph.start, glyph.end);
+    //     }
 
-        let last_glyph = &self.glyphs[self.glyphs.len() - 1];
-        (last_glyph.end, last_glyph.end)
-    }
+    //     let last_glyph = &self.glyphs[self.glyphs.len() - 1];
+    //     (last_glyph.end, last_glyph.end)
+    // }
 
     fn get_text_left(&self, index: usize) -> usize {
         if self.glyphs.is_empty() {
@@ -1868,7 +1867,7 @@ impl TheTextRenderer {
 
         // Tokens
         let text = &state.get_text(glyph_start, glyph_end);
-        let row_start_index = self.get_glyph_text_range(glyph_start).0;
+        // let row_start_index = self.get_glyph_text_range(glyph_start).0;
         let stride = buffer.stride();
         if let Some(highlights) = &row.highlights {
             // Matches

@@ -76,17 +76,12 @@ impl TheWidget for TheTreeIcons {
 
         match event {
             TheEvent::Drop(coord, drop) => {
-                // println!("00 {:?}", drop);
                 if drop.id.name == "Tile" {
                     // Adjust coordinates for scroll offset from layout
                     let adjusted_coord = Vec2::new(coord.x, coord.y + self.scroll_offset);
-
-                    println!("0 {}", adjusted_coord);
-
                     // Find which icon was dropped on
                     for (i, rect) in self.rectangles.iter().enumerate() {
                         if rect.contains(adjusted_coord) && i < self.icons.len() {
-                            println!("1 {}", i);
                             let tile_id = drop.id.uuid;
                             ctx.ui
                                 .send(TheEvent::TileDropped(self.id().clone(), tile_id, i));
