@@ -5,6 +5,7 @@ use syntect::{
     highlighting::{Theme, ThemeSet},
     parsing::{SyntaxDefinition, SyntaxReference, SyntaxSet},
 };
+use unicode_segmentation::UnicodeSegmentation;
 
 use crate::prelude::*;
 
@@ -191,7 +192,7 @@ impl TheCodeHighlighterTrait for TheCodeHighlighter {
                                 style.background.b,
                                 style.background.a,
                             ),
-                            token.len(),
+                            token.graphemes(true).count(),
                         )
                     })
                     .collect::<Vec<(TheColor, TheColor, usize)>>()
