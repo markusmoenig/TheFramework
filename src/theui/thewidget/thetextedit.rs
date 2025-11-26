@@ -792,11 +792,7 @@ impl TheTextEditState {
     }
 
     fn byte_offset_of_index(&self, row_number: usize, index: usize) -> usize {
-        self.rows[row_number]
-            .grapheme_indices(true)
-            .nth(index)
-            .map(|(byte_offset, _)| byte_offset)
-            .unwrap_or(self.rows[row_number].len())
+        grapheme_indices(&self.rows[row_number], index).unwrap_or(self.rows[row_number].len())
     }
 
     fn delete_char_by_cursor(&mut self) -> bool {
@@ -930,9 +926,11 @@ impl TheTextEditState {
         let end_col = end_col.min(self.rows[end_row].len());
 
         if start_row == end_row {
-            self.rows[start_row][start_col..end_col].to_owned()
+            grapheme_string(&self.rows[start_row], start_col, end_col).to_owned()
         } else {
-            let mut text = self.rows[start_row][start_col..].to_owned();
+            let mut text =
+                grapheme_string(&self.rows[start_row], start_col, self.rows[start_row].len())
+                    .to_owned();
             for row in &self.rows[start_row + 1..end_row] {
                 text.push('\n');
                 text.push_str(row.as_str());
@@ -1196,16 +1194,21 @@ impl TheTextRenderer {
             },
         );
         let glyph_positions = layout.glyphs();
-        self.glyphs = glyph_positions
-            .iter()
-            .map(|glyph| TheGlyph {
+
+        self.glyphs = Vec::with_capacity(glyph_positions.len());
+        let mut start = 0;
+        for glyph in glyph_positions {
+            let end = start + glyph.parent.len_utf8();
+            self.glyphs.push(TheGlyph {
                 parent: glyph.parent,
-                start: glyph.byte_offset,
-                end: glyph.byte_offset + glyph.parent.len_utf8(),
+                start,
+                end,
                 x: glyph.x,
                 width: glyph.width,
-            })
-            .collect();
+            });
+
+            start = end;
+        }
 
         // Hack: to get the width of a normal space,
         // for that fontdue will render the tailing space with zero width
@@ -1628,8 +1631,12 @@ impl TheTextRenderer {
     // Inclusive on both end
     // Make sure start and end are on the same row
     fn get_text_width(&self, start: usize, end: usize) -> usize {
-        if self.glyphs.is_empty() || start == end {
+        if self.glyphs.is_empty() {
             return 0;
+        }
+
+        if start == end {
+            return self.glyphs[start].width;
         }
 
         let left = start.min(end);
@@ -1939,7 +1946,7 @@ impl TheTextRenderer {
                 if self.indicate_space {
                     let mut chars_to_rendered: Vec<char> = vec![];
                     for (char_index, char) in
-                        text[token_start_in_row..token_end_in_row].char_indices()
+                        grapheme_string(text, token_start_in_row, token_end_in_row).char_indices()
                     {
                         if let Some(ch) = chars_to_rendered.first() {
                             if ch.is_whitespace() == char.is_whitespace() {
@@ -2045,7 +2052,7 @@ impl TheTextRenderer {
                         &Vec2::new(left, top - 1),
                         &(self.left, self.top, self.width, self.height),
                         stride,
-                        &text[token_start_in_row..token_end_in_row],
+                        &grapheme_string(text, token_start_in_row, token_end_in_row),
                         TheFontSettings {
                             size: self.font_size,
                             preference: font_preference.clone(),
@@ -2102,15 +2109,12 @@ impl TheTextRenderer {
                 }
                 if let Some(color) = &text_style.foreground {
                     let left = left + self.get_text_left(token_start).to_i32().unwrap() + 0;
-                    let start = self.get_glyph_text_range(token_start).0 - row_start_index;
-                    let end = self.get_glyph_text_range(token_end).1 - row_start_index;
-                    let end = text.len().min(end);
                     draw.text_rect_blend_clip(
                         buffer.pixels_mut(),
                         &Vec2::new(left, top - 1),
                         &(self.left, self.top, self.width, self.height),
                         stride,
-                        &text[start..end],
+                        &grapheme_string(text, token_start, token_end),
                         TheFontSettings {
                             size: self.font_size,
                             preference: font_preference.clone(),
@@ -2153,15 +2157,12 @@ impl TheTextRenderer {
 
             for (start, end) in text_ranges_to_render {
                 let left = left + self.get_text_left(start).to_i32().unwrap();
-                let start = self.get_glyph_text_range(start).0 - row_start_index;
-                let end = self.get_glyph_text_range(end).1 - row_start_index;
-                let end = text.len().min(end);
                 draw.text_rect_blend_clip(
                     buffer.pixels_mut(),
                     &Vec2::new(left, top - 1),
                     &(self.left, self.top, self.width, self.height),
                     stride,
-                    &text[start..end],
+                    grapheme_string(text, start - glyph_start, end - glyph_start),
                     TheFontSettings {
                         size: self.font_size,
                         preference: font_preference.clone(),
@@ -2276,4 +2277,15 @@ impl TheTextStyle {
     pub fn is_empty(&self) -> bool {
         self.foreground.is_none() && self.background.is_none() && self.underline.is_none()
     }
+}
+
+fn grapheme_indices(text: &str, index: usize) -> Option<usize> {
+    text.grapheme_indices(true)
+        .nth(index)
+        .map(|(byte_offset, _)| byte_offset)
+}
+
+fn grapheme_string(text: &str, start: usize, end: usize) -> &str {
+    &text[grapheme_indices(text, start).unwrap_or_default()
+        ..grapheme_indices(text, end).unwrap_or(text.len())]
 }
