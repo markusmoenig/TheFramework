@@ -52,6 +52,8 @@ pub struct TheRGBAView {
     dim: TheDim,
     is_dirty: bool,
 
+    mouse_down_pos: Vec2<i32>,
+
     accumulated_wheel_delta: Vec2<f32>,
 
     layout_id: TheId,
@@ -162,6 +164,8 @@ impl TheWidget for TheRGBAView {
             dim: TheDim::zero(),
             is_dirty: true,
 
+            mouse_down_pos: Vec2::zero(),
+
             accumulated_wheel_delta: Vec2::zero(),
 
             layout_id: TheId::empty(),
@@ -216,6 +220,8 @@ impl TheWidget for TheRGBAView {
 
                 ctx.ui.set_focus(self.id());
 
+                self.mouse_down_pos = *coord;
+
                 if self.mode != TheRGBAViewMode::Display {
                     if let Some(loc) = self.get_grid_location(*coord) {
                         self.last_loc = loc;
@@ -262,6 +268,22 @@ impl TheWidget for TheRGBAView {
                         self.layout_id.clone(),
                     ));
                     ctx.ui.set_focus(self.id());
+                }
+
+                // Check if we should start dragging in TilePicker mode
+                if self.mode == TheRGBAViewMode::TilePicker && ctx.ui.drop.is_none() {
+                    if Vec2::new(self.mouse_down_pos.x as f32, self.mouse_down_pos.y as f32)
+                        .distance(Vec2::new(coord.x as f32, coord.y as f32))
+                        >= 5.0
+                    {
+                        if let Some(loc) = self.get_grid_location(self.mouse_down_pos) {
+                            ctx.ui.send(TheEvent::TileDragStarted(
+                                self.id().clone(),
+                                Vec2::new(loc.0, loc.1),
+                                Vec2::new(loc.0 + coord.x, loc.1 + coord.y),
+                            ));
+                        }
+                    }
                 }
 
                 if self.mode != TheRGBAViewMode::Display {

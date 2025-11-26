@@ -18,6 +18,7 @@ pub enum TheEvent {
     ModifierChanged(bool, bool, bool, bool),
     DropPreview(Vec2<i32>, TheDrop),
     Drop(Vec2<i32>, TheDrop),
+    TileDropped(TheId, Uuid, usize),
 
     // These events define widget states.
     StateChanged(TheId, TheWidgetState),
@@ -51,6 +52,7 @@ pub enum TheEvent {
     // Tile / Code Editor
     TileSelectionChanged(TheId),
     TilePicked(TheId, Vec2<i32>),
+    TileDragStarted(TheId, Vec2<i32>, Vec2<i32>),
     TileEditorClicked(TheId, Vec2<i32>),
     TileEditorDragged(TheId, Vec2<i32>),
     TileEditorHoverChanged(TheId, Vec2<i32>),

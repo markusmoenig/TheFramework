@@ -13,6 +13,7 @@ pub struct TheTreeIcons {
     scroll_offset: i32,
 
     icons: Vec<Option<TheRGBABuffer>>,
+    texts: Vec<Option<String>>,
     status_texts: Vec<Option<String>>,
     selected_index: Option<usize>,
     hovered_index: Option<usize>,
@@ -47,6 +48,7 @@ impl TheWidget for TheTreeIcons {
             scroll_offset: 0,
 
             icons: vec![],
+            texts: vec![],
             status_texts: vec![],
             selected_index: None,
             hovered_index: None,
@@ -73,6 +75,27 @@ impl TheWidget for TheTreeIcons {
         let mut redraw = false;
 
         match event {
+            TheEvent::Drop(coord, drop) => {
+                // println!("00 {:?}", drop);
+                if drop.id.name == "Tile" {
+                    // Adjust coordinates for scroll offset from layout
+                    let adjusted_coord = Vec2::new(coord.x, coord.y + self.scroll_offset);
+
+                    println!("0 {}", adjusted_coord);
+
+                    // Find which icon was dropped on
+                    for (i, rect) in self.rectangles.iter().enumerate() {
+                        if rect.contains(adjusted_coord) && i < self.icons.len() {
+                            println!("1 {}", i);
+                            let tile_id = drop.id.uuid;
+                            ctx.ui
+                                .send(TheEvent::TileDropped(self.id().clone(), tile_id, i));
+                            self.is_dirty = true;
+                            return true;
+                        }
+                    }
+                }
+            }
             TheEvent::Context(coord) => {
                 if let Some(context_menu) = &self.context_menu {
                     ctx.ui.send(TheEvent::ShowContextMenu(
@@ -370,6 +393,36 @@ impl TheWidget for TheTreeIcons {
                         );
                     }
                 }
+
+                // Draw text overlay (always if present, even over icons)
+                if index < self.texts.len() {
+                    if let Some(text) = &self.texts[index] {
+                        let text_color = WHITE;
+                        let font_size = 9.0; // Small font size
+
+                        // Calculate text rectangle to center it in the icon area
+                        let text_rect = (
+                            icon_rect.0,
+                            icon_rect.1,
+                            (self.icon_size) as usize,
+                            (self.icon_size) as usize,
+                        );
+
+                        ctx.draw.text_rect_blend(
+                            buffer.pixels_mut(),
+                            &text_rect,
+                            stride,
+                            text,
+                            TheFontSettings {
+                                size: font_size,
+                                ..Default::default()
+                            },
+                            &text_color,
+                            TheHorizontalAlign::Center,
+                            TheVerticalAlign::Center,
+                        );
+                    }
+                }
             }
 
             col += 1;
@@ -421,6 +474,7 @@ pub trait TheTreeIconsTrait {
     fn set_spacing(&mut self, spacing: i32);
     fn set_icon_count(&mut self, count: usize);
     fn set_icon(&mut self, index: usize, icon: TheRGBABuffer);
+    fn set_text(&mut self, index: usize, text: String);
     fn set_status_text_for(&mut self, index: usize, text: String);
     fn set_palette(&mut self, palette: &ThePalette);
     fn clear_icons(&mut self);
@@ -457,6 +511,7 @@ impl TheTreeIconsTrait for TheTreeIcons {
 
     fn set_icon_count(&mut self, count: usize) {
         self.icons.resize(count, None);
+        self.texts.resize(count, None);
         self.status_texts.resize(count, None);
         self.update_height();
         self.is_dirty = true;
@@ -479,6 +534,15 @@ impl TheTreeIconsTrait for TheTreeIcons {
         }
     }
 
+    fn set_text(&mut self, index: usize, text: String) {
+        // Ensure texts vec is large enough
+        if index >= self.texts.len() {
+            self.texts.resize(index + 1, None);
+        }
+        self.texts[index] = Some(text);
+        self.is_dirty = true;
+    }
+
     fn set_status_text_for(&mut self, index: usize, text: String) {
         // Ensure status_texts vec is large enough
         if index >= self.status_texts.len() {
@@ -489,6 +553,7 @@ impl TheTreeIconsTrait for TheTreeIcons {
 
     fn set_palette(&mut self, palette: &ThePalette) {
         self.icons.clear();
+        self.texts.clear();
         self.status_texts.clear();
 
         for (index, color_opt) in palette.colors.iter().enumerate() {
@@ -523,6 +588,7 @@ impl TheTreeIconsTrait for TheTreeIcons {
 
     fn clear_icons(&mut self) {
         self.icons.clear();
+        self.texts.clear();
         self.status_texts.clear();
         self.selected_index = None;
         self.hovered_index = None;

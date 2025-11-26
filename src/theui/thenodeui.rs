@@ -29,6 +29,8 @@ pub enum TheNodeUIItem {
     Checkbox(String, String, String, bool),
     /// Separator: Name
     Separator(String),
+    /// Icons: Id, Name, Status, (Buffer, Name, Id)
+    Icons(String, String, String, Vec<(TheRGBABuffer, String, Uuid)>),
 }
 
 impl TheNodeUIItem {
@@ -47,6 +49,7 @@ impl TheNodeUIItem {
             TheNodeUIItem::ColorPicker(id, _, _, _, _) => id,
             TheNodeUIItem::Checkbox(id, _, _, _) => id,
             TheNodeUIItem::Separator(name) => name,
+            TheNodeUIItem::Icons(id, _, _, _) => id,
         }
     }
 }
@@ -129,6 +132,23 @@ impl TheNodeUI {
                 match item {
                     &Checkbox(_, _, _, value) => {
                         return Some(value);
+                    }
+                    _ => {}
+                }
+            }
+        }
+        None
+    }
+
+    /// Get a tile id for the given index
+    pub fn get_tile_id(&self, id: &str, index: usize) -> Option<Uuid> {
+        for (item_id, item) in &self.items {
+            if id == item_id {
+                match item {
+                    Icons(_, _, _, items) => {
+                        if index < items.len() {
+                            return Some(items[index].2);
+                        }
                     }
                     _ => {}
                 }
@@ -248,6 +268,20 @@ impl TheNodeUI {
 
                     node.add_widget(Box::new(item));
                 }
+                Icons(id, _name, status, vec) => {
+                    let mut item = TheTreeIcons::new(TheId::named(id));
+                    item.set_status_text(status);
+                    item.set_icon_size(32);
+                    item.set_icon_count(vec.len());
+                    item.set_selected_index(Some(0));
+
+                    for (index, icon) in vec.iter().enumerate() {
+                        item.set_text(index, icon.1.clone());
+                        item.set_icon(index, icon.0.clone());
+                    }
+
+                    node.add_widget(Box::new(item));
+                }
                 Markdown(_, text) => {
                     //     let mut view = TheMarkdownView::new(TheId::named(id));
                     //     view.set_text(text.clone());
@@ -261,15 +295,21 @@ impl TheNodeUI {
 
                     node.add_widget(Box::new(item));
                 }
-                // Selector(id, name, status, values, value) => {
-                //     let mut dropdown = TheDropdownMenu::new(TheId::named(id));
-                //     for item in values {
-                //         dropdown.add_option(item.clone());
-                //     }
-                //     dropdown.set_selected_index(*value);
-                //     dropdown.set_status_text(status);
-                //     layout.add_pair(name.clone(), Box::new(dropdown));
-                // }
+                Selector(id, name, status, values, value) => {
+                    let mut dropdown = TheDropdownMenu::new(TheId::named(id));
+                    for item in values {
+                        dropdown.add_option(item.clone());
+                    }
+                    dropdown.set_selected_index(*value);
+                    dropdown.set_status_text(status);
+
+                    let mut item = TheTreeItem::new(TheId::named("FloatEditSlider"));
+                    item.set_text(name.clone());
+                    item.add_widget_column(200, Box::new(dropdown));
+                    item.set_status_text(status);
+
+                    node.add_widget(Box::new(item));
+                }
                 FloatEditSlider(id, name, status, value, range, continous) => {
                     let mut slider = TheTextLineEdit::new(TheId::named(id));
                     slider.set_value(TheValue::Float(*value));
@@ -474,6 +514,7 @@ impl TheNodeUI {
                     let sep = TheSeparator::new(TheId::named_with_id("Separator", Uuid::new_v4()));
                     layout.add_pair(name.clone(), Box::new(sep));
                 }
+                _ => {}
             }
         }
     }
@@ -538,10 +579,4 @@ impl TheNodeUI {
         }
         updated
     }
-
-    // pub fn create_canvas(&self) -> TheCanvas {
-    //     let mut canvas = TheCanvas::default();
-
-    //     canvas
-    // }
 }
