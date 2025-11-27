@@ -196,6 +196,20 @@ impl TheNodeUI {
         None
     }
 
+    /// Set a bool value.
+    pub fn set_bool_value(&mut self, id: &str, val: bool) {
+        for (item_id, item) in &mut self.items {
+            if id == item_id {
+                match item {
+                    Checkbox(_, _, _, value) => {
+                        *value = val;
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
     /// Set an f32 value.
     pub fn set_f32_value(&mut self, id: &str, val: f32) {
         for (item_id, item) in &mut self.items {
@@ -313,7 +327,9 @@ impl TheNodeUI {
                 FloatEditSlider(id, name, status, value, range, continous) => {
                     let mut slider = TheTextLineEdit::new(TheId::named(id));
                     slider.set_value(TheValue::Float(*value));
-                    slider.set_range(TheValue::RangeF32(range.clone()));
+                    if *range.start() != 0.0 || *range.end() != 0.0 {
+                        slider.set_range(TheValue::RangeF32(range.clone()));
+                    }
                     slider.set_continuous(*continous);
                     slider.set_status_text(status);
 
@@ -342,7 +358,9 @@ impl TheNodeUI {
                 IntEditSlider(id, name, status, value, range, continous) => {
                     let mut slider = TheTextLineEdit::new(TheId::named(id));
                     slider.set_value(TheValue::Int(*value));
-                    slider.set_range(TheValue::RangeI32(range.clone()));
+                    if *range.start() != 0 || *range.end() != 0 {
+                        slider.set_range(TheValue::RangeI32(range.clone()));
+                    }
                     slider.set_continuous(*continous);
                     slider.set_status_text(status);
 
