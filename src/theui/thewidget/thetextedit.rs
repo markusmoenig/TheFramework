@@ -33,9 +33,6 @@ impl TheCursor {
 
 struct TheGlyph {
     parent: char,
-
-    // start: usize,
-    // end: usize,
     x: f32,
     width: usize,
 }
@@ -1194,20 +1191,14 @@ impl TheTextRenderer {
         );
         let glyph_positions = layout.glyphs();
 
-        self.glyphs = Vec::with_capacity(glyph_positions.len());
-        let mut start = 0;
-        for glyph in glyph_positions {
-            let end = start + glyph.parent.len_utf8();
-            self.glyphs.push(TheGlyph {
+        self.glyphs = glyph_positions
+            .iter()
+            .map(|glyph| TheGlyph {
                 parent: glyph.parent,
-                // start,
-                // end,
                 x: glyph.x,
                 width: glyph.width,
-            });
-
-            start = end;
-        }
+            })
+            .collect();
 
         // Hack: to get the width of a normal space,
         // for that fontdue will render the tailing space with zero width
@@ -1600,19 +1591,6 @@ impl TheTextRenderer {
         self.row_info[row].glyph_start + column
     }
 
-    // fn get_glyph_text_range(&self, index: usize) -> (usize, usize) {
-    //     if self.glyphs.is_empty() {
-    //         return (0, 0);
-    //     }
-
-    //     if let Some(glyph) = self.glyphs.get(index) {
-    //         return (glyph.start, glyph.end);
-    //     }
-
-    //     let last_glyph = &self.glyphs[self.glyphs.len() - 1];
-    //     (last_glyph.end, last_glyph.end)
-    // }
-
     fn get_text_left(&self, index: usize) -> usize {
         if self.glyphs.is_empty() {
             return 0;
@@ -1867,7 +1845,6 @@ impl TheTextRenderer {
 
         // Tokens
         let text = &state.get_text(glyph_start, glyph_end);
-        // let row_start_index = self.get_glyph_text_range(glyph_start).0;
         let stride = buffer.stride();
         if let Some(highlights) = &row.highlights {
             // Matches
@@ -2051,7 +2028,7 @@ impl TheTextRenderer {
                         &Vec2::new(left, top - 1),
                         &(self.left, self.top, self.width, self.height),
                         stride,
-                        &grapheme_string(text, token_start_in_row, token_end_in_row),
+                        grapheme_string(text, token_start_in_row, token_end_in_row),
                         TheFontSettings {
                             size: self.font_size,
                             preference: font_preference.clone(),
@@ -2073,7 +2050,7 @@ impl TheTextRenderer {
             let mut rendered_text_ranges = vec![];
             for (range, text_style) in styles {
                 if range.start >= glyph_start + visible_text_end_index
-                    || range.end <= glyph_start + visible_text_start_index
+                    || range.end <= glyph_start + visible_text_start_index.saturating_sub(1)
                 {
                     continue;
                 }
@@ -2113,7 +2090,11 @@ impl TheTextRenderer {
                         &Vec2::new(left, top - 1),
                         &(self.left, self.top, self.width, self.height),
                         stride,
-                        &grapheme_string(text, token_start, token_end),
+                        grapheme_string(
+                            text,
+                            token_start - glyph_start,
+                            token_end - glyph_start + 1,
+                        ),
                         TheFontSettings {
                             size: self.font_size,
                             preference: font_preference.clone(),
