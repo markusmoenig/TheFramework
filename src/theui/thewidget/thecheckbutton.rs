@@ -11,6 +11,7 @@ pub struct TheCheckButton {
     dim: TheDim,
     is_dirty: bool,
     cursor_icon: Option<TheCursorIcon>,
+    embedded: bool,
 }
 
 impl TheWidget for TheCheckButton {
@@ -31,6 +32,7 @@ impl TheWidget for TheCheckButton {
             dim: TheDim::zero(),
             is_dirty: false,
             cursor_icon: Some(TheCursorIcon::Hand),
+            embedded: false,
         }
     }
 
@@ -52,6 +54,10 @@ impl TheWidget for TheCheckButton {
 
     fn set_status_text(&mut self, text: &str) {
         self.status = Some(text.to_string());
+    }
+
+    fn set_embedded(&mut self, embedded: bool) {
+        self.embedded = embedded;
     }
 
     #[allow(clippy::single_match)]
@@ -171,7 +177,7 @@ impl TheWidget for TheCheckButton {
 
         let mut icon_name = "dark_checkbutton_normal".to_string();
 
-        if self.id().equals(&ctx.ui.hover) || self.id().equals(&ctx.ui.focus) {
+        if (self.id().equals(&ctx.ui.hover) || self.id().equals(&ctx.ui.focus)) && !self.embedded {
             icon_name = "dark_checkbutton_focus".to_string();
         }
 
@@ -182,7 +188,7 @@ impl TheWidget for TheCheckButton {
         if let Some(icon) = ctx.ui.icon(icon_name.as_str()) {
             let utuple = self.dim.to_buffer_utuple();
             let r = (
-                (utuple.0 + (utuple.2 - icon.dim().width as usize) / 2),
+                utuple.0, //(utuple.0 + (utuple.2 - icon.dim().width as usize) / 2),
                 utuple.1 + 3,
                 icon.dim().width as usize,
                 icon.dim().height as usize,

@@ -18,6 +18,10 @@ pub struct TheDropdownMenu {
     is_dirty: bool,
 
     safety_offset: Vec2<i32>,
+    embedded: bool,
+
+    parent_id: Option<TheId>,
+    overlay_offset: Vec2<i32>,
 }
 
 impl TheWidget for TheDropdownMenu {
@@ -46,6 +50,10 @@ impl TheWidget for TheDropdownMenu {
             is_dirty: false,
 
             safety_offset: Vec2::new(0, 0),
+            embedded: false,
+
+            parent_id: None,
+            overlay_offset: Vec2::zero(),
         }
     }
 
@@ -93,9 +101,16 @@ impl TheWidget for TheDropdownMenu {
         }
     }
 
+    fn set_embedded(&mut self, embedded: bool) {
+        self.embedded = embedded;
+    }
+
+    fn set_parent_id(&mut self, parent_id: TheId) {
+        self.parent_id = Some(parent_id);
+    }
+
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
-        // println!("event ({}): {:?}", self.widget_id.name, event);
         if self.is_disabled {
             return false;
         }
@@ -106,7 +121,14 @@ impl TheWidget for TheDropdownMenu {
                     self.state = TheWidgetState::Clicked;
                     ctx.ui.send_widget_state_changed(self.id(), self.state);
                     ctx.ui.set_focus(self.id());
-                    ctx.ui.set_overlay(self.id());
+
+                    // When embedded, set overlay to parent so parent's draw_overlay is called
+                    if let Some(parent_id) = &self.parent_id {
+                        ctx.ui.set_overlay(parent_id);
+                    } else {
+                        ctx.ui.set_overlay(self.id());
+                    }
+
                     self.original = self.selected;
                 }
                 redraw = true;
@@ -213,13 +235,13 @@ impl TheWidget for TheDropdownMenu {
 
         let utuple: (usize, usize, usize, usize) = self.dim.to_buffer_utuple();
 
-        let mut icon_name = if self.state == TheWidgetState::Clicked {
+        let mut icon_name = if self.state == TheWidgetState::Clicked && !self.embedded {
             "dark_dropdown_clicked".to_string()
         } else {
             "dark_dropdown_normal".to_string()
         };
 
-        if !self.is_disabled {
+        if !self.is_disabled && !self.embedded {
             if self.state != TheWidgetState::Clicked && self.id().equals(&ctx.ui.hover) {
                 icon_name = "dark_dropdown_hover".to_string()
             }
@@ -290,6 +312,9 @@ impl TheWidget for TheDropdownMenu {
         let height = 2 + len * 20 + (if len > 1 { len - 1 } else { 0 });
 
         let mut dim = TheDim::new(self.dim.x, self.dim.y + 20, width as i32, height as i32);
+
+        // Store the overlay offset (will be adjusted by parent if embedded)
+        self.overlay_offset = Vec2::new(self.dim.x, self.dim.y + 20);
 
         self.safety_offset = Vec2::zero();
 
