@@ -312,6 +312,8 @@ impl TheWidget for TheDropdownMenu {
         let height = 2 + len * 20 + (if len > 1 { len - 1 } else { 0 });
 
         let mut dim = TheDim::new(self.dim.x, self.dim.y + 20, width as i32, height as i32);
+        dim.buffer_x = self.dim.x;
+        dim.buffer_y = self.dim.y + 20;
 
         // Store the overlay offset (will be adjusted by parent if embedded)
         self.overlay_offset = Vec2::new(self.dim.x, self.dim.y + 20);

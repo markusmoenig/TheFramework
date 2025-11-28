@@ -78,7 +78,6 @@ impl TheWidget for TheTreeItem {
 
     fn on_event(&mut self, event: &TheEvent, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
-        // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
             TheEvent::Context(coord) => {
                 if let Some(context_menu) = &self.context_menu {
@@ -725,6 +724,25 @@ impl TheWidget for TheTreeItem {
 
     fn as_any(&mut self) -> &mut dyn std::any::Any {
         self
+    }
+
+    fn draw_overlay(
+        &mut self,
+        style: &mut Box<dyn TheStyle>,
+        ctx: &mut TheContext,
+    ) -> TheRGBABuffer {
+        if let Some((_, widget)) = &mut self.widget_column {
+            let mut buffer = widget.draw_overlay(style, ctx);
+            let d = buffer.dim_mut();
+            // d.x += self.dim().x;
+            // d.y += self.dim().y;
+            d.buffer_x = d.x + self.dim().x - 6;
+            d.buffer_y = d.y + self.dim().y + 1;
+
+            buffer
+        } else {
+            TheRGBABuffer::default()
+        }
     }
 }
 

@@ -69,6 +69,11 @@ impl TheRGBABuffer {
     }
 
     /// Gets the width (stride) of the buffer.
+    pub fn dim_mut(&mut self) -> &mut TheDim {
+        &mut self.dim
+    }
+
+    /// Gets the width (stride) of the buffer.
     pub fn stride(&self) -> usize {
         self.dim.width as usize
     }

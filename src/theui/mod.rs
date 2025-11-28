@@ -815,7 +815,13 @@ impl TheUI {
             return redraw;
         }
 
-        if let Some(id) = &ctx.ui.focus {
+        if let Some(id) = &ctx.ui.overlay {
+            if let Some(widget) = self.get_widget_abs(None, Some(&id.uuid)) {
+                let event = TheEvent::MouseDragged(widget.dim().to_local(coord));
+                redraw = widget.on_event(&event, ctx);
+                self.process_events(ctx);
+            }
+        } else if let Some(id) = &ctx.ui.focus {
             if let Some(widget) = self.get_widget_abs(None, Some(&id.uuid)) {
                 let event = TheEvent::MouseDragged(widget.dim().to_local(coord));
                 redraw = widget.on_event(&event, ctx);
@@ -850,7 +856,13 @@ impl TheUI {
             return redraw;
         }
 
-        if let Some(id) = &ctx.ui.focus {
+        if let Some(id) = &ctx.ui.overlay {
+            if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
+                let event = TheEvent::MouseUp(widget.dim().to_local(coord));
+                redraw = widget.on_event(&event, ctx);
+                self.process_events(ctx);
+            }
+        } else if let Some(id) = &ctx.ui.focus {
             if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
                 let event = TheEvent::MouseUp(widget.dim().to_local(coord));
                 redraw = widget.on_event(&event, ctx);

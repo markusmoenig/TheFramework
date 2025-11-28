@@ -522,7 +522,7 @@ impl TheCanvas {
                 let buffer = widget.draw_overlay(style, ctx);
                 if buffer.is_valid() {
                     self.buffer
-                        .copy_into(buffer.dim().x, buffer.dim().y, &buffer);
+                        .copy_into(buffer.dim().buffer_x, buffer.dim().buffer_y, &buffer);
                 }
             }
         }
