@@ -134,7 +134,7 @@ impl TheWidget for TheMenu {
             self.menus_text.clear();
 
             let mut x = 10;
-            let width = 50;
+            let width = 80;
 
             for _ in 0..self.menus.len() {
                 let dim = TheDim::new(x, 3, width, 18);
