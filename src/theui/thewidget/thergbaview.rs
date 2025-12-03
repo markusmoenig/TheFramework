@@ -520,8 +520,11 @@ impl TheWidget for TheRGBAView {
         &mut self.dim
     }
 
-    fn set_dim(&mut self, dim: TheDim, _ctx: &mut TheContext) {
+    fn set_dim(&mut self, dim: TheDim, ctx: &mut TheContext) {
         if self.dim != dim {
+            if self.dim.width != dim.width || self.dim.height != dim.height {
+                ctx.ui.send(TheEvent::WidgetResized(self.id.clone(), dim));
+            }
             self.dim = dim;
             self.is_dirty = true;
         }
