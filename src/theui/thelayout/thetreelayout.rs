@@ -540,6 +540,26 @@ impl TheLayout for TheTreeLayout {
         &mut self.widgets
     }
 
+    fn supports_mouse_wheel(&self) -> bool {
+        true
+    }
+
+    fn mouse_wheel_scroll(&mut self, delta: Vec2<i32>) {
+        if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+            scroll_bar.scroll_by(-delta.y);
+            // Apply the new scroll offset to all widgets
+            let offset = scroll_bar.scroll_offset();
+            self.root.apply_scroll_offset(offset);
+        }
+    }
+
+    fn get_layout_at_coord(&mut self, coord: Vec2<i32>) -> Option<TheId> {
+        if self.dim.contains(coord) {
+            return Some(self.id.clone());
+        }
+        None
+    }
+
     fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         if self.layout_dirty_flag.load(Ordering::Relaxed) {
             return None;
@@ -637,8 +657,6 @@ impl TheLayout for TheTreeLayout {
         if self.layout_dirty_flag.load(Ordering::Relaxed) {
             self.recalculate_layout(ctx);
         }
-
-        // println!("treelayout true");
 
         // let stride: usize = buffer.stride();
         // if let Some(background) = self.background {

@@ -64,6 +64,16 @@ impl TheLayout for TheListLayout {
         self.background = color;
     }
 
+    fn supports_mouse_wheel(&self) -> bool {
+        true
+    }
+
+    fn mouse_wheel_scroll(&mut self, delta: Vec2<i32>) {
+        if let Some(scroll_bar) = self.vertical_scrollbar.as_vertical_scrollbar() {
+            scroll_bar.scroll_by(-delta.y);
+        }
+    }
+
     fn widgets(&mut self) -> &mut Vec<Box<dyn TheWidget>> {
         &mut self.widgets
     }

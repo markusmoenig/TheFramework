@@ -289,6 +289,50 @@ impl TheCanvas {
         None
     }
 
+    /// Returns the layout id at the given screen coordinate (if any)
+    pub fn get_layout_at_coord(&mut self, coord: Vec2<i32>) -> Option<TheId> {
+        if let Some(left) = &mut self.left {
+            if let Some(layout_id) = left.get_layout_at_coord(coord) {
+                return Some(layout_id);
+            }
+        }
+
+        if let Some(top) = &mut self.top {
+            if let Some(layout_id) = top.get_layout_at_coord(coord) {
+                return Some(layout_id);
+            }
+        }
+
+        if let Some(right) = &mut self.right {
+            if let Some(layout_id) = right.get_layout_at_coord(coord) {
+                return Some(layout_id);
+            }
+        }
+
+        if let Some(bottom) = &mut self.bottom {
+            if let Some(layout_id) = bottom.get_layout_at_coord(coord) {
+                return Some(layout_id);
+            }
+        }
+
+        if let Some(center) = &mut self.center {
+            if let Some(layout_id) = center.get_layout_at_coord(coord) {
+                return Some(layout_id);
+            }
+        } else if let Some(layout) = &mut self.layout {
+            if layout.dim().contains(coord) {
+                // Check if the layout has a child layout at this coord
+                if let Some(child_layout_id) = layout.get_layout_at_coord(coord) {
+                    return Some(child_layout_id);
+                }
+                // If not, return this layout's id
+                return Some(layout.id().clone());
+            }
+        }
+
+        None
+    }
+
     /// Returns the widget at the given screen coordinate (if any)
     pub fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         if let Some(left) = &mut self.left {

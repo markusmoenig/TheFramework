@@ -66,6 +66,17 @@ impl TheLayout for TheStackLayout {
         &mut self.widgets
     }
 
+    fn get_layout_at_coord(&mut self, coord: Vec2<i32>) -> Option<TheId> {
+        if self.dim.contains(coord) {
+            if !self.canvas.is_empty() && self.index < self.canvas.len() {
+                if let Some(layout_id) = self.canvas[self.index].get_layout_at_coord(coord) {
+                    return Some(layout_id);
+                }
+            }
+        }
+        None
+    }
+
     fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         if !self.canvas.is_empty() && self.index < self.canvas.len() {
             return self.canvas[self.index].get_widget_at_coord(coord);

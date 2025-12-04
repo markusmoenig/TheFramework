@@ -287,6 +287,9 @@ pub struct TheUI {
     pub ctrl: bool,
     pub alt: bool,
     pub logo: bool,
+
+    // Mouse pos
+    pub mouse_coord: Vec2<i32>,
 }
 
 impl Default for TheUI {
@@ -319,6 +322,8 @@ impl TheUI {
             ctrl: false,
             alt: false,
             logo: false,
+
+            mouse_coord: Vec2::zero(),
         }
     }
 
@@ -893,6 +898,7 @@ impl TheUI {
     pub fn hover(&mut self, x: f32, y: f32, ctx: &mut TheContext) -> bool {
         let mut redraw = false;
         let coord = Vec2::new(x as i32, y as i32);
+        self.mouse_coord = coord;
 
         if let Some(context) = &mut self.context_menu {
             if context.contains(coord) {
@@ -948,10 +954,32 @@ impl TheUI {
 
     pub fn mouse_wheel(&mut self, delta: (i32, i32), ctx: &mut TheContext) -> bool {
         let mut redraw = false;
-        if let Some(id) = &ctx.ui.hover {
-            if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
-                redraw = widget.on_event(&TheEvent::MouseWheel(Vec2::new(delta.0, delta.1)), ctx);
-                self.process_events(ctx);
+
+        let mut layout_id = None;
+        if let Some(id) = self.get_layout_at_coord(self.mouse_coord) {
+            layout_id = Some(id);
+        }
+
+        let mut processed = false;
+
+        // We check first if the layout under the mouse supports manual scrolling, and if yes use that
+        if let Some(layout_id) = layout_id {
+            if let Some(layout) = self.get_layout(&layout_id.name) {
+                if layout.supports_mouse_wheel() {
+                    layout.mouse_wheel_scroll(Vec2::new(delta.0, delta.1));
+                    processed = true;
+                }
+            }
+        }
+
+        if !processed {
+            // If not processed, call the widget directly.
+            if let Some(id) = &ctx.ui.hover {
+                if let Some(widget) = self.get_widget_abs(Some(&id.name), Some(&id.uuid)) {
+                    redraw =
+                        widget.on_event(&TheEvent::MouseWheel(Vec2::new(delta.0, delta.1)), ctx);
+                    self.process_events(ctx);
+                }
             }
         }
         redraw
@@ -1064,6 +1092,18 @@ impl TheUI {
             }
         }
         redraw
+    }
+
+    /// Returns the layout at the given position.
+    pub fn get_layout_at_coord(&mut self, coord: Vec2<i32>) -> Option<TheId> {
+        if let Some(dialog) = &mut self.dialog {
+            if let Some(layout) = dialog.get_layout_at_coord(coord) {
+                return Some(layout);
+            }
+        } else if let Some(layout) = self.canvas.get_layout_at_coord(coord) {
+            return Some(layout);
+        }
+        None
     }
 
     /// Returns the absolute widget at the given position.

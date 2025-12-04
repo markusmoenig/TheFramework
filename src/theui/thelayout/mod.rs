@@ -76,6 +76,14 @@ pub trait TheLayout: Send {
         false
     }
 
+    /// This layouts supports mouse wheel events (TheListLayout etc)
+    fn supports_mouse_wheel(&self) -> bool {
+        false
+    }
+
+    /// And if yes, process them here.
+    fn mouse_wheel_scroll(&mut self, coord: Vec2<i32>) {}
+
     /// Relayouts the layout.
     fn relayout(&mut self, ctx: &mut TheContext) {}
 
@@ -92,6 +100,10 @@ pub trait TheLayout: Send {
         name: Option<&String>,
         uuid: Option<&Uuid>,
     ) -> Option<&mut Box<dyn TheWidget>>;
+
+    fn get_layout_at_coord(&mut self, coord: Vec2<i32>) -> Option<TheId> {
+        None
+    }
 
     fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>>;
 

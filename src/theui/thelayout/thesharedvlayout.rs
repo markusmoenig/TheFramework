@@ -78,6 +78,17 @@ impl TheLayout for TheSharedVLayout {
         false
     }
 
+    fn get_layout_at_coord(&mut self, coord: Vec2<i32>) -> Option<TheId> {
+        if self.dim.contains(coord) {
+            for c in &mut self.canvas {
+                if let Some(layout_id) = c.get_layout_at_coord(coord) {
+                    return Some(layout_id);
+                }
+            }
+        }
+        None
+    }
+
     fn get_widget_at_coord(&mut self, coord: Vec2<i32>) -> Option<&mut Box<dyn TheWidget>> {
         if self.canvas.len() < 2 {
             return None;
