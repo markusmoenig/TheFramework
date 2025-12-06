@@ -418,6 +418,9 @@ impl TheWidget for TheTextAreaEdit {
                 self.last_mouse_down_time = Instant::now();
             }
             TheEvent::MouseDragged(coord) => {
+                if *coord == self.last_mouse_down_coord {
+                    return false;
+                }
                 self.is_dirty = true;
 
                 if !self.state.is_empty() {
