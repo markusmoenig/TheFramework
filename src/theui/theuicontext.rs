@@ -337,6 +337,7 @@ impl TheUIContext {
                     png::ColorType::Indexed => {
                         // Image is Indexed, decode using the palette
                         if let Some(palette) = reader.info().palette.as_ref() {
+                            let trns = reader.info().trns.as_ref();
                             let mut expanded_buf =
                                 Vec::with_capacity(info.width as usize * info.height as usize * 4);
                             for &index in bytes {
@@ -344,7 +345,13 @@ impl TheUIContext {
                                 expanded_buf.push(palette[palette_index]); // R
                                 expanded_buf.push(palette[palette_index + 1]); // G
                                 expanded_buf.push(palette[palette_index + 2]); // B
-                                expanded_buf.push(255); // A (opaque)
+                                                                               // Check if transparency chunk exists and get alpha value
+                                let alpha = if let Some(trns_data) = trns {
+                                    trns_data.get(index as usize).copied().unwrap_or(255)
+                                } else {
+                                    255 // Fully opaque if no transparency
+                                };
+                                expanded_buf.push(alpha);
                             }
                             expanded_buf
                         } else {
