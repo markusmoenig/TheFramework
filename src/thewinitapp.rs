@@ -372,8 +372,8 @@ impl TheWinitApp {
             let scale_factor = ctx.window.scale_factor() as f32;
             ctx.ctx.scale_factor = scale_factor;
 
-            let width = (size.width as f32 / scale_factor) as usize;
-            let height = (size.height as f32 / scale_factor) as usize;
+            let width = (size.width as f32 / scale_factor) as u32;
+            let height = (size.height as f32 / scale_factor) as u32;
 
             // WASM-specific: surface should use logical size
             #[cfg(target_arch = "wasm32")]
@@ -386,21 +386,31 @@ impl TheWinitApp {
 
             // Desktop: surface uses physical size
             #[cfg(not(target_arch = "wasm32"))]
-            ctx.surface
-                .resize(
-                    NonZeroU32::new(size.width).unwrap(),
-                    NonZeroU32::new(size.height).unwrap(),
-                )
-                .unwrap();
+            {
+                #[cfg(not(target_os = "macos"))]
+                ctx.surface
+                    .resize(
+                        NonZeroU32::new(width).unwrap(),
+                        NonZeroU32::new(height).unwrap(),
+                    )
+                    .unwrap();
+                #[cfg(target_os = "macos")]
+                ctx.surface
+                    .resize(
+                        NonZeroU32::new(size.width).unwrap(),
+                        NonZeroU32::new(size.height).unwrap(),
+                    )
+                    .unwrap();
+            }
 
             println!("Window scale_factor: {}", scale_factor);
             println!("New logical size: {}x{}", width, height);
             println!("New ui_frame size: {} bytes", width * height * 4);
 
-            ctx.ctx.width = width;
-            ctx.ctx.height = height;
+            ctx.ctx.width = width as usize;
+            ctx.ctx.height = height as usize;
 
-            ctx.ui_frame.resize(width * height * 4, 0);
+            ctx.ui_frame.resize((width * height * 4) as usize, 0);
             println!("===================\n");
 
             #[cfg(feature = "ui")]
