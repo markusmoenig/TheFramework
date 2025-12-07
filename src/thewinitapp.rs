@@ -101,37 +101,42 @@ fn accel_physical_to_ascii(code: KeyCode, shift: bool) -> Option<char> {
 
 fn blit_rgba_into_softbuffer(
     ui_frame: &[u8],
-    scale_factor: usize,
+    scale_factor: f32,
     width: usize,
     height: usize,
     dest: &mut [u32],
 ) {
-    let dest_width = width * scale_factor;
-    let dest_height = height * scale_factor;
-    debug_assert_eq!(dest.len(), dest_width * dest_height);
+    let dest_width = (width as f32 * scale_factor) as usize;
+    let dest_height = (height as f32 * scale_factor) as usize;
 
-    if scale_factor == 1 {
+    if scale_factor == 1.0 {
         // Direct copy without extra allocation.
         for (dst, rgba) in dest.iter_mut().zip(ui_frame.chunks_exact(4)) {
             *dst = (rgba[2] as u32) | ((rgba[1] as u32) << 8) | ((rgba[0] as u32) << 16);
         }
     } else {
-        for y in 0..height {
-            let src_row = &ui_frame[y * width * 4..(y + 1) * width * 4];
-            for x in 0..width {
-                let offset = x * 4;
-                let r = src_row[offset] as u32;
-                let g = src_row[offset + 1] as u32;
-                let b = src_row[offset + 2] as u32;
+        // Nearest-neighbor upscaling with fractional scale factors
+        for dest_y in 0..dest_height {
+            let src_y = (dest_y as f32 / scale_factor) as usize;
+            if src_y >= height {
+                continue;
+            }
+
+            for dest_x in 0..dest_width {
+                let src_x = (dest_x as f32 / scale_factor) as usize;
+                if src_x >= width {
+                    continue;
+                }
+
+                let src_offset = (src_y * width + src_x) * 4;
+                let r = ui_frame[src_offset] as u32;
+                let g = ui_frame[src_offset + 1] as u32;
+                let b = ui_frame[src_offset + 2] as u32;
                 let color = b | (g << 8) | (r << 16);
 
-                let dest_x = x * scale_factor;
-                let dest_y = y * scale_factor;
-
-                for sy in 0..scale_factor {
-                    let row = dest_y + sy;
-                    let row_start = row * dest_width + dest_x;
-                    dest[row_start..row_start + scale_factor].fill(color);
+                let dest_offset = dest_y * dest_width + dest_x;
+                if dest_offset < dest.len() {
+                    dest[dest_offset] = color;
                 }
             }
         }
@@ -339,12 +344,29 @@ impl TheWinitApp {
         // but do not use the UI API
         self.app.draw(&mut ctx.ui_frame, &mut ctx.ctx);
 
-        // On Windows/Linux, always use scale_factor = 1 for blitting to avoid crashes
+        // On Windows/Linux, try to use the actual scale_factor, but verify the dest buffer is large enough
         // On macOS, use the actual scale_factor for Retina displays
         #[cfg(target_os = "macos")]
-        let blit_scale_factor = ctx.ctx.scale_factor as usize;
+        let blit_scale_factor = ctx.ctx.scale_factor;
         #[cfg(not(target_os = "macos"))]
-        let blit_scale_factor = 1;
+        let blit_scale_factor = {
+            let buffer = ctx.surface.buffer_mut().unwrap();
+            let desired_scale = ctx.ctx.scale_factor;
+            let required_size = ((ctx.ctx.width as f32 * desired_scale) as usize)
+                * ((ctx.ctx.height as f32 * desired_scale) as usize);
+
+            // Check if the destination buffer is large enough for the upscaled blit
+            // If not, fall back to scale_factor = 1.0 to avoid crashes/panics
+            if buffer.len() >= required_size {
+                desired_scale
+            } else {
+                println!(
+                    "Warning: Buffer too small for scale_factor {}. Required: {}, Available: {}. Falling back to scale_factor = 1.0",
+                    desired_scale, required_size, buffer.len()
+                );
+                1.0
+            }
+        };
 
         let mut buffer = ctx.surface.buffer_mut().unwrap();
         blit_rgba_into_softbuffer(
