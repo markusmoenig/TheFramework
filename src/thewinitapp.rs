@@ -397,12 +397,27 @@ impl TheWinitApp {
             println!("New physical size: {}x{}", size.width, size.height);
 
             let scale_factor = ctx.window.scale_factor() as f32;
-            ctx.ctx.scale_factor = scale_factor;
 
-            let (width, height) = (
+            // On non-macOS, if DPI scale is fractional, render at physical resolution with scale_factor forced to 1.0
+            #[cfg(all(not(target_os = "macos"), not(target_arch = "wasm32")))]
+            let (effective_scale, width, height) = if scale_factor.fract() != 0.0 {
+                (1.0_f32, size.width, size.height)
+            } else {
+                (
+                    scale_factor,
+                    (size.width as f32 / scale_factor).round() as u32,
+                    (size.height as f32 / scale_factor).round() as u32,
+                )
+            };
+            // macOS and WASM: keep logical sizing based on scale_factor
+            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+            let (effective_scale, width, height) = (
+                scale_factor,
                 (size.width as f32 / scale_factor).round() as u32,
                 (size.height as f32 / scale_factor).round() as u32,
             );
+
+            ctx.ctx.scale_factor = effective_scale;
 
             // WASM-specific: surface should use logical size
             #[cfg(target_arch = "wasm32")]
