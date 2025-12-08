@@ -106,8 +106,9 @@ fn blit_rgba_into_softbuffer(
     height: usize,
     dest: &mut [u32],
 ) {
-    let dest_width = (width as f32 * scale_factor) as usize;
-    let dest_height = (height as f32 * scale_factor) as usize;
+    // Round to match the resized surface at fractional DPI across platforms
+    let dest_width = (width as f32 * scale_factor).round() as usize;
+    let dest_height = (height as f32 * scale_factor).round() as usize;
 
     if scale_factor == 1.0 {
         // Direct copy without extra allocation.
@@ -351,9 +352,13 @@ impl TheWinitApp {
         #[cfg(not(target_os = "macos"))]
         let blit_scale_factor = {
             let buffer = ctx.surface.buffer_mut().unwrap();
-            let desired_scale = ctx.ctx.scale_factor;
-            let required_size = ((ctx.ctx.width as f32 * desired_scale) as usize)
-                * ((ctx.ctx.height as f32 * desired_scale) as usize);
+            let inner_size = ctx.window.inner_size();
+            // Derive scale from the actual surface size to avoid double rounding (Windows fractional DPI)
+            let desired_scale = inner_size.width as f32 / ctx.ctx.width as f32;
+
+            let dest_width = inner_size.width as usize;
+            let dest_height = inner_size.height as usize;
+            let required_size = dest_width * dest_height;
 
             // Check if the destination buffer is large enough for the upscaled blit
             // If not, fall back to scale_factor = 1.0 to avoid crashes/panics
@@ -394,8 +399,10 @@ impl TheWinitApp {
             let scale_factor = ctx.window.scale_factor() as f32;
             ctx.ctx.scale_factor = scale_factor;
 
-            let width = (size.width as f32 / scale_factor) as u32;
-            let height = (size.height as f32 / scale_factor) as u32;
+            let (width, height) = (
+                (size.width as f32 / scale_factor).round() as u32,
+                (size.height as f32 / scale_factor).round() as u32,
+            );
 
             // WASM-specific: surface should use logical size
             #[cfg(target_arch = "wasm32")]
@@ -412,8 +419,8 @@ impl TheWinitApp {
                 #[cfg(not(target_os = "macos"))]
                 ctx.surface
                     .resize(
-                        NonZeroU32::new(width).unwrap(),
-                        NonZeroU32::new(height).unwrap(),
+                        NonZeroU32::new(size.width).unwrap(),
+                        NonZeroU32::new(size.height).unwrap(),
                     )
                     .unwrap();
                 #[cfg(target_os = "macos")]
