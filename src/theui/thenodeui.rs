@@ -31,6 +31,10 @@ pub enum TheNodeUIItem {
     Separator(String),
     /// Icons: Id, Name, Status, (Buffer, Name, Id)
     Icons(String, String, String, Vec<(TheRGBABuffer, String, Uuid)>),
+    /// Open Tree
+    OpenTree(String),
+    /// Open Tree
+    CloseTree,
 }
 
 impl TheNodeUIItem {
@@ -50,6 +54,8 @@ impl TheNodeUIItem {
             TheNodeUIItem::Checkbox(id, _, _, _) => id,
             TheNodeUIItem::Separator(name) => name,
             TheNodeUIItem::Icons(id, _, _, _) => id,
+            TheNodeUIItem::OpenTree(_) => "OpenTree",
+            TheNodeUIItem::CloseTree => "CloseTree",
         }
     }
 }
@@ -266,6 +272,8 @@ impl TheNodeUI {
         node.widgets.clear();
         node.childs.clear();
 
+        let mut group: Option<TheTreeNode> = None;
+
         for (_, item) in &self.items {
             match item {
                 Text(id, name, status, value, default_value, continous) => {
@@ -280,7 +288,11 @@ impl TheNodeUI {
                     item.set_status_text(status);
                     item.add_widget_column(200, Box::new(edit));
 
-                    node.add_widget(Box::new(item));
+                    if let Some(ref mut g) = group {
+                        g.add_widget(Box::new(item));
+                    } else {
+                        node.add_widget(Box::new(item));
+                    }
                 }
                 Icons(id, _name, status, vec) => {
                     let mut item = TheTreeIcons::new(TheId::named(id));
@@ -294,20 +306,28 @@ impl TheNodeUI {
                         item.set_icon(index, icon.0.clone());
                     }
 
-                    node.add_widget(Box::new(item));
+                    if let Some(ref mut g) = group {
+                        g.add_widget(Box::new(item));
+                    } else {
+                        node.add_widget(Box::new(item));
+                    }
                 }
-                Markdown(_, text) => {
+                Markdown(_, _text) => {
                     //     let mut view = TheMarkdownView::new(TheId::named(id));
                     //     view.set_text(text.clone());
                     //     view.set_font_size(12.5);
                     //     view.limiter_mut().set_max_width(360);
 
-                    let mut item = TheTreeText::new(TheId::named("FloatEditSlider"));
-                    item.set_text(text.clone());
-                    // item.add_widget_column(200, Box::new(view));
-                    // item.set_background_color(TheColor::from(ActionRole::Dock.to_color()));
+                    // let mut item = TheTreeText::new(TheId::named("FloatEditSlider"));
+                    // item.set_text(text.clone());
+                    // // item.add_widget_column(200, Box::new(view));
+                    // // item.set_background_color(TheColor::from(ActionRole::Dock.to_color()));
 
-                    node.add_widget(Box::new(item));
+                    // if let Some(ref mut g) = group {
+                    //     g.add_widget(Box::new(item));
+                    // } else {
+                    //     node.add_widget(Box::new(item));
+                    // }
                 }
                 Selector(id, name, status, values, value) => {
                     let mut dropdown = TheDropdownMenu::new(TheId::named(id));
@@ -322,7 +342,11 @@ impl TheNodeUI {
                     item.add_widget_column(200, Box::new(dropdown));
                     item.set_status_text(status);
 
-                    node.add_widget(Box::new(item));
+                    if let Some(ref mut g) = group {
+                        g.add_widget(Box::new(item));
+                    } else {
+                        node.add_widget(Box::new(item));
+                    }
                 }
                 FloatEditSlider(id, name, status, value, range, continous) => {
                     let mut slider = TheTextLineEdit::new(TheId::named(id));
@@ -338,7 +362,11 @@ impl TheNodeUI {
                     item.add_widget_column(200, Box::new(slider));
                     item.set_status_text(status);
 
-                    node.add_widget(Box::new(item));
+                    if let Some(ref mut g) = group {
+                        g.add_widget(Box::new(item));
+                    } else {
+                        node.add_widget(Box::new(item));
+                    }
                 }
                 FloatSlider(id, name, status, value, range, default_value, continous) => {
                     let mut slider = TheSlider::new(TheId::named(id));
@@ -353,7 +381,11 @@ impl TheNodeUI {
                     item.add_widget_column(200, Box::new(slider));
                     item.set_status_text(status);
 
-                    node.add_widget(Box::new(item));
+                    if let Some(ref mut g) = group {
+                        g.add_widget(Box::new(item));
+                    } else {
+                        node.add_widget(Box::new(item));
+                    }
                 }
                 IntEditSlider(id, name, status, value, range, continous) => {
                     let mut slider = TheTextLineEdit::new(TheId::named(id));
@@ -369,7 +401,11 @@ impl TheNodeUI {
                     item.add_widget_column(200, Box::new(slider));
                     item.set_status_text(status);
 
-                    node.add_widget(Box::new(item));
+                    if let Some(ref mut g) = group {
+                        g.add_widget(Box::new(item));
+                    } else {
+                        node.add_widget(Box::new(item));
+                    }
                 }
                 PaletteSlider(id, name, status, value, palette, continous) => {
                     let mut slider = TheTextLineEdit::new(TheId::named(id));
@@ -384,7 +420,11 @@ impl TheNodeUI {
                     item.add_widget_column(200, Box::new(slider));
                     item.set_status_text(status);
 
-                    node.add_widget(Box::new(item));
+                    if let Some(ref mut g) = group {
+                        g.add_widget(Box::new(item));
+                    } else {
+                        node.add_widget(Box::new(item));
+                    }
                 }
                 IntSlider(id, name, status, value, range, default_value, continous) => {
                     let mut slider = TheSlider::new(TheId::named(id));
@@ -399,7 +439,11 @@ impl TheNodeUI {
                     item.add_widget_column(200, Box::new(slider));
                     item.set_status_text(status);
 
-                    node.add_widget(Box::new(item));
+                    if let Some(ref mut g) = group {
+                        g.add_widget(Box::new(item));
+                    } else {
+                        node.add_widget(Box::new(item));
+                    }
                 }
                 // Button(id, name, status, layout_text) => {
                 //     let mut button = TheTraybarButton::new(TheId::named(id));
@@ -425,8 +469,25 @@ impl TheNodeUI {
                     item.add_widget_column(200, Box::new(cb));
                     item.set_status_text(status);
 
-                    node.add_widget(Box::new(item));
+                    if let Some(ref mut g) = group {
+                        g.add_widget(Box::new(item));
+                    } else {
+                        node.add_widget(Box::new(item));
+                    }
                 }
+                OpenTree(name) => {
+                    let mut group_node = TheTreeNode::new(TheId::empty());
+                    group_node.widget.set_value(TheValue::Text(name.clone()));
+                    group_node.set_root_mode(false);
+                    group_node.set_open(true);
+                    group = Some(group_node);
+                }
+                CloseTree => {
+                    if let Some(group) = group.take() {
+                        node.add_child(group);
+                    }
+                }
+
                 // Separator(name) => {
                 //     let sep = TheSeparator::new(TheId::named_with_id("Separator", Uuid::new_v4()));
                 //     layout.add_pair(name.clone(), Box::new(sep));
