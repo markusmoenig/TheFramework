@@ -178,15 +178,15 @@ impl TheWinitContext {
         #[cfg(not(target_arch = "wasm32"))]
         let (width, height) = (size.width as usize, size.height as usize);
 
-        println!("=== from_window DEBUG ===");
-        println!(
-            "Window scale_factor (from winit): {}",
-            window.scale_factor()
-        );
-        println!("Using scale_factor: {}", scale_factor);
-        println!("Physical size (inner_size): {}x{}", size.width, size.height);
-        println!("Context size: {}x{}", width, height);
-        println!("ui_frame size: {} bytes", width * height * 4);
+        // println!("=== from_window DEBUG ===");
+        // println!(
+        //     "Window scale_factor (from winit): {}",
+        //     window.scale_factor()
+        // );
+        // println!("Using scale_factor: {}", scale_factor);
+        // println!("Physical size (inner_size): {}x{}", size.width, size.height);
+        // println!("Context size: {}x{}", width, height);
+        // println!("ui_frame size: {} bytes", width * height * 4);
 
         let ctx = TheContext::new(width, height, scale_factor);
 
@@ -212,7 +212,7 @@ impl TheWinitContext {
                 size.height * surface_scale as u32,
             )
         };
-        println!("Surface size: {}x{}", surface_width, surface_height);
+        // println!("Surface size: {}x{}", surface_width, surface_height);
 
         if let (Some(width), Some(height)) = (
             NonZeroU32::new(surface_width),
@@ -220,7 +220,7 @@ impl TheWinitContext {
         ) {
             surface.resize(width, height).unwrap();
         }
-        println!("========================\n");
+        // println!("========================\n");
 
         TheWinitContext {
             window,
@@ -393,8 +393,8 @@ impl TheWinitApp {
         };
 
         if size.width != 0 && size.height != 0 {
-            println!("=== resize DEBUG ===");
-            println!("New physical size: {}x{}", size.width, size.height);
+            // println!("=== resize DEBUG ===");
+            // println!("New physical size: {}x{}", size.width, size.height);
 
             let scale_factor = ctx.window.scale_factor() as f32;
 
@@ -447,15 +447,15 @@ impl TheWinitApp {
                     .unwrap();
             }
 
-            println!("Window scale_factor: {}", scale_factor);
-            println!("New logical size: {}x{}", width, height);
-            println!("New ui_frame size: {} bytes", width * height * 4);
+            // println!("Window scale_factor: {}", scale_factor);
+            // println!("New logical size: {}x{}", width, height);
+            // println!("New ui_frame size: {} bytes", width * height * 4);
 
             ctx.ctx.width = width as usize;
             ctx.ctx.height = height as usize;
 
             ctx.ui_frame.resize((width * height * 4) as usize, 0);
-            println!("===================\n");
+            // println!("===================\n");
 
             #[cfg(feature = "ui")]
             self.ui
