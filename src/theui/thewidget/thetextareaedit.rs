@@ -54,6 +54,9 @@ pub struct TheTextAreaEdit {
     ln_area_dim: Option<TheDim>,
     scrollbar_size: usize,
     statusbar_type: StatusbarType,
+    debug_line: Option<usize>,
+    pending_scroll_row: Option<usize>,
+    pending_scroll_centered: bool,
 
     // Interaction
     auto_scroll_to_cursor: bool,
@@ -123,6 +126,9 @@ impl TheWidget for TheTextAreaEdit {
             ln_area_dim: None,
             scrollbar_size: 13,
             statusbar_type: StatusbarType::None,
+            debug_line: None,
+            pending_scroll_row: None,
+            pending_scroll_centered: false,
 
             auto_scroll_to_cursor: true,
             drag_start_index: 0,
@@ -1314,7 +1320,14 @@ impl TheWidget for TheTextAreaEdit {
                 visible_area.3,
             );
 
-            if self.auto_scroll_to_cursor {
+            if let Some(row) = self.pending_scroll_row.take() {
+                if self.pending_scroll_centered {
+                    self.renderer.scroll_to_row_centered(row);
+                } else {
+                    self.renderer.scroll_to_row_with_margin(row, 3);
+                }
+                self.pending_scroll_centered = false;
+            } else if self.auto_scroll_to_cursor {
                 self.renderer
                     .scroll_to_cursor(self.state.find_cursor_index(), self.state.cursor.row);
             }
@@ -1480,7 +1493,9 @@ impl TheWidget for TheTextAreaEdit {
                     let line = lines[i - start_row];
                     let top = dim.y - self.renderer.scroll_offset.y as i32
                         + (self.renderer.row_baseline(i) as f32 - line.max_ascent).ceil() as i32;
-                    let color = if self.state.cursor.row == i {
+                    let color = if self.debug_line == Some(i) {
+                        style.theme().color(TextEditLineNumberDebugColor)
+                    } else if self.state.cursor.row == i {
                         style.theme().color(TextEditLineNumberHighlightColor)
                     } else {
                         style.theme().color_disabled_t(TextEditLineNumberColor)
@@ -1570,6 +1585,7 @@ pub trait TheTextAreaEditTrait: TheWidget {
     fn highlight_match(&mut self, highlight_index: usize);
     fn set_errors(&mut self, errors: &[(usize, usize)]);
     fn clear_errors(&mut self);
+    fn set_debug_line(&mut self, line_number: Option<usize>);
     fn goto_char_by_index(&mut self, char_index: usize);
     fn goto_line(&mut self, line_number: usize);
     fn set_supports_undo(&mut self, supports_undo: bool);
@@ -1675,6 +1691,12 @@ impl TheTextAreaEditTrait for TheTextAreaEdit {
     fn clear_errors(&mut self) {
         self.renderer.clear_errors();
     }
+    fn set_debug_line(&mut self, line_number: Option<usize>) {
+        self.debug_line = line_number;
+        self.renderer.set_debug_line(line_number);
+        self.modified_since_last_tick = true;
+        self.is_dirty = true;
+    }
     fn goto_char_by_index(&mut self, char_index: usize) {
         if self.state.goto_char_by_index(char_index) {
             self.modified_since_last_tick = true;
@@ -1683,6 +1705,8 @@ impl TheTextAreaEditTrait for TheTextAreaEdit {
     }
     fn goto_line(&mut self, line_number: usize) {
         if self.state.goto_row(line_number) {
+            self.pending_scroll_row = Some(self.state.cursor.row);
+            self.pending_scroll_centered = true;
             self.modified_since_last_tick = true;
             self.is_dirty = true;
         }

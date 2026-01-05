@@ -1064,6 +1064,9 @@ pub struct TheTextRenderer {
 
     // Errors
     errors: Vec<(usize, usize)>,
+
+    // Debugging
+    debug_line: Option<usize>,
 }
 
 impl Default for TheTextRenderer {
@@ -1091,6 +1094,8 @@ impl Default for TheTextRenderer {
             highlighted_match: 0,
 
             errors: vec![],
+
+            debug_line: None,
         }
     }
 }
@@ -1552,12 +1557,50 @@ impl TheTextRenderer {
         self.errors = errors;
     }
 
+    pub fn set_debug_line(&mut self, debug_line: Option<usize>) {
+        self.debug_line = debug_line;
+    }
+
     pub fn set_font_size(&mut self, font_size: f32) {
         self.font_size = font_size;
     }
 
     pub fn set_matches(&mut self, matches: Vec<(usize, usize)>) {
         self.matches = matches;
+    }
+
+    pub fn scroll_to_row_centered(&mut self, row_number: usize) {
+        if row_number >= self.row_info.len() {
+            return;
+        }
+
+        let row = &self.row_info[row_number];
+        let row_mid = (row.top + row.bottom) / 2;
+        let mut target = row_mid.saturating_sub(self.height / 2);
+
+        if self.actual_size.y > self.height {
+            let downmost = self.actual_size.y - self.height;
+            target = target.min(downmost);
+        } else {
+            target = 0;
+        }
+
+        self.scroll_offset.y = target;
+    }
+
+    pub fn scroll_to_row_with_margin(&mut self, row_number: usize, margin_rows: usize) {
+        if row_number >= self.row_info.len() {
+            return;
+        }
+
+        let row = &self.row_info[row_number];
+        let row_height = self.row_height(row_number);
+        let margin = margin_rows * row_height;
+
+        let upmost = row.top.saturating_sub(margin);
+        let downmost = self.actual_size.y.saturating_sub(self.height);
+
+        self.scroll_offset.y = upmost.min(downmost);
     }
 
     // Inclusive on both end
@@ -1807,6 +1850,18 @@ impl TheTextRenderer {
             row.bottom - row.top,
         ) {
             return;
+        }
+
+        if self.debug_line == Some(row_number) {
+            let color = style.theme().color(TextEditDebugLineBackground);
+            self.render_text_background(
+                row_number,
+                row.glyph_start,
+                row.glyph_end + 1,
+                buffer,
+                color,
+                draw,
+            );
         }
 
         // Find the visible text

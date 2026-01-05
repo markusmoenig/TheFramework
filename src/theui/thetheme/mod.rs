@@ -56,6 +56,8 @@ pub enum TheThemeColors {
     TextEditCursorColor,
     TextEditLineNumberColor,
     TextEditLineNumberHighlightColor,
+    TextEditLineNumberDebugColor,
+    TextEditDebugLineBackground,
 
     TextLinkColor,
     TextLinkHoveredColor,

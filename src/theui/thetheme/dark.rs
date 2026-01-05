@@ -42,6 +42,8 @@ impl TheTheme for TheDarkTheme {
         colors.insert(TextEditCursorColor, [119, 119, 119, 255]);
         colors.insert(TextEditLineNumberColor, [219, 219, 219, 255]);
         colors.insert(TextEditLineNumberHighlightColor, [242, 242, 242, 255]);
+        colors.insert(TextEditLineNumberDebugColor, [255, 214, 102, 255]);
+        colors.insert(TextEditDebugLineBackground, [255, 214, 102, 80]);
 
         colors.insert(TextLinkColor, [0, 0, 238, 255]);
         colors.insert(TextLinkHoveredColor, [0, 0, 170, 255]);
