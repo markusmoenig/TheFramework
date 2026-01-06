@@ -1097,14 +1097,21 @@ impl ApplicationHandler for TheWinitApp {
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
         let now = Instant::now();
-        if now >= self.next_frame_time {
+        let should_redraw = now >= self.next_frame_time;
+        if should_redraw {
             if let Some(ctx) = &self.ctx {
                 ctx.window.request_redraw();
             }
             self.next_frame_time = now + self.target_frame_time;
         }
 
-        #[cfg(not(target_arch = "wasm32"))]
+        // #[cfg(target_arch = "wasm32")]
+        // {
+        //     // Avoid WaitUntil on wasm to sidestep duration underflow; simple Wait keeps CPU low.
+        //     event_loop.set_control_flow(ControlFlow::Wait);
+        // }
+
+        // #[cfg(not(target_arch = "wasm32"))]
         event_loop.set_control_flow(ControlFlow::WaitUntil(self.next_frame_time));
 
         let Some(ctx) = &mut self.ctx else {
