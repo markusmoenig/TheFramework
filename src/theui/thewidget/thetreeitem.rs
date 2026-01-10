@@ -737,7 +737,7 @@ impl TheWidget for TheTreeItem {
             // d.x += self.dim().x;
             // d.y += self.dim().y;
             d.buffer_x = d.x + self.dim().x - 6;
-            d.buffer_y = d.y + self.dim().y + 1;
+            d.buffer_y = d.y + self.dim().y + 1 - self.scroll_offset;
 
             buffer
         } else {
