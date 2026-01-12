@@ -146,6 +146,7 @@ impl ThePalette {
         None
     }
 
+    /*
     /// Returns the index of the closest matching color in the palette.
     /// Returns `None` if the palette is empty.
     pub fn find_closest_color_index(&self, color: &TheColor) -> Option<usize> {
@@ -164,6 +165,34 @@ impl ThePalette {
 
                 if dist_sq < best_distance {
                     best_distance = dist_sq;
+                    best_index = Some(i);
+                }
+            }
+        }
+
+        best_index
+    }*/
+
+    /// Returns the index of the palette color that best matches the given color.
+    /// Used for palette remapping (closest-color quantization).
+    /// Returns `None` if the palette is empty.
+    pub fn find_closest_color_index(&self, color: &TheColor) -> Option<usize> {
+        let mut best_index = None;
+        let mut best_distance = f32::MAX;
+
+        for (i, entry) in self.colors.iter().enumerate() {
+            if let Some(existing) = entry {
+                // Perceptual weighted distance in linear RGBA space
+                let dr = existing.r - color.r;
+                let dg = existing.g - color.g;
+                let db = existing.b - color.b;
+                let da = existing.a - color.a;
+
+                // Human-vision–weighted RGB, alpha has lower influence
+                let dist = dr * dr * 0.30 + dg * dg * 0.59 + db * db * 0.11 + da * da * 0.05;
+
+                if dist < best_distance {
+                    best_distance = dist;
                     best_index = Some(i);
                 }
             }
