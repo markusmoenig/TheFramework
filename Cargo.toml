@@ -25,7 +25,7 @@ rust-embed = { version = "8", default-features = true, features = [
 ] }
 png = "0.17"
 rustc-hash = "2.1.1"
-rfd = { version = "0.15.4", optional = true }
+rfd = { version = "0.17.1", optional = true }
 futures = { version = "0.3" }
 serde = { version = "1.0", features = ["derive"], optional = false }
 serde_json = { version = "1.0", optional = false }
