@@ -568,7 +568,7 @@ impl TheWidget for TheTextAreaEdit {
                     } else {
                         delta.y
                     };
-                    self.renderer.scroll(&Vec2::new(delta, 0), false)
+                    self.renderer.scroll(&Vec2::new(-delta, 0), false)
                 } else if self.vscrollbar.dim().contains(global_coord) {
                     let delta = if delta.x.abs() > delta.y.abs() {
                         delta.x
@@ -577,7 +577,7 @@ impl TheWidget for TheTextAreaEdit {
                     };
                     self.renderer.scroll(&Vec2::new(0, -delta), false)
                 } else {
-                    self.renderer.scroll(&Vec2::new(delta.x, -delta.y), false)
+                    self.renderer.scroll(&Vec2::new(-delta.x, -delta.y), false)
                 };
                 if scrolled {
                     self.is_dirty = true;
