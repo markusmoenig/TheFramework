@@ -12,6 +12,8 @@ pub struct TheMenubarButton {
 
     status: Option<String>,
 
+    has_state: bool,
+
     dim: TheDim,
     is_dirty: bool,
 }
@@ -36,6 +38,8 @@ impl TheWidget for TheMenubarButton {
 
             status: None,
 
+            has_state: false,
+
             dim: TheDim::zero(),
             is_dirty: false,
         }
@@ -51,14 +55,30 @@ impl TheWidget for TheMenubarButton {
         // println!("event ({}): {:?}", self.widget_id.name, event);
         match event {
             TheEvent::MouseDown(_coord) => {
-                if !ctx.ui.is_disabled(&self.id.name) {
-                    if self.state != TheWidgetState::Clicked {
-                        self.state = TheWidgetState::Clicked;
-                        ctx.ui.set_focus(self.id());
-                        ctx.ui.send_widget_state_changed(self.id(), self.state);
+                if !self.has_state {
+                    if !ctx.ui.is_disabled(&self.id.name) {
+                        if self.state != TheWidgetState::Clicked {
+                            self.state = TheWidgetState::Clicked;
+                            ctx.ui.set_focus(self.id());
+                            ctx.ui.send_widget_state_changed(self.id(), self.state);
+                        }
+                        self.is_dirty = true;
+                        redraw = true;
                     }
-                    self.is_dirty = true;
-                    redraw = true;
+                } else {
+                    if !ctx.ui.is_disabled(&self.id.name) {
+                        if self.state == TheWidgetState::Clicked {
+                            self.state = TheWidgetState::None;
+                            ctx.ui.set_focus(self.id());
+                            ctx.ui.send_widget_state_changed(self.id(), self.state);
+                        } else if self.state == TheWidgetState::None {
+                            self.state = TheWidgetState::Clicked;
+                            ctx.ui.set_focus(self.id());
+                            ctx.ui.send_widget_state_changed(self.id(), self.state);
+                        }
+                        self.is_dirty = true;
+                        redraw = true;
+                    }
                 }
             }
             TheEvent::Hover(_coord) => {
@@ -73,12 +93,14 @@ impl TheWidget for TheMenubarButton {
             }
             TheEvent::MouseUp(_coord) => {
                 if !ctx.ui.is_disabled(&self.id.name) {
-                    if self.state == TheWidgetState::Clicked {
-                        self.state = TheWidgetState::None;
-                        ctx.ui.clear_focus();
+                    if !self.has_state {
+                        if self.state == TheWidgetState::Clicked {
+                            self.state = TheWidgetState::None;
+                            ctx.ui.clear_focus();
+                        }
+                        self.is_dirty = true;
+                        redraw = true;
                     }
-                    self.is_dirty = true;
-                    redraw = true;
                 }
             }
             _ => {}
@@ -265,6 +287,7 @@ pub trait TheMenubarButtonTrait {
     fn set_fixed_size(&mut self, size: Vec2<i32>);
     fn set_icon_name(&mut self, text: String);
     fn set_icon_offset(&mut self, offset: Vec2<i32>);
+    fn set_has_state(&mut self, has_state: bool);
 }
 
 impl TheMenubarButtonTrait for TheMenubarButton {
@@ -278,5 +301,8 @@ impl TheMenubarButtonTrait for TheMenubarButton {
     }
     fn set_icon_offset(&mut self, offset: Vec2<i32>) {
         self.icon_offset = offset;
+    }
+    fn set_has_state(&mut self, has_state: bool) {
+        self.has_state = has_state;
     }
 }
