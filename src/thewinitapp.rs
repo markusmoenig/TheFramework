@@ -655,8 +655,12 @@ impl ApplicationHandler for TheWinitApp {
                                     }
                                 };
                                 ctx.window.set_cursor(cursor_icon);
-                                ctx.window.set_cursor_visible(true);
+                                ctx.window.set_cursor_visible(ctx.ctx.cursor_visible());
                                 ctx.ctx.reset_cursor_changed();
+                            }
+                            if ctx.ctx.cursor_visible_changed() {
+                                ctx.window.set_cursor_visible(ctx.ctx.cursor_visible());
+                                ctx.ctx.reset_cursor_visible_changed();
                             }
                         }
                         if key_event.state == ElementState::Released {
@@ -774,8 +778,12 @@ impl ApplicationHandler for TheWinitApp {
                                     }
                                 };
                                 ctx.window.set_cursor(cursor_icon);
-                                ctx.window.set_cursor_visible(true);
+                                ctx.window.set_cursor_visible(ctx.ctx.cursor_visible());
                                 ctx.ctx.reset_cursor_changed();
+                            }
+                            if ctx.ctx.cursor_visible_changed() {
+                                ctx.window.set_cursor_visible(ctx.ctx.cursor_visible());
+                                ctx.ctx.reset_cursor_visible_changed();
                             }
                         }
                     }
@@ -876,8 +884,12 @@ impl ApplicationHandler for TheWinitApp {
                                 TheCursorIcon::RowResize => winit::window::CursorIcon::RowResize,
                             };
                             ctx.window.set_cursor(cursor_icon);
-                            ctx.window.set_cursor_visible(true);
+                            ctx.window.set_cursor_visible(ctx.ctx.cursor_visible());
                             ctx.ctx.reset_cursor_changed();
+                        }
+                        if ctx.ctx.cursor_visible_changed() {
+                            ctx.window.set_cursor_visible(ctx.ctx.cursor_visible());
+                            ctx.ctx.reset_cursor_visible_changed();
                         }
 
                         if redraw {
@@ -1051,8 +1063,12 @@ impl ApplicationHandler for TheWinitApp {
                                     }
                                 };
                                 ctx.window.set_cursor(cursor_icon);
-                                ctx.window.set_cursor_visible(true);
+                                ctx.window.set_cursor_visible(ctx.ctx.cursor_visible());
                                 ctx.ctx.reset_cursor_changed();
+                            }
+                            if ctx.ctx.cursor_visible_changed() {
+                                ctx.window.set_cursor_visible(ctx.ctx.cursor_visible());
+                                ctx.ctx.reset_cursor_visible_changed();
                             }
 
                             if redraw {

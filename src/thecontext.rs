@@ -50,6 +50,8 @@ pub struct TheContext {
 
     pub cursor_icon: TheCursorIcon,
     pub cursor_changed: bool,
+    pub cursor_visible: bool,
+    pub cursor_visible_changed: bool,
 }
 
 impl TheContext {
@@ -63,6 +65,8 @@ impl TheContext {
             ui: TheUIContext::new(),
             cursor_icon: TheCursorIcon::Default,
             cursor_changed: false,
+            cursor_visible: true,
+            cursor_visible_changed: false,
         }
     }
 
@@ -87,6 +91,29 @@ impl TheContext {
     /// Reset the cursor changed flag
     pub fn reset_cursor_changed(&mut self) {
         self.cursor_changed = false;
+    }
+
+    /// Set the cursor visibility
+    pub fn set_cursor_visible(&mut self, visible: bool) {
+        if self.cursor_visible != visible {
+            self.cursor_visible = visible;
+            self.cursor_visible_changed = true;
+        }
+    }
+
+    /// Get the current cursor visibility
+    pub fn cursor_visible(&self) -> bool {
+        self.cursor_visible
+    }
+
+    /// Check if the cursor visibility has changed
+    pub fn cursor_visible_changed(&self) -> bool {
+        self.cursor_visible_changed
+    }
+
+    /// Reset the cursor visibility changed flag
+    pub fn reset_cursor_visible_changed(&mut self) {
+        self.cursor_visible_changed = false;
     }
 
     /// Gets the current time in milliseconds.

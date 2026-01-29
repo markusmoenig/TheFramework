@@ -592,6 +592,7 @@ impl TheWidget for TheRGBAView {
         }
 
         let target = buffer;
+        let target_len = target.pixels().len();
 
         let src_width = self.buffer.dim().width as f32;
         let src_height = self.buffer.dim().height as f32;
@@ -627,6 +628,10 @@ impl TheWidget for TheRGBAView {
                     + target_x
                     + self.dim.buffer_x) as usize
                     * 4;
+
+                if target_index + 4 > target_len {
+                    continue;
+                }
 
                 // TileSelection mode - use original grid drawing logic
                 if !self.dont_show_grid && self.mode == TheRGBAViewMode::TileSelection {
